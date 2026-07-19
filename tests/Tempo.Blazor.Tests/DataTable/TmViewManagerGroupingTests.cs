@@ -49,7 +49,7 @@ public class TmViewManagerGroupingTests : LocalizationTestBase
     public async Task ViewManager_Modal_ShowsGroupableColumns()
     {
         var provider = BuildProvider();
-        var cut = RenderComponent<TmViewManager>(p => p
+        var cut = Render<TmViewManager>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.ViewContext, TestViewContext)
             .Add(c => c.CurrentUserId, TestUserId)
@@ -70,7 +70,7 @@ public class TmViewManagerGroupingTests : LocalizationTestBase
     public async Task ViewManager_Modal_NoGroupableColumns_NoGroupSection()
     {
         var provider = BuildProvider();
-        var cut = RenderComponent<TmViewManager>(p => p
+        var cut = Render<TmViewManager>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.ViewContext, TestViewContext)
             .Add(c => c.CurrentUserId, TestUserId)
@@ -92,7 +92,7 @@ public class TmViewManagerGroupingTests : LocalizationTestBase
     public async Task ViewManager_SaveView_IncludesGroupByColumns()
     {
         var provider = BuildProvider();
-        var cut = RenderComponent<TmViewManager>(p => p
+        var cut = Render<TmViewManager>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.ViewContext, TestViewContext)
             .Add(c => c.CurrentUserId, TestUserId)
@@ -140,7 +140,7 @@ public class TmViewManagerGroupingTests : LocalizationTestBase
         };
         var provider = BuildProvider([existingView]);
 
-        var cut = RenderComponent<TmViewManager>(p => p
+        var cut = Render<TmViewManager>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.ViewContext, TestViewContext)
             .Add(c => c.CurrentUserId, TestUserId)
@@ -175,7 +175,7 @@ public class TmViewManagerGroupingTests : LocalizationTestBase
         var provider = BuildProvider([existingView]);
 
         DataTableView? applied = null;
-        var cut = RenderComponent<TmViewManager>(p => p
+        var cut = Render<TmViewManager>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.ViewContext, TestViewContext)
             .Add(c => c.CurrentUserId, TestUserId)

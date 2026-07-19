@@ -10,7 +10,7 @@ public class TmSpreadsheetCustomFilterDialogTests : LocalizationTestBase
     [Fact]
     public void Renders_AndOr_AndOperators_Localized()
     {
-        var cut = RenderComponent<TmSpreadsheetCustomFilterDialog>(p => p
+        var cut = Render<TmSpreadsheetCustomFilterDialog>(p => p
             .Add(c => c.ColumnIndex, 1)
             .Add(c => c.Kind, SpreadsheetFilterKind.Number));
 
@@ -26,7 +26,7 @@ public class TmSpreadsheetCustomFilterDialogTests : LocalizationTestBase
     public void Apply_NumberGreaterThan_BuildsCriteria()
     {
         SpreadsheetColumnFilter? applied = null;
-        var cut = RenderComponent<TmSpreadsheetCustomFilterDialog>(p => p
+        var cut = Render<TmSpreadsheetCustomFilterDialog>(p => p
             .Add(c => c.ColumnIndex, 1)
             .Add(c => c.Kind, SpreadsheetFilterKind.Number)
             .Add(c => c.OnApply, EventCallback.Factory.Create<SpreadsheetColumnFilter?>(this, f => applied = f)));

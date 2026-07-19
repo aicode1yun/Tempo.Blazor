@@ -13,7 +13,7 @@ public class TmInlineEditTests : LocalizationTestBase
     [Fact]
     public void TmInlineEdit_Renders_DisplayMode_By_Default()
     {
-        var cut = RenderComponent<TmInlineEdit>(p => p
+        var cut = Render<TmInlineEdit>(p => p
             .Add(c => c.Value, "Hello"));
 
         cut.Find(".tm-inline-edit").Should().NotBeNull();
@@ -24,7 +24,7 @@ public class TmInlineEditTests : LocalizationTestBase
     [Fact]
     public void TmInlineEdit_Shows_Placeholder_When_Empty()
     {
-        var cut = RenderComponent<TmInlineEdit>(p => p
+        var cut = Render<TmInlineEdit>(p => p
             .Add(c => c.Value, "")
             .Add(c => c.Placeholder, "Click to edit"));
 
@@ -36,7 +36,7 @@ public class TmInlineEditTests : LocalizationTestBase
     [Fact]
     public void TmInlineEdit_Click_Switches_To_EditMode()
     {
-        var cut = RenderComponent<TmInlineEdit>(p => p
+        var cut = Render<TmInlineEdit>(p => p
             .Add(c => c.Value, "Hello"));
 
         cut.Find(".tm-inline-edit-display").Click();
@@ -49,7 +49,7 @@ public class TmInlineEditTests : LocalizationTestBase
     public void TmInlineEdit_Enter_Saves_Value()
     {
         string? saved = null;
-        var cut = RenderComponent<TmInlineEdit>(p => p
+        var cut = Render<TmInlineEdit>(p => p
             .Add(c => c.Value, "Hello")
             .Add(c => c.OnSave, EventCallback.Factory.Create<string>(this, v => saved = v)));
 
@@ -65,7 +65,7 @@ public class TmInlineEditTests : LocalizationTestBase
     public void TmInlineEdit_Escape_Cancels_Edit()
     {
         string? saved = null;
-        var cut = RenderComponent<TmInlineEdit>(p => p
+        var cut = Render<TmInlineEdit>(p => p
             .Add(c => c.Value, "Hello")
             .Add(c => c.OnSave, EventCallback.Factory.Create<string>(this, v => saved = v)));
 
@@ -81,7 +81,7 @@ public class TmInlineEditTests : LocalizationTestBase
     public void TmInlineEdit_Validation_Error_Prevents_Save()
     {
         string? saved = null;
-        var cut = RenderComponent<TmInlineEdit>(p => p
+        var cut = Render<TmInlineEdit>(p => p
             .Add(c => c.Value, "Hello")
             .Add(c => c.OnSave, EventCallback.Factory.Create<string>(this, v => saved = v))
             .Add(c => c.Validate, v => string.IsNullOrWhiteSpace(v) ? "Value is required" : null));
@@ -98,7 +98,7 @@ public class TmInlineEditTests : LocalizationTestBase
     [Fact]
     public void TmInlineEdit_Disabled_Does_Not_Switch_To_EditMode()
     {
-        var cut = RenderComponent<TmInlineEdit>(p => p
+        var cut = Render<TmInlineEdit>(p => p
             .Add(c => c.Value, "Hello")
             .Add(c => c.Disabled, true));
 
@@ -111,7 +111,7 @@ public class TmInlineEditTests : LocalizationTestBase
     [Fact]
     public void TmInlineEdit_Applies_Custom_Class()
     {
-        var cut = RenderComponent<TmInlineEdit>(p => p
+        var cut = Render<TmInlineEdit>(p => p
             .Add(c => c.Value, "Hello")
             .Add(c => c.Class, "my-class"));
 
@@ -121,7 +121,7 @@ public class TmInlineEditTests : LocalizationTestBase
     [Fact]
     public void TmInlineEdit_Disabled_Has_Disabled_Class()
     {
-        var cut = RenderComponent<TmInlineEdit>(p => p
+        var cut = Render<TmInlineEdit>(p => p
             .Add(c => c.Value, "Hello")
             .Add(c => c.Disabled, true));
 

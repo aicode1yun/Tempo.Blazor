@@ -55,7 +55,7 @@ public class DiagramToolboxAccessibilityPhase10Tests : LocalizationTestBase
     [Fact]
     public void Search_Input_Has_Localized_Aria_Label()
     {
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
 
         var search = cut.Find(".tm-diagram-toolbox__search input");
 
@@ -66,7 +66,7 @@ public class DiagramToolboxAccessibilityPhase10Tests : LocalizationTestBase
     [Fact]
     public void Stencil_Item_Has_Localized_Aria_Label_Without_Duplicating_Visible_Label()
     {
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
 
         var item = cut.Find("[data-stencil-id='phase10.diagram.core.node']");
         var label = item.QuerySelector(".tm-diagram-toolbox__label");
@@ -83,7 +83,7 @@ public class DiagramToolboxAccessibilityPhase10Tests : LocalizationTestBase
     public void Stencil_Item_Keyboard_Insert_Invokes_Callback(string key)
     {
         string? insertedStencilId = null;
-        var cut = RenderComponent<TmDiagramToolbox>(parameters => parameters
+        var cut = Render<TmDiagramToolbox>(parameters => parameters
             .Add(component => component.StencilKeyboardInsert, EventCallback.Factory.Create<string>(this, id => insertedStencilId = id)));
 
         cut.Find("[data-stencil-id='phase10.diagram.core.node']").KeyDown(key);

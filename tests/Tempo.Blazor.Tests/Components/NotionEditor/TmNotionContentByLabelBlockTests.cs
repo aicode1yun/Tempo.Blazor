@@ -100,7 +100,7 @@ public sealed class TmNotionContentByLabelBlockTests : LocalizationTestBase
             NavigateTo = _ => Task.CompletedTask
         };
 
-        return RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        return Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(component => component.Value, context)
             .AddChildContent<TmNotionContentByLabelBlock>(child => child
                 .Add(component => component.Content, content)

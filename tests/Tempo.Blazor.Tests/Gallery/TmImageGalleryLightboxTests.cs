@@ -29,7 +29,7 @@ public class TmImageGalleryLightboxTests : LocalizationTestBase
     public void Gallery_ClickThumbnail_OpensLightbox()
     {
         var images = new[] { Img("1", "http://img/1.jpg", "First") };
-        var cut = RenderComponent<TmImageGallery>(p => p.Add(c => c.Images, images));
+        var cut = Render<TmImageGallery>(p => p.Add(c => c.Images, images));
 
         cut.Find(".tm-gallery-item").Click();
 
@@ -40,7 +40,7 @@ public class TmImageGalleryLightboxTests : LocalizationTestBase
     public void Gallery_Lightbox_ShowsFullImage()
     {
         var images = new[] { Img("1", "http://img/1.jpg", "Hero") };
-        var cut = RenderComponent<TmImageGallery>(p => p.Add(c => c.Images, images));
+        var cut = Render<TmImageGallery>(p => p.Add(c => c.Images, images));
 
         cut.Find(".tm-gallery-item").Click();
 
@@ -51,7 +51,7 @@ public class TmImageGalleryLightboxTests : LocalizationTestBase
     public void Gallery_Lightbox_CloseButton_Closes()
     {
         var images = new[] { Img("1", "http://img/1.jpg") };
-        var cut = RenderComponent<TmImageGallery>(p => p.Add(c => c.Images, images));
+        var cut = Render<TmImageGallery>(p => p.Add(c => c.Images, images));
 
         cut.Find(".tm-gallery-item").Click();
         cut.Find(".tm-lightbox-close").Click();
@@ -67,7 +67,7 @@ public class TmImageGalleryLightboxTests : LocalizationTestBase
             Img("1", "http://img/1.jpg", "First"),
             Img("2", "http://img/2.jpg", "Second"),
         };
-        var cut = RenderComponent<TmImageGallery>(p => p.Add(c => c.Images, images));
+        var cut = Render<TmImageGallery>(p => p.Add(c => c.Images, images));
 
         cut.FindAll(".tm-gallery-item")[0].Click();
         cut.Find(".tm-lightbox-next").Click();
@@ -83,7 +83,7 @@ public class TmImageGalleryLightboxTests : LocalizationTestBase
             Img("1", "http://img/1.jpg", "First"),
             Img("2", "http://img/2.jpg", "Second"),
         };
-        var cut = RenderComponent<TmImageGallery>(p => p.Add(c => c.Images, images));
+        var cut = Render<TmImageGallery>(p => p.Add(c => c.Images, images));
 
         cut.FindAll(".tm-gallery-item")[1].Click();
         cut.Find(".tm-lightbox-prev").Click();
@@ -95,7 +95,7 @@ public class TmImageGalleryLightboxTests : LocalizationTestBase
     public void Gallery_Lightbox_Escape_Closes()
     {
         var images = new[] { Img("1", "http://img/1.jpg") };
-        var cut = RenderComponent<TmImageGallery>(p => p.Add(c => c.Images, images));
+        var cut = Render<TmImageGallery>(p => p.Add(c => c.Images, images));
 
         cut.Find(".tm-gallery-item").Click();
         cut.Find(".tm-lightbox").KeyDown(Key.Escape);
@@ -112,7 +112,7 @@ public class TmImageGalleryLightboxTests : LocalizationTestBase
             Img("2", "http://img/2.jpg"),
             Img("3", "http://img/3.jpg"),
         };
-        var cut = RenderComponent<TmImageGallery>(p => p.Add(c => c.Images, images));
+        var cut = Render<TmImageGallery>(p => p.Add(c => c.Images, images));
 
         cut.FindAll(".tm-gallery-item")[0].Click();
 
@@ -127,7 +127,7 @@ public class TmImageGalleryLightboxTests : LocalizationTestBase
         Services.AddSingleton<IImageGalleryDataProvider>(provider);
 
         var images = new[] { Img("img-1", "http://img/1.jpg", "Via ticket") };
-        var cut = RenderComponent<TmImageGallery>(p => p
+        var cut = Render<TmImageGallery>(p => p
             .Add(c => c.Images,        images)
             .Add(c => c.DataProvider,  provider));
 
@@ -142,7 +142,7 @@ public class TmImageGalleryLightboxTests : LocalizationTestBase
     {
         var images = new[] { Img("1", "http://img/1.jpg") };
         var provider = new FakeProvider("http://ticket/1.jpg");
-        var cut = RenderComponent<TmImageGallery>(p => p
+        var cut = Render<TmImageGallery>(p => p
             .Add(c => c.Images,       images)
             .Add(c => c.DataProvider, provider)
             .Add(c => c.CanDelete,    true));

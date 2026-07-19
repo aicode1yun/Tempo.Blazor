@@ -14,7 +14,7 @@ public class TmColorPickerTests : LocalizationTestBase
     [Fact]
     public void TmColorPicker_Renders_Trigger()
     {
-        var cut = RenderComponent<TmColorPicker>();
+        var cut = Render<TmColorPicker>();
 
         cut.Find(".tm-color-picker-trigger").Should().NotBeNull();
         cut.Find(".tm-color-picker-trigger-bg").Should().NotBeNull();
@@ -23,7 +23,7 @@ public class TmColorPickerTests : LocalizationTestBase
     [Fact]
     public void TmColorPicker_Empty_Value_Shows_Placeholder()
     {
-        var cut = RenderComponent<TmColorPicker>(parameters =>
+        var cut = Render<TmColorPicker>(parameters =>
         {
             parameters.Add(p => p.Placeholder, "Pick a color");
         });
@@ -34,7 +34,7 @@ public class TmColorPickerTests : LocalizationTestBase
     [Fact]
     public void TmColorPicker_Value_Shows_Value()
     {
-        var cut = RenderComponent<TmColorPicker>(parameters =>
+        var cut = Render<TmColorPicker>(parameters =>
         {
             parameters.Add(p => p.Value, "#FF5733");
         });
@@ -46,7 +46,7 @@ public class TmColorPickerTests : LocalizationTestBase
     [Fact]
     public void TmColorPicker_Click_Opens_Dropdown()
     {
-        var cut = RenderComponent<TmColorPicker>();
+        var cut = Render<TmColorPicker>();
 
         cut.FindAll(".tm-color-picker-dropdown").Should().BeEmpty();
 
@@ -59,7 +59,7 @@ public class TmColorPickerTests : LocalizationTestBase
     [Fact]
     public void TmColorPicker_TriggerKeyboard_TogglesDropdownAndExposesLowercaseExpandedState()
     {
-        var cut = RenderComponent<TmColorPicker>();
+        var cut = Render<TmColorPicker>();
         var trigger = cut.Find(".tm-color-picker-trigger");
 
         trigger.GetAttribute("aria-expanded").Should().Be("false");
@@ -79,7 +79,7 @@ public class TmColorPickerTests : LocalizationTestBase
     [Fact]
     public void TmColorPicker_Open_Adds_Open_Class()
     {
-        var cut = RenderComponent<TmColorPicker>();
+        var cut = Render<TmColorPicker>();
 
         cut.Find(".tm-color-picker").ClassList.Should().NotContain("tm-color-picker--open");
 
@@ -92,7 +92,7 @@ public class TmColorPickerTests : LocalizationTestBase
     public void TmColorPicker_Selection_Closes_Dropdown()
     {
         var selectedValue = string.Empty;
-        var cut = RenderComponent<TmColorPicker>(parameters =>
+        var cut = Render<TmColorPicker>(parameters =>
         {
             parameters.Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, v => selectedValue = v ?? string.Empty));
         });
@@ -106,7 +106,7 @@ public class TmColorPickerTests : LocalizationTestBase
     [Fact]
     public void TmColorPicker_ShowAlpha_False_Passed_To_Gradient()
     {
-        var cut = RenderComponent<TmColorPicker>(parameters =>
+        var cut = Render<TmColorPicker>(parameters =>
         {
             parameters.Add(p => p.ShowAlpha, false);
         });
@@ -120,7 +120,7 @@ public class TmColorPickerTests : LocalizationTestBase
     [Fact]
     public void TmColorPicker_ShowApplyButton_Renders_Apply_Button()
     {
-        var cut = RenderComponent<TmColorPicker>(parameters =>
+        var cut = Render<TmColorPicker>(parameters =>
         {
             parameters.Add(p => p.ShowApplyButton, true);
         });
@@ -135,7 +135,7 @@ public class TmColorPickerTests : LocalizationTestBase
     [Fact]
     public void TmColorPicker_ShowApplyButton_Selection_Does_Not_Close_Dropdown()
     {
-        var cut = RenderComponent<TmColorPicker>(parameters =>
+        var cut = Render<TmColorPicker>(parameters =>
         {
             parameters.Add(p => p.ShowApplyButton, true);
         });
@@ -150,7 +150,7 @@ public class TmColorPickerTests : LocalizationTestBase
     public void TmColorPicker_ShowApplyButton_Apply_Closes_Dropdown_And_Fires_ValueChanged()
     {
         string? changed = null;
-        var cut = RenderComponent<TmColorPicker>(parameters =>
+        var cut = Render<TmColorPicker>(parameters =>
         {
             parameters.Add(p => p.ShowApplyButton, true);
             parameters.Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, v => changed = v));
@@ -168,7 +168,7 @@ public class TmColorPickerTests : LocalizationTestBase
     public void TmColorPicker_ShowCancelButton_ClosesDropdownWithoutFiringValueChanged()
     {
         string? changed = null;
-        var cut = RenderComponent<TmColorPicker>(parameters =>
+        var cut = Render<TmColorPicker>(parameters =>
         {
             parameters.Add(p => p.Value, "#112233");
             parameters.Add(p => p.ShowApplyButton, true);
@@ -189,7 +189,7 @@ public class TmColorPickerTests : LocalizationTestBase
     public void TmColorPicker_Escape_ClosesDropdownWithoutFiringValueChanged()
     {
         string? changed = null;
-        var cut = RenderComponent<TmColorPicker>(parameters =>
+        var cut = Render<TmColorPicker>(parameters =>
         {
             parameters.Add(p => p.Value, "#112233");
             parameters.Add(p => p.ShowApplyButton, true);
@@ -208,7 +208,7 @@ public class TmColorPickerTests : LocalizationTestBase
     [Fact]
     public void TmColorPicker_Disabled_DoesNotOpen()
     {
-        var cut = RenderComponent<TmColorPicker>(parameters =>
+        var cut = Render<TmColorPicker>(parameters =>
         {
             parameters.Add(p => p.Disabled, true);
         });

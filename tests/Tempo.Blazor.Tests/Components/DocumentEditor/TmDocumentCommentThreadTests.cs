@@ -11,7 +11,7 @@ public class TmDocumentCommentThreadTests : LocalizationTestBase
     [Fact]
     public void Thread_CollapsesResolvedCommentByDefault()
     {
-        var cut = RenderComponent<TmDocumentCommentThread>(parameters => parameters
+        var cut = Render<TmDocumentCommentThread>(parameters => parameters
             .Add(p => p.Comment, Comment(DocumentCommentStatus.Resolved)));
 
         cut.Find("[data-testid='document-comment-thread-collapsed']").TextContent.Should().Contain("Resolved text");
@@ -21,7 +21,7 @@ public class TmDocumentCommentThreadTests : LocalizationTestBase
     [Fact]
     public void Thread_ExpandsResolvedComment()
     {
-        var cut = RenderComponent<TmDocumentCommentThread>(parameters => parameters
+        var cut = Render<TmDocumentCommentThread>(parameters => parameters
             .Add(p => p.Comment, Comment(DocumentCommentStatus.Resolved)));
 
         cut.Find("[data-testid='document-comment-expand']").Click();
@@ -35,7 +35,7 @@ public class TmDocumentCommentThreadTests : LocalizationTestBase
     {
         string? reopened = null;
         var comment = Comment(DocumentCommentStatus.Resolved);
-        var cut = RenderComponent<TmDocumentCommentThread>(parameters => parameters
+        var cut = Render<TmDocumentCommentThread>(parameters => parameters
             .Add(p => p.Comment, comment)
             .Add(p => p.OnReopen, id => reopened = id));
 

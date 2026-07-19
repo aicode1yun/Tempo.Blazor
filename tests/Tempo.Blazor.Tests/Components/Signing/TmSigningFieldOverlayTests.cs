@@ -13,7 +13,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [Fact]
     public void Render_BasicField_RendersRootAndPosition()
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField(name: "Signer name"))
                       .Add(p => p.Area, CreateArea(x: 0.1, y: 0.2, width: 0.3, height: 0.4)));
 
@@ -41,7 +41,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
             }
         ];
 
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, field)
                       .Add(p => p.Culture, "cs-CZ"));
 
@@ -53,7 +53,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [Fact]
     public void Render_SignatureField_RendersTypeIcon()
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField(SigningFieldType.Signature, "Signature")));
 
         cut.Find(".tm-signing-field__icon").GetAttribute("data-icon").Should().Be("edit");
@@ -62,7 +62,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [Fact]
     public void Render_RequiredField_RendersRequiredIndicator()
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField(required: true)));
 
         var required = cut.Find(".tm-signing-field__required");
@@ -73,7 +73,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [Fact]
     public void Render_ClassAndAdditionalAttributes_AreApplied()
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.Class, "custom-field")
                       .AddUnmatched("data-testid", "field"));
@@ -86,7 +86,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [Fact]
     public void Render_StateClassesAndAria_AreApplied()
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.Selected, true)
                       .Add(p => p.Focused, true)
@@ -114,7 +114,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [InlineData(SigningFieldType.Number, "42")]
     public void Render_TextLikeValue_RendersPreview(SigningFieldType type, string expected)
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField(type))
                       .Add(p => p.Value, expected));
 
@@ -124,7 +124,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [Fact]
     public void Render_DateValue_RendersFormattedPreview()
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField(SigningFieldType.Date))
                       .Add(p => p.Value, new DateOnly(2026, 5, 8)));
 
@@ -136,7 +136,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [InlineData(false)]
     public void Render_CheckboxValue_RendersCheckedState(bool value)
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField(SigningFieldType.Checkbox))
                       .Add(p => p.Value, value));
 
@@ -152,7 +152,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
         var field = CreateChoiceField(SigningFieldType.Radio);
         var area = CreateArea(optionUuid: "option-2");
 
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, field)
                       .Add(p => p.Area, area));
 
@@ -164,7 +164,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     {
         var field = CreateChoiceField(SigningFieldType.Multiple);
 
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, field)
                       .Add(p => p.Value, new[] { "option-1", "option-3" }));
 
@@ -176,7 +176,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [Fact]
     public void Render_CellsField_SplitsValueIntoCells()
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField(SigningFieldType.Cells))
                       .Add(p => p.Value, "AB12"));
 
@@ -192,7 +192,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [InlineData(SigningFieldType.Image)]
     public void Render_ImageLikeValue_RendersThumbnail(SigningFieldType type)
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField(type))
                       .Add(p => p.Value, "data:image/png;base64,abc"));
 
@@ -208,7 +208,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [InlineData(SigningFieldType.Image)]
     public void Render_ImageLikeValue_WithPlainText_DoesNotRenderBrokenThumbnail(SigningFieldType type)
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField(type))
                       .Add(p => p.Value, "option-a"));
 
@@ -219,7 +219,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [Fact]
     public void Render_PaymentWithoutValue_RendersPaymentTypeName()
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField(SigningFieldType.Payment)));
 
         cut.Find(".tm-signing-field__value").TextContent.Should().Be("Payment");
@@ -228,7 +228,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [Fact]
     public void Render_StampWithoutValue_RendersPlaceholder()
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField(SigningFieldType.Stamp)));
 
         cut.Find(".tm-signing-field__stamp").TextContent.Should().Contain("Stamp");
@@ -244,7 +244,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
         var field = CreateField(type, name: "Signature");
         field.Placeholders.Translations["cs"] = "Doplňte podpis";
 
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, field)
                       .Add(p => p.Culture, "cs-CZ"));
 
@@ -254,7 +254,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [Fact]
     public void Render_Heading_RendersHeadingText()
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField(SigningFieldType.Heading, title: "Terms")));
 
         cut.Find(".tm-signing-field__heading").TextContent.Should().Be("Terms");
@@ -263,7 +263,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [Fact]
     public void Render_Strikethrough_RendersLine()
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField(SigningFieldType.Strikethrough)));
 
         cut.Find(".tm-signing-field__strikethrough").Should().NotBeNull();
@@ -275,7 +275,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
         TmSigningFieldOverlayPointerEventArgs? captured = null;
         var field = CreateField();
 
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, field)
                       .Add(p => p.OnClick, EventCallback.Factory.Create<TmSigningFieldOverlayPointerEventArgs>(this, args => captured = args)));
 
@@ -290,7 +290,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     {
         var invoked = false;
 
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.OnDoubleClick, EventCallback.Factory.Create<TmSigningFieldOverlayPointerEventArgs>(this, _ => invoked = true)));
 
@@ -304,7 +304,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     {
         TmSigningFieldOverlayPointerEventArgs? captured = null;
 
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.OnContextMenu, EventCallback.Factory.Create<TmSigningFieldOverlayPointerEventArgs>(this, args => captured = args)));
 
@@ -319,7 +319,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     {
         var invoked = false;
 
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.Draggable, true)
                       .Add(p => p.OnStartMove, EventCallback.Factory.Create<TmSigningFieldOverlayPointerEventArgs>(this, _ => invoked = true)));
@@ -334,7 +334,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     {
         TmSigningFieldOverlayResizeEventArgs? captured = null;
 
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.Editable, true)
                       .Add(p => p.OnStartResize, EventCallback.Factory.Create<TmSigningFieldOverlayResizeEventArgs>(this, args => captured = args)));
@@ -348,13 +348,13 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     [Fact]
     public void Render_ResizeHandles_AreRenderedOnlyWhenEditable()
     {
-        var notEditable = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var notEditable = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.Editable, false));
 
         notEditable.FindAll(".tm-signing-field__resize-handle").Should().BeEmpty();
 
-        var editable = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var editable = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.Editable, true));
 

@@ -187,7 +187,7 @@ public class TmDocumentRendererTests : LocalizationTestBase
         DocumentBlock block,
         IDocumentImageUrlResolver? resolver = null)
     {
-        return RenderComponent<TmDocumentBlockRenderer>(parameters => parameters
+        return Render<TmDocumentBlockRenderer>(parameters => parameters
             .Add(p => p.DocumentId, "doc-1")
             .Add(p => p.Block, block)
             .Add(p => p.ImageUrlResolver, resolver));

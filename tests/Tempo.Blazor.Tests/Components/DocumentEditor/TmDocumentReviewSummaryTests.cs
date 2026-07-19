@@ -10,7 +10,7 @@ public class TmDocumentReviewSummaryTests : LocalizationTestBase
     [Fact]
     public void Summary_RendersPendingChangesAndComments()
     {
-        var cut = RenderComponent<TmDocumentReviewSummary>(parameters => parameters
+        var cut = Render<TmDocumentReviewSummary>(parameters => parameters
             .Add(p => p.PendingRevisionCount, 3)
             .Add(p => p.OpenCommentCount, 2));
 
@@ -22,7 +22,7 @@ public class TmDocumentReviewSummaryTests : LocalizationTestBase
     {
         var openedComments = false;
         var openedRevisions = false;
-        var cut = RenderComponent<TmDocumentReviewSummary>(parameters => parameters
+        var cut = Render<TmDocumentReviewSummary>(parameters => parameters
             .Add(p => p.PendingRevisionCount, 1)
             .Add(p => p.OpenCommentCount, 1)
             .Add(p => p.OpenComments, () => openedComments = true)

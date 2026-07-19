@@ -54,7 +54,7 @@ public class TmUserPickerTests : LocalizationTestBase
         Func<string, CancellationToken, Task<TmPickerSearchResult<TestUser>>>? search = null,
         Func<string, CancellationToken, Task<TmPickerResolveResult<TestUser>>>? resolve = null,
         int minChars = 1)
-        => RenderComponent<TmUserPicker<TestUser>>(p =>
+        => Render<TmUserPicker<TestUser>>(p =>
         {
             p.Add(x => x.SearchProvider, search ?? SearchProvider());
             p.Add(x => x.ResolveProvider, resolve ?? ResolveProvider());

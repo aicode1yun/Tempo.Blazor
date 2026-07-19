@@ -194,7 +194,7 @@ public class TmNotionMyTasksTests : LocalizationTestBase
     private IRenderedComponent<TmNotionMyTasks> RenderTasks(
         ITmWorkItemProvider provider,
         EventCallback<(string, string)> navigateCallback = default)
-        => RenderComponent<TmNotionMyTasks>(parameters => parameters
+        => Render<TmNotionMyTasks>(parameters => parameters
             .Add(component => component.WorkItemSource, provider)
             .Add(component => component.CurrentUserId, "alice")
             .Add(component => component.OnNavigateToBlock, navigateCallback));

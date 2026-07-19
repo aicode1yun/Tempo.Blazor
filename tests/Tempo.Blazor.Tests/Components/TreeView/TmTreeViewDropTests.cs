@@ -37,7 +37,7 @@ public class TmTreeViewDropTests : LocalizationTestBase
     [Fact]
     public void AllowDrop_False_Nodes_HaveNo_Drop_Attribute()
     {
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowDrop, false));
 
@@ -49,7 +49,7 @@ public class TmTreeViewDropTests : LocalizationTestBase
     [Fact]
     public void AllowDrop_False_Nodes_HaveNo_DragOver_Attribute()
     {
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowDrop, false));
 
@@ -68,7 +68,7 @@ public class TmTreeViewDropTests : LocalizationTestBase
         var dragDrop = Services.GetRequiredService<DragDropService>();
         dragDrop.StartDrag(["tc-001", "tc-002"]);
 
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowDrop, true)
             .Add(c => c.OnItemsDrop,
@@ -88,7 +88,7 @@ public class TmTreeViewDropTests : LocalizationTestBase
         var dragDrop = Services.GetRequiredService<DragDropService>();
         dragDrop.StartDrag(["tc-001", "tc-002"]);
 
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowDrop, true)
             .Add(c => c.OnItemsDrop,
@@ -105,7 +105,7 @@ public class TmTreeViewDropTests : LocalizationTestBase
         TreeDropEventArgs<string>? received = null;
 
         // DragDropService has no active drag
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowDrop, true)
             .Add(c => c.OnItemsDrop,
@@ -119,7 +119,7 @@ public class TmTreeViewDropTests : LocalizationTestBase
     [Fact]
     public void AllowDrop_True_DragOver_AddsDropTargetClass()
     {
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowDrop, true));
 
@@ -132,7 +132,7 @@ public class TmTreeViewDropTests : LocalizationTestBase
     [Fact]
     public void AllowDrop_True_DragLeave_RemovesDropTargetClass()
     {
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowDrop, true));
 
@@ -154,7 +154,7 @@ public class TmTreeViewDropTests : LocalizationTestBase
         var dragDrop = Services.GetRequiredService<DragDropService>();
         dragDrop.StartDrag(["tc-010"]);
 
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowDrop, true)
             .Add(c => c.OnItemsDrop,

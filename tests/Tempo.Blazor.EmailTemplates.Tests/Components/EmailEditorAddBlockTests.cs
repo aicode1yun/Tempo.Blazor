@@ -10,7 +10,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.EmailTemplates.Tests.Components;
 
-public class EmailEditorAddBlockTests : TestContext
+public class EmailEditorAddBlockTests : BunitContext
 {
     public EmailEditorAddBlockTests()
     {
@@ -27,7 +27,7 @@ public class EmailEditorAddBlockTests : TestContext
         EmailTemplateDocument? changed = null;
         var doc = new EmailTemplateDocument();
 
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p
+        var cut = Render<TmEmailTemplateEditor>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.DocumentChanged, d => changed = d));
 
@@ -48,7 +48,7 @@ public class EmailEditorAddBlockTests : TestContext
         section.Columns.Add(new EmailColumn());
         doc.Sections.Add(section);
 
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
 
         cut.Find("[data-tm-block=\"button\"]").Click();
 
@@ -62,7 +62,7 @@ public class EmailEditorAddBlockTests : TestContext
     {
         var doc = new EmailTemplateDocument();
 
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
 
         cut.Find("[data-tm-preset=\"ThreeEqual\"]").Click();
 

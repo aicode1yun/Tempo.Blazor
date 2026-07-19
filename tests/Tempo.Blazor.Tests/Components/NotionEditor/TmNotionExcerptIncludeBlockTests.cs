@@ -79,7 +79,7 @@ public sealed class TmNotionExcerptIncludeBlockTests : LocalizationTestBase
             NavigateTo = _ => Task.CompletedTask
         };
 
-        return RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        return Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(component => component.Value, context)
             .AddChildContent<TmNotionExcerptIncludeBlock>(child => child
                 .Add(component => component.Block, block)

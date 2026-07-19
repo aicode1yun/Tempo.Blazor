@@ -10,7 +10,7 @@ public sealed class TmReportDesignerTests : ReportingComponentTestBase
     [Fact]
     public void Designer_RendersBandsAndUpdatesBandHeightAndZoom()
     {
-        var cut = RenderComponent<TmReportDesigner>(parameters => parameters
+        var cut = Render<TmReportDesigner>(parameters => parameters
             .Add(component => component.Definition, Definition()));
 
         cut.Find("[data-testid='tm-report-designer']").Should().NotBeNull();
@@ -26,7 +26,7 @@ public sealed class TmReportDesignerTests : ReportingComponentTestBase
     [Fact]
     public void Designer_AddsSelectsCopiesAndUndoesTextElement()
     {
-        var cut = RenderComponent<TmReportDesigner>(parameters => parameters
+        var cut = Render<TmReportDesigner>(parameters => parameters
             .Add(component => component.Definition, Definition()));
 
         cut.Find("[data-testid='tm-designer-add-textbox']").Click();
@@ -46,7 +46,7 @@ public sealed class TmReportDesignerTests : ReportingComponentTestBase
     [Fact]
     public void Designer_DataTabInsertsFieldExpressionAndValidatesInvalidExpression()
     {
-        var cut = RenderComponent<TmReportDesigner>(parameters => parameters
+        var cut = Render<TmReportDesigner>(parameters => parameters
             .Add(component => component.Definition, Definition()));
 
         cut.Find("[data-testid='tm-designer-add-textbox']").Click();
@@ -65,7 +65,7 @@ public sealed class TmReportDesignerTests : ReportingComponentTestBase
     public void Designer_EditsChartPropertiesAndRendersChartPreview()
     {
         ReportDefinition? changed = null;
-        var cut = RenderComponent<TmReportDesigner>(parameters => parameters
+        var cut = Render<TmReportDesigner>(parameters => parameters
             .Add(component => component.Definition, Definition())
             .Add(component => component.DefinitionChanged, definition => changed = definition));
 
@@ -95,7 +95,7 @@ public sealed class TmReportDesignerTests : ReportingComponentTestBase
     public void Designer_PreviewValidatesAndRaisesPublishSave()
     {
         ReportDesignerSaveEventArgs? saved = null;
-        var cut = RenderComponent<TmReportDesigner>(parameters => parameters
+        var cut = Render<TmReportDesigner>(parameters => parameters
             .Add(component => component.Definition, Definition())
             .Add(component => component.Saved, args => saved = args));
 

@@ -43,7 +43,7 @@ public class TmNotionSpreadsheetBlockTests : LocalizationTestBase
     public void Render_NullContent_NotReadOnly_ShowsCreateButton()
     {
         var ctx = BuildContext();
-        var cut = RenderComponent<TmNotionSpreadsheetBlock>(p => p
+        var cut = Render<TmNotionSpreadsheetBlock>(p => p
             .AddCascadingValue(ctx)
             .Add(x => x.Content, (ISpreadsheetBlockContent?)null)
             .Add(x => x.ReadOnly, false));
@@ -57,7 +57,7 @@ public class TmNotionSpreadsheetBlockTests : LocalizationTestBase
     public void Render_NullContent_ReadOnly_ShowsEmptyPlaceholder()
     {
         var ctx = BuildContext();
-        var cut = RenderComponent<TmNotionSpreadsheetBlock>(p => p
+        var cut = Render<TmNotionSpreadsheetBlock>(p => p
             .AddCascadingValue(ctx)
             .Add(x => x.Content, (ISpreadsheetBlockContent?)null)
             .Add(x => x.ReadOnly, true));
@@ -75,7 +75,7 @@ public class TmNotionSpreadsheetBlockTests : LocalizationTestBase
         var ctx = BuildContext(provider);
         var content = MakeContent();
 
-        var cut = RenderComponent<TmNotionSpreadsheetBlock>(p => p
+        var cut = Render<TmNotionSpreadsheetBlock>(p => p
             .AddCascadingValue(ctx)
             .Add(x => x.Content, content)
             .Add(x => x.ReadOnly, false));
@@ -92,7 +92,7 @@ public class TmNotionSpreadsheetBlockTests : LocalizationTestBase
     public async Task Render_WithContent_NotReadOnly_ShowsEditButton()
     {
         var ctx = BuildContext(MockProvider());
-        var cut = RenderComponent<TmNotionSpreadsheetBlock>(p => p
+        var cut = Render<TmNotionSpreadsheetBlock>(p => p
             .AddCascadingValue(ctx)
             .Add(x => x.Content, MakeContent())
             .Add(x => x.ReadOnly, false));
@@ -108,7 +108,7 @@ public class TmNotionSpreadsheetBlockTests : LocalizationTestBase
     public async Task Render_WithContent_ReadOnly_HidesEditButton()
     {
         var ctx = BuildContext(MockProvider());
-        var cut = RenderComponent<TmNotionSpreadsheetBlock>(p => p
+        var cut = Render<TmNotionSpreadsheetBlock>(p => p
             .AddCascadingValue(ctx)
             .Add(x => x.Content, MakeContent())
             .Add(x => x.ReadOnly, true));
@@ -124,7 +124,7 @@ public class TmNotionSpreadsheetBlockTests : LocalizationTestBase
     public async Task ClickEdit_OpensModal()
     {
         var ctx = BuildContext(MockProvider());
-        var cut = RenderComponent<TmNotionSpreadsheetBlock>(p => p
+        var cut = Render<TmNotionSpreadsheetBlock>(p => p
             .AddCascadingValue(ctx)
             .Add(x => x.Content, MakeContent())
             .Add(x => x.ReadOnly, false));
@@ -143,7 +143,7 @@ public class TmNotionSpreadsheetBlockTests : LocalizationTestBase
     public async Task OnDiscarded_ClosesModal()
     {
         var ctx = BuildContext(MockProvider());
-        var cut = RenderComponent<TmNotionSpreadsheetBlock>(p => p
+        var cut = Render<TmNotionSpreadsheetBlock>(p => p
             .AddCascadingValue(ctx)
             .Add(x => x.Content, MakeContent())
             .Add(x => x.ReadOnly, false));
@@ -166,7 +166,7 @@ public class TmNotionSpreadsheetBlockTests : LocalizationTestBase
     public void Render_HasFocusHandler()
     {
         var ctx = BuildContext();
-        var cut = RenderComponent<TmNotionSpreadsheetBlock>(p => p
+        var cut = Render<TmNotionSpreadsheetBlock>(p => p
             .AddCascadingValue(ctx)
             .Add(x => x.Content, (ISpreadsheetBlockContent?)null)
             .Add(x => x.ReadOnly, false));

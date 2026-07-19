@@ -24,7 +24,7 @@ public class ContextMenuTests : DiagramTestBase
             ]
         };
 
-        var cut = RenderComponent<TmDiagramEditor>(parameters => parameters
+        var cut = Render<TmDiagramEditor>(parameters => parameters
             .Add(p => p.Document, doc));
 
         // Trigger node context menu via the internal method isn't directly possible from bUnit
@@ -43,7 +43,7 @@ public class ContextMenuTests : DiagramTestBase
             Height = 1000
         };
 
-        var cut = RenderComponent<TmDiagramEditor>(parameters => parameters
+        var cut = Render<TmDiagramEditor>(parameters => parameters
             .Add(p => p.Document, doc));
 
         var canvas = cut.Find(".tm-diagram-canvas");
@@ -84,7 +84,7 @@ public class ContextMenuTests : DiagramTestBase
             ]
         };
 
-        var cut = RenderComponent<TmDiagramCanvas>(parameters => parameters
+        var cut = Render<TmDiagramCanvas>(parameters => parameters
             .Add(p => p.Document, doc)
             .Add(p => p.SelectedTableCells, [(0, 0), (1, 1)]));
 
@@ -106,7 +106,7 @@ public class ContextMenuTests : DiagramTestBase
             Height = 1000
         };
 
-        var cut = RenderComponent<TmDiagramEditor>(parameters => parameters
+        var cut = Render<TmDiagramEditor>(parameters => parameters
             .Add(p => p.Document, doc));
 
         // Force-open the canvas context menu via reflection

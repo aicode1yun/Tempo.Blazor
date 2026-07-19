@@ -13,7 +13,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     [Fact]
     public void Viewer_CommentsDisabled_DoesNotRenderCommentPanel()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.ShowToolbar, true));
 
@@ -24,7 +24,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     [Fact]
     public void Viewer_CommentsEnabled_RendersToolbarPanelAndMarkers()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.CommentsEnabled, true)
@@ -40,7 +40,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     [Fact]
     public void Viewer_CommentsEnabledWithoutMainToolbar_RendersFallbackCommentToolbar()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.ShowToolbar, false)
                       .Add(p => p.CommentsEnabled, true)
@@ -53,7 +53,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     [Fact]
     public void Viewer_ShowResolvedComments_RendersResolvedAreaMarker()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.CommentsEnabled, true)
                       .Add(p => p.ShowResolvedComments, true)
@@ -65,7 +65,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     [Fact]
     public void ThreadPanel_PageAnchor_RendersAsWholePageThreadWithoutMarker()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.CommentsEnabled, true)
                       .Add(p => p.CommentThreads, PageThread()));
@@ -78,7 +78,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     [Fact]
     public void Viewer_CommentMarkerTemplate_ReplacesDefaultMarkerContent()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.CommentsEnabled, true)
                       .Add(p => p.CommentThreads, SampleThreads())
@@ -97,7 +97,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     public void Viewer_ToggleCommentMode_InvokesChangedAndSetsPressedState()
     {
         DocumentCommentMode? mode = null;
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.CommentsEnabled, true)
@@ -112,7 +112,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     [Fact]
     public void Viewer_ClickInCommentMode_CreatesDraftAtNormalizedPoint()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage(width: 800, height: 1000))
                       .Add(p => p.CommentsEnabled, true)
                       .Add(p => p.CommentMode, DocumentCommentMode.Comment));
@@ -127,7 +127,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     [Fact]
     public void Viewer_DragInCommentMode_CreatesAreaDraft()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage(width: 800, height: 1000))
                       .Add(p => p.CommentsEnabled, true)
                       .Add(p => p.CommentMode, DocumentCommentMode.Comment));
@@ -146,7 +146,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     public void Viewer_SubmitDraft_InvokesCreateRequest()
     {
         DocumentCommentThreadCreateRequest? request = null;
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage(width: 800, height: 1000))
                       .Add(p => p.CommentsEnabled, true)
                       .Add(p => p.CommentMode, DocumentCommentMode.Comment)
@@ -167,7 +167,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     public void Viewer_PageClick_ClearsSelectedCommentThread()
     {
         string? selected = "thread-1";
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.CommentsEnabled, true)
                       .Add(p => p.SelectedCommentThreadId, selected)
@@ -183,7 +183,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     public void Viewer_DisabledComments_BlockDraftCreationAndComposerSubmit()
     {
         DocumentCommentThreadCreateRequest? request = null;
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.CommentsEnabled, true)
                       .Add(p => p.Disabled, true)
@@ -203,7 +203,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
         DocumentCommentReplyRequest? reply = null;
         DocumentCommentReactionToggleRequest? reaction = null;
 
-        var cut = RenderComponent<TmDocumentCommentThreadPanel>(parameters =>
+        var cut = Render<TmDocumentCommentThreadPanel>(parameters =>
             parameters.Add(p => p.Threads, SampleThreads())
                       .Add(p => p.SelectedThreadIdChanged, value => selected = value)
                       .Add(p => p.OnResolveRequested, value => resolved = value)
@@ -213,7 +213,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
         cut.Find("[data-thread-id='thread-1']").Click();
         selected.Should().Be("thread-1");
 
-        cut.SetParametersAndRender(parameters => parameters.Add(p => p.SelectedThreadId, "thread-1"));
+        cut.Render(parameters => parameters.Add(p => p.SelectedThreadId, "thread-1"));
         cut.Find(".tm-comment-composer__input").Input("Reply body");
         cut.Find(".tm-comment-composer__button--primary").Click();
         cut.Find(".tm-document-comments-panel__resolve").Click();
@@ -231,7 +231,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     public void ThreadPanel_SelectThread_EmitsNavigationRequest()
     {
         DocumentCommentThreadNavigateRequest? navigation = null;
-        var cut = RenderComponent<TmDocumentCommentThreadPanel>(parameters =>
+        var cut = Render<TmDocumentCommentThreadPanel>(parameters =>
             parameters.Add(p => p.Threads, PageTwoThread())
                       .Add(p => p.OnThreadNavigateRequested, value => navigation = value));
 
@@ -246,7 +246,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     public void Composer_MentionSelection_EmitsStableMention()
     {
         IReadOnlyList<DocumentCommentMention>? mentions = null;
-        var cut = RenderComponent<TmCommentComposer>(parameters =>
+        var cut = Render<TmCommentComposer>(parameters =>
             parameters.Add(p => p.MentionUsers, MentionUsers())
                       .Add(p => p.MentionsChanged, value => mentions = value));
 
@@ -261,7 +261,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     public void Composer_KeyboardMentionSelection_UsesActiveCandidate()
     {
         IReadOnlyList<DocumentCommentMention>? mentions = null;
-        var cut = RenderComponent<TmCommentComposer>(parameters =>
+        var cut = Render<TmCommentComposer>(parameters =>
             parameters.Add(p => p.MentionUsers, MentionUsers())
                       .Add(p => p.MentionsChanged, value => mentions = value));
 
@@ -277,7 +277,7 @@ public class TmDocumentCommentsTests : LocalizationTestBase
     public void Composer_SubmitOnEnter_SubmitsWhenMentionListIsClosed()
     {
         DocumentCommentComposerSubmitEventArgs? submitted = null;
-        var cut = RenderComponent<TmCommentComposer>(parameters =>
+        var cut = Render<TmCommentComposer>(parameters =>
             parameters.Add(p => p.SubmitOnEnter, true)
                       .Add(p => p.OnSubmit, args => submitted = args));
 

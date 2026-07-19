@@ -19,7 +19,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_Renders_Button_Element()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .AddChildContent("Click me"));
 
         cut.Find("button").Should().NotBeNull();
@@ -28,7 +28,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_Renders_ChildContent()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .AddChildContent("Save"));
 
         cut.Find("button").TextContent.Trim().Should().Be("Save");
@@ -39,7 +39,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_Default_Type_Is_Button()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .AddChildContent("Click"));
 
         cut.Find("button").GetAttribute("type").Should().Be("button");
@@ -51,7 +51,7 @@ public class TmButtonTests : LocalizationTestBase
     [InlineData(ButtonType.Reset, "reset")]
     public void TmButton_Renders_Correct_Html_Type(ButtonType buttonType, string expectedHtmlType)
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.Type, buttonType)
             .AddChildContent("Click"));
 
@@ -73,7 +73,7 @@ public class TmButtonTests : LocalizationTestBase
     [InlineData(ButtonVariant.OutlineWarning, "tm-btn-outline-warning")]
     public void TmButton_Applies_Variant_CssClass(ButtonVariant variant, string expectedClass)
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.Variant, variant)
             .AddChildContent("Click"));
 
@@ -83,7 +83,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_Default_Variant_Is_Primary()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .AddChildContent("Click"));
 
         cut.Find("button").ClassList.Should().Contain("tm-btn-primary");
@@ -98,7 +98,7 @@ public class TmButtonTests : LocalizationTestBase
     [InlineData(ButtonSize.Lg, "tm-btn-lg")]
     public void TmButton_Applies_Size_CssClass(ButtonSize size, string expectedClass)
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.Size, size)
             .AddChildContent("Click"));
 
@@ -108,7 +108,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_Default_Size_Is_Md()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .AddChildContent("Click"));
 
         cut.Find("button").ClassList.Should().Contain("tm-btn-md");
@@ -119,7 +119,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_Block_Adds_Block_CssClass()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.Block, true)
             .AddChildContent("Click"));
 
@@ -129,7 +129,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_NonBlock_Does_Not_Add_Block_CssClass()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.Block, false)
             .AddChildContent("Click"));
 
@@ -141,7 +141,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_Disabled_Sets_Disabled_Attribute()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.Disabled, true)
             .AddChildContent("Click"));
 
@@ -152,7 +152,7 @@ public class TmButtonTests : LocalizationTestBase
     public void TmButton_Disabled_Does_Not_Fire_OnClick()
     {
         var clicked = false;
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.Disabled, true)
             .Add(c => c.OnClick, EventCallback.Factory.Create(this, () => { clicked = true; }))
             .AddChildContent("Click"));
@@ -167,7 +167,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_Loading_Renders_Spinner_And_Disables()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.IsLoading, true)
             .AddChildContent("Save"));
 
@@ -181,7 +181,7 @@ public class TmButtonTests : LocalizationTestBase
     public void TmButton_Loading_Does_Not_Fire_OnClick()
     {
         var clicked = false;
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.IsLoading, true)
             .Add(c => c.OnClick, EventCallback.Factory.Create(this, () => { clicked = true; }))
             .AddChildContent("Save"));
@@ -194,7 +194,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_Loading_Hides_Icon_And_Shows_Spinner()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.IsLoading, true)
             .Add(c => c.Icon, IconNames.Check)
             .AddChildContent("Save"));
@@ -209,7 +209,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_Icon_Left_Renders_Icon_Before_Content()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.Icon, IconNames.Check)
             .Add(c => c.IconRight, false)
             .AddChildContent("Save"));
@@ -222,7 +222,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_Icon_Right_When_IconRight_True()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.Icon, IconNames.Check)
             .Add(c => c.IconRight, true)
             .AddChildContent("Next"));
@@ -238,7 +238,7 @@ public class TmButtonTests : LocalizationTestBase
     public void TmButton_Click_Fires_OnClick()
     {
         var clicked = false;
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.OnClick, EventCallback.Factory.Create(this, () => { clicked = true; }))
             .AddChildContent("Click"));
 
@@ -251,7 +251,7 @@ public class TmButtonTests : LocalizationTestBase
     public void TmButton_Enter_Key_Fires_OnClick()
     {
         var clicked = false;
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.OnClick, EventCallback.Factory.Create(this, () => { clicked = true; }))
             .AddChildContent("Click"));
 
@@ -264,7 +264,7 @@ public class TmButtonTests : LocalizationTestBase
     public void TmButton_Space_Key_Fires_OnClick()
     {
         var clicked = false;
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.OnClick, EventCallback.Factory.Create(this, () => { clicked = true; }))
             .AddChildContent("Click"));
 
@@ -278,7 +278,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_Default_TabIndex_Is_Zero()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .AddChildContent("Click"));
 
         cut.Find("button").GetAttribute("tabindex").Should().Be("0");
@@ -287,7 +287,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_Custom_TabIndex_Is_Applied()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.TabIndex, -1)
             .AddChildContent("Click"));
 
@@ -299,7 +299,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_AriaLabel_Is_Applied_When_Set()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .Add(c => c.AriaLabel, "Delete item")
             .AddChildContent("X"));
 
@@ -309,7 +309,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_AriaLabel_Not_Rendered_When_Null()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .AddChildContent("Save"));
 
         cut.Find("button").HasAttribute("aria-label").Should().BeFalse();
@@ -320,7 +320,7 @@ public class TmButtonTests : LocalizationTestBase
     [Fact]
     public void TmButton_Always_Has_TmBtn_Class()
     {
-        var cut = RenderComponent<TmButton>(p => p
+        var cut = Render<TmButton>(p => p
             .AddChildContent("Click"));
 
         cut.Find("button").ClassList.Should().Contain("tm-btn");

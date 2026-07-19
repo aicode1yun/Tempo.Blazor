@@ -80,7 +80,7 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
     [Fact]
     public void Attachments_RendersFileList()
     {
-        var cut = RenderComponent<TmActivityAttachments>(p => p
+        var cut = Render<TmActivityAttachments>(p => p
             .Add(c => c.Attachments, SampleAttachments()));
 
         cut.FindAll(".tm-attach-item").Count.Should().Be(2);
@@ -89,7 +89,7 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
     [Fact]
     public void Attachments_Empty_RendersEmptyState()
     {
-        var cut = RenderComponent<TmActivityAttachments>(p => p
+        var cut = Render<TmActivityAttachments>(p => p
             .Add(c => c.Attachments, Array.Empty<TmAttachment>()));
 
         cut.FindAll(".tm-attach-item").Should().BeEmpty();
@@ -99,7 +99,7 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
     [Fact]
     public void Attachments_FileIcon_ByMimeType()
     {
-        var cut = RenderComponent<TmActivityAttachments>(p => p
+        var cut = Render<TmActivityAttachments>(p => p
             .Add(c => c.Attachments, SampleAttachments()));
 
         var items = cut.FindAll(".tm-attach-item");
@@ -118,7 +118,7 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
             Attachment("a2", "mid.zip", "application/zip", 2 * 1024),
             Attachment("a3", "big.mp4", "video/mp4", 3 * 1024 * 1024),
         };
-        var cut = RenderComponent<TmActivityAttachments>(p => p.Add(c => c.Attachments, list));
+        var cut = Render<TmActivityAttachments>(p => p.Add(c => c.Attachments, list));
 
         var sizes = cut.FindAll(".tm-attach-size");
         sizes[0].TextContent.Should().Contain("B");
@@ -129,7 +129,7 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
     [Fact]
     public void Attachments_DeleteButton_ShowsWhenCanDelete()
     {
-        var cut = RenderComponent<TmActivityAttachments>(p => p
+        var cut = Render<TmActivityAttachments>(p => p
             .Add(c => c.Attachments, SampleAttachments()));
 
         var items = cut.FindAll(".tm-attach-item");
@@ -141,7 +141,7 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
     public async Task Attachments_Delete_CallsProvider()
     {
         var provider = BuildProvider();
-        var cut = RenderComponent<TmActivityAttachments>(p => p
+        var cut = Render<TmActivityAttachments>(p => p
             .Add(c => c.Attachments, SampleAttachments())
             .Add(c => c.AttachmentProvider, provider)
             .Add(c => c.EntityId, "entity-1"));
@@ -160,7 +160,7 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
     {
         const int ChunkSize = 256 * 1024;
         var provider = BuildProvider(new List<TmAttachment>());
-        var cut = RenderComponent<TmActivityAttachments>(p => p
+        var cut = Render<TmActivityAttachments>(p => p
             .Add(c => c.AttachmentProvider, provider)
             .Add(c => c.FileProvider, (ITmFileProvider)provider)
             .Add(c => c.EntityId, "entity-1")
@@ -190,7 +190,7 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
                     return blocker.Task;
                 });
 
-        var cut = RenderComponent<TmActivityAttachments>(p => p
+        var cut = Render<TmActivityAttachments>(p => p
             .Add(c => c.AttachmentProvider, provider)
             .Add(c => c.FileProvider, (ITmFileProvider)provider)
             .Add(c => c.EntityId, "entity-1")
@@ -214,7 +214,7 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
     public async Task Attachments_Upload_Complete_RefreshesListAsync()
     {
         var provider = BuildProvider(new List<TmAttachment>());
-        var cut = RenderComponent<TmActivityAttachments>(p => p
+        var cut = Render<TmActivityAttachments>(p => p
             .Add(c => c.AttachmentProvider, provider)
             .Add(c => c.FileProvider, (ITmFileProvider)provider)
             .Add(c => c.EntityId, "entity-1")
@@ -232,7 +232,7 @@ public class TmActivityAttachmentsTests : LocalizationTestBase
     [Fact]
     public void Attachments_DuplicateFile_Rejected()
     {
-        var cut = RenderComponent<TmActivityAttachments>(p => p
+        var cut = Render<TmActivityAttachments>(p => p
             .Add(c => c.Attachments, SampleAttachments())
             .Add(c => c.AllowUpload, true));
 

@@ -18,7 +18,7 @@ public sealed class CanvasEngineHostRenderTests : LocalizationTestBase
         SetupCanvasModule();
         var document = DocumentEditorDocument.Empty("canvas-host-render");
 
-        var cut = RenderComponent<TmDocumentCanvasEngineHost>(parameters => parameters
+        var cut = Render<TmDocumentCanvasEngineHost>(parameters => parameters
             .Add(p => p.Document, document)
             .Add(p => p.AriaLabel, "Document editor")
             .Add(p => p.InputAriaLabel, "Document editor"));
@@ -49,7 +49,7 @@ public sealed class CanvasEngineHostRenderTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedEmptyDocument("canvas-editor-empty");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = Render<TmDocumentEditor>(parameters => parameters
             .Add(p => p.DocumentId, "canvas-editor-empty")
             .Add(p => p.Provider, provider));
 
@@ -70,7 +70,7 @@ public sealed class CanvasEngineHostRenderTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedEmptyDocument("canvas-editor-default");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = Render<TmDocumentEditor>(parameters => parameters
             .Add(p => p.DocumentId, "canvas-editor-default")
             .Add(p => p.Provider, provider));
 
@@ -122,7 +122,7 @@ public sealed class CanvasEngineHostRenderTests : LocalizationTestBase
         var module = SetupCanvasModule();
         var document = DocumentEditorDocument.Empty("canvas-host-dispose");
 
-        var cut = RenderComponent<TmDocumentCanvasEngineHost>(parameters => parameters
+        var cut = Render<TmDocumentCanvasEngineHost>(parameters => parameters
             .Add(p => p.Document, document)
             .Add(p => p.AriaLabel, "Document editor")
             .Add(p => p.InputAriaLabel, "Document editor"));
@@ -146,7 +146,7 @@ public sealed class CanvasEngineHostRenderTests : LocalizationTestBase
         var document = DocumentEditorDocument.Empty("canvas-host-assets");
         document.Assets.Add(new DocumentImageAsset { Id = "asset-1", Source = DocumentImageSource.Asset });
 
-        var cut = RenderComponent<TmDocumentCanvasEngineHost>(parameters => parameters
+        var cut = Render<TmDocumentCanvasEngineHost>(parameters => parameters
             .Add(p => p.Document, document)
             .Add(p => p.ImageUrlResolver, resolver)
             .Add(p => p.AriaLabel, "Document editor")
@@ -170,7 +170,7 @@ public sealed class CanvasEngineHostRenderTests : LocalizationTestBase
         var document = DocumentEditorDocument.Empty("canvas-host-assets-no-resolver");
         document.Assets.Add(new DocumentImageAsset { Id = "asset-1", Source = DocumentImageSource.Asset });
 
-        var cut = RenderComponent<TmDocumentCanvasEngineHost>(parameters => parameters
+        var cut = Render<TmDocumentCanvasEngineHost>(parameters => parameters
             .Add(p => p.Document, document)
             .Add(p => p.AriaLabel, "Document editor")
             .Add(p => p.InputAriaLabel, "Document editor"));

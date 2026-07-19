@@ -12,7 +12,7 @@ public class TmTabsAccessibilityTests : LocalizationTestBase
     [Fact]
     public void Tabs_TabButton_HasCorrectId()
     {
-        var cut = RenderComponent<TmTabs>(p => p
+        var cut = Render<TmTabs>(p => p
             .Add(x => x.ActiveTabId, "tab1")
             .AddChildContent<TmTabPanel>(tp => tp
                 .Add(x => x.Id, "tab1")
@@ -32,7 +32,7 @@ public class TmTabsAccessibilityTests : LocalizationTestBase
     [Fact]
     public void Tabs_TabPanel_AriaLabelledBy_MatchesTabId()
     {
-        var cut = RenderComponent<TmTabs>(p => p
+        var cut = Render<TmTabs>(p => p
             .Add(x => x.ActiveTabId, "tab1")
             .AddChildContent<TmTabPanel>(tp => tp
                 .Add(x => x.Id, "tab1")

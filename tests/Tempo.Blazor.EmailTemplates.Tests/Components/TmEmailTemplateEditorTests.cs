@@ -10,7 +10,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.EmailTemplates.Tests.Components;
 
-public class TmEmailTemplateEditorTests : TestContext
+public class TmEmailTemplateEditorTests : BunitContext
 {
     public TmEmailTemplateEditorTests()
     {
@@ -24,7 +24,7 @@ public class TmEmailTemplateEditorTests : TestContext
     [Fact]
     public void Renders_Toolbar_And_ThreePanels()
     {
-        var cut = RenderComponent<TmEmailTemplateEditor>();
+        var cut = Render<TmEmailTemplateEditor>();
 
         cut.Find("[data-tm-email-editor]").Should().NotBeNull();
         cut.Find("[role=toolbar]").Should().NotBeNull();
@@ -36,7 +36,7 @@ public class TmEmailTemplateEditorTests : TestContext
     [Fact]
     public void EmptyDocument_ShowsEmptyStateInCanvas()
     {
-        var cut = RenderComponent<TmEmailTemplateEditor>();
+        var cut = Render<TmEmailTemplateEditor>();
 
         var canvas = cut.Find("[data-tm-canvas]");
         canvas.TextContent.Should().NotBeNullOrWhiteSpace();
@@ -51,7 +51,7 @@ public class TmEmailTemplateEditorTests : TestContext
         doc2section.Columns.Add(new EmailColumn());
         doc.Sections.Add(doc2section);
 
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p
+        var cut = Render<TmEmailTemplateEditor>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.OnSave, d => saved = d));
 
@@ -66,7 +66,7 @@ public class TmEmailTemplateEditorTests : TestContext
         var doc = new EmailTemplateDocument();
         doc.Sections.Add(new EmailSection());
 
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
 
         // A document with a section should not show the empty-state hint text.
         cut.Markup.Should().NotContain("Drag a block here");

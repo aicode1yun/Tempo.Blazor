@@ -29,7 +29,7 @@ public class TmFileUploadK4Tests : LocalizationTestBase
             new() { FileName = "d.exe", Percent = 100, State = TmUploadState.Blocked },
         };
 
-        var cut = RenderComponent<TmFileUploadProgress>(p => p.Add(c => c.Uploads, uploads));
+        var cut = Render<TmFileUploadProgress>(p => p.Add(c => c.Uploads, uploads));
 
         cut.FindAll("[data-testid='upload-item']").Should().HaveCount(4);
         // Uploading → cancel available
@@ -52,7 +52,7 @@ public class TmFileUploadK4Tests : LocalizationTestBase
             new() { FileName = "done.bin", Percent = 100, State = TmUploadState.Completed },
         };
 
-        var cut = RenderComponent<TmFileUploadProgress>(p => p
+        var cut = Render<TmFileUploadProgress>(p => p
             .Add(c => c.Uploads, uploads)
             .Add(c => c.OnCancel, (TmUploadItem i) => cancelled = i)
             .Add(c => c.OnResume, (TmUploadItem i) => resumed = i)
@@ -72,7 +72,7 @@ public class TmFileUploadK4Tests : LocalizationTestBase
     [Fact]
     public void VersionHistory_Empty_ShowsEmptyState()
     {
-        var cut = RenderComponent<TmFileVersionHistory>(p => p
+        var cut = Render<TmFileVersionHistory>(p => p
             .Add(c => c.ItemId, "item-1")
             .Add(c => c.Hook, new FakeVersioningHook()));
 
@@ -85,7 +85,7 @@ public class TmFileUploadK4Tests : LocalizationTestBase
         var hook = new FakeVersioningHook();
         hook.Seed("item-1", ("v1 line", 1), ("v1 line\nv2 line", 2), ("v1 line\nv2 line\nv3 line", 3));
 
-        var cut = RenderComponent<TmFileVersionHistory>(p => p
+        var cut = Render<TmFileVersionHistory>(p => p
             .Add(c => c.ItemId, "item-1")
             .Add(c => c.Hook, hook));
 
@@ -102,7 +102,7 @@ public class TmFileUploadK4Tests : LocalizationTestBase
         hook.Seed("item-1", ("old", 1), ("new", 2));
         TmFileVersion? restored = null;
 
-        var cut = RenderComponent<TmFileVersionHistory>(p => p
+        var cut = Render<TmFileVersionHistory>(p => p
             .Add(c => c.ItemId, "item-1")
             .Add(c => c.Hook, hook)
             .Add(c => c.OnRestored, (TmFileVersion v) => restored = v));
@@ -123,7 +123,7 @@ public class TmFileUploadK4Tests : LocalizationTestBase
         var hook = new FakeVersioningHook();
         hook.Seed("item-1", ("line1\nline2", 1), ("line1\nline2\nline3", 2));
 
-        var cut = RenderComponent<TmFileVersionHistory>(p => p
+        var cut = Render<TmFileVersionHistory>(p => p
             .Add(c => c.ItemId, "item-1")
             .Add(c => c.Hook, hook));
 
@@ -139,7 +139,7 @@ public class TmFileUploadK4Tests : LocalizationTestBase
     public async Task DocumentManager_ChunkedUpload_SplitsIntoChunksAndCreatesItem()
     {
         var provider = new ChunkingDocProvider();
-        var cut = RenderComponent<TmDocumentManager<DocMeta>>(p => p
+        var cut = Render<TmDocumentManager<DocMeta>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.MaxUploadSize, 50L * 1024 * 1024));
 
@@ -157,7 +157,7 @@ public class TmFileUploadK4Tests : LocalizationTestBase
     public async Task DocumentManager_ScanBlocked_MarksItemUnavailable()
     {
         var provider = new ChunkingDocProvider();
-        var cut = RenderComponent<TmDocumentManager<DocMeta>>(p => p
+        var cut = Render<TmDocumentManager<DocMeta>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.ScanHook, new BlockingScanHook()));
 
@@ -181,7 +181,7 @@ public class TmFileUploadK4Tests : LocalizationTestBase
         // Regression: a provider that returns NEW item instances on every reload must still
         // show the file as Blocked (the scan gate is re-applied from the recorded verdict).
         var provider = new ChunkingDocProvider { CloneOnRead = true };
-        var cut = RenderComponent<TmDocumentManager<DocMeta>>(p => p
+        var cut = Render<TmDocumentManager<DocMeta>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.ScanHook, new BlockingScanHook()));
 
@@ -209,7 +209,7 @@ public class TmFileUploadK4Tests : LocalizationTestBase
     public async Task FileManager_ChunkedUpload_UsesChunkSink()
     {
         var provider = new ChunkingFileProvider();
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, provider));
 
         var big = new string('y', 300 * 1024);
@@ -231,7 +231,7 @@ public class TmFileUploadK4Tests : LocalizationTestBase
             ScanStatus = FileScanStatus.Blocked, ScanMessage = "Threat"
         });
 
-        var cut = RenderComponent<TmFileManager>(p => p.Add(c => c.DataProvider, provider));
+        var cut = Render<TmFileManager>(p => p.Add(c => c.DataProvider, provider));
 
         cut.FindAll("[data-testid='file-scan-blocked']").Should().ContainSingle();
     }
@@ -242,7 +242,7 @@ public class TmFileUploadK4Tests : LocalizationTestBase
     public async Task AttachmentManager_ChunkedUpload_UsesChunkProvider()
     {
         var provider = new ChunkingAttachmentProvider();
-        var cut = RenderComponent<TmAttachmentManager>(p => p
+        var cut = Render<TmAttachmentManager>(p => p
             .Add(c => c.AttachmentProvider, provider)
             .Add(c => c.FileProvider, provider)
             .Add(c => c.EntityId, "e-1"));
@@ -270,7 +270,7 @@ public class TmFileUploadK4Tests : LocalizationTestBase
         };
         var provider = new ChunkingAttachmentProvider([att]);
 
-        var cut = RenderComponent<TmAttachmentManager>(p => p
+        var cut = Render<TmAttachmentManager>(p => p
             .Add(c => c.AttachmentProvider, provider)
             .Add(c => c.FileProvider, provider)
             .Add(c => c.EntityId, "e-1"));

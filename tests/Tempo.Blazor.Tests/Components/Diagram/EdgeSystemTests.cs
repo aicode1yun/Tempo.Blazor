@@ -40,7 +40,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -69,7 +69,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -96,7 +96,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -140,7 +140,7 @@ public class EdgeSystemTests : LocalizationTestBase
         doc.Edges.Add(edgeH);
         doc.Edges.Add(edgeV);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -179,7 +179,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -309,7 +309,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -340,7 +340,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Nodes.Add(node);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -363,7 +363,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Nodes.Add(node);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -391,7 +391,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -411,7 +411,7 @@ public class EdgeSystemTests : LocalizationTestBase
         var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
         doc.Nodes.Add(n1);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -438,7 +438,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -467,7 +467,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -541,7 +541,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -568,7 +568,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -596,7 +596,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -625,7 +625,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -663,7 +663,7 @@ public class EdgeSystemTests : LocalizationTestBase
         doc.Edges.Add(edgeLow);
         doc.Edges.Add(edgeHigh);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -707,7 +707,7 @@ public class EdgeSystemTests : LocalizationTestBase
         doc.Edges.Add(edgeH);
         doc.Edges.Add(edgeV);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -720,7 +720,7 @@ public class EdgeSystemTests : LocalizationTestBase
     [Fact]
     public void ArrowSelect_RendersButtonTriggerWithSvg()
     {
-        var cut = RenderComponent<TmDiagramArrowSelect>(p => p
+        var cut = Render<TmDiagramArrowSelect>(p => p
             .Add(c => c.Value, "classic")
             .Add(c => c.Options, new List<SelectOption<string>>
             {
@@ -830,7 +830,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Edges.Add(sourceEdge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -861,7 +861,7 @@ public class EdgeSystemTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 

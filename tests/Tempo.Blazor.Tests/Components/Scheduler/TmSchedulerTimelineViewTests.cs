@@ -20,7 +20,7 @@ public class TmSchedulerTimelineViewTests : LocalizationTestBase
     [Fact]
     public void Renders_Timeline_Container()
     {
-        var cut = RenderComponent<TmSchedulerTimelineView>(p => p
+        var cut = Render<TmSchedulerTimelineView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.Resources, TestResources));
 
@@ -30,7 +30,7 @@ public class TmSchedulerTimelineViewTests : LocalizationTestBase
     [Fact]
     public void Renders_Resource_Labels()
     {
-        var cut = RenderComponent<TmSchedulerTimelineView>(p => p
+        var cut = Render<TmSchedulerTimelineView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.Resources, TestResources));
 
@@ -44,7 +44,7 @@ public class TmSchedulerTimelineViewTests : LocalizationTestBase
     [Fact]
     public void Renders_Time_Headers()
     {
-        var cut = RenderComponent<TmSchedulerTimelineView>(p => p
+        var cut = Render<TmSchedulerTimelineView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.Resources, TestResources));
 
@@ -55,7 +55,7 @@ public class TmSchedulerTimelineViewTests : LocalizationTestBase
     [Fact]
     public void Renders_Resource_Rows()
     {
-        var cut = RenderComponent<TmSchedulerTimelineView>(p => p
+        var cut = Render<TmSchedulerTimelineView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.Resources, TestResources));
 
@@ -71,7 +71,7 @@ public class TmSchedulerTimelineViewTests : LocalizationTestBase
             new() { Title = "Room B Meeting", Start = new DateTime(2025, 6, 10, 14, 0, 0), End = new DateTime(2025, 6, 10, 15, 0, 0), ResourceId = "room-b" },
         };
 
-        var cut = RenderComponent<TmSchedulerTimelineView>(p => p
+        var cut = Render<TmSchedulerTimelineView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.Resources, TestResources)
             .Add(c => c.Events, events));
@@ -89,7 +89,7 @@ public class TmSchedulerTimelineViewTests : LocalizationTestBase
             new() { Title = "Meeting", Start = new DateTime(2025, 6, 10, 10, 0, 0), End = new DateTime(2025, 6, 10, 11, 0, 0), ResourceId = "room-a" },
         };
 
-        var cut = RenderComponent<TmSchedulerTimelineView>(p => p
+        var cut = Render<TmSchedulerTimelineView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.Resources, TestResources)
             .Add(c => c.Events, events)
@@ -105,7 +105,7 @@ public class TmSchedulerTimelineViewTests : LocalizationTestBase
     public void Slot_Click_Fires_Callback()
     {
         (DateTime Start, DateTime End)? slot = null;
-        var cut = RenderComponent<TmSchedulerTimelineView>(p => p
+        var cut = Render<TmSchedulerTimelineView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.Resources, TestResources)
             .Add(c => c.OnSlotClick, EventCallback.Factory.Create<(DateTime, DateTime)>(this, s => slot = s)));
@@ -123,7 +123,7 @@ public class TmSchedulerTimelineViewTests : LocalizationTestBase
             new() { Title = "Meeting", Start = new DateTime(2025, 6, 10, 12, 0, 0), End = new DateTime(2025, 6, 10, 14, 0, 0), ResourceId = "room-a" },
         };
 
-        var cut = RenderComponent<TmSchedulerTimelineView>(p => p
+        var cut = Render<TmSchedulerTimelineView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.Resources, TestResources)
             .Add(c => c.Events, events));
@@ -137,7 +137,7 @@ public class TmSchedulerTimelineViewTests : LocalizationTestBase
     [Fact]
     public void Renders_Without_Resources()
     {
-        var cut = RenderComponent<TmSchedulerTimelineView>(p => p
+        var cut = Render<TmSchedulerTimelineView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10)));
 
         cut.Find(".tm-scheduler-timeline").Should().NotBeNull();

@@ -26,7 +26,7 @@ public class TmDiagramCanvasTests : DiagramTestBase
             ]
         };
 
-        var cut = RenderComponent<TmDiagramCanvas>(parameters => parameters
+        var cut = Render<TmDiagramCanvas>(parameters => parameters
             .Add(p => p.Document, doc));
 
         var pathElement = cut.Find("path[data-edge-id=\"e1\"]");
@@ -54,7 +54,7 @@ public class TmDiagramCanvasTests : DiagramTestBase
             ]
         };
 
-        var cut = RenderComponent<TmDiagramCanvas>(parameters => parameters
+        var cut = Render<TmDiagramCanvas>(parameters => parameters
             .Add(p => p.Document, doc));
 
         var pathElement = cut.Find("path[data-edge-id=\"e1\"]");
@@ -81,13 +81,13 @@ public class TmDiagramCanvasTests : DiagramTestBase
             ]
         };
 
-        var cut = RenderComponent<TmDiagramCanvas>(parameters => parameters
+        var cut = Render<TmDiagramCanvas>(parameters => parameters
             .Add(p => p.Document, doc));
 
         cut.FindAll("[data-node-id]").Count.Should().Be(2);
 
         layer1.IsVisible = false;
-        cut.SetParametersAndRender(parameters => parameters.Add(p => p.Document, doc));
+        cut.Render(parameters => parameters.Add(p => p.Document, doc));
 
         var nodes = cut.FindAll("[data-node-id]");
         nodes.Count.Should().Be(1);

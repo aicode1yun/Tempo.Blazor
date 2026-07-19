@@ -17,7 +17,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
     [Fact]
     public void Panel_RendersWithTestId()
     {
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, EmptyDocument()));
 
         cut.Find("[data-testid='document-find-panel']").Should().NotBeNull();
@@ -26,7 +26,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
     [Fact]
     public void Panel_HasSearchInput()
     {
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, EmptyDocument()));
 
         cut.Find("[data-testid='document-find-input']").Should().NotBeNull();
@@ -35,7 +35,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
     [Fact]
     public void Panel_HasNextAndPreviousButtons()
     {
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, EmptyDocument()));
 
         cut.Find("[data-testid='document-find-next']").Should().NotBeNull();
@@ -45,7 +45,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
     [Fact]
     public void Panel_HasCloseButton()
     {
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, EmptyDocument()));
 
         cut.Find("[data-testid='document-find-close']").Should().NotBeNull();
@@ -56,7 +56,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
     [Fact]
     public void Panel_ReplaceRowHiddenByDefault()
     {
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, EmptyDocument()));
 
         cut.FindAll("[data-testid='document-replace-input']").Should().BeEmpty();
@@ -65,7 +65,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
     [Fact]
     public void Panel_ShowReplace_ShowsReplaceRow()
     {
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, EmptyDocument())
             .Add(x => x.ShowReplace, true));
 
@@ -77,7 +77,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
     [Fact]
     public void Panel_WithNoDocument_ShowsNoResultsText()
     {
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, EmptyDocument()));
 
         var count = cut.Find("[data-testid='document-find-count']");
@@ -102,7 +102,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
             ]
         };
 
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, doc));
 
         cut.Find("[data-testid='document-find-input']").Input("hello");
@@ -133,7 +133,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
             ]
         };
         var searches = new List<string>();
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, doc)
             .Add(x => x.OnSearchRequested, Microsoft.AspNetCore.Components.EventCallback.Factory.Create<DocumentSearchQuery>(
                 this, query => searches.Add(query.Text))));
@@ -169,7 +169,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
                 }
             ]
         };
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, doc));
 
         cut.Find("[data-testid='document-find-input']").Input("cat");
@@ -189,7 +189,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
     public void Panel_CloseButton_InvokesOnClose()
     {
         var closed = false;
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, EmptyDocument())
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => closed = true)));
 
@@ -202,7 +202,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
     public void Panel_EscapeKey_InvokesOnClose()
     {
         var closed = false;
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, EmptyDocument())
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => closed = true)));
 
@@ -232,7 +232,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
             ]
         };
 
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, doc));
 
         cut.Find("[data-testid='document-find-input']").Input("cat");
@@ -246,7 +246,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
     [Fact]
     public void Panel_RendersSearchScopeSelector()
     {
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, EmptyDocument()));
 
         var select = cut.Find("[data-testid='document-find-scope']");
@@ -284,7 +284,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
             ]
         };
 
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, doc));
 
         cut.Find("[data-testid='document-find-input']").Input("secret");
@@ -312,7 +312,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
             ]
         };
 
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, doc)
             .Add(x => x.OnActiveResultChanged, EventCallback.Factory.Create<DocumentSearchResult>(this, r => active = r)));
 
@@ -353,7 +353,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
             ]
         };
 
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, doc)
             .Add(x => x.ShowReplace, true)
             .Add(x => x.OnReplaceOneRequested, EventCallback.Factory.Create<DocumentFindReplaceRequest>(this, r => request = r)));
@@ -373,7 +373,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
     [Fact]
     public void Panel_HasRoleAndAriaLabel()
     {
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, EmptyDocument()));
 
         var panel = cut.Find("[data-testid='document-find-panel']");
@@ -383,7 +383,7 @@ public sealed class TmDocumentFindPanelTests : LocalizationTestBase
     [Fact]
     public void Panel_NextButton_DisabledWhenNoResults()
     {
-        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+        var cut = Render<TmDocumentFindPanel>(p => p
             .Add(x => x.Document, EmptyDocument()));
 
         var nextBtn = cut.Find("[data-testid='document-find-next']");

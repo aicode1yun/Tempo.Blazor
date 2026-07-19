@@ -11,7 +11,7 @@ public class TmShareLinkPanelTests : LocalizationTestBase
     [Fact]
     public void Render_LinkCopyQrEmbedAndExpiration()
     {
-        var cut = RenderComponent<TmShareLinkPanel>(parameters => parameters
+        var cut = Render<TmShareLinkPanel>(parameters => parameters
             .Add(p => p.Link, "https://sign.example.test/s/abc")
             .Add(p => p.EmbedCode, "<iframe src=\"https://sign.example.test/s/abc\"></iframe>")
             .Add(p => p.ExpiresAt, new DateTimeOffset(2026, 5, 8, 12, 0, 0, TimeSpan.Zero)));
@@ -27,7 +27,7 @@ public class TmShareLinkPanelTests : LocalizationTestBase
     public void Toggle_InvokesEnabledChangedAndDisablesInputs()
     {
         bool? enabled = null;
-        var cut = RenderComponent<TmShareLinkPanel>(parameters => parameters
+        var cut = Render<TmShareLinkPanel>(parameters => parameters
             .Add(p => p.Link, "https://sign.example.test/s/abc")
             .Add(p => p.EnabledChanged, EventCallback.Factory.Create<bool>(this, value => enabled = value)));
 

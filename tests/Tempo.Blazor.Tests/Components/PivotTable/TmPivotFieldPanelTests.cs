@@ -23,7 +23,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_Render_DisplaysAllZones()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
         );
 
@@ -37,7 +37,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_Render_UnusedFields_ShowsAllAvailableFields()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
         );
 
@@ -51,7 +51,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_WithRowFields_ShowsInRowZone()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
         );
@@ -68,7 +68,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_WithColumnFields_ShowsInColumnZone()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ColumnFieldKeys, ["Month"])
         );
@@ -81,7 +81,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_WithValueFields_ShowsInDataZone()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
         );
@@ -94,7 +94,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_WithFilterFields_ShowsInFilterZone()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.FilterFields, new Dictionary<string, List<object?>> { ["Category"] = ["Food"] })
         );
@@ -111,7 +111,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_RemoveRowField_MovesToUnused()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
         );
@@ -129,7 +129,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_RemoveValueField_MovesToUnused()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
         );
@@ -153,7 +153,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     {
         PivotTableConfiguration? capturedConfig = null;
 
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
             .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
@@ -173,7 +173,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_ClearAll_EmptiesAllZones()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
             .Add(p => p.ColumnFieldKeys, ["Month"])
@@ -194,7 +194,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_Reset_RestoresOriginalConfiguration()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
         );
@@ -221,7 +221,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_ValueFieldSettings_TogglesEditor()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
         );
@@ -245,7 +245,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     {
         PivotTableConfiguration? capturedConfig = null;
 
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
             .Add(p => p.OnConfigurationChanged, config => { capturedConfig = config; })
@@ -280,7 +280,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
             new("Transport", "Feb", 200m),
         };
 
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.Items, items)
             .Add(p => p.FilterFields, new Dictionary<string, List<object?>> { ["Category"] = ["Food"] })
@@ -312,7 +312,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
             new("Transport", "Feb", 200m),
         };
 
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.Items, items)
             .Add(p => p.FilterFields, new Dictionary<string, List<object?>> { ["Category"] = ["Food"] })
@@ -349,7 +349,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
             new("Transport", "Feb", 200m),
         };
 
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.Items, items)
             .Add(p => p.FilterFields, new Dictionary<string, List<object?>> { ["Category"] = ["Food"] })
@@ -377,7 +377,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_DropValueField_FieldRemainsInUnused()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
         );
@@ -390,7 +390,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_DropFilterField_FieldRemainsInUnused()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.FilterFields, new Dictionary<string, List<object?>> { ["Category"] = ["Food"] })
         );
@@ -409,7 +409,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
             new("Transport", "Feb", 200m),
         };
 
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.Items, items)
             .Add(p => p.FilterFields, new Dictionary<string, List<object?>>())
@@ -417,7 +417,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
 
         // Simulate drop by directly calling the component's internal move logic
         // We can't easily trigger drag-and-drop in bUnit, so we verify via re-render with pre-set filter
-        var cut2 = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut2 = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.Items, items)
             .Add(p => p.FilterFields, new Dictionary<string, List<object?>> { ["Category"] = ["Food", "Transport"] })
@@ -438,7 +438,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_DropRowField_FieldRemovedFromUnused()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
         );
@@ -451,7 +451,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_DropSameValueFieldTwice_CreatesTwoValueFields()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
         );
@@ -469,7 +469,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
         // Drag from unused to data is simulated by clicking the zone drop handler
         // Instead, we'll test via the component's public behavior by triggering OnZoneDrop through JS drag events
         // But that's complex. Let's use a simpler approach - verify the chip count after adding via parameters.
-        var cut2 = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut2 = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ValueFields,
             [
@@ -484,7 +484,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_RemoveOneValueField_DoesNotRemoveOthers()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ValueFields,
             [
@@ -512,7 +512,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_ValueFieldSettings_ShowsFormatDropdown()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
         );
@@ -535,7 +535,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     {
         PivotTableConfiguration? capturedConfig = null;
 
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
             .Add(p => p.OnConfigurationChanged, config => { capturedConfig = config; })
@@ -560,7 +560,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_CustomFormatPreset_ShowsCustomInput()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ValueFields, [new PivotValueFieldConfiguration
             {
@@ -584,7 +584,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     {
         PivotTableConfiguration? capturedConfig = null;
 
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ValueFields, [new PivotValueFieldConfiguration
             {
@@ -616,7 +616,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     {
         PivotTableConfiguration? capturedConfig = null;
 
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ValueFields, [new PivotValueFieldConfiguration
             {
@@ -650,7 +650,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_RowFieldChip_ShowsSortMenuButton()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
         );
@@ -662,7 +662,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_SortMenu_OpensOnClick()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
         );
@@ -692,7 +692,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
             }
         };
 
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, fields)
             .Add(p => p.RowFieldKeys, ["Category"])
             .Add(p => p.OnSortChanged, args => { capturedSort = args; })
@@ -726,7 +726,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
             }
         };
 
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, fields)
             .Add(p => p.RowFieldKeys, ["Category"])
             .Add(p => p.OnSortChanged, args => { capturedSort = args; })
@@ -751,7 +751,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     {
         PivotTableConfiguration? capturedConfig = null;
 
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.OnConfigurationChanged, config => { capturedConfig = config; })
         );
@@ -777,7 +777,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     {
         PivotTableConfiguration? capturedConfig = null;
 
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
             .Add(p => p.OnConfigurationChanged, config => { capturedConfig = config; })
@@ -801,7 +801,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_HasDraftChanges_ApplyButtonDisabledWhenNoChanges()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
         );
@@ -828,7 +828,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
 
         PivotTableConfiguration? capturedConfig = null;
 
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.Items, items)
             .Add(p => p.AutoApplyFilters, true)
@@ -854,7 +854,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_FieldTree_Menu_AddsToRow()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ShowFieldTree, true)
         );
@@ -876,7 +876,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_FieldTree_Menu_AddsToValue_AllowsDuplicates()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ShowFieldTree, true)
             .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
@@ -898,7 +898,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_FieldTree_Menu_RemoveFromAll()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ShowFieldTree, true)
             .Add(p => p.RowFieldKeys, ["Category"])
@@ -920,7 +920,7 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldPanel_FieldTree_ShowsAreaBadge()
     {
-        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldPanel<Transaction>>(parameters => parameters
             .Add(p => p.Fields, Fields)
             .Add(p => p.ShowFieldTree, true)
             .Add(p => p.RowFieldKeys, ["Category"])

@@ -18,7 +18,7 @@ public class TmActivityCommentsTests : LocalizationTestBase
     [Fact]
     public void Comments_RendersExistingComments()
     {
-        var cut = RenderComponent<TmActivityComments>(p => p
+        var cut = Render<TmActivityComments>(p => p
             .Add(c => c.Comments, TwoComments()));
 
         cut.FindAll(".tm-comment-item").Count.Should().Be(2);
@@ -27,7 +27,7 @@ public class TmActivityCommentsTests : LocalizationTestBase
     [Fact]
     public void Comments_Empty_RendersEmptyState()
     {
-        var cut = RenderComponent<TmActivityComments>(p => p
+        var cut = Render<TmActivityComments>(p => p
             .Add(c => c.Comments, Array.Empty<TmCommentEntry>()));
 
         cut.FindAll(".tm-comment-item").Should().BeEmpty();
@@ -37,7 +37,7 @@ public class TmActivityCommentsTests : LocalizationTestBase
     [Fact]
     public void Comments_ShowEditor_WhenAddCommentClicked()
     {
-        var cut = RenderComponent<TmActivityComments>(p => p
+        var cut = Render<TmActivityComments>(p => p
             .Add(c => c.Comments, TwoComments()));
 
         cut.Find(".tm-comments-add-btn").Click();
@@ -48,7 +48,7 @@ public class TmActivityCommentsTests : LocalizationTestBase
     [Fact]
     public void Comments_HideEditor_WhenCancelClicked()
     {
-        var cut = RenderComponent<TmActivityComments>(p => p
+        var cut = Render<TmActivityComments>(p => p
             .Add(c => c.Comments, TwoComments()));
 
         cut.Find(".tm-comments-add-btn").Click();
@@ -61,7 +61,7 @@ public class TmActivityCommentsTests : LocalizationTestBase
     public async Task Comments_SubmitComment_CallsOnCommentAdded()
     {
         string? received = null;
-        var cut = RenderComponent<TmActivityComments>(p => p
+        var cut = Render<TmActivityComments>(p => p
             .Add(c => c.Comments, TwoComments())
             .Add(c => c.OnCommentAdded,
                 EventCallback.Factory.Create<string>(this, html => received = html)));
@@ -77,7 +77,7 @@ public class TmActivityCommentsTests : LocalizationTestBase
     [Fact]
     public void Comments_EditButton_ShowsWhenCanEdit()
     {
-        var cut = RenderComponent<TmActivityComments>(p => p
+        var cut = Render<TmActivityComments>(p => p
             .Add(c => c.Comments, TwoComments()));
 
         // Alice's comment (CanEdit=true) must have an edit button
@@ -88,7 +88,7 @@ public class TmActivityCommentsTests : LocalizationTestBase
     [Fact]
     public void Comments_DeleteButton_ShowsWhenCanDelete()
     {
-        var cut = RenderComponent<TmActivityComments>(p => p
+        var cut = Render<TmActivityComments>(p => p
             .Add(c => c.Comments, TwoComments()));
 
         // Alice's comment (CanDelete=true) must have a delete button; Bob's must not
@@ -101,7 +101,7 @@ public class TmActivityCommentsTests : LocalizationTestBase
     public async Task Comments_Delete_CallsOnCommentDeleted()
     {
         string? deletedId = null;
-        var cut = RenderComponent<TmActivityComments>(p => p
+        var cut = Render<TmActivityComments>(p => p
             .Add(c => c.Comments, TwoComments())
             .Add(c => c.OnCommentDeleted,
                 EventCallback.Factory.Create<string>(this, id => deletedId = id)));
@@ -115,7 +115,7 @@ public class TmActivityCommentsTests : LocalizationTestBase
     [Fact]
     public async Task Comments_RefreshAsync_ReloadsComments()
     {
-        var cut = RenderComponent<TmActivityComments>(p => p
+        var cut = Render<TmActivityComments>(p => p
             .Add(c => c.Comments, TwoComments()));
 
         cut.FindAll(".tm-comment-item").Count.Should().Be(2);
@@ -126,7 +126,7 @@ public class TmActivityCommentsTests : LocalizationTestBase
     [Fact]
     public void Comments_CommentDate_UsesRelativeTime()
     {
-        var cut = RenderComponent<TmActivityComments>(p => p
+        var cut = Render<TmActivityComments>(p => p
             .Add(c => c.Comments, TwoComments()));
 
         cut.FindAll(".tm-comment-time").Should().NotBeEmpty();

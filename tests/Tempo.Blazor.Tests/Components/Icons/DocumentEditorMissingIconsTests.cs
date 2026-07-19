@@ -86,7 +86,7 @@ public class DocumentEditorMissingIconsTests : LocalizationTestBase
     [Fact]
     public void Toolbar_NumberedList_UsesListOrderedIcon_DistinctFromBulletList()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         var bullet = cut.Find("[data-testid='document-bullet-list'] svg").InnerHtml;
         var numbered = cut.Find("[data-testid='document-numbered-list'] svg").InnerHtml;
@@ -96,7 +96,7 @@ public class DocumentEditorMissingIconsTests : LocalizationTestBase
     [Fact]
     public void Toolbar_DoubleStrikethroughButton_UsesDistinctGlyph()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.ShowAdvancedCharacterFormatting, true));
 
         var single = cut.Find("[data-testid='document-strikethrough'] svg").InnerHtml;

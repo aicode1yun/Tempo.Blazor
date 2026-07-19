@@ -21,7 +21,7 @@ public class TmDiagramCanvasLayoutTests : DiagramTestBase
             }
         };
 
-        var cut = RenderComponent<TmDiagramCanvas>(parameters => parameters
+        var cut = Render<TmDiagramCanvas>(parameters => parameters
             .Add(p => p.Document, doc));
 
         var field = typeof(TmDiagramCanvas).GetField("_jsInitialized", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);

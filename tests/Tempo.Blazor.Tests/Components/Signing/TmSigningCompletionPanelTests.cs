@@ -11,7 +11,7 @@ public class TmSigningCompletionPanelTests : LocalizationTestBase
     [Fact]
     public void Render_CompletedMessageAndDownloadLink()
     {
-        var cut = RenderComponent<TmSigningCompletionPanel>(parameters => parameters
+        var cut = Render<TmSigningCompletionPanel>(parameters => parameters
             .Add(p => p.DownloadUrl, "/signed.pdf"));
 
         cut.Find(".tm-signing-completion-panel__title").TextContent.Should().Contain("Document completed");
@@ -23,7 +23,7 @@ public class TmSigningCompletionPanelTests : LocalizationTestBase
     {
         var sendCopyClicked = false;
         var customClicked = false;
-        var cut = RenderComponent<TmSigningCompletionPanel>(parameters => parameters
+        var cut = Render<TmSigningCompletionPanel>(parameters => parameters
             .Add(p => p.CustomActionText, "Back to documents")
             .Add(p => p.OnSendCopy, EventCallback.Factory.Create(this, () => sendCopyClicked = true))
             .Add(p => p.OnCustomAction, EventCallback.Factory.Create(this, () => customClicked = true)));
@@ -38,7 +38,7 @@ public class TmSigningCompletionPanelTests : LocalizationTestBase
     [Fact]
     public void Render_WaitingForOthersState()
     {
-        var cut = RenderComponent<TmSigningCompletionPanel>(parameters => parameters
+        var cut = Render<TmSigningCompletionPanel>(parameters => parameters
             .Add(p => p.IsWaitingForOthers, true));
 
         cut.Markup.Should().Contain("Waiting for others");
@@ -49,7 +49,7 @@ public class TmSigningCompletionPanelTests : LocalizationTestBase
     [Fact]
     public void Render_UsesProvidedValuesWithoutSigningFieldLocalization()
     {
-        var cut = RenderComponent<TmSigningCompletionPanel>(parameters => parameters
+        var cut = Render<TmSigningCompletionPanel>(parameters => parameters
             .Add(p => p.Title, "Dokument podepsán pro Alex Johnson")
             .Add(p => p.Description, "Submission value: email")
             .Add(p => p.CustomActionText, "Use saved value email"));

@@ -13,7 +13,7 @@ public class TmPopoverTests : LocalizationTestBase
     [Fact]
     public void Popover_RendersTrigger()
     {
-        var cut = RenderComponent<TmPopover>(p => p
+        var cut = Render<TmPopover>(p => p
             .Add(x => x.TriggerContent, b => b.AddContent(0, "<button>Open</button>"))
             .AddChildContent("Popover body"));
 
@@ -23,7 +23,7 @@ public class TmPopoverTests : LocalizationTestBase
     [Fact]
     public void Popover_ClosedByDefault()
     {
-        var cut = RenderComponent<TmPopover>(p => p
+        var cut = Render<TmPopover>(p => p
             .Add(x => x.TriggerContent, b => b.AddContent(0, "<button>Open</button>"))
             .AddChildContent("Popover body"));
 
@@ -33,7 +33,7 @@ public class TmPopoverTests : LocalizationTestBase
     [Fact]
     public void Popover_ClickTrigger_Opens()
     {
-        var cut = RenderComponent<TmPopover>(p => p
+        var cut = Render<TmPopover>(p => p
             .Add(x => x.TriggerContent, b => b.AddMarkupContent(0, "<button class='trigger-btn'>Open</button>"))
             .AddChildContent("Popover body"));
 
@@ -45,7 +45,7 @@ public class TmPopoverTests : LocalizationTestBase
     [Fact]
     public void Popover_ClickTrigger_ShowsContent()
     {
-        var cut = RenderComponent<TmPopover>(p => p
+        var cut = Render<TmPopover>(p => p
             .Add(x => x.TriggerContent, b => b.AddMarkupContent(0, "<button>Open</button>"))
             .AddChildContent("<p>Rich content here</p>"));
 
@@ -57,7 +57,7 @@ public class TmPopoverTests : LocalizationTestBase
     [Fact]
     public void Popover_EscapeCloses()
     {
-        var cut = RenderComponent<TmPopover>(p => p
+        var cut = Render<TmPopover>(p => p
             .Add(x => x.TriggerContent, b => b.AddMarkupContent(0, "<button>Open</button>"))
             .AddChildContent("Content"));
 
@@ -75,7 +75,7 @@ public class TmPopoverTests : LocalizationTestBase
     [InlineData(PopoverPosition.Right, "tm-popover--right")]
     public void Popover_Position_AppliesCss(PopoverPosition pos, string expected)
     {
-        var cut = RenderComponent<TmPopover>(p => p
+        var cut = Render<TmPopover>(p => p
             .Add(x => x.Position, pos)
             .Add(x => x.TriggerContent, b => b.AddMarkupContent(0, "<button>Open</button>"))
             .AddChildContent("Content"));
@@ -86,7 +86,7 @@ public class TmPopoverTests : LocalizationTestBase
     [Fact]
     public void Popover_AriaExpanded_WhenOpen()
     {
-        var cut = RenderComponent<TmPopover>(p => p
+        var cut = Render<TmPopover>(p => p
             .Add(x => x.TriggerContent, b => b.AddMarkupContent(0, "<button>Open</button>"))
             .AddChildContent("Content"));
 
@@ -100,7 +100,7 @@ public class TmPopoverTests : LocalizationTestBase
     [Fact]
     public void Popover_ShowArrowFalse_HidesArrow()
     {
-        var cut = RenderComponent<TmPopover>(p => p
+        var cut = Render<TmPopover>(p => p
             .Add(x => x.ShowArrow, false)
             .Add(x => x.TriggerContent, b => b.AddMarkupContent(0, "<button>Open</button>"))
             .AddChildContent("Content"));
@@ -112,7 +112,7 @@ public class TmPopoverTests : LocalizationTestBase
     [Fact]
     public void Popover_ShowArrowTrue_HasArrow()
     {
-        var cut = RenderComponent<TmPopover>(p => p
+        var cut = Render<TmPopover>(p => p
             .Add(x => x.ShowArrow, true)
             .Add(x => x.TriggerContent, b => b.AddMarkupContent(0, "<button>Open</button>"))
             .AddChildContent("Content"));
@@ -124,7 +124,7 @@ public class TmPopoverTests : LocalizationTestBase
     [Fact]
     public void Popover_ControlledMode_RespectsIsOpen()
     {
-        var cut = RenderComponent<TmPopover>(p => p
+        var cut = Render<TmPopover>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.TriggerContent, b => b.AddMarkupContent(0, "<button>Open</button>"))
             .AddChildContent("Content"));
@@ -135,7 +135,7 @@ public class TmPopoverTests : LocalizationTestBase
     [Fact]
     public void Popover_CustomClass_IsApplied()
     {
-        var cut = RenderComponent<TmPopover>(p => p
+        var cut = Render<TmPopover>(p => p
             .Add(x => x.Class, "my-pop")
             .Add(x => x.TriggerContent, b => b.AddMarkupContent(0, "<button>Open</button>"))
             .AddChildContent("Content"));

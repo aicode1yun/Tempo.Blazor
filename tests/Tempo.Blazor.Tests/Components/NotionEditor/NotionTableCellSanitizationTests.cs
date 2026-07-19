@@ -66,7 +66,7 @@ public sealed class NotionTableCellSanitizationTests : LocalizationTestBase
             Content = new TableRowBlockContent { Cells = [cellHtml] }
         };
 
-        return RenderComponent<TmNotionTableRowBlock>(parameters => parameters
+        return Render<TmNotionTableRowBlock>(parameters => parameters
             .Add(p => p.Row, row)
             .Add(p => p.ColumnCount, 1));
     }

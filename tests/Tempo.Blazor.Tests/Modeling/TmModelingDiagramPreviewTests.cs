@@ -19,7 +19,7 @@ public sealed class TmModelingDiagramPreviewTests : LocalizationTestBase
     [Fact]
     public void Non_empty_document_renders_diagram_editor()
     {
-        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+        using var cut = Render<TmModelingDiagramPreview>(parameters => parameters
             .Add(p => p.Document, CreateDocument(nodeCount: 2)));
 
         cut.Find("[data-testid='modeling-diagram-preview']").GetAttribute("data-state").Should().Be("populated");
@@ -30,7 +30,7 @@ public sealed class TmModelingDiagramPreviewTests : LocalizationTestBase
     [Fact]
     public void Null_document_renders_pre_generation_empty_state()
     {
-        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+        using var cut = Render<TmModelingDiagramPreview>(parameters => parameters
             .Add(p => p.Document, (DiagramDocument?)null));
 
         cut.Find("[data-testid='modeling-diagram-preview']").GetAttribute("data-state").Should().Be("empty");
@@ -44,7 +44,7 @@ public sealed class TmModelingDiagramPreviewTests : LocalizationTestBase
         var document = CreateDocument(nodeCount: 1);
         DiagramDocument? openedDocument = null;
 
-        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+        using var cut = Render<TmModelingDiagramPreview>(parameters => parameters
             .Add(p => p.Document, document)
             .Add(p => p.OnOpenInEditor, EventCallback.Factory.Create<DiagramDocument>(this, value => openedDocument = value)));
 
@@ -56,7 +56,7 @@ public sealed class TmModelingDiagramPreviewTests : LocalizationTestBase
     [Fact]
     public void Zero_node_document_renders_empty_canvas_hint_without_loading_state()
     {
-        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+        using var cut = Render<TmModelingDiagramPreview>(parameters => parameters
             .Add(p => p.Document, CreateDocument(nodeCount: 0)));
 
         cut.Find("[data-testid='modeling-diagram-preview']").GetAttribute("data-state").Should().Be("empty-diagram");
@@ -72,7 +72,7 @@ public sealed class TmModelingDiagramPreviewTests : LocalizationTestBase
         var element = CreateElement("task-drop", "source/task-drop");
         ModelingNodeDroppedEventArgs? dropped = null;
 
-        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+        using var cut = Render<TmModelingDiagramPreview>(parameters => parameters
             .Add(p => p.Document, document)
             .Add(p => p.ActiveDraggedElement, element)
             .Add(p => p.OnNodeDropped, EventCallback.Factory.Create<ModelingNodeDroppedEventArgs>(this, value => dropped = value)));
@@ -95,7 +95,7 @@ public sealed class TmModelingDiagramPreviewTests : LocalizationTestBase
         var document = CreateDocument(nodeCount: 0);
         var element = CreateElement("task-reuse", "source/task-reuse");
 
-        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+        using var cut = Render<TmModelingDiagramPreview>(parameters => parameters
             .Add(p => p.Document, document)
             .Add(p => p.ActiveDraggedElement, element));
 
@@ -114,7 +114,7 @@ public sealed class TmModelingDiagramPreviewTests : LocalizationTestBase
         var document = CreateDocument(nodeCount: 1);
         var element = CreateElement("element-0", "source/element-0");
 
-        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+        using var cut = Render<TmModelingDiagramPreview>(parameters => parameters
             .Add(p => p.Document, document)
             .Add(p => p.ActiveDraggedElement, element));
 
@@ -132,7 +132,7 @@ public sealed class TmModelingDiagramPreviewTests : LocalizationTestBase
     {
         var document = CreateDocument(nodeCount: 1);
 
-        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+        using var cut = Render<TmModelingDiagramPreview>(parameters => parameters
             .Add(p => p.Document, document)
             .Add(p => p.ActiveDraggedElement, CreateElement("task-drop", "source/task-drop")));
 
@@ -147,7 +147,7 @@ public sealed class TmModelingDiagramPreviewTests : LocalizationTestBase
     {
         var document = CreateDocument(nodeCount: 1);
 
-        using var cut = RenderComponent<TmModelingDiagramPreview>(parameters => parameters
+        using var cut = Render<TmModelingDiagramPreview>(parameters => parameters
             .Add(p => p.Document, document)
             .Add(p => p.ActiveDraggedElement, CreateElement("task-drop", "source/task-drop"))
             .Add(p => p.AllowNodeDrop, false));

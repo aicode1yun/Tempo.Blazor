@@ -12,7 +12,7 @@ public class TmFormulaBuilderTests : LocalizationTestBase
     [Fact]
     public void Render_RendersTextarea()
     {
-        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+        var cut = Render<TmFormulaBuilder>(parameters =>
             parameters.Add(p => p.Field, CreateCurrentField())
                       .Add(p => p.Fields, CreateFields()));
 
@@ -22,7 +22,7 @@ public class TmFormulaBuilderTests : LocalizationTestBase
     [Fact]
     public void Render_RendersTokenButtonsForNumberFields()
     {
-        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+        var cut = Render<TmFormulaBuilder>(parameters =>
             parameters.Add(p => p.Field, CreateCurrentField())
                       .Add(p => p.Fields, CreateFields()));
 
@@ -35,7 +35,7 @@ public class TmFormulaBuilderTests : LocalizationTestBase
     [Fact]
     public void Render_RendersNumericSelectAndRadioFieldsWhenOptionsAreNumeric()
     {
-        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+        var cut = Render<TmFormulaBuilder>(parameters =>
             parameters.Add(p => p.Field, CreateCurrentField())
                       .Add(p => p.Fields, CreateFields()));
 
@@ -48,7 +48,7 @@ public class TmFormulaBuilderTests : LocalizationTestBase
     [Fact]
     public void Render_DoesNotRenderCurrentFieldToken()
     {
-        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+        var cut = Render<TmFormulaBuilder>(parameters =>
             parameters.Add(p => p.Field, CreateCurrentField())
                       .Add(p => p.Fields, CreateFields()));
 
@@ -64,7 +64,7 @@ public class TmFormulaBuilderTests : LocalizationTestBase
         var fields = CreateFields();
         fields.First(field => field.Uuid == "dependent").Preferences.Formula = "{{total}}";
 
-        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+        var cut = Render<TmFormulaBuilder>(parameters =>
             parameters.Add(p => p.Field, CreateCurrentField())
                       .Add(p => p.Fields, fields));
 
@@ -78,7 +78,7 @@ public class TmFormulaBuilderTests : LocalizationTestBase
     public void ClickTokenButton_InsertsToken()
     {
         string? captured = null;
-        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+        var cut = Render<TmFormulaBuilder>(parameters =>
             parameters.Add(p => p.Field, CreateCurrentField())
                       .Add(p => p.Fields, CreateFields())
                       .Add(p => p.ValueChanged, EventCallback.Factory.Create<string>(this, value => captured = value)));
@@ -99,7 +99,7 @@ public class TmFormulaBuilderTests : LocalizationTestBase
             Translations = { ["en-US"] = "Subtotal localized" }
         };
 
-        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+        var cut = Render<TmFormulaBuilder>(parameters =>
             parameters.Add(p => p.Field, CreateCurrentField())
                       .Add(p => p.Fields, fields)
                       .Add(p => p.Culture, "en-US")
@@ -119,7 +119,7 @@ public class TmFormulaBuilderTests : LocalizationTestBase
             Translations = { ["en-US"] = "Subtotal localized" }
         };
 
-        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+        var cut = Render<TmFormulaBuilder>(parameters =>
             parameters.Add(p => p.Field, CreateCurrentField())
                       .Add(p => p.Fields, fields)
                       .Add(p => p.Culture, "en-US")
@@ -138,7 +138,7 @@ public class TmFormulaBuilderTests : LocalizationTestBase
     public void OperatorButton_InsertsOperator(string op)
     {
         string? captured = null;
-        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+        var cut = Render<TmFormulaBuilder>(parameters =>
             parameters.Add(p => p.Field, CreateCurrentField())
                       .Add(p => p.Fields, CreateFields())
                       .Add(p => p.ValueChanged, EventCallback.Factory.Create<string>(this, value => captured = value)));
@@ -154,7 +154,7 @@ public class TmFormulaBuilderTests : LocalizationTestBase
     public void FunctionButton_InsertsFunction(string function)
     {
         string? captured = null;
-        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+        var cut = Render<TmFormulaBuilder>(parameters =>
             parameters.Add(p => p.Field, CreateCurrentField())
                       .Add(p => p.Fields, CreateFields())
                       .Add(p => p.ValueChanged, EventCallback.Factory.Create<string>(this, value => captured = value)));
@@ -168,7 +168,7 @@ public class TmFormulaBuilderTests : LocalizationTestBase
     public void Save_WithUnknownToken_ShowsValidationAndDoesNotSave()
     {
         var saved = false;
-        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+        var cut = Render<TmFormulaBuilder>(parameters =>
             parameters.Add(p => p.Field, CreateCurrentField())
                       .Add(p => p.Fields, CreateFields())
                       .Add(p => p.Value, "{{Missing}} + 1")
@@ -185,7 +185,7 @@ public class TmFormulaBuilderTests : LocalizationTestBase
     {
         string? saved = null;
         var field = CreateCurrentField();
-        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+        var cut = Render<TmFormulaBuilder>(parameters =>
             parameters.Add(p => p.Field, field)
                       .Add(p => p.Fields, CreateFields())
                       .Add(p => p.Value, "{{Subtotal}} + {{Tax}}")
@@ -204,13 +204,13 @@ public class TmFormulaBuilderTests : LocalizationTestBase
         var fields = CreateFields();
         fields.First(field => field.Uuid == "subtotal").Labels.Translations["cs"] = "Mezisoučet";
 
-        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+        var cut = Render<TmFormulaBuilder>(parameters =>
             parameters.Add(p => p.Field, CreateCurrentField())
                       .Add(p => p.Fields, fields)
                       .Add(p => p.Value, "{{subtotal}}")
                       .Add(p => p.Culture, "en-US"));
 
-        cut.SetParametersAndRender(parameters => parameters.Add(p => p.Culture, "cs-CZ"));
+        cut.Render(parameters => parameters.Add(p => p.Culture, "cs-CZ"));
 
         cut.Find(".tm-formula-builder__textarea").GetAttribute("value").Should().Be("{{Subtotal}}");
         cut.Find("[data-field-uuid='subtotal']").TextContent.Should().Contain("Mezisoučet");

@@ -1,3 +1,4 @@
+using Bunit.Rendering;
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
@@ -9,7 +10,7 @@ namespace Tempo.Blazor.Tests.Forms;
 
 public class TmValidationSummaryTests : LocalizationTestBase
 {
-    private IRenderedFragment RenderWithEditContext<TModel>(TModel model, Action<ComponentParameterCollectionBuilder<TmValidationSummary>>? configure = null)
+    private IRenderedComponent<ContainerFragment> RenderWithEditContext<TModel>(TModel model, Action<ComponentParameterCollectionBuilder<TmValidationSummary>>? configure = null)
         where TModel : class
     {
         return Render(builder =>
@@ -27,7 +28,7 @@ public class TmValidationSummaryTests : LocalizationTestBase
         });
     }
 
-    private IRenderedFragment RenderInEditForm<TModel>(TModel model, Action<Dictionary<string, object?>>? addParams = null)
+    private IRenderedComponent<ContainerFragment> RenderInEditForm<TModel>(TModel model, Action<Dictionary<string, object?>>? addParams = null)
         where TModel : class
     {
         return Render(builder =>

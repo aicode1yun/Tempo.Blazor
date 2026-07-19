@@ -100,7 +100,7 @@ public sealed class DocumentEditorCommandRegistrationTests : LocalizationTestBas
         var registry = new DocumentEditorCommandRegistry();
         registry.RefreshAllAsync(new DocumentEditorCommandContext()).GetAwaiter().GetResult();
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         var button = cut.Find("[data-testid='document-bold']");
@@ -111,12 +111,12 @@ public sealed class DocumentEditorCommandRegistrationTests : LocalizationTestBas
     [Fact]
     public void Toolbar_WithoutRegistry_KeepsHistoricalReadOnlyFallback()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         cut.Find("[data-testid='document-bold']").HasAttribute("disabled").Should().BeFalse(
             "bez registry platí historický fallback !ReadOnly (žádný breaking change pro standalone toolbar)");
 
-        var cutReadOnly = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cutReadOnly = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.ReadOnly, true));
         cutReadOnly.Find("[data-testid='document-bold']").HasAttribute("disabled").Should().BeTrue();
     }
@@ -129,7 +129,7 @@ public sealed class DocumentEditorCommandRegistrationTests : LocalizationTestBas
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedEmptyDocument(documentId);
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = Render<TmDocumentEditor>(parameters => parameters
             .Add(p => p.DocumentId, documentId)
             .Add(p => p.Provider, provider));
 

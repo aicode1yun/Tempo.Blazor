@@ -12,7 +12,7 @@ public class TmChipTests : LocalizationTestBase
     [Fact]
     public void Chip_RendersLabel()
     {
-        var cut = RenderComponent<TmChip>(p => p
+        var cut = Render<TmChip>(p => p
             .Add(x => x.Label, "Active"));
 
         cut.Find(".tm-chip").TextContent.Should().Contain("Active");
@@ -24,7 +24,7 @@ public class TmChipTests : LocalizationTestBase
     [InlineData(ChipVariant.Outlined, "tm-chip--outlined")]
     public void Chip_Variant_AppliesCss(ChipVariant variant, string expected)
     {
-        var cut = RenderComponent<TmChip>(p => p
+        var cut = Render<TmChip>(p => p
             .Add(x => x.Label, "Tag")
             .Add(x => x.Variant, variant));
 
@@ -34,7 +34,7 @@ public class TmChipTests : LocalizationTestBase
     [Fact]
     public void Chip_CustomColor_AppliesStyle()
     {
-        var cut = RenderComponent<TmChip>(p => p
+        var cut = Render<TmChip>(p => p
             .Add(x => x.Label, "Custom")
             .Add(x => x.Color, "#ff5722"));
 
@@ -45,7 +45,7 @@ public class TmChipTests : LocalizationTestBase
     [Fact]
     public void Chip_Removable_ShowsRemoveButton()
     {
-        var cut = RenderComponent<TmChip>(p => p
+        var cut = Render<TmChip>(p => p
             .Add(x => x.Label, "Tag")
             .Add(x => x.Removable, true));
 
@@ -56,7 +56,7 @@ public class TmChipTests : LocalizationTestBase
     public void Chip_RemoveClick_FiresOnRemove()
     {
         bool removed = false;
-        var cut = RenderComponent<TmChip>(p => p
+        var cut = Render<TmChip>(p => p
             .Add(x => x.Label, "Tag")
             .Add(x => x.Removable, true)
             .Add(x => x.OnRemove, EventCallback.Factory.Create(this, () => removed = true)));
@@ -69,7 +69,7 @@ public class TmChipTests : LocalizationTestBase
     public void Chip_Clickable_FiresOnClick()
     {
         bool clicked = false;
-        var cut = RenderComponent<TmChip>(p => p
+        var cut = Render<TmChip>(p => p
             .Add(x => x.Label, "Tag")
             .Add(x => x.Clickable, true)
             .Add(x => x.OnClick, EventCallback.Factory.Create(this, () => clicked = true)));
@@ -81,7 +81,7 @@ public class TmChipTests : LocalizationTestBase
     [Fact]
     public void Chip_Selected_HasSelectedClass()
     {
-        var cut = RenderComponent<TmChip>(p => p
+        var cut = Render<TmChip>(p => p
             .Add(x => x.Label, "Tag")
             .Add(x => x.Selected, true));
 
@@ -93,7 +93,7 @@ public class TmChipTests : LocalizationTestBase
     [InlineData(ChipSize.Md, "tm-chip--md")]
     public void Chip_Size_AppliesCss(ChipSize size, string expected)
     {
-        var cut = RenderComponent<TmChip>(p => p
+        var cut = Render<TmChip>(p => p
             .Add(x => x.Label, "Tag")
             .Add(x => x.Size, size));
 
@@ -103,7 +103,7 @@ public class TmChipTests : LocalizationTestBase
     [Fact]
     public void ChipGroup_RendersChildren()
     {
-        var cut = RenderComponent<TmChipGroup>(p => p
+        var cut = Render<TmChipGroup>(p => p
             .AddChildContent("<span class='test-child'>Child</span>"));
 
         cut.Find(".tm-chip-group").InnerHtml.Should().Contain("test-child");
@@ -112,7 +112,7 @@ public class TmChipTests : LocalizationTestBase
     [Fact]
     public void ChipGroup_CustomClass_IsApplied()
     {
-        var cut = RenderComponent<TmChipGroup>(p => p
+        var cut = Render<TmChipGroup>(p => p
             .Add(x => x.Class, "my-group")
             .AddChildContent("<span>Child</span>"));
 

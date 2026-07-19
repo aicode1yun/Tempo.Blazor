@@ -22,7 +22,7 @@ public class TmDialogCallbackTests : LocalizationTestBase
     {
         // Arrange
         bool? resultValue = null;
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, DialogType.Confirm)
             .Add(d => d.Title, "Confirm?")
@@ -41,7 +41,7 @@ public class TmDialogCallbackTests : LocalizationTestBase
     {
         // Arrange
         bool? resultValue = null;
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, DialogType.Confirm)
             .Add(d => d.Title, "Confirm?")
@@ -60,7 +60,7 @@ public class TmDialogCallbackTests : LocalizationTestBase
     {
         // Arrange
         string? promptResult = null;
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, DialogType.Prompt)
             .Add(d => d.Title, "Enter name")
@@ -84,7 +84,7 @@ public class TmDialogCallbackTests : LocalizationTestBase
         // Arrange
         bool promptResultFired = false;
         string? promptResult = "sentinel";
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, DialogType.Prompt)
             .Add(d => d.Title, "Enter name")

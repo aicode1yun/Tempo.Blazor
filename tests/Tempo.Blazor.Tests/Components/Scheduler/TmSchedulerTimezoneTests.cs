@@ -26,21 +26,21 @@ public class TmSchedulerTimezoneTests : LocalizationTestBase
     [Fact]
     public void ResolveTimeZone_NullId_ReturnsLocal()
     {
-        var cut = RenderComponent<TmScheduler>();
+        var cut = Render<TmScheduler>();
         cut.Instance.ResolveTimeZone().Should().Be(TimeZoneInfo.Local);
     }
 
     [Fact]
     public void ResolveTimeZone_KnownId_ReturnsThatZone()
     {
-        var cut = RenderComponent<TmScheduler>(p => p.Add(c => c.TimeZoneId, "Europe/Prague"));
+        var cut = Render<TmScheduler>(p => p.Add(c => c.TimeZoneId, "Europe/Prague"));
         cut.Instance.ResolveTimeZone().BaseUtcOffset.Should().Be(TimeSpan.FromHours(1)); // CET base
     }
 
     [Fact]
     public void ResolveTimeZone_InvalidId_FallsBackToLocal()
     {
-        var cut = RenderComponent<TmScheduler>(p => p.Add(c => c.TimeZoneId, "Not/AReal_Zone"));
+        var cut = Render<TmScheduler>(p => p.Add(c => c.TimeZoneId, "Not/AReal_Zone"));
         cut.Instance.ResolveTimeZone().Should().Be(TimeZoneInfo.Local);
     }
 
@@ -72,7 +72,7 @@ public class TmSchedulerTimezoneTests : LocalizationTestBase
     public void EventsPath_ExpandsRecurrence_ForPlainEvents()
     {
         // Regression: the plain Events path previously ignored RecurrenceRule (only the provider expanded).
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Month)
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 15))
             .Add(c => c.Events, new List<TmScheduleEvent>
@@ -100,7 +100,7 @@ public class TmSchedulerTimezoneTests : LocalizationTestBase
             Start = new DateTime(2025, 6, 10, 9, 0, 0),
             End = new DateTime(2025, 6, 10, 10, 0, 0)
         };
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Month)
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 15))
             .Add(c => c.Events, new List<TmScheduleEvent> { evt }));

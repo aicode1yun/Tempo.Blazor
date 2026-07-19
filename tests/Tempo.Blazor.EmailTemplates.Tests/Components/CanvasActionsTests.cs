@@ -10,7 +10,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.EmailTemplates.Tests.Components;
 
-public class CanvasActionsTests : TestContext
+public class CanvasActionsTests : BunitContext
 {
     public CanvasActionsTests()
     {
@@ -34,7 +34,7 @@ public class CanvasActionsTests : TestContext
     }
 
     private IRenderedComponent<TmEmailTemplateCanvas> Render(EmailTemplateDocument doc)
-        => RenderComponent<TmEmailTemplateCanvas>(p => p
+        => Render<TmEmailTemplateCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.OnDocumentChanged, () => { }));
 

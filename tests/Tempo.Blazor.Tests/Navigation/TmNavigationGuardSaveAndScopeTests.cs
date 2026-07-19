@@ -16,13 +16,13 @@ namespace Tempo.Blazor.Tests.Navigation;
 /// </summary>
 public class TmNavigationGuardSaveAndScopeTests : LocalizationTestBase
 {
-    private FakeNavigationManager Nav => Services.GetRequiredService<NavigationManager>() as FakeNavigationManager
-        ?? throw new InvalidOperationException("FakeNavigationManager not registered.");
+    private BunitNavigationManager Nav => Services.GetRequiredService<NavigationManager>() as BunitNavigationManager
+        ?? throw new InvalidOperationException("BunitNavigationManager not registered.");
 
     [Fact]
     public void ShouldGuard_ReturnsFalse_AllowsDirtyNavigationWithoutPrompt()
     {
-        var cut = RenderComponent<TmNavigationGuard>(p => p
+        var cut = Render<TmNavigationGuard>(p => p
             .Add(x => x.IsDirty, true)
             .Add(x => x.ShouldGuard, uri => !uri.Contains("/loss/", StringComparison.Ordinal)));
 
@@ -36,7 +36,7 @@ public class TmNavigationGuardSaveAndScopeTests : LocalizationTestBase
     [Fact]
     public void ShouldGuard_ReturnsTrue_StillGuardsDirtyNavigation()
     {
-        var cut = RenderComponent<TmNavigationGuard>(p => p
+        var cut = Render<TmNavigationGuard>(p => p
             .Add(x => x.IsDirty, true)
             .Add(x => x.ShouldGuard, _ => true));
 
@@ -50,7 +50,7 @@ public class TmNavigationGuardSaveAndScopeTests : LocalizationTestBase
     [Fact]
     public void SaveAndLeave_ThirdButton_NotRendered_WhenCallbackUnset()
     {
-        var cut = RenderComponent<TmNavigationGuard>(p => p.Add(x => x.IsDirty, true));
+        var cut = Render<TmNavigationGuard>(p => p.Add(x => x.IsDirty, true));
 
         Nav.NavigateTo("/next-page");
         cut.WaitForState(() => Nav.History.Count > 0);
@@ -62,7 +62,7 @@ public class TmNavigationGuardSaveAndScopeTests : LocalizationTestBase
     [Fact]
     public void SaveAndLeave_ThirdButton_Rendered_WhenCallbackSet()
     {
-        var cut = RenderComponent<TmNavigationGuard>(p => p
+        var cut = Render<TmNavigationGuard>(p => p
             .Add(x => x.IsDirty, true)
             .Add(x => x.OnSaveAndLeave, () => { })
             .Add(x => x.SaveAndLeaveText, "Save and leave"));
@@ -79,7 +79,7 @@ public class TmNavigationGuardSaveAndScopeTests : LocalizationTestBase
     public async Task SaveAndLeave_Click_InvokesCallbackThenReissuesNavigation()
     {
         var saved = false;
-        var cut = RenderComponent<TmNavigationGuard>(p => p
+        var cut = Render<TmNavigationGuard>(p => p
             .Add(x => x.IsDirty, true)
             .Add(x => x.OnSaveAndLeave, () => saved = true)
             .Add(x => x.SaveAndLeaveText, "Save and leave"));
@@ -102,7 +102,7 @@ public class TmNavigationGuardSaveAndScopeTests : LocalizationTestBase
     public async Task SaveAndLeave_Variant_Escape_Stays_WithoutReissuingNavigation()
     {
         var saved = false;
-        var cut = RenderComponent<TmNavigationGuard>(p => p
+        var cut = Render<TmNavigationGuard>(p => p
             .Add(x => x.IsDirty, true)
             .Add(x => x.OnSaveAndLeave, () => saved = true));
 

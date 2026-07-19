@@ -15,13 +15,13 @@ public sealed class DocumentEditorToolbarRenderGatingTests : LocalizationTestBas
     [Fact]
     public void Toolbar_DoesNotRerender_WhenParametersAreUnchanged()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.IsDirty, false)
             .Add(p => p.CanUndo, true)
             .Add(p => p.ZoomPercent, 100));
         var renders = cut.RenderCount;
 
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.IsDirty, false)
             .Add(p => p.CanUndo, true)
             .Add(p => p.ZoomPercent, 100));
@@ -38,10 +38,10 @@ public sealed class DocumentEditorToolbarRenderGatingTests : LocalizationTestBas
     [InlineData("ReadOnly")]
     public void Toolbar_Rerenders_WhenACriticalParameterChanges(string parameterName)
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         var renders = cut.RenderCount;
 
-        cut.SetParametersAndRender(parameters =>
+        cut.Render(parameters =>
         {
             switch (parameterName)
             {
@@ -59,7 +59,7 @@ public sealed class DocumentEditorToolbarRenderGatingTests : LocalizationTestBas
     [Fact]
     public void Toolbar_Rerenders_ForInternalUiStateChanges()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         // Internal state change through an event handler (ribbon tab switch) must still render.
         var insertTab = cut.Find("[data-testid='document-ribbon-tab-insert']");
@@ -71,7 +71,7 @@ public sealed class DocumentEditorToolbarRenderGatingTests : LocalizationTestBas
     [Fact]
     public async Task Toolbar_OverflowStateChange_StillRenders()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true, ["bold"]));
 
         cut.Find("[data-testid='document-toolbar-more']").HasAttribute("hidden")
@@ -81,13 +81,13 @@ public sealed class DocumentEditorToolbarRenderGatingTests : LocalizationTestBas
     [Fact]
     public void TmIcon_DoesNotRerender_ForIdenticalInputs()
     {
-        var cut = RenderComponent<TmIcon>(parameters => parameters
+        var cut = Render<TmIcon>(parameters => parameters
             .Add(p => p.Name, "check")
             .Add(p => p.Size, IconSize.Sm));
         var renders = cut.RenderCount;
         var markup = cut.Markup;
 
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.Name, "check")
             .Add(p => p.Size, IconSize.Sm));
 
@@ -98,16 +98,16 @@ public sealed class DocumentEditorToolbarRenderGatingTests : LocalizationTestBas
     [Fact]
     public void TmIcon_Rerenders_WhenNameOrSizeChanges()
     {
-        var cut = RenderComponent<TmIcon>(parameters => parameters
+        var cut = Render<TmIcon>(parameters => parameters
             .Add(p => p.Name, "check")
             .Add(p => p.Size, IconSize.Sm));
 
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.Name, "save")
             .Add(p => p.Size, IconSize.Sm));
         cut.Markup.Should().Contain("17 21 17 13 7 13 7 21", "the save glyph must render after the name change");
 
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.Name, "save")
             .Add(p => p.Size, IconSize.Lg));
         cut.Markup.Should().Contain("tm-icon-lg", "the size change must re-render the css class");

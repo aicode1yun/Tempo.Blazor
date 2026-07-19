@@ -13,7 +13,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     [Fact]
     public void Render_NoFields_ShowsEmptyState()
     {
-        var cut = RenderComponent<TmSigningFormRunner>();
+        var cut = Render<TmSigningFormRunner>();
 
         cut.Find(".tm-signing-form-runner__empty").TextContent.Should().Contain("No fields");
     }
@@ -21,7 +21,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     [Fact]
     public void Render_DocumentsOverlaysAndCurrentStep()
     {
-        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var cut = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Pages, [CreatePage()])
             .Add(p => p.Fields, [CreateField("name", "Name", SigningFieldType.Text)]));
 
@@ -33,7 +33,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     [Fact]
     public void ClickOverlay_SelectsMatchingStep()
     {
-        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var cut = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Pages, [CreatePage()])
             .Add(p => p.Fields,
             [
@@ -52,7 +52,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     {
         IReadOnlyDictionary<string, object?>? values = null;
         SigningStepItem? submitted = null;
-        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var cut = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Fields,
             [
                 CreateField("name", "Name", SigningFieldType.Text),
@@ -73,7 +73,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     [Fact]
     public void Next_RequiredMissing_StaysOnFirstInvalidField()
     {
-        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var cut = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Fields,
             [
                 CreateField("name", "Name", SigningFieldType.Text, required: true),
@@ -89,7 +89,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     [Fact]
     public void SkipOptional_AdvancesToNextStep()
     {
-        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var cut = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Fields,
             [
                 CreateField("middle", "Middle name", SigningFieldType.Text),
@@ -104,7 +104,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     [Fact]
     public void Complete_DisabledUntilRequiredValuesArePresent()
     {
-        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var cut = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Fields, [CreateField("name", "Name", SigningFieldType.Text, required: true)]));
 
         cut.Find(".tm-signing-form-runner__complete").HasAttribute("disabled").Should().BeTrue();
@@ -118,7 +118,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     public void SignatureStep_DrawModePersistsAfterValueCommit()
     {
         var signatureField = CreateField("signature", "Signature", SigningFieldType.Signature, required: true);
-        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var cut = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Pages, [CreatePage()])
             .Add(p => p.Fields, [signatureField]));
 
@@ -140,7 +140,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     [Fact]
     public void Complete_ErrorShowsValidationState()
     {
-        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var cut = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Fields, [CreateField("name", "Name", SigningFieldType.Text, required: true)])
             .Add(p => p.OnComplete, EventCallback.Factory.Create<IReadOnlyDictionary<string, object?>>(this, _ =>
             {
@@ -157,7 +157,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     public async Task Autosave_DebouncesAndShowsError()
     {
         var autosaves = 0;
-        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var cut = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Fields, [CreateField("name", "Name", SigningFieldType.Text)])
             .Add(p => p.AutoSaveDelay, TimeSpan.FromMilliseconds(20))
             .Add(p => p.OnAutoSave, EventCallback.Factory.Create<IReadOnlyDictionary<string, object?>>(this, _ =>
@@ -178,7 +178,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     [Fact]
     public void Loading_DisablesNavigation()
     {
-        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var cut = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Fields, [CreateField("name", "Name", SigningFieldType.Text)])
             .Add(p => p.IsLoading, true));
 
@@ -188,7 +188,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     [Fact]
     public void Completing_DisablesForwardNavigation()
     {
-        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var cut = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Fields,
             [
                 CreateField("name", "Name", SigningFieldType.Text),
@@ -202,7 +202,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     [Fact]
     public void MobileCollapsed_CanExpandAndMinimize()
     {
-        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var cut = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Fields, [CreateField("name", "Name", SigningFieldType.Text)])
             .Add(p => p.MobilePanelMode, TmSigningFormRunnerMobilePanelMode.Collapsed));
 
@@ -216,7 +216,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     [Fact]
     public void MobileCompleteTarget_AddsAvoidanceClass()
     {
-        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var cut = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Fields, [CreateField("name", "Name", SigningFieldType.Text)])
             .Add(p => p.MobileCompleteTargetSelector, "#fixed-complete"));
 
@@ -227,7 +227,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     [Fact]
     public void AccessibilityMode_ListsFieldsAndFocusesStep()
     {
-        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var cut = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Fields,
             [
                 CreateField("first", "First", SigningFieldType.Text, y: 0.1),
@@ -254,7 +254,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
         second.Labels.Translations["en"] = "Second name";
         second.Labels.Translations["cs"] = "Druhé jméno";
 
-        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var cut = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Fields, [first, second])
             .Add(p => p.Culture, "en")
             .Add(p => p.FallbackCulture, "en")
@@ -281,14 +281,14 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
     [Fact]
     public void LanguageSelector_IsHiddenWhenDisabledOrSingleCulture()
     {
-        var disabled = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var disabled = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Fields, [CreateField("name", "Name", SigningFieldType.Text)])
             .Add(p => p.SupportedCultures, ["en", "cs"])
             .Add(p => p.ShowLanguageSelector, false));
 
         disabled.FindAll(".tm-signing-form-runner__language-select").Should().BeEmpty();
 
-        var singleCulture = RenderComponent<TmSigningFormRunner>(parameters => parameters
+        var singleCulture = Render<TmSigningFormRunner>(parameters => parameters
             .Add(p => p.Fields, [CreateField("name", "Name", SigningFieldType.Text)])
             .Add(p => p.SupportedCultures, ["en"])
             .Add(p => p.ShowLanguageSelector, true));

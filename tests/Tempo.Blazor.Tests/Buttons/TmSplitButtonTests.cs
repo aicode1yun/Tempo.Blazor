@@ -13,7 +13,7 @@ public class TmSplitButtonTests : LocalizationTestBase
     [Fact]
     public void SplitButton_RendersPrimaryText()
     {
-        var cut = RenderComponent<TmSplitButton>(p => p
+        var cut = Render<TmSplitButton>(p => p
             .Add(x => x.Text, "Save"));
 
         cut.Find(".tm-split-button__text").TextContent.Should().Contain("Save");
@@ -23,7 +23,7 @@ public class TmSplitButtonTests : LocalizationTestBase
     public void SplitButton_PrimaryClick_FiresOnClick()
     {
         bool clicked = false;
-        var cut = RenderComponent<TmSplitButton>(p => p
+        var cut = Render<TmSplitButton>(p => p
             .Add(x => x.Text, "Save")
             .Add(x => x.OnClick, EventCallback.Factory.Create(this, () => clicked = true)));
 
@@ -35,7 +35,7 @@ public class TmSplitButtonTests : LocalizationTestBase
     [Fact]
     public void SplitButton_DropdownToggle_OpensMenu()
     {
-        var cut = RenderComponent<TmSplitButton>(p => p
+        var cut = Render<TmSplitButton>(p => p
             .Add(x => x.Text, "Save")
             .AddChildContent("<button role='menuitem'>Save as Draft</button>"));
 
@@ -49,7 +49,7 @@ public class TmSplitButtonTests : LocalizationTestBase
     [Fact]
     public void SplitButton_DropdownToggle_HasAriaHasPopup()
     {
-        var cut = RenderComponent<TmSplitButton>(p => p
+        var cut = Render<TmSplitButton>(p => p
             .Add(x => x.Text, "Save"));
 
         cut.Find(".tm-split-button__toggle").GetAttribute("aria-haspopup").Should().Be("true");
@@ -58,7 +58,7 @@ public class TmSplitButtonTests : LocalizationTestBase
     [Fact]
     public void SplitButton_Disabled_DisablesBothButtons()
     {
-        var cut = RenderComponent<TmSplitButton>(p => p
+        var cut = Render<TmSplitButton>(p => p
             .Add(x => x.Text, "Save")
             .Add(x => x.Disabled, true));
 
@@ -69,7 +69,7 @@ public class TmSplitButtonTests : LocalizationTestBase
     [Fact]
     public void SplitButton_Loading_ShowsSpinner()
     {
-        var cut = RenderComponent<TmSplitButton>(p => p
+        var cut = Render<TmSplitButton>(p => p
             .Add(x => x.Text, "Saving...")
             .Add(x => x.IsLoading, true));
 
@@ -79,7 +79,7 @@ public class TmSplitButtonTests : LocalizationTestBase
     [Fact]
     public void SplitButton_Variant_AppliesCss()
     {
-        var cut = RenderComponent<TmSplitButton>(p => p
+        var cut = Render<TmSplitButton>(p => p
             .Add(x => x.Text, "Save")
             .Add(x => x.Variant, ButtonVariant.Danger));
 
@@ -89,7 +89,7 @@ public class TmSplitButtonTests : LocalizationTestBase
     [Fact]
     public void SplitButton_Size_AppliesCss()
     {
-        var cut = RenderComponent<TmSplitButton>(p => p
+        var cut = Render<TmSplitButton>(p => p
             .Add(x => x.Text, "Save")
             .Add(x => x.Size, ButtonSize.Sm));
 
@@ -99,7 +99,7 @@ public class TmSplitButtonTests : LocalizationTestBase
     [Fact]
     public void SplitButton_Escape_ClosesDropdown()
     {
-        var cut = RenderComponent<TmSplitButton>(p => p
+        var cut = Render<TmSplitButton>(p => p
             .Add(x => x.Text, "Save")
             .AddChildContent("<button role='menuitem'>Draft</button>"));
 
@@ -114,7 +114,7 @@ public class TmSplitButtonTests : LocalizationTestBase
     [Fact]
     public void SplitButton_DropdownItems_Render()
     {
-        var cut = RenderComponent<TmSplitButton>(p => p
+        var cut = Render<TmSplitButton>(p => p
             .Add(x => x.Text, "Save")
             .AddChildContent("<button role='menuitem'>Save as Draft</button><button role='menuitem'>Save & Close</button>"));
 

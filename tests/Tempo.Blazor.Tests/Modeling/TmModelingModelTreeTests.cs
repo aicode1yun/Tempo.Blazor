@@ -11,7 +11,7 @@ public sealed class TmModelingModelTreeTests : LocalizationTestBase
     [Fact]
     public void Renders_node_for_each_model_element()
     {
-        using var cut = RenderComponent<TmModelingModelTree>(parameters => parameters
+        using var cut = Render<TmModelingModelTree>(parameters => parameters
             .Add(p => p.Elements, CreateElements()));
 
         cut.FindAll("[data-testid^='modeling-tree-node-']").Should().HaveCount(3);
@@ -20,7 +20,7 @@ public sealed class TmModelingModelTreeTests : LocalizationTestBase
     [Fact]
     public void Filter_narrows_visible_nodes_to_matches()
     {
-        using var cut = RenderComponent<TmModelingModelTree>(parameters => parameters
+        using var cut = Render<TmModelingModelTree>(parameters => parameters
             .Add(p => p.Elements, CreateElements()));
 
         cut.Find("[data-testid='modeling-tree-search']").Input("approve");
@@ -32,7 +32,7 @@ public sealed class TmModelingModelTreeTests : LocalizationTestBase
     [Fact]
     public void Empty_filter_restores_all_nodes()
     {
-        using var cut = RenderComponent<TmModelingModelTree>(parameters => parameters
+        using var cut = Render<TmModelingModelTree>(parameters => parameters
             .Add(p => p.Elements, CreateElements()));
 
         cut.Find("[data-testid='modeling-tree-search']").Input("approve");
@@ -44,7 +44,7 @@ public sealed class TmModelingModelTreeTests : LocalizationTestBase
     [Fact]
     public void Non_matching_filter_shows_empty_filter_state()
     {
-        using var cut = RenderComponent<TmModelingModelTree>(parameters => parameters
+        using var cut = Render<TmModelingModelTree>(parameters => parameters
             .Add(p => p.Elements, CreateElements()));
 
         cut.Find("[data-testid='modeling-tree-search']").Input("xxxx");
@@ -57,7 +57,7 @@ public sealed class TmModelingModelTreeTests : LocalizationTestBase
     public void Clicking_node_emits_selected_element()
     {
         ModelingElementDto? selected = null;
-        using var cut = RenderComponent<TmModelingModelTree>(parameters => parameters
+        using var cut = Render<TmModelingModelTree>(parameters => parameters
             .Add(p => p.Elements, CreateElements())
             .Add(p => p.OnElementSelected, EventCallback.Factory.Create<ModelingElementDto>(this, element => selected = element)));
 
@@ -71,7 +71,7 @@ public sealed class TmModelingModelTreeTests : LocalizationTestBase
     public void Dragstart_exposes_element_id_for_data_transfer_bridge()
     {
         ModelingElementDto? dragged = null;
-        using var cut = RenderComponent<TmModelingModelTree>(parameters => parameters
+        using var cut = Render<TmModelingModelTree>(parameters => parameters
             .Add(p => p.Elements, CreateElements())
             .Add(p => p.OnElementDragStarted, EventCallback.Factory.Create<ModelingElementDto>(this, element => dragged = element)));
 
@@ -92,7 +92,7 @@ public sealed class TmModelingModelTreeTests : LocalizationTestBase
     [Fact]
     public void Empty_model_shows_message_instead_of_blank_container()
     {
-        using var cut = RenderComponent<TmModelingModelTree>(parameters => parameters
+        using var cut = Render<TmModelingModelTree>(parameters => parameters
             .Add(p => p.Elements, Array.Empty<ModelingElementDto>()));
 
         cut.Find("[data-testid='modeling-model-tree']").Should().NotBeNull();
@@ -109,7 +109,7 @@ public sealed class TmModelingModelTreeTests : LocalizationTestBase
             Name = string.Empty
         }).ToArray();
 
-        using var cut = RenderComponent<TmModelingModelTree>(parameters => parameters
+        using var cut = Render<TmModelingModelTree>(parameters => parameters
             .Add(p => p.Elements, elements));
 
         cut.Find("[data-testid='modeling-tree-node-empty-name']").TextContent.Should().Contain("(Unnamed)");

@@ -20,7 +20,7 @@ public class TmDiagramEditorRulerTests : LocalizationTestBase
     public void DefaultState_RulersAreHidden()
     {
         var doc = new DiagramDocument();
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(e => e.Document, doc));
 
         var rulerElements = cut.FindAll(".tm-diagram-ruler");
@@ -31,7 +31,7 @@ public class TmDiagramEditorRulerTests : LocalizationTestBase
     public void ToggleRulersButton_ShowsRulers()
     {
         var doc = new DiagramDocument();
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(e => e.Document, doc));
 
         var toolbarButtons = cut.FindAll("button");
@@ -53,7 +53,7 @@ public class TmDiagramEditorRulerTests : LocalizationTestBase
     public void ToggleRulersButton_Twice_HidesRulers()
     {
         var doc = new DiagramDocument();
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(e => e.Document, doc));
 
         var toolbarButtons = cut.FindAll("button");

@@ -30,7 +30,7 @@ public class TmTimelineTests : LocalizationTestBase
     [Fact]
     public void TmTimeline_Renders_Timeline()
     {
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, MakeEntries()));
 
         cut.Find(".tm-timeline").Should().NotBeNull();
@@ -39,7 +39,7 @@ public class TmTimelineTests : LocalizationTestBase
     [Fact]
     public void TmTimeline_Renders_All_Public_Entries()
     {
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, MakeEntries())
             .Add(c => c.ShowInternal, false));
 
@@ -50,7 +50,7 @@ public class TmTimelineTests : LocalizationTestBase
     [Fact]
     public void TmTimeline_Internal_Hidden_By_Default()
     {
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, MakeEntries()));
 
         cut.FindAll(".tm-timeline-entry").Count.Should().Be(2);
@@ -59,7 +59,7 @@ public class TmTimelineTests : LocalizationTestBase
     [Fact]
     public void TmTimeline_ShowInternal_Shows_All_Entries()
     {
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, MakeEntries())
             .Add(c => c.ShowInternal, true));
 
@@ -69,7 +69,7 @@ public class TmTimelineTests : LocalizationTestBase
     [Fact]
     public void TmTimeline_Shows_Author_Name()
     {
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, MakeEntries())
             .Add(c => c.ShowInternal, false));
 
@@ -80,7 +80,7 @@ public class TmTimelineTests : LocalizationTestBase
     [Fact]
     public void TmTimeline_Shows_Entry_Content()
     {
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, MakeEntries())
             .Add(c => c.ShowInternal, false));
 

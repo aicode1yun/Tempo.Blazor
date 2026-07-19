@@ -10,7 +10,7 @@ public sealed class ReportDesignerPageTests : ReportServerWebTestBase
     {
         SignIn();
 
-        var cut = RenderComponent<ReportDesignerPage>(parameters => parameters
+        var cut = Render<ReportDesignerPage>(parameters => parameters
             .Add(component => component.ReportId, "sales-register"));
 
         cut.Find("[data-testid='f13-designer-page']").TextContent.Should().Contain("Sales Register");

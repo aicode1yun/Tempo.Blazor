@@ -18,7 +18,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
     [Fact]
     public void Renders_TimeGrid_Container()
     {
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, [new DateOnly(2025, 6, 10)]));
 
         cut.Find(".tm-scheduler-timegrid").Should().NotBeNull();
@@ -27,7 +27,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
     [Fact]
     public void Renders_Time_Labels()
     {
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, [new DateOnly(2025, 6, 10)]));
 
         var labels = cut.FindAll(".tm-scheduler-timegrid-time-label");
@@ -46,7 +46,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
             new DateOnly(2025, 6, 11),
         };
 
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, dates));
 
         cut.FindAll(".tm-scheduler-timegrid-col").Count.Should().Be(3);
@@ -61,7 +61,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
             new DateOnly(2025, 6, 10),
         };
 
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, dates));
 
         var headers = cut.FindAll(".tm-scheduler-timegrid-col-header");
@@ -71,7 +71,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
     [Fact]
     public void Renders_Time_Slots()
     {
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, [new DateOnly(2025, 6, 10)])
             .Add(c => c.SlotDuration, 30));
 
@@ -83,7 +83,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
     [Fact]
     public void Renders_AllDay_Row()
     {
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, [new DateOnly(2025, 6, 10)]));
 
         cut.Find(".tm-scheduler-timegrid-allday").Should().NotBeNull();
@@ -97,7 +97,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
             Evt("Conference", new DateTime(2025, 6, 10), new DateTime(2025, 6, 11), allDay: true)
         };
 
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, [new DateOnly(2025, 6, 10)])
             .Add(c => c.Events, events));
 
@@ -113,7 +113,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
             Evt("Meeting", new DateTime(2025, 6, 10, 14, 0, 0), new DateTime(2025, 6, 10, 15, 0, 0))
         };
 
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, [new DateOnly(2025, 6, 10)])
             .Add(c => c.Events, events));
 
@@ -130,7 +130,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
             Evt("Meeting", new DateTime(2025, 6, 10, 12, 0, 0), new DateTime(2025, 6, 10, 13, 0, 0))
         };
 
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, [new DateOnly(2025, 6, 10)])
             .Add(c => c.Events, events));
 
@@ -144,7 +144,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
     public void Slot_Click_Fires_OnSlotClick()
     {
         (DateTime Start, DateTime End)? slot = null;
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, [new DateOnly(2025, 6, 10)])
             .Add(c => c.SlotDuration, 30)
             .Add(c => c.OnSlotClick, EventCallback.Factory.Create<(DateTime, DateTime)>(this, s => slot = s)));
@@ -165,7 +165,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
             Evt("Standup", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 9, 30, 0))
         };
 
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, [new DateOnly(2025, 6, 10)])
             .Add(c => c.Events, events)
             .Add(c => c.OnEventClick, EventCallback.Factory.Create<TmScheduleEvent>(this, e => clicked = e)));
@@ -185,7 +185,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
             Evt("Event B", new DateTime(2025, 6, 10, 11, 0, 0), new DateTime(2025, 6, 10, 13, 0, 0)),
         };
 
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, [new DateOnly(2025, 6, 10)])
             .Add(c => c.Events, events));
 
@@ -209,7 +209,7 @@ public class TmSchedulerTimeGridTests : LocalizationTestBase
             Evt("Colored", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0), color: "#ff5722")
         };
 
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, [new DateOnly(2025, 6, 10)])
             .Add(c => c.Events, events));
 

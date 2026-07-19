@@ -35,7 +35,7 @@ public class TmDataImportTests : LocalizationTestBase
     private IRenderedComponent<TmDataImport> Render(
         IDataImportTarget target,
         Action<Bunit.ComponentParameterCollectionBuilder<TmDataImport>>? configure = null)
-        => RenderComponent<TmDataImport>(p =>
+        => Render<TmDataImport>(p =>
         {
             p.Add(x => x.Target, target);
             configure?.Invoke(p);

@@ -10,7 +10,7 @@ public class TmSpreadsheetSpecialPasteDialogTests : LocalizationTestBase
     [Fact]
     public void Renders_AllContentOptions_Localized()
     {
-        var cut = RenderComponent<TmSpreadsheetSpecialPasteDialog>();
+        var cut = Render<TmSpreadsheetSpecialPasteDialog>();
 
         var markup = cut.Markup;
         markup.Should().Contain("Paste special");
@@ -25,7 +25,7 @@ public class TmSpreadsheetSpecialPasteDialogTests : LocalizationTestBase
     public void Apply_DefaultsToAll_NoOperation()
     {
         SpreadsheetPasteSpecialOptions? applied = null;
-        var cut = RenderComponent<TmSpreadsheetSpecialPasteDialog>(p => p
+        var cut = Render<TmSpreadsheetSpecialPasteDialog>(p => p
             .Add(c => c.OnApply, EventCallback.Factory.Create<SpreadsheetPasteSpecialOptions>(this, o => applied = o)));
 
         cut.Find(".tm-spreadsheet-pastespecial__btn--ok").Click();
@@ -40,7 +40,7 @@ public class TmSpreadsheetSpecialPasteDialogTests : LocalizationTestBase
     public void Apply_ReflectsSelectedContent_AndTranspose()
     {
         SpreadsheetPasteSpecialOptions? applied = null;
-        var cut = RenderComponent<TmSpreadsheetSpecialPasteDialog>(p => p
+        var cut = Render<TmSpreadsheetSpecialPasteDialog>(p => p
             .Add(c => c.OnApply, EventCallback.Factory.Create<SpreadsheetPasteSpecialOptions>(this, o => applied = o)));
 
         // Select the "Values" radio (2nd option).

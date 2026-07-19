@@ -11,7 +11,7 @@ public class TmDateRangePickerTests : LocalizationTestBase
     [Fact]
     public void DateRangePicker_ShowsTwoCalendars()
     {
-        var cut = RenderComponent<TmDateRangePicker>();
+        var cut = Render<TmDateRangePicker>();
 
         // Open the picker first
         cut.Find(".tm-date-range-trigger").Click();
@@ -22,7 +22,7 @@ public class TmDateRangePickerTests : LocalizationTestBase
     [Fact]
     public void DateRangePicker_SelectStartDate_HighlightsIt()
     {
-        var cut = RenderComponent<TmDateRangePicker>();
+        var cut = Render<TmDateRangePicker>();
         cut.Find(".tm-date-range-trigger").Click();
 
         // Click first available day in left calendar
@@ -36,7 +36,7 @@ public class TmDateRangePickerTests : LocalizationTestBase
     [Fact]
     public void DateRangePicker_SelectEndDate_HighlightsRange()
     {
-        var cut = RenderComponent<TmDateRangePicker>();
+        var cut = Render<TmDateRangePicker>();
         cut.Find(".tm-date-range-trigger").Click();
 
         // Select start
@@ -51,7 +51,7 @@ public class TmDateRangePickerTests : LocalizationTestBase
     [Fact]
     public void DateRangePicker_Hover_ShowsPreviewRange()
     {
-        var cut = RenderComponent<TmDateRangePicker>();
+        var cut = Render<TmDateRangePicker>();
         cut.Find(".tm-date-range-trigger").Click();
 
         // Click start
@@ -69,7 +69,7 @@ public class TmDateRangePickerTests : LocalizationTestBase
     public void DateRangePicker_EndBeforeStart_SetsEndAsNewStart()
     {
         (DateOnly? s, DateOnly? e)? captured = null;
-        var cut = RenderComponent<TmDateRangePicker>(p => p
+        var cut = Render<TmDateRangePicker>(p => p
             .Add(c => c.ValueChanged, ((DateOnly? s, DateOnly? e) v) => captured = v)
             .Add(c => c.Value, (new DateOnly(2025, 6, 15), (DateOnly?)null)));
 
@@ -88,7 +88,7 @@ public class TmDateRangePickerTests : LocalizationTestBase
     {
         var start = new DateOnly(2025, 3, 1);
         var end   = new DateOnly(2025, 3, 31);
-        var cut   = RenderComponent<TmDateRangePicker>(p => p
+        var cut   = Render<TmDateRangePicker>(p => p
             .Add(c => c.Value, (start, end)));
 
         cut.Find(".tm-date-range-trigger").TextContent.Should().Contain("01");
@@ -99,7 +99,7 @@ public class TmDateRangePickerTests : LocalizationTestBase
     {
         (DateOnly? s, DateOnly? e)? captured = null;
         var presets = new[] { DateRangePresets.Today };
-        var cut = RenderComponent<TmDateRangePicker>(p => p
+        var cut = Render<TmDateRangePicker>(p => p
             .Add(c => c.ShowPresets,  true)
             .Add(c => c.Presets,      presets)
             .Add(c => c.ValueChanged, ((DateOnly? s, DateOnly? e) v) => captured = v));
@@ -116,7 +116,7 @@ public class TmDateRangePickerTests : LocalizationTestBase
     {
         var min = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 10);
         var max = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 20);
-        var cut = RenderComponent<TmDateRangePicker>(p => p
+        var cut = Render<TmDateRangePicker>(p => p
             .Add(c => c.MinDate, min)
             .Add(c => c.MaxDate, max));
 
@@ -129,7 +129,7 @@ public class TmDateRangePickerTests : LocalizationTestBase
     public void DateRangePicker_ClearButton_ClearsRange()
     {
         (DateOnly? s, DateOnly? e)? captured = null;
-        var cut = RenderComponent<TmDateRangePicker>(p => p
+        var cut = Render<TmDateRangePicker>(p => p
             .Add(c => c.Value,        (new DateOnly(2025, 1, 1), new DateOnly(2025, 1, 31)))
             .Add(c => c.ValueChanged, ((DateOnly? s, DateOnly? e) v) => captured = v));
 

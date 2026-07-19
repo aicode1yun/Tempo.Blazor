@@ -34,7 +34,7 @@ public sealed class TmNotionBlockListKeyTests : LocalizationTestBase
 
         // Prepend a block: every existing block shifts down by one index.
         var inserted = Paragraph("inserted");
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.Blocks, new List<IPageBlock> { inserted, first, second }));
 
         var after = cut.FindComponents<TmNotionBlock>()
@@ -58,7 +58,7 @@ public sealed class TmNotionBlockListKeyTests : LocalizationTestBase
             .Single(component => component.Instance.Block.Id == second.Id)
             .Instance;
 
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.Blocks, new List<IPageBlock> { second }));
 
         var afterSecond = cut.FindComponents<TmNotionBlock>()
@@ -78,7 +78,7 @@ public sealed class TmNotionBlockListKeyTests : LocalizationTestBase
         var before = cut.FindComponents<TmNotionBlock>()
             .ToDictionary(component => component.Instance.Block.Id, component => component.Instance);
 
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.Blocks, new List<IPageBlock> { second, first }));
 
         var after = cut.FindComponents<TmNotionBlock>()
@@ -97,7 +97,7 @@ public sealed class TmNotionBlockListKeyTests : LocalizationTestBase
             BlockProvider = Substitute.For<INotionBlockProvider>()
         };
 
-        return RenderComponent<TmNotionBlockList>(parameters => parameters
+        return Render<TmNotionBlockList>(parameters => parameters
             .AddCascadingValue(context)
             .Add(p => p.PageId, PageId)
             .Add(p => p.ReadOnly, true)

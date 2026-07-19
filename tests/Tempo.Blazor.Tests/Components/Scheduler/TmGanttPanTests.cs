@@ -24,7 +24,7 @@ public class TmGanttPanTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Pan_Dragging_Moves_Scroll()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var timeline = cut.Find(".tm-gantt__timeline");
@@ -58,7 +58,7 @@ public class TmGanttPanTests : LocalizationTestBase
     public void TmGantt_Pan_ClickOnBar_DoesNotPan()
     {
         TmWorkItem? selected = null;
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks())
             .Add(c => c.OnTaskSelected, t => selected = t));
 
@@ -82,7 +82,7 @@ public class TmGanttPanTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Pan_Adds_Panning_Class()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var timeline = cut.Find(".tm-gantt__timeline");

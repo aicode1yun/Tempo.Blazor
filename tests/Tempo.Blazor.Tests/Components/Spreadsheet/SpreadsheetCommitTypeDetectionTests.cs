@@ -67,7 +67,7 @@ public class SpreadsheetCommitTypeDetectionTests : LocalizationTestBase
     [Fact]
     public async Task Commit_NumberInput_StoresDoubleAndNumberType()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         await cut.InvokeAsync(() => cut.Instance.SetCellValue("A1", "123"));
 
         var cell = cut.Instance.Workbook.ActiveSheet!.Cells["A1"];
@@ -78,7 +78,7 @@ public class SpreadsheetCommitTypeDetectionTests : LocalizationTestBase
     [Fact]
     public async Task Commit_PercentInput_SetsImpliedFormat()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         await cut.InvokeAsync(() => cut.Instance.SetCellValue("A1", "50%"));
 
         var cell = cut.Instance.Workbook.ActiveSheet!.Cells["A1"];
@@ -90,7 +90,7 @@ public class SpreadsheetCommitTypeDetectionTests : LocalizationTestBase
     [Fact]
     public async Task Commit_ForcedText_KeepsLeadingZeros()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         await cut.InvokeAsync(() => cut.Instance.SetCellValue("A1", "'007"));
 
         var cell = cut.Instance.Workbook.ActiveSheet!.Cells["A1"];
@@ -101,7 +101,7 @@ public class SpreadsheetCommitTypeDetectionTests : LocalizationTestBase
     [Fact]
     public async Task Commit_FormulaInput_StillEvaluates()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         await cut.InvokeAsync(() =>
         {
             cut.Instance.SetCellValue("A1", "10");

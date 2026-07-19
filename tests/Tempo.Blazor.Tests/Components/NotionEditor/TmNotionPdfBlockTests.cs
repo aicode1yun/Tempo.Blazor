@@ -16,7 +16,7 @@ public class TmNotionPdfBlockTests : LocalizationTestBase
     [Fact]
     public void Render_WithUrl_DisplaysPdfViewer()
     {
-        var cut = RenderComponent<TmNotionPdfBlock>(parameters =>
+        var cut = Render<TmNotionPdfBlock>(parameters =>
             parameters.Add(p => p.Content, CreateContent("https://example.com/test.pdf")));
 
         cut.Find(".tm-pdf-viewer").Should().NotBeNull();
@@ -27,7 +27,7 @@ public class TmNotionPdfBlockTests : LocalizationTestBase
     [Fact]
     public void Render_PassesUrlToPdfViewer()
     {
-        var cut = RenderComponent<TmNotionPdfBlock>(parameters =>
+        var cut = Render<TmNotionPdfBlock>(parameters =>
             parameters.Add(p => p.Content, CreateContent("https://example.com/doc.pdf")));
 
         var openLink = cut.Find("a[target='_blank']");
@@ -39,7 +39,7 @@ public class TmNotionPdfBlockTests : LocalizationTestBase
     [Fact]
     public void Render_WithCaption_DisplaysCaptionArea()
     {
-        var cut = RenderComponent<TmNotionPdfBlock>(parameters =>
+        var cut = Render<TmNotionPdfBlock>(parameters =>
             parameters.Add(p => p.Content, CreateContent("https://example.com/test.pdf", "My caption"))
                       .Add(p => p.ReadOnly, false));
 
@@ -53,7 +53,7 @@ public class TmNotionPdfBlockTests : LocalizationTestBase
     [Fact]
     public void Render_WithoutUrl_DisplaysUploadZone()
     {
-        var cut = RenderComponent<TmNotionPdfBlock>(parameters =>
+        var cut = Render<TmNotionPdfBlock>(parameters =>
             parameters.Add(p => p.Content, CreateContent())
                       .Add(p => p.ReadOnly, false));
 
@@ -65,7 +65,7 @@ public class TmNotionPdfBlockTests : LocalizationTestBase
     [Fact]
     public void Render_WithoutUrl_ReadOnly_ShowsEmptyPlaceholder()
     {
-        var cut = RenderComponent<TmNotionPdfBlock>(parameters =>
+        var cut = Render<TmNotionPdfBlock>(parameters =>
             parameters.Add(p => p.Content, CreateContent())
                       .Add(p => p.ReadOnly, true));
 
@@ -78,7 +78,7 @@ public class TmNotionPdfBlockTests : LocalizationTestBase
     [Fact]
     public void Render_HasFocusHandler()
     {
-        var cut = RenderComponent<TmNotionPdfBlock>(parameters =>
+        var cut = Render<TmNotionPdfBlock>(parameters =>
             parameters.Add(p => p.Content, CreateContent("https://example.com/test.pdf")));
 
         var root = cut.Find(".tm-notion-pdf-block");

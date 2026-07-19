@@ -27,7 +27,7 @@ public class TmSchedulerWorkItemSourceTests : LocalizationTestBase
             }
         ]);
 
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Month)
             .Add(c => c.CurrentDate, today)
             .Add(c => c.WorkItemSource, provider));
@@ -49,7 +49,7 @@ public class TmSchedulerWorkItemSourceTests : LocalizationTestBase
                 Start = today.AddYears(1), End = today.AddYears(1).AddDays(2) }
         ]);
 
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Month)
             .Add(c => c.CurrentDate, today)
             .Add(c => c.WorkItemSource, provider));

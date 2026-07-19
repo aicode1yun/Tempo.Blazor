@@ -41,7 +41,7 @@ public class TmViewManagerTests : LocalizationTestBase
     public async Task ViewManager_LoadsViewsFromProvider()
     {
         var provider = BuildProvider();
-        var cut = RenderComponent<TmViewManager>(p => p
+        var cut = Render<TmViewManager>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.ViewContext, TestViewContext)
             .Add(c => c.CurrentUserId, TestUserId));
@@ -57,7 +57,7 @@ public class TmViewManagerTests : LocalizationTestBase
     {
         var provider = BuildProvider();
         DataTableView? applied = null;
-        var cut = RenderComponent<TmViewManager>(p => p
+        var cut = Render<TmViewManager>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.ViewContext, TestViewContext)
             .Add(c => c.CurrentUserId, TestUserId)
@@ -76,7 +76,7 @@ public class TmViewManagerTests : LocalizationTestBase
     public async Task ViewManager_DefaultView_MarkedWithStar()
     {
         var provider = BuildProvider();
-        var cut = RenderComponent<TmViewManager>(p => p
+        var cut = Render<TmViewManager>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.ViewContext, TestViewContext)
             .Add(c => c.CurrentUserId, TestUserId));
@@ -92,7 +92,7 @@ public class TmViewManagerTests : LocalizationTestBase
     public async Task ViewManager_SaveView_CallsProviderSaveViewAsync()
     {
         var provider = BuildProvider();
-        var cut = RenderComponent<TmViewManager>(p => p
+        var cut = Render<TmViewManager>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.ViewContext, TestViewContext)
             .Add(c => c.CurrentUserId, TestUserId)
@@ -125,7 +125,7 @@ public class TmViewManagerTests : LocalizationTestBase
     public async Task ViewManager_DeleteView_CallsProviderDeleteViewAsync()
     {
         var provider = BuildProvider();
-        var cut = RenderComponent<TmViewManager>(p => p
+        var cut = Render<TmViewManager>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.ViewContext, TestViewContext)
             .Add(c => c.CurrentUserId, TestUserId));
@@ -148,7 +148,7 @@ public class TmViewManagerTests : LocalizationTestBase
     public async Task ViewManager_TenantOption_HiddenWhenCanCreateTenantViewsFalse()
     {
         var provider = BuildProvider();
-        var cut = RenderComponent<TmViewManager>(p => p
+        var cut = Render<TmViewManager>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.ViewContext, TestViewContext)
             .Add(c => c.CurrentUserId, TestUserId)
@@ -173,7 +173,7 @@ public class TmViewManagerTests : LocalizationTestBase
     public async Task ViewManager_TenantOption_ShownWhenCanCreateTenantViewsTrue()
     {
         var provider = BuildProvider();
-        var cut = RenderComponent<TmViewManager>(p => p
+        var cut = Render<TmViewManager>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.ViewContext, TestViewContext)
             .Add(c => c.CurrentUserId, TestUserId)
@@ -205,7 +205,7 @@ public class TmViewManagerTests : LocalizationTestBase
                 Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns<DataTableView>(_ => throw new InvalidOperationException("Save failed"));
 
-        var cut = RenderComponent<TmViewManager>(p => p
+        var cut = Render<TmViewManager>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.ViewContext, TestViewContext)
             .Add(c => c.CurrentUserId, TestUserId)
@@ -244,7 +244,7 @@ public class TmViewManagerTests : LocalizationTestBase
                 Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(_ => throw new InvalidOperationException("Delete failed"));
 
-        var cut = RenderComponent<TmViewManager>(p => p
+        var cut = Render<TmViewManager>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.ViewContext, TestViewContext)
             .Add(c => c.CurrentUserId, TestUserId));

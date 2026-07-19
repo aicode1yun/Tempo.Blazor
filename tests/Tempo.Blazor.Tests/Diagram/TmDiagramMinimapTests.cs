@@ -16,7 +16,7 @@ public class TmDiagramMinimapTests : DiagramTestBase
         var doc = new DiagramDocument { Width = 800, Height = 600 };
         doc.Nodes.Add(new DiagramNode { Id = "n1", X = 10, Y = 20, W = 100, H = 80 });
 
-        var cut = RenderComponent<TmDiagramMinimap>(
+        var cut = Render<TmDiagramMinimap>(
             parameters => parameters.Add(p => p.Document, doc));
 
         var svg = cut.Find("svg");
@@ -30,7 +30,7 @@ public class TmDiagramMinimapTests : DiagramTestBase
         doc.Nodes.Add(new DiagramNode { Id = "n1", X = 10, Y = 20, W = 100, H = 80 });
         doc.Nodes.Add(new DiagramNode { Id = "n2", X = 200, Y = 50, W = 60, H = 40 });
 
-        var cut = RenderComponent<TmDiagramMinimap>(
+        var cut = Render<TmDiagramMinimap>(
             parameters => parameters.Add(p => p.Document, doc));
 
         var rects = cut.FindAll("rect.tm-diagram-minimap__node");
@@ -43,7 +43,7 @@ public class TmDiagramMinimapTests : DiagramTestBase
         var doc = new DiagramDocument { Width = 500, Height = 400 };
         doc.Nodes.Add(new DiagramNode { Id = "n1", X = 10, Y = 20, W = 100, H = 80 });
 
-        var cut = RenderComponent<TmDiagramMinimap>(
+        var cut = Render<TmDiagramMinimap>(
             parameters =>
             {
                 parameters.Add(p => p.Document, doc);
@@ -60,7 +60,7 @@ public class TmDiagramMinimapTests : DiagramTestBase
         var doc = new DiagramDocument { Width = 1000, Height = 800 };
         var vp = new DiagramMinimapViewport(100, 50, 400, 300);
 
-        var cut = RenderComponent<TmDiagramMinimap>(
+        var cut = Render<TmDiagramMinimap>(
             parameters =>
             {
                 parameters.Add(p => p.Document, doc);
@@ -81,7 +81,7 @@ public class TmDiagramMinimapTests : DiagramTestBase
         var vp = new DiagramMinimapViewport(100, 50, 400, 300);
         DiagramMinimapNavigateArgs? navigated = null;
 
-        var cut = RenderComponent<TmDiagramMinimap>(
+        var cut = Render<TmDiagramMinimap>(
             parameters =>
             {
                 parameters.Add(p => p.Document, doc);
@@ -103,7 +103,7 @@ public class TmDiagramMinimapTests : DiagramTestBase
         var doc = new DiagramDocument { Width = 1000, Height = 800 };
         var vp = new DiagramMinimapViewport(100, 50, 400, 300);
 
-        var cut = RenderComponent<TmDiagramMinimap>(
+        var cut = Render<TmDiagramMinimap>(
             parameters =>
             {
                 parameters.Add(p => p.Document, doc);

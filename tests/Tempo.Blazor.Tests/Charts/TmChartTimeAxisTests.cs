@@ -44,7 +44,7 @@ public class TmChartTimeAxisTests : LocalizationTestBase
             [new DateTime(2025, 1, 1), new DateTime(2025, 1, 2), new DateTime(2025, 1, 10)],
             [10, 20, 30]);
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, data));
 
@@ -68,7 +68,7 @@ public class TmChartTimeAxisTests : LocalizationTestBase
             [new DateTime(2025, 3, 1), new DateTime(2025, 1, 1), new DateTime(2025, 2, 1)],
             [30, 10, 20]);
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, data));
 
@@ -94,7 +94,7 @@ public class TmChartTimeAxisTests : LocalizationTestBase
             [new DateTime(2025, 5, 1), duplicate, duplicate],
             [10, 20, 40]);
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, data));
 
@@ -116,7 +116,7 @@ public class TmChartTimeAxisTests : LocalizationTestBase
         var points = Enumerable.Range(0, 12).Select(m => new DateTime(2025, 1, 15).AddMonths(m)).ToArray();
         var data = TimeData(points, Enumerable.Range(1, 12).Select(v => (double)v).ToArray());
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, data));
 
@@ -132,7 +132,7 @@ public class TmChartTimeAxisTests : LocalizationTestBase
         var points = Enumerable.Range(0, 12).Select(m => new DateTime(2025, 1, 15).AddMonths(m)).ToArray();
         var data = TimeData(points, Enumerable.Range(1, 12).Select(v => (double)v).ToArray());
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, data));
 
@@ -149,7 +149,7 @@ public class TmChartTimeAxisTests : LocalizationTestBase
         var points = Enumerable.Range(0, 15).Select(y => new DateTime(2010 + y, 6, 1)).ToArray();
         var data = TimeData(points, Enumerable.Range(1, 15).Select(v => (double)v).ToArray());
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, data));
 
@@ -167,7 +167,7 @@ public class TmChartTimeAxisTests : LocalizationTestBase
         var points = Enumerable.Range(0, 6).Select(h => start.AddHours(h)).ToArray();
         var data = TimeData(points, [1, 2, 3, 4, 5, 6]);
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, data));
 
@@ -183,7 +183,7 @@ public class TmChartTimeAxisTests : LocalizationTestBase
         var points = Enumerable.Range(0, 120).Select(d => start.AddDays(d)).ToArray();
         var data = TimeData(points, Enumerable.Range(1, 120).Select(v => (double)v).ToArray());
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, data));
 
@@ -198,7 +198,7 @@ public class TmChartTimeAxisTests : LocalizationTestBase
         var points = Enumerable.Range(0, 6).Select(m => new DateTime(2025, 1, 1).AddMonths(m)).ToArray();
         var data = TimeData(points, [1, 2, 3, 4, 5, 6]);
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, data)
             .Add(x => x.TimeLabelFormat, "yyyy-MM"));
@@ -215,7 +215,7 @@ public class TmChartTimeAxisTests : LocalizationTestBase
         var points = new[] { new DateTime(2025, 1, 1), new DateTime(2025, 4, 15), new DateTime(2025, 7, 1) };
         var data = TimeData(points, [10, 20, 30]);
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, data));
 
@@ -233,7 +233,7 @@ public class TmChartTimeAxisTests : LocalizationTestBase
     {
         var data = TimeData([new DateTime(2025, 5, 1)], [42]);
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, data));
 
@@ -251,7 +251,7 @@ public class TmChartTimeAxisTests : LocalizationTestBase
             [new DateTime(2025, 1, 1), new DateTime(2025, 1, 2), new DateTime(2025, 1, 10)],
             [10, 20, 30]);
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, data));
 
@@ -271,7 +271,7 @@ public class TmChartTimeAxisTests : LocalizationTestBase
         // Axis runs Jan 1 – Jan 21 (20 days); the single data point on Jan 11 sits mid-axis.
         var data = TimeData([new DateTime(2025, 1, 11)], [10]);
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, data)
             .Add(x => x.TimeAxisMin, new DateTime(2025, 1, 1))
@@ -293,7 +293,7 @@ public class TmChartTimeAxisTests : LocalizationTestBase
             Datasets = [new ChartDataset { Label = "S", Values = [1, 2, 3], Color = "#3b82f6" }]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, data));
 
@@ -319,7 +319,7 @@ public class TmChartTimeAxisTests : LocalizationTestBase
             Datasets = [new ChartDataset { Label = "S", Values = [], Color = "#3b82f6" }]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, data));
 

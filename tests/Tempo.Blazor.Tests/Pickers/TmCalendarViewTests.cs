@@ -11,7 +11,7 @@ public class TmCalendarViewTests : LocalizationTestBase
     [Fact]
     public void CalendarView_Renders_MonthGrid()
     {
-        var cut = RenderComponent<TmCalendarView>();
+        var cut = Render<TmCalendarView>();
 
         cut.Find(".tm-calendar-view").Should().NotBeNull();
         // Month grid should have 42 day cells (6 rows × 7 cols)
@@ -21,7 +21,7 @@ public class TmCalendarViewTests : LocalizationTestBase
     [Fact]
     public void CalendarView_ShowsWeekdayHeaders()
     {
-        var cut = RenderComponent<TmCalendarView>();
+        var cut = Render<TmCalendarView>();
 
         cut.FindAll(".tm-cal-header-cell").Count.Should().Be(7);
     }
@@ -29,7 +29,7 @@ public class TmCalendarViewTests : LocalizationTestBase
     [Fact]
     public void CalendarView_ShowsMonthNavigation()
     {
-        var cut = RenderComponent<TmCalendarView>();
+        var cut = Render<TmCalendarView>();
 
         cut.Find(".tm-cal-nav").Should().NotBeNull();
         cut.FindAll(".tm-cal-nav-btn").Count.Should().Be(2);
@@ -38,7 +38,7 @@ public class TmCalendarViewTests : LocalizationTestBase
     [Fact]
     public void CalendarView_NavigatePreviousMonth()
     {
-        var cut = RenderComponent<TmCalendarView>();
+        var cut = Render<TmCalendarView>();
 
         var title = cut.Find(".tm-cal-title").TextContent;
         cut.Find(".tm-cal-prev").Click();
@@ -50,7 +50,7 @@ public class TmCalendarViewTests : LocalizationTestBase
     [Fact]
     public void CalendarView_NavigateNextMonth()
     {
-        var cut = RenderComponent<TmCalendarView>();
+        var cut = Render<TmCalendarView>();
 
         var title = cut.Find(".tm-cal-title").TextContent;
         cut.Find(".tm-cal-next").Click();
@@ -63,7 +63,7 @@ public class TmCalendarViewTests : LocalizationTestBase
     public void CalendarView_SelectedDate_Highlights()
     {
         var date = new DateOnly(2025, 6, 15);
-        var cut = RenderComponent<TmCalendarView>(p => p
+        var cut = Render<TmCalendarView>(p => p
             .Add(x => x.SelectedDate, date));
 
         cut.FindAll(".tm-cal-day--selected").Count.Should().Be(1);
@@ -73,7 +73,7 @@ public class TmCalendarViewTests : LocalizationTestBase
     public void CalendarView_DateClick_FiresCallback()
     {
         DateOnly? clicked = null;
-        var cut = RenderComponent<TmCalendarView>(p => p
+        var cut = Render<TmCalendarView>(p => p
             .Add(x => x.OnDateClick, d => clicked = d));
 
         // Click a day cell (skip other-month days, find one in current month)
@@ -92,7 +92,7 @@ public class TmCalendarViewTests : LocalizationTestBase
             new() { Date = new DateOnly(2025, 6, 20), Title = "Deadline" }
         };
 
-        var cut = RenderComponent<TmCalendarView>(p => p
+        var cut = Render<TmCalendarView>(p => p
             .Add(x => x.SelectedDate, new DateOnly(2025, 6, 1))
             .Add(x => x.Events, events));
 
@@ -106,7 +106,7 @@ public class TmCalendarViewTests : LocalizationTestBase
         var evt = new CalendarEvent { Date = new DateOnly(2025, 6, 10), Title = "Meeting" };
         var events = new List<CalendarEvent> { evt };
 
-        var cut = RenderComponent<TmCalendarView>(p => p
+        var cut = Render<TmCalendarView>(p => p
             .Add(x => x.SelectedDate, new DateOnly(2025, 6, 1))
             .Add(x => x.Events, events)
             .Add(x => x.OnEventClick, e => clicked = e));
@@ -126,7 +126,7 @@ public class TmCalendarViewTests : LocalizationTestBase
             new DateOnly(2025, 6, 25)
         };
 
-        var cut = RenderComponent<TmCalendarView>(p => p
+        var cut = Render<TmCalendarView>(p => p
             .Add(x => x.SelectedDate, new DateOnly(2025, 6, 1))
             .Add(x => x.HighlightedDates, highlighted));
 
@@ -136,7 +136,7 @@ public class TmCalendarViewTests : LocalizationTestBase
     [Fact]
     public void CalendarView_MinMaxDate_DisablesDays()
     {
-        var cut = RenderComponent<TmCalendarView>(p => p
+        var cut = Render<TmCalendarView>(p => p
             .Add(x => x.SelectedDate, new DateOnly(2025, 6, 15))
             .Add(x => x.MinDate, new DateOnly(2025, 6, 10))
             .Add(x => x.MaxDate, new DateOnly(2025, 6, 20)));
@@ -148,7 +148,7 @@ public class TmCalendarViewTests : LocalizationTestBase
     [Fact]
     public void CalendarView_TodayHighlight()
     {
-        var cut = RenderComponent<TmCalendarView>();
+        var cut = Render<TmCalendarView>();
 
         // Today should be highlighted (assuming we're rendering current month)
         cut.FindAll(".tm-cal-day--today").Count.Should().BeGreaterThanOrEqualTo(1);
@@ -157,7 +157,7 @@ public class TmCalendarViewTests : LocalizationTestBase
     [Fact]
     public void CalendarView_CustomClass()
     {
-        var cut = RenderComponent<TmCalendarView>(p => p
+        var cut = Render<TmCalendarView>(p => p
             .Add(x => x.Class, "my-calendar"));
 
         cut.Find(".tm-calendar-view").ClassList.Should().Contain("my-calendar");
@@ -171,7 +171,7 @@ public class TmCalendarViewTests : LocalizationTestBase
             new() { Date = new DateOnly(2025, 6, 10), Title = "Meeting", Color = "#ef4444" }
         };
 
-        var cut = RenderComponent<TmCalendarView>(p => p
+        var cut = Render<TmCalendarView>(p => p
             .Add(x => x.SelectedDate, new DateOnly(2025, 6, 1))
             .Add(x => x.Events, events));
 

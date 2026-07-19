@@ -46,7 +46,7 @@ public class TmNotionTokenDropdownTests : LocalizationTestBase
     public void TokenDropdown_WhenNotVisible_RendersNothing()
     {
         var ctx = BuildContext(ProviderWith());
-        var cut = RenderComponent<TmNotionTokenDropdown>(p => p
+        var cut = Render<TmNotionTokenDropdown>(p => p
             .Add(x => x.Visible, false)
             .Add(x => x.Top, 100)
             .Add(x => x.Left, 200)
@@ -67,7 +67,7 @@ public class TmNotionTokenDropdownTests : LocalizationTestBase
         };
         var ctx = BuildContext(ProviderWith(tokens));
 
-        var cut = RenderComponent<TmNotionTokenDropdown>(p => p
+        var cut = Render<TmNotionTokenDropdown>(p => p
             .Add(x => x.Visible, true)
             .Add(x => x.Top, 100)
             .Add(x => x.Left, 200)
@@ -95,7 +95,7 @@ public class TmNotionTokenDropdownTests : LocalizationTestBase
 
         (string Key, string DisplayName, string? ColorClass) selected = default;
 
-        var cut = RenderComponent<TmNotionTokenDropdown>(p => p
+        var cut = Render<TmNotionTokenDropdown>(p => p
             .Add(x => x.Visible, true)
             .Add(x => x.Top, 100)
             .Add(x => x.Left, 200)
@@ -122,7 +122,7 @@ public class TmNotionTokenDropdownTests : LocalizationTestBase
         var ctx = BuildContext(ProviderWith());
         var closedFired = false;
 
-        var cut = RenderComponent<TmNotionTokenDropdown>(p => p
+        var cut = Render<TmNotionTokenDropdown>(p => p
             .Add(x => x.Visible, true)
             .Add(x => x.Top, 100)
             .Add(x => x.Left, 200)
@@ -146,7 +146,7 @@ public class TmNotionTokenDropdownTests : LocalizationTestBase
         var ctx = BuildContext(ProviderWith());
         var closedFired = false;
 
-        var cut = RenderComponent<TmNotionTokenDropdown>(p => p
+        var cut = Render<TmNotionTokenDropdown>(p => p
             .Add(x => x.Visible, true)
             .Add(x => x.Top, 100)
             .Add(x => x.Left, 200)

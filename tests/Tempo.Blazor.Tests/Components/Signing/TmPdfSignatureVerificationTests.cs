@@ -13,7 +13,7 @@ public class TmPdfSignatureVerificationTests : LocalizationTestBase
     public void Render_EmptyUploadState()
     {
         var requested = false;
-        var cut = RenderComponent<TmPdfSignatureVerification>(parameters => parameters
+        var cut = Render<TmPdfSignatureVerification>(parameters => parameters
             .Add(p => p.OnVerifyRequested, EventCallback.Factory.Create(this, () => requested = true)));
 
         cut.Markup.Should().Contain("Verify a signed PDF");
@@ -29,7 +29,7 @@ public class TmPdfSignatureVerificationTests : LocalizationTestBase
     [InlineData(SigningPdfVerificationStatus.MalformedPdf, "Malformed PDF")]
     public void Render_StatusStates(SigningPdfVerificationStatus status, string expected)
     {
-        var cut = RenderComponent<TmPdfSignatureVerification>(parameters => parameters
+        var cut = Render<TmPdfSignatureVerification>(parameters => parameters
             .Add(p => p.Result, new SigningPdfVerificationResult { Status = status }));
 
         cut.Markup.Should().Contain(expected);
@@ -39,7 +39,7 @@ public class TmPdfSignatureVerificationTests : LocalizationTestBase
     [Fact]
     public void Render_VerifiedDetailsAndSignatures()
     {
-        var cut = RenderComponent<TmPdfSignatureVerification>(parameters => parameters
+        var cut = Render<TmPdfSignatureVerification>(parameters => parameters
             .Add(p => p.Result, new SigningPdfVerificationResult
             {
                 Status = SigningPdfVerificationStatus.Verified,
@@ -66,7 +66,7 @@ public class TmPdfSignatureVerificationTests : LocalizationTestBase
     [Fact]
     public void Render_VerificationDataIsIndependentFromSigningFieldLocalization()
     {
-        var cut = RenderComponent<TmPdfSignatureVerification>(parameters => parameters
+        var cut = Render<TmPdfSignatureVerification>(parameters => parameters
             .Add(p => p.Result, new SigningPdfVerificationResult
             {
                 Status = SigningPdfVerificationStatus.ChecksumNotFound,

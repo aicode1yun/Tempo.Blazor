@@ -1,3 +1,4 @@
+using Bunit.Rendering;
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
@@ -13,15 +14,15 @@ public class SigningAccessibilityTests : LocalizationTestBase
     [Fact]
     public void IconOnlyButtons_HaveAccessibleNames()
     {
-        var fieldEditor = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var fieldEditor = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateChoiceField()));
         AssertIconOnlyButtonsHaveAccessibleNames(fieldEditor);
 
-        var roles = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var roles = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, CreateRoles()));
         AssertIconOnlyButtonsHaveAccessibleNames(roles);
 
-        var conditions = RenderComponent<TmConditionBuilder>(parameters =>
+        var conditions = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateConditionFields())
                       .Add(p => p.CurrentFieldUuid, "target")
                       .Add(p => p.Conditions, [
@@ -34,7 +35,7 @@ public class SigningAccessibilityTests : LocalizationTestBase
     [Fact]
     public void FieldOverlay_InvalidState_UsesAriaInvalid()
     {
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateTextField())
                       .Add(p => p.Invalid, true));
 
@@ -47,7 +48,7 @@ public class SigningAccessibilityTests : LocalizationTestBase
         var field = CreateTextField();
         field.Labels.Translations["cs"] = "Celé jméno";
 
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, field)
                       .Add(p => p.Culture, "cs-CZ"));
 
@@ -64,7 +65,7 @@ public class SigningAccessibilityTests : LocalizationTestBase
             Messages = { Translations = { ["cs"] = "Jméno je povinné." } }
         };
 
-        var cut = RenderComponent<TmSigningTextStep>(parameters =>
+        var cut = Render<TmSigningTextStep>(parameters =>
             parameters.Add(p => p.Field, field)
                       .Add(p => p.Culture, "cs-CZ"));
 
@@ -80,7 +81,7 @@ public class SigningAccessibilityTests : LocalizationTestBase
     public void FieldOverlay_EnterKey_InvokesSelection()
     {
         var invoked = false;
-        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+        var cut = Render<TmSigningFieldOverlay>(parameters =>
             parameters.Add(p => p.Field, CreateTextField())
                       .Add(p => p.OnClick, EventCallback.Factory.Create<TmSigningFieldOverlayPointerEventArgs>(this, _ => invoked = true)));
 
@@ -92,7 +93,7 @@ public class SigningAccessibilityTests : LocalizationTestBase
     [Fact]
     public void RunnerProgress_HasAriaLabel()
     {
-        var cut = RenderComponent<TmSigningFormRunner>(parameters =>
+        var cut = Render<TmSigningFormRunner>(parameters =>
             parameters.Add(p => p.Fields, [CreateTextField()]));
 
         cut.Find(".tm-signing-form-runner__progress")
@@ -140,7 +141,8 @@ public class SigningAccessibilityTests : LocalizationTestBase
         hardcodedColors.Should().BeEmpty("signing CSS should stay token-driven and avoid a one-note hardcoded palette");
     }
 
-    private static void AssertIconOnlyButtonsHaveAccessibleNames(IRenderedFragment fragment)
+    private static void AssertIconOnlyButtonsHaveAccessibleNames<TComponent>(IRenderedComponent<TComponent> fragment)
+        where TComponent : Microsoft.AspNetCore.Components.IComponent
     {
         var buttons = fragment.FindAll("button")
             .Where(button => string.IsNullOrWhiteSpace(button.TextContent)

@@ -12,7 +12,7 @@ public class TmCopyButtonTests : LocalizationTestBase
     [Fact]
     public void CopyButton_Renders()
     {
-        var cut = RenderComponent<TmCopyButton>(p => p
+        var cut = Render<TmCopyButton>(p => p
             .Add(x => x.Text, "copy me"));
 
         cut.Find(".tm-copy-button").Should().NotBeNull();
@@ -21,7 +21,7 @@ public class TmCopyButtonTests : LocalizationTestBase
     [Fact]
     public void CopyButton_HasAriaLabel()
     {
-        var cut = RenderComponent<TmCopyButton>(p => p
+        var cut = Render<TmCopyButton>(p => p
             .Add(x => x.Text, "copy me"));
 
         cut.Find(".tm-copy-button").GetAttribute("aria-label").Should().NotBeNullOrEmpty();
@@ -30,7 +30,7 @@ public class TmCopyButtonTests : LocalizationTestBase
     [Fact]
     public void CopyButton_HasCopyIcon()
     {
-        var cut = RenderComponent<TmCopyButton>(p => p
+        var cut = Render<TmCopyButton>(p => p
             .Add(x => x.Text, "copy me"));
 
         // Should have an SVG icon
@@ -40,7 +40,7 @@ public class TmCopyButtonTests : LocalizationTestBase
     [Fact]
     public void CopyButton_CustomClass_IsApplied()
     {
-        var cut = RenderComponent<TmCopyButton>(p => p
+        var cut = Render<TmCopyButton>(p => p
             .Add(x => x.Text, "copy me")
             .Add(x => x.Class, "my-copy"));
 
@@ -53,7 +53,7 @@ public class TmCopyButtonTests : LocalizationTestBase
         // Use bUnit's JSInterop to mock clipboard call
         JSInterop.SetupVoid("navigator.clipboard.writeText", "copy me").SetVoidResult();
 
-        var cut = RenderComponent<TmCopyButton>(p => p
+        var cut = Render<TmCopyButton>(p => p
             .Add(x => x.Text, "copy me"));
 
         cut.Find(".tm-copy-button").Click();

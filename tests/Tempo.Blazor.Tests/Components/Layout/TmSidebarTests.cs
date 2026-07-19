@@ -19,7 +19,7 @@ public class TmSidebarTests : LocalizationTestBase
     [Fact]
     public void TmSidebar_Has_Base_CssClass()
     {
-        var cut = RenderComponent<TmSidebar>(p => p
+        var cut = Render<TmSidebar>(p => p
             .Add(c => c.Items, SampleItems));
 
         cut.Find("aside").ClassList.Should().Contain("tm-sidebar");
@@ -28,7 +28,7 @@ public class TmSidebarTests : LocalizationTestBase
     [Fact]
     public void TmSidebar_Expanded_By_Default()
     {
-        var cut = RenderComponent<TmSidebar>(p => p
+        var cut = Render<TmSidebar>(p => p
             .Add(c => c.Items, SampleItems));
 
         cut.Find("aside").ClassList.Should().Contain("tm-sidebar-expanded");
@@ -37,7 +37,7 @@ public class TmSidebarTests : LocalizationTestBase
     [Fact]
     public void TmSidebar_Collapsed_Adds_Collapsed_CssClass()
     {
-        var cut = RenderComponent<TmSidebar>(p => p
+        var cut = Render<TmSidebar>(p => p
             .Add(c => c.Collapsed, true)
             .Add(c => c.Items, SampleItems));
 
@@ -47,7 +47,7 @@ public class TmSidebarTests : LocalizationTestBase
     [Fact]
     public void TmSidebar_Renders_Nav_Items()
     {
-        var cut = RenderComponent<TmSidebar>(p => p
+        var cut = Render<TmSidebar>(p => p
             .Add(c => c.Items, SampleItems));
 
         cut.FindAll(".tm-sidebar-nav-item").Count.Should().Be(2);
@@ -56,7 +56,7 @@ public class TmSidebarTests : LocalizationTestBase
     [Fact]
     public void TmSidebar_Active_Item_Has_Active_CssClass()
     {
-        var cut = RenderComponent<TmSidebar>(p => p
+        var cut = Render<TmSidebar>(p => p
             .Add(c => c.Items, SampleItems));
 
         var items = cut.FindAll(".tm-sidebar-nav-item");
@@ -66,7 +66,7 @@ public class TmSidebarTests : LocalizationTestBase
     [Fact]
     public void TmSidebar_Badge_Renders_When_BadgeCount_Set()
     {
-        var cut = RenderComponent<TmSidebar>(p => p
+        var cut = Render<TmSidebar>(p => p
             .Add(c => c.Items, SampleItems));
 
         cut.FindAll(".tm-sidebar-badge").Should().NotBeEmpty();
@@ -76,7 +76,7 @@ public class TmSidebarTests : LocalizationTestBase
     public void TmSidebar_Toggle_Button_Fires_OnToggle()
     {
         var toggled = false;
-        var cut = RenderComponent<TmSidebar>(p => p
+        var cut = Render<TmSidebar>(p => p
             .Add(c => c.Items, SampleItems)
             .Add(c => c.OnToggle, EventCallback.Factory.Create(this, () => toggled = true)));
 

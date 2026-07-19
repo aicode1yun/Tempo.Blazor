@@ -13,14 +13,14 @@ public class TmQueryInputLocalizationTests : LocalizationTestBase
     [Fact]
     public void QueryInput_DefaultPlaceholder_UsesLocalizer_English()
     {
-        var cut = RenderComponent<TmQueryInput>();
+        var cut = Render<TmQueryInput>();
         cut.Find(".tm-query-input__input").GetAttribute("placeholder").Should().Be("Type a query…");
     }
 
     [Fact]
     public void QueryInput_ExplicitPlaceholder_Overrides()
     {
-        var cut = RenderComponent<TmQueryInput>(p => p.Add(c => c.Placeholder, "status = ..."));
+        var cut = Render<TmQueryInput>(p => p.Add(c => c.Placeholder, "status = ..."));
         cut.Find(".tm-query-input__input").GetAttribute("placeholder").Should().Be("status = ...");
     }
 
@@ -28,7 +28,7 @@ public class TmQueryInputLocalizationTests : LocalizationTestBase
     public void QueryInput_DefaultPlaceholder_UsesLocalizer_Czech()
     {
         UseCzechLocalization();
-        var cut = RenderComponent<TmQueryInput>();
+        var cut = Render<TmQueryInput>();
         cut.Find(".tm-query-input__input").GetAttribute("placeholder").Should().Be("Zadejte dotaz…");
     }
 
@@ -36,7 +36,7 @@ public class TmQueryInputLocalizationTests : LocalizationTestBase
     public void QueryInput_EmptyState_UsesLocalizer_Czech()
     {
         UseCzechLocalization();
-        var cut = RenderComponent<TmQueryInput>(p => p
+        var cut = Render<TmQueryInput>(p => p
             .Add(c => c.DebounceMs, 0)
             .Add(c => c.SuggestionsProvider, Empty));
 

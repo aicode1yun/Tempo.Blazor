@@ -42,7 +42,7 @@ public sealed class TmNotionPagePropertiesBlockTests : LocalizationTestBase
             Rows = [new PagePropertyRow { Key = "Status", ValueHtml = "Green" }]
         };
 
-        var cut = RenderComponent<TmNotionPagePropertiesBlock>(parameters => parameters
+        var cut = Render<TmNotionPagePropertiesBlock>(parameters => parameters
             .Add(component => component.Block, MakeBlock(BlockType.PageProperties, content))
             .Add(component => component.Content, content)
             .Add(component => component.OnContentChanged, EventCallback.Factory.Create<PagePropertiesBlockContent>(
@@ -65,7 +65,7 @@ public sealed class TmNotionPagePropertiesBlockTests : LocalizationTestBase
         PagePropertiesBlockContent? changed = null;
         var content = new PagePropertiesBlockContent();
 
-        var cut = RenderComponent<TmNotionPagePropertiesBlock>(parameters => parameters
+        var cut = Render<TmNotionPagePropertiesBlock>(parameters => parameters
             .Add(component => component.Block, MakeBlock(BlockType.PageProperties, content))
             .Add(component => component.Content, content)
             .Add(component => component.OnContentChanged, EventCallback.Factory.Create<PagePropertiesBlockContent>(
@@ -151,7 +151,7 @@ public sealed class TmNotionPagePropertiesBlockTests : LocalizationTestBase
             NavigateTo = _ => Task.CompletedTask
         };
 
-        return RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        return Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(component => component.Value, context)
             .AddChildContent<TmNotionPagePropertiesReportBlock>(child => child
                 .Add(component => component.Block, MakeBlock(BlockType.PagePropertiesReport, content))

@@ -10,7 +10,7 @@ public class TmToolbarButtonTests : LocalizationTestBase
     [Fact]
     public void ToolbarButton_RendersText()
     {
-        var cut = RenderComponent<TmToolbarButton>(p => p.Add(c => c.Text, "Export"));
+        var cut = Render<TmToolbarButton>(p => p.Add(c => c.Text, "Export"));
 
         cut.Find(".tm-toolbar-btn").TextContent.Trim().Should().Contain("Export");
     }
@@ -18,7 +18,7 @@ public class TmToolbarButtonTests : LocalizationTestBase
     [Fact]
     public void ToolbarButton_WithIcon_RendersIcon()
     {
-        var cut = RenderComponent<TmToolbarButton>(p => p
+        var cut = Render<TmToolbarButton>(p => p
             .Add(c => c.Text, "Download")
             .Add(c => c.Icon, "download"));
 
@@ -28,7 +28,7 @@ public class TmToolbarButtonTests : LocalizationTestBase
     [Fact]
     public void ToolbarButton_IconOnly_NoText()
     {
-        var cut = RenderComponent<TmToolbarButton>(p => p
+        var cut = Render<TmToolbarButton>(p => p
             .Add(c => c.Icon, "download")
             .Add(c => c.Tooltip, "Download"));
 
@@ -39,7 +39,7 @@ public class TmToolbarButtonTests : LocalizationTestBase
     public void ToolbarButton_Click_FiresCallback()
     {
         var clicked = false;
-        var cut = RenderComponent<TmToolbarButton>(p => p
+        var cut = Render<TmToolbarButton>(p => p
             .Add(c => c.Text,    "Click me")
             .Add(c => c.OnClick, () => clicked = true));
 
@@ -51,7 +51,7 @@ public class TmToolbarButtonTests : LocalizationTestBase
     [Fact]
     public void ToolbarButton_Disabled_IsDisabled()
     {
-        var cut = RenderComponent<TmToolbarButton>(p => p
+        var cut = Render<TmToolbarButton>(p => p
             .Add(c => c.Text,     "Disabled")
             .Add(c => c.Disabled, true));
 
@@ -61,7 +61,7 @@ public class TmToolbarButtonTests : LocalizationTestBase
     [Fact]
     public void ToolbarButton_Tooltip_RenderedAsTitle()
     {
-        var cut = RenderComponent<TmToolbarButton>(p => p
+        var cut = Render<TmToolbarButton>(p => p
             .Add(c => c.Icon,    "info")
             .Add(c => c.Tooltip, "More info"));
 

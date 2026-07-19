@@ -13,7 +13,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void Render_Always_RendersCanvasGrid()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
 
         cut.Find(".tm-spreadsheet").Should().NotBeNull();
         cut.Find(".tm-spreadsheet-canvas-grid").Should().NotBeNull();
@@ -23,7 +23,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void Render_DoesNotRenderDomGrid()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
 
         // The DOM grid renderer has been removed; only the canvas engine remains.
         // The canvas grid root reuses the .tm-spreadsheet-grid styling class, so
@@ -34,7 +34,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void Render_CustomHeight_AppliesStyle()
     {
-        var cut = RenderComponent<TmSpreadsheet>(parameters => parameters
+        var cut = Render<TmSpreadsheet>(parameters => parameters
             .Add(p => p.Height, "400px")
             .Add(p => p.Width, "800px"));
 
@@ -46,7 +46,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void Render_DefaultParameters_CreatesWorkbookWithOneSheet()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
 
         var component = cut.Instance;
         component.Workbook.Sheets.Should().HaveCount(1);
@@ -56,7 +56,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void Render_WithRowsAndColumnsCount_SetsSheetDimensions()
     {
-        var cut = RenderComponent<TmSpreadsheet>(parameters => parameters
+        var cut = Render<TmSpreadsheet>(parameters => parameters
             .Add(p => p.RowsCount, 100)
             .Add(p => p.ColumnsCount, 30));
 
@@ -69,7 +69,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void Render_WithCustomRowHeightAndColumnWidth_SetsDefaults()
     {
-        var cut = RenderComponent<TmSpreadsheet>(parameters => parameters
+        var cut = Render<TmSpreadsheet>(parameters => parameters
             .Add(p => p.RowHeight, 25)
             .Add(p => p.ColumnWidth, 80));
 
@@ -82,7 +82,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void Render_WithClass_AppliesCssClass()
     {
-        var cut = RenderComponent<TmSpreadsheet>(parameters => parameters
+        var cut = Render<TmSpreadsheet>(parameters => parameters
             .Add(p => p.Class, "my-custom-class"));
 
         cut.Find(".tm-spreadsheet").ClassList.Should().Contain("my-custom-class");
@@ -91,7 +91,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void CopyButton_InvokesCopyCommand()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
         sheet.Cells["A1"] = new SpreadsheetCell { Value = "test" };
         sheet.ActiveCellRef = "A1";
@@ -107,7 +107,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void CutButton_RemovesCellAndSetsClipboard()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
         sheet.Cells["A1"] = new SpreadsheetCell { Value = "test" };
         sheet.ActiveCellRef = "A1";
@@ -123,7 +123,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void PasteButton_InsertsClipboardContent()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
         sheet.Cells["A1"] = new SpreadsheetCell { Value = "hello" };
         sheet.ActiveCellRef = "A1";
@@ -141,7 +141,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void InsertRowButton_AddsRow()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
         sheet.Cells["A1"] = new SpreadsheetCell { Value = "top" };
         sheet.Cells["A2"] = new SpreadsheetCell { Value = "bottom" };
@@ -157,7 +157,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void DeleteRowButton_RemovesRow()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
         sheet.Cells["A1"] = new SpreadsheetCell { Value = "top" };
         sheet.Cells["A2"] = new SpreadsheetCell { Value = "middle" };
@@ -174,7 +174,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void InsertColumnButton_AddsColumn()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
         sheet.Cells["A1"] = new SpreadsheetCell { Value = "left" };
         sheet.Cells["B1"] = new SpreadsheetCell { Value = "right" };
@@ -190,7 +190,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void DeleteColumnButton_RemovesColumn()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
         sheet.Cells["A1"] = new SpreadsheetCell { Value = "left" };
         sheet.Cells["B1"] = new SpreadsheetCell { Value = "middle" };
@@ -209,14 +209,14 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void Render_DisplaysSheetTabs()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         cut.FindComponent<TmSpreadsheetSheetTabs>().Should().NotBeNull();
     }
 
     [Fact]
     public void AddSheetButton_AddsNewSheet()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var workbook = cut.Instance.Workbook;
         workbook.Sheets.Should().HaveCount(1);
 
@@ -230,7 +230,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void SheetTab_Click_SwitchesActiveSheet()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var workbook = cut.Instance.Workbook;
         workbook.AddSheet("Sheet2");
         cut.Render();
@@ -244,7 +244,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void DeleteSheetButton_RemovesSheet()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var workbook = cut.Instance.Workbook;
         workbook.AddSheet("Sheet2");
         cut.Render();
@@ -260,7 +260,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void InsertLinkDialog_OpensAndCloses()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
         sheet.ActiveCellRef = "A1";
 
@@ -282,7 +282,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void InsertImageDialog_OpensAndCloses()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
         sheet.ActiveCellRef = "B2";
 
@@ -304,7 +304,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void ToggleGridLines_HidesBorders()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
         sheet.ShowGridLines.Should().BeTrue();
 
@@ -322,7 +322,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void Render_FormulaBar_DisplaysActiveCellValue()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
         sheet.SetCellValue(0, 0, "Hello World");
         sheet.ActiveCellRef = "A1";
@@ -335,7 +335,7 @@ public class TmSpreadsheetTests : LocalizationTestBase
     [Fact]
     public void Render_FormulaBar_DisplaysActiveCellFormula()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
         sheet.SetCellValue(0, 0, "=SUM(B1:B5)");
         sheet.ActiveCellRef = "A1";

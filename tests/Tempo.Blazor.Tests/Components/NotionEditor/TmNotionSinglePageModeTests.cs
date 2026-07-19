@@ -127,7 +127,7 @@ public sealed class TmNotionSinglePageModeTests : LocalizationTestBase
     public void SinglePageMode_WithoutInitialPageId_ShowsLocalizedConfigError()
     {
         var provider = new SinglePageProvider();
-        var cut = RenderComponent<TmNotionEditor>(p => p
+        var cut = Render<TmNotionEditor>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.BlockProvider, provider)
             .Add(c => c.SinglePageMode, true)); // no InitialPageId
@@ -156,7 +156,7 @@ public sealed class TmNotionSinglePageModeTests : LocalizationTestBase
         Action<string>? onNav = null)
     {
         var provider = new SinglePageProvider();
-        return RenderComponent<TmNotionEditor>(p =>
+        return Render<TmNotionEditor>(p =>
         {
             p.Add(c => c.DataProvider, provider)
              .Add(c => c.BlockProvider, provider)

@@ -12,7 +12,7 @@ public class TmColumnFilterTests : LocalizationTestBase
     [Fact]
     public void ColumnFilter_Text_RendersTextInput()
     {
-        var cut = RenderComponent<TmColumnFilter>(p => p
+        var cut = Render<TmColumnFilter>(p => p
             .Add(c => c.ColumnKey, "Name")
             .Add(c => c.FilterType, FilterType.Text));
 
@@ -22,7 +22,7 @@ public class TmColumnFilterTests : LocalizationTestBase
     [Fact]
     public void ColumnFilter_Number_RendersNumberInput()
     {
-        var cut = RenderComponent<TmColumnFilter>(p => p
+        var cut = Render<TmColumnFilter>(p => p
             .Add(c => c.ColumnKey, "Score")
             .Add(c => c.FilterType, FilterType.Number));
 
@@ -32,7 +32,7 @@ public class TmColumnFilterTests : LocalizationTestBase
     [Fact]
     public void ColumnFilter_Date_RendersDateInput()
     {
-        var cut = RenderComponent<TmColumnFilter>(p => p
+        var cut = Render<TmColumnFilter>(p => p
             .Add(c => c.ColumnKey, "CreatedAt")
             .Add(c => c.FilterType, FilterType.Date));
 
@@ -42,7 +42,7 @@ public class TmColumnFilterTests : LocalizationTestBase
     [Fact]
     public void ColumnFilter_Boolean_RendersSelectWithYesNo()
     {
-        var cut = RenderComponent<TmColumnFilter>(p => p
+        var cut = Render<TmColumnFilter>(p => p
             .Add(c => c.ColumnKey, "IsActive")
             .Add(c => c.FilterType, FilterType.Boolean));
 
@@ -61,7 +61,7 @@ public class TmColumnFilterTests : LocalizationTestBase
             new() { Value = "user",  Label = "User" },
         };
 
-        var cut = RenderComponent<TmColumnFilter>(p => p
+        var cut = Render<TmColumnFilter>(p => p
             .Add(c => c.ColumnKey, "Role")
             .Add(c => c.FilterType, FilterType.Select)
             .Add(c => c.FilterOptions, options));
@@ -75,7 +75,7 @@ public class TmColumnFilterTests : LocalizationTestBase
     public void ColumnFilter_OnChange_FiresCallbackWithFilter()
     {
         DataTableFilter? received = null;
-        var cut = RenderComponent<TmColumnFilter>(p => p
+        var cut = Render<TmColumnFilter>(p => p
             .Add(c => c.ColumnKey, "Name")
             .Add(c => c.FilterType, FilterType.Text)
             .Add(c => c.OnFilterChange,
@@ -93,7 +93,7 @@ public class TmColumnFilterTests : LocalizationTestBase
     public void ColumnFilter_Clear_FiresCallbackWithNull()
     {
         DataTableFilter? received = new DataTableFilter("Name", "contains", "x");
-        var cut = RenderComponent<TmColumnFilter>(p => p
+        var cut = Render<TmColumnFilter>(p => p
             .Add(c => c.ColumnKey, "Name")
             .Add(c => c.FilterType, FilterType.Text)
             .Add(c => c.OnFilterChange,

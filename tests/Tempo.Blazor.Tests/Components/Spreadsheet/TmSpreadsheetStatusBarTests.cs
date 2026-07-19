@@ -11,7 +11,7 @@ public class TmSpreadsheetStatusBarTests : LocalizationTestBase
     [Fact]
     public void Render_ShowsContainer()
     {
-        var cut = RenderComponent<TmSpreadsheetStatusBar>();
+        var cut = Render<TmSpreadsheetStatusBar>();
 
         cut.FindAll(".tm-spreadsheet-statusbar").Count.Should().Be(1);
     }
@@ -19,7 +19,7 @@ public class TmSpreadsheetStatusBarTests : LocalizationTestBase
     [Fact]
     public void Render_HasZoomControl()
     {
-        var cut = RenderComponent<TmSpreadsheetStatusBar>(p => p.Add(x => x.Zoom, 1.0));
+        var cut = Render<TmSpreadsheetStatusBar>(p => p.Add(x => x.Zoom, 1.0));
 
         cut.FindAll(".tm-spreadsheet-statusbar__zoom").Count.Should().Be(1);
         cut.FindAll(".tm-spreadsheet-statusbar__zoom-slider").Count.Should().Be(1);
@@ -32,7 +32,7 @@ public class TmSpreadsheetStatusBarTests : LocalizationTestBase
         var aggregation = new SpreadsheetAggregationResult(
             Count: 3, CountNumbers: 3, Sum: 60.0, Average: 20.0, Min: 10.0, Max: 30.0);
 
-        var cut = RenderComponent<TmSpreadsheetStatusBar>(p => p.Add(x => x.Aggregation, aggregation));
+        var cut = Render<TmSpreadsheetStatusBar>(p => p.Add(x => x.Aggregation, aggregation));
 
         var text = cut.Find(".tm-spreadsheet-statusbar__aggregations").TextContent;
         text.Should().Contain("Sum");
@@ -49,7 +49,7 @@ public class TmSpreadsheetStatusBarTests : LocalizationTestBase
         var aggregation = new SpreadsheetAggregationResult(
             Count: 1, CountNumbers: 1, Sum: 5.0, Average: 5.0, Min: 5.0, Max: 5.0);
 
-        var cut = RenderComponent<TmSpreadsheetStatusBar>(p => p.Add(x => x.Aggregation, aggregation));
+        var cut = Render<TmSpreadsheetStatusBar>(p => p.Add(x => x.Aggregation, aggregation));
 
         cut.Find(".tm-spreadsheet-statusbar__aggregations").TextContent.Trim().Should().BeEmpty();
     }
@@ -60,7 +60,7 @@ public class TmSpreadsheetStatusBarTests : LocalizationTestBase
         var aggregation = new SpreadsheetAggregationResult(
             Count: 3, CountNumbers: 0, Sum: null, Average: null, Min: null, Max: null);
 
-        var cut = RenderComponent<TmSpreadsheetStatusBar>(p => p.Add(x => x.Aggregation, aggregation));
+        var cut = Render<TmSpreadsheetStatusBar>(p => p.Add(x => x.Aggregation, aggregation));
 
         var text = cut.Find(".tm-spreadsheet-statusbar__aggregations").TextContent;
         text.Should().Contain("Count");
@@ -73,7 +73,7 @@ public class TmSpreadsheetStatusBarTests : LocalizationTestBase
     public void ZoomSlider_Input_FiresOnZoomChanged()
     {
         double? received = null;
-        var cut = RenderComponent<TmSpreadsheetStatusBar>(p => p
+        var cut = Render<TmSpreadsheetStatusBar>(p => p
             .Add(x => x.Zoom, 1.0)
             .Add(x => x.OnZoomChanged, EventCallback.Factory.Create<double>(this, z => received = z)));
 
@@ -86,7 +86,7 @@ public class TmSpreadsheetStatusBarTests : LocalizationTestBase
     public void ZoomPercent_Click_ResetsTo100()
     {
         double? received = null;
-        var cut = RenderComponent<TmSpreadsheetStatusBar>(p => p
+        var cut = Render<TmSpreadsheetStatusBar>(p => p
             .Add(x => x.Zoom, 1.5)
             .Add(x => x.OnZoomChanged, EventCallback.Factory.Create<double>(this, z => received = z)));
 
@@ -99,7 +99,7 @@ public class TmSpreadsheetStatusBarTests : LocalizationTestBase
     public void ZoomIn_Click_IncreasesByTenPercent()
     {
         double? received = null;
-        var cut = RenderComponent<TmSpreadsheetStatusBar>(p => p
+        var cut = Render<TmSpreadsheetStatusBar>(p => p
             .Add(x => x.Zoom, 1.0)
             .Add(x => x.OnZoomChanged, EventCallback.Factory.Create<double>(this, z => received = z)));
 

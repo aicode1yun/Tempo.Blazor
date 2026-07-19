@@ -15,7 +15,7 @@ public sealed class DocumentEditorPhase21AccessibilityTests : LocalizationTestBa
     [Fact]
     public void Toolbar_ExposesToolbarAndTabSemantics()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         var toolbar = cut.Find("[data-testid='document-toolbar']");
         toolbar.GetAttribute("role").Should().Be("toolbar");
@@ -30,7 +30,7 @@ public sealed class DocumentEditorPhase21AccessibilityTests : LocalizationTestBa
     public async Task OverflowMenu_ExposesMenuSemanticsAndRovingTabIndex()
     {
         string? executed = null;
-        var cut = RenderComponent<TmDocumentToolbarOverflowMenu>(parameters => parameters
+        var cut = Render<TmDocumentToolbarOverflowMenu>(parameters => parameters
             .Add(p => p.IsOverflowing, true)
             .Add(p => p.IsOpen, true)
             .Add(p => p.MoreLabel, "More")
@@ -62,7 +62,7 @@ public sealed class DocumentEditorPhase21AccessibilityTests : LocalizationTestBa
     {
         string? executed = null;
         var closed = false;
-        var cut = RenderComponent<TmDocumentCommandPalette>(parameters => parameters
+        var cut = Render<TmDocumentCommandPalette>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.Commands, CommandStates())
             .Add(p => p.OnExecuteCommand, EventCallback.Factory.Create<string>(this, value => executed = value))
@@ -91,7 +91,7 @@ public sealed class DocumentEditorPhase21AccessibilityTests : LocalizationTestBa
     [Fact]
     public void ImageInspector_ExposesComplementaryLandmarkLabelsAndLiveWarning()
     {
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, new ImageBlockContent { Source = DocumentImageSource.Url, Url = "https://example.test/evidence.png" }));
 
         var inspector = cut.Find("[data-testid='document-image-inspector']");
@@ -107,7 +107,7 @@ public sealed class DocumentEditorPhase21AccessibilityTests : LocalizationTestBa
     [Fact]
     public void TableAndCellProperties_ExposeRegionsGroupsAndInputLabels()
     {
-        var table = RenderComponent<TmDocumentTablePropertiesPanel>(parameters => parameters
+        var table = Render<TmDocumentTablePropertiesPanel>(parameters => parameters
             .Add(p => p.Layout, new TableLayoutContent()));
 
         table.Find("[data-testid='document-table-properties-panel']").GetAttribute("role").Should().Be("region");
@@ -116,7 +116,7 @@ public sealed class DocumentEditorPhase21AccessibilityTests : LocalizationTestBa
         table.Find("[data-testid='document-table-properties-width']").ParentElement!.TextContent.Should().Contain("width");
         table.Find("[data-testid='document-table-properties-border']").ParentElement!.TextContent.Should().Contain("border");
 
-        var cell = RenderComponent<TmDocumentCellPropertiesPanel>(parameters => parameters
+        var cell = Render<TmDocumentCellPropertiesPanel>(parameters => parameters
             .Add(p => p.Cell, new TableCellContent()));
 
         cell.Find("[data-testid='document-cell-properties-panel']").GetAttribute("role").Should().Be("region");
@@ -128,18 +128,18 @@ public sealed class DocumentEditorPhase21AccessibilityTests : LocalizationTestBa
     [Fact]
     public void GridPickerPasteReportAutocompleteAndLiveRegion_ExposeAccessibleStatusRoles()
     {
-        var grid = RenderComponent<TmDocumentTableGridPicker>();
+        var grid = Render<TmDocumentTableGridPicker>();
         grid.Find("[data-testid='document-table-grid-picker']").GetAttribute("role").Should().Be("grid");
         grid.FindAll("[role='gridcell']").Should().HaveCount(100);
         grid.Find(".tm-document-table-grid-picker__dims").GetAttribute("aria-live").Should().Be("polite");
 
-        var report = RenderComponent<TmDocumentPasteReport>(parameters => parameters
+        var report = Render<TmDocumentPasteReport>(parameters => parameters
             .Add(p => p.Warnings, [new DocumentClipboardWarning { Code = "unsafe-link-removed", Message = "Link removed" }]));
         report.Find("[data-testid='document-paste-report']").GetAttribute("role").Should().Be("status");
         report.Find("[data-testid='document-paste-report']").GetAttribute("aria-live").Should().Be("polite");
         report.Find("[data-testid='document-paste-report-close']").GetAttribute("aria-label").Should().NotBeNullOrWhiteSpace();
 
-        var autocomplete = RenderComponent<TmDocumentAutocompleteMenu>(parameters => parameters
+        var autocomplete = Render<TmDocumentAutocompleteMenu>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.Items, AutocompleteItems())
             .Add(p => p.HighlightedIndex, 0));
@@ -147,7 +147,7 @@ public sealed class DocumentEditorPhase21AccessibilityTests : LocalizationTestBa
         autocomplete.Find("[data-testid='document-autocomplete-menu']").GetAttribute("aria-busy").Should().Be("false");
         autocomplete.FindAll("[role='option']").Should().HaveCount(2);
 
-        var live = RenderComponent<TmDocumentEditorLiveRegion>(parameters => parameters
+        var live = Render<TmDocumentEditorLiveRegion>(parameters => parameters
             .Add(p => p.Message, "Saved")
             .Add(p => p.AriaLive, "assertive"));
         live.Find("[data-testid='document-editor-live-region']").GetAttribute("role").Should().Be("status");

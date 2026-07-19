@@ -13,7 +13,7 @@ public class TmFileDropZoneTests : LocalizationTestBase
     [Fact]
     public void TmFileDropZone_Renders_DropZone()
     {
-        var cut = RenderComponent<TmFileDropZone>();
+        var cut = Render<TmFileDropZone>();
 
         cut.Find(".tm-file-drop-zone").Should().NotBeNull();
     }
@@ -21,7 +21,7 @@ public class TmFileDropZoneTests : LocalizationTestBase
     [Fact]
     public void TmFileDropZone_Has_DropArea()
     {
-        var cut = RenderComponent<TmFileDropZone>();
+        var cut = Render<TmFileDropZone>();
 
         cut.Find(".tm-file-drop-zone__area").Should().NotBeNull();
     }
@@ -29,7 +29,7 @@ public class TmFileDropZoneTests : LocalizationTestBase
     [Fact]
     public void TmFileDropZone_Has_FileInput()
     {
-        var cut = RenderComponent<TmFileDropZone>();
+        var cut = Render<TmFileDropZone>();
 
         cut.FindAll("input[type=file]").Should().NotBeEmpty();
     }
@@ -37,7 +37,7 @@ public class TmFileDropZoneTests : LocalizationTestBase
     [Fact]
     public void TmFileDropZone_Disabled_Has_Disabled_Class()
     {
-        var cut = RenderComponent<TmFileDropZone>(p => p
+        var cut = Render<TmFileDropZone>(p => p
             .Add(c => c.Disabled, true));
 
         cut.Find(".tm-file-drop-zone").ClassList
@@ -47,7 +47,7 @@ public class TmFileDropZoneTests : LocalizationTestBase
     [Fact]
     public void TmFileDropZone_Multiple_Sets_Input_Multiple()
     {
-        var cut = RenderComponent<TmFileDropZone>(p => p
+        var cut = Render<TmFileDropZone>(p => p
             .Add(c => c.Multiple, true));
 
         cut.Find("input[type=file]").HasAttribute("multiple").Should().BeTrue();
@@ -56,7 +56,7 @@ public class TmFileDropZoneTests : LocalizationTestBase
     [Fact]
     public void TmFileDropZone_Accept_Sets_Input_Accept()
     {
-        var cut = RenderComponent<TmFileDropZone>(p => p
+        var cut = Render<TmFileDropZone>(p => p
             .Add(c => c.Accept, "image/*,.pdf"));
 
         cut.Find("input[type=file]").GetAttribute("accept")
@@ -66,7 +66,7 @@ public class TmFileDropZoneTests : LocalizationTestBase
     [Fact]
     public void TmFileDropZone_Shows_DefaultContent()
     {
-        var cut = RenderComponent<TmFileDropZone>();
+        var cut = Render<TmFileDropZone>();
 
         cut.Find(".tm-file-drop-zone__hint").Should().NotBeNull();
         cut.Find(".tm-file-drop-zone__browse").Should().NotBeNull();
@@ -75,7 +75,7 @@ public class TmFileDropZoneTests : LocalizationTestBase
     [Fact]
     public void TmFileDropZone_Shows_CustomContent()
     {
-        var cut = RenderComponent<TmFileDropZone>(p => p
+        var cut = Render<TmFileDropZone>(p => p
             .AddChildContent("<span class='custom'>Upload here</span>"));
 
         cut.Find(".custom").TextContent.Should().Contain("Upload here");
@@ -85,7 +85,7 @@ public class TmFileDropZoneTests : LocalizationTestBase
     [Fact]
     public void TmFileDropZone_InputCoversDropArea()
     {
-        var cut = RenderComponent<TmFileDropZone>();
+        var cut = Render<TmFileDropZone>();
 
         // InputFile should have the overlay class inside the area
         cut.Find(".tm-file-drop-zone__area .tm-file-drop-zone__input").Should().NotBeNull();
@@ -94,7 +94,7 @@ public class TmFileDropZoneTests : LocalizationTestBase
     [Fact]
     public void TmFileDropZone_HasIcon()
     {
-        var cut = RenderComponent<TmFileDropZone>();
+        var cut = Render<TmFileDropZone>();
 
         cut.Find(".tm-file-drop-zone__icon").Should().NotBeNull();
     }
@@ -102,7 +102,7 @@ public class TmFileDropZoneTests : LocalizationTestBase
     [Fact]
     public void TmFileDropZone_NoFilesInitially()
     {
-        var cut = RenderComponent<TmFileDropZone>();
+        var cut = Render<TmFileDropZone>();
 
         cut.FindAll(".tm-file-drop-zone__file-item").Count.Should().Be(0);
     }

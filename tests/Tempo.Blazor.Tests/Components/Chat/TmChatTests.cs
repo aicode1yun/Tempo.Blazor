@@ -23,7 +23,7 @@ public class TmChatTests : LocalizationTestBase
             new ChatMessage("m2", "Hi there", _currentUser, ChatMessageType.Outgoing),
         };
 
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.Messages, messages)
                       .Add(p => p.CurrentUser, _currentUser));
 
@@ -33,7 +33,7 @@ public class TmChatTests : LocalizationTestBase
     [Fact]
     public void Render_EmptyMessages_ShowsEmptyState()
     {
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.CurrentUser, _currentUser));
 
         cut.FindAll(".tm-chat__message").Should().BeEmpty();
@@ -50,7 +50,7 @@ public class TmChatTests : LocalizationTestBase
             new ChatMessage("m1", "Hello", _otherUser, ChatMessageType.Incoming),
         };
 
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.Messages, messages)
                       .Add(p => p.CurrentUser, _currentUser));
 
@@ -68,7 +68,7 @@ public class TmChatTests : LocalizationTestBase
             new ChatMessage("m1", "Hi", _currentUser, ChatMessageType.Outgoing),
         };
 
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.Messages, messages)
                       .Add(p => p.CurrentUser, _currentUser));
 
@@ -85,7 +85,7 @@ public class TmChatTests : LocalizationTestBase
             new ChatMessage("m1", "Bob joined the conversation", type: ChatMessageType.System),
         };
 
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.Messages, messages)
                       .Add(p => p.CurrentUser, _currentUser));
 
@@ -102,7 +102,7 @@ public class TmChatTests : LocalizationTestBase
             new ChatMessage("m1", "Hi", type: ChatMessageType.Outgoing),
         };
 
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.Messages, messages)
                       .Add(p => p.CurrentUser, _currentUser));
 
@@ -117,7 +117,7 @@ public class TmChatTests : LocalizationTestBase
     public void TypeMessage_ClickSend_FiresOnSendMessage()
     {
         string? sentText = null;
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.CurrentUser, _currentUser)
                       .Add(p => p.OnSendMessage, EventCallback.Factory.Create<string>(this, t => sentText = t)));
 
@@ -134,7 +134,7 @@ public class TmChatTests : LocalizationTestBase
     [Fact]
     public void EmptyInput_SendButtonDisabled()
     {
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.CurrentUser, _currentUser));
 
         var sendBtn = cut.Find(".tm-chat__send-btn");
@@ -145,7 +145,7 @@ public class TmChatTests : LocalizationTestBase
     public void DisabledInput_CannotSend()
     {
         string? sentText = null;
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.CurrentUser, _currentUser)
                       .Add(p => p.Disabled, true)
                       .Add(p => p.OnSendMessage, EventCallback.Factory.Create<string>(this, t => sentText = t)));
@@ -162,7 +162,7 @@ public class TmChatTests : LocalizationTestBase
     [Fact]
     public void Render_WithTypingUsers_DisplaysTypingIndicator()
     {
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.CurrentUser, _currentUser)
                       .Add(p => p.TypingUsers, new[] { _otherUser }));
 
@@ -174,7 +174,7 @@ public class TmChatTests : LocalizationTestBase
     [Fact]
     public void Render_WithoutTypingUsers_HidesIndicator()
     {
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.CurrentUser, _currentUser));
 
         cut.FindAll(".tm-chat__typing-indicator").Should().BeEmpty();
@@ -184,7 +184,7 @@ public class TmChatTests : LocalizationTestBase
     public void Render_MultipleTypingUsers_ShowsAllNames()
     {
         var carol = new ChatUser("u3", "Carol", avatar: "C");
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.CurrentUser, _currentUser)
                       .Add(p => p.TypingUsers, new[] { _otherUser, carol }));
 
@@ -206,7 +206,7 @@ public class TmChatTests : LocalizationTestBase
             }
         };
 
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.Messages, new[] { msg })
                       .Add(p => p.CurrentUser, _currentUser));
 
@@ -225,7 +225,7 @@ public class TmChatTests : LocalizationTestBase
             Attachments = new[] { attachment }
         };
 
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.Messages, new[] { msg })
                       .Add(p => p.CurrentUser, _currentUser)
                       .Add(p => p.OnAttachmentClick, EventCallback.Factory.Create<ChatAttachment>(this, a => clicked = a)));
@@ -244,7 +244,7 @@ public class TmChatTests : LocalizationTestBase
         var ts = new DateTimeOffset(2026, 5, 2, 10, 30, 0, TimeSpan.Zero);
         var msg = new ChatMessage("m1", "Hello", _otherUser, ChatMessageType.Incoming, ts);
 
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.Messages, new[] { msg })
                       .Add(p => p.CurrentUser, _currentUser));
 
@@ -255,7 +255,7 @@ public class TmChatTests : LocalizationTestBase
     [Fact]
     public void Render_WithCustomClass_AppliesClass()
     {
-        var cut = RenderComponent<TmChat>(parameters =>
+        var cut = Render<TmChat>(parameters =>
             parameters.Add(p => p.CurrentUser, _currentUser)
                       .Add(p => p.Class, "my-chat"));
 

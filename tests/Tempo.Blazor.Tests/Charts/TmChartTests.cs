@@ -42,7 +42,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void Chart_Renders_SvgElement()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData));
 
@@ -53,7 +53,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void Chart_WidthHeight_AppliedAsStyle()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData)
             .Add(x => x.Width, "500px")
@@ -68,7 +68,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void Chart_HasAriaLabel()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData));
 
@@ -78,7 +78,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void Chart_CustomClass_Applied()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData)
             .Add(x => x.Class, "my-chart"));
@@ -91,7 +91,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void BarChart_Renders_Rects()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData));
 
@@ -103,7 +103,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void BarChart_MultiDataset_GroupedBars()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, MultiDatasetData));
 
@@ -115,7 +115,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void BarChart_ShowsLabels()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData));
 
@@ -130,7 +130,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void LineChart_Renders_Polyline()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, SimpleBarData));
 
@@ -140,7 +140,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void LineChart_Renders_DataPoints()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, SimpleBarData));
 
@@ -152,7 +152,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void PieChart_Renders_Paths()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Pie)
             .Add(x => x.Data, PieData));
 
@@ -165,7 +165,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void DonutChart_Renders_Paths()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Donut)
             .Add(x => x.Data, PieData));
 
@@ -177,7 +177,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void HorizontalBarChart_Renders_Rects()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.HorizontalBar)
             .Add(x => x.Data, SimpleBarData));
 
@@ -191,7 +191,7 @@ public class TmChartTests : LocalizationTestBase
     {
         var data = ChartDataWithBackgroundColors(["#dc2626", "#ea580c", "#16a34a"]);
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Donut)
             .Add(x => x.Data, data));
 
@@ -203,7 +203,7 @@ public class TmChartTests : LocalizationTestBase
     {
         var data = ChartDataWithBackgroundColors(["#dc2626", "#ea580c", "#16a34a"]);
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Pie)
             .Add(x => x.Data, data));
 
@@ -215,7 +215,7 @@ public class TmChartTests : LocalizationTestBase
     {
         var data = ChartDataWithBackgroundColors(["#dc2626", "#ea580c", "#16a34a"]);
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, data));
 
@@ -227,7 +227,7 @@ public class TmChartTests : LocalizationTestBase
     {
         var data = ChartDataWithBackgroundColors(["#dc2626", "#ea580c", "#16a34a"]);
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.HorizontalBar)
             .Add(x => x.Data, data));
 
@@ -242,7 +242,7 @@ public class TmChartTests : LocalizationTestBase
             backgroundColor: "#0d9488",
             color: "#2563eb");
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, data));
 
@@ -254,7 +254,7 @@ public class TmChartTests : LocalizationTestBase
     {
         var data = ChartDataWithBackgroundColors(["#dc2626", "#ea580c"]);
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Donut)
             .Add(x => x.Data, data));
 
@@ -264,10 +264,10 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void Chart_NullBackgroundColors_KeepsBackwardCompatibleBehavior()
     {
-        var donutCut = RenderComponent<TmChart>(p => p
+        var donutCut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Donut)
             .Add(x => x.Data, PieData));
-        var barCut = RenderComponent<TmChart>(p => p
+        var barCut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData));
 
@@ -280,7 +280,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void Chart_ShowLegend_RendersLegend()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, MultiDatasetData)
             .Add(x => x.ShowLegend, true));
@@ -297,7 +297,7 @@ public class TmChartTests : LocalizationTestBase
             ["#dc2626", "#ea580c", "#16a34a"],
             color: "#3b82f6");
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Donut)
             .Add(x => x.Data, data)
             .Add(x => x.ShowLegend, true));
@@ -312,7 +312,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void Chart_HideLegend_NoLegend()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData)
             .Add(x => x.ShowLegend, false));
@@ -325,7 +325,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void Chart_ShowGrid_RendersGridLines()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData)
             .Add(x => x.ShowGrid, true));
@@ -338,7 +338,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void Chart_ShowValues_DisplaysValueText()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData)
             .Add(x => x.ShowValues, true));
@@ -355,7 +355,7 @@ public class TmChartTests : LocalizationTestBase
     public void Chart_SegmentClick_FiresCallback()
     {
         ChartSegment? clicked = null;
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData)
             .Add(x => x.OnSegmentClick, seg => clicked = seg));
@@ -375,7 +375,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void Chart_Animated_HasAnimatedClass()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData)
             .Add(x => x.Animated, true));
@@ -390,7 +390,7 @@ public class TmChartTests : LocalizationTestBase
     {
         var emptyData = new ChartData { Labels = [], Datasets = [] };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, emptyData));
 
@@ -402,7 +402,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void InteractiveLegend_Default_LegendItemsAreNotButtons()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, MultiDatasetData));
 
@@ -414,7 +414,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void InteractiveLegend_Enabled_LegendItemsAreButtons()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, MultiDatasetData)
             .Add(x => x.InteractiveLegend, true));
@@ -425,7 +425,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void InteractiveLegend_ClickDataset_HidesItsBars()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, MultiDatasetData)
             .Add(x => x.InteractiveLegend, true));
@@ -443,7 +443,7 @@ public class TmChartTests : LocalizationTestBase
     public void InteractiveLegend_Toggle_FiresOnSeriesToggle()
     {
         ChartSeriesToggle? evt = null;
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, MultiDatasetData)
             .Add(x => x.InteractiveLegend, true)
@@ -460,7 +460,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void InteractiveLegend_ClickTwice_RestoresSeries()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, MultiDatasetData)
             .Add(x => x.InteractiveLegend, true));
@@ -478,7 +478,7 @@ public class TmChartTests : LocalizationTestBase
     public void InteractiveLegend_PerValue_HidesSingleSlice()
     {
         var data = ChartDataWithBackgroundColors(["#dc2626", "#ea580c", "#16a34a"]);
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Donut)
             .Add(x => x.Data, data)
             .Add(x => x.InteractiveLegend, true));
@@ -497,7 +497,7 @@ public class TmChartTests : LocalizationTestBase
         var first = MultiDatasetData;
         var second = MultiDatasetData; // distinct instance, same shape
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, first)
             .Add(x => x.InteractiveLegend, true));
@@ -506,7 +506,7 @@ public class TmChartTests : LocalizationTestBase
         cut.FindAll("rect.tm-chart__bar").Count.Should().Be(3);
 
         // Parent swaps in a different (same-shape) dataset → hidden state must reset.
-        cut.SetParametersAndRender(p => p.Add(x => x.Data, second));
+        cut.Render(p => p.Add(x => x.Data, second));
 
         cut.FindAll("rect.tm-chart__bar").Count.Should().Be(6);
         cut.FindAll(".tm-chart__legend-item--hidden").Count.Should().Be(0);
@@ -517,7 +517,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void Tooltip_Enabled_NotRenderedUntilHover()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData));
 
@@ -527,7 +527,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void Tooltip_Hover_ShowsLabelAndValue()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData));
 
@@ -541,7 +541,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void Tooltip_Disabled_NotShownOnHover()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData)
             .Add(x => x.ShowTooltip, false));
@@ -554,7 +554,7 @@ public class TmChartTests : LocalizationTestBase
     [Fact]
     public void Tooltip_CustomTemplate_UsedOnHover()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, SimpleBarData)
             .Add(x => x.TooltipTemplate, ctx => builder =>
@@ -577,7 +577,7 @@ public class TmChartTests : LocalizationTestBase
     public void EmptyData_Message_IsLocalized()
     {
         var emptyData = new ChartData { Labels = [], Datasets = [] };
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, emptyData));
 

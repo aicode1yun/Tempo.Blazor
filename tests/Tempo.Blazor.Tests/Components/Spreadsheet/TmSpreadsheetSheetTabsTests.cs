@@ -18,7 +18,7 @@ public class TmSpreadsheetSheetTabsTests : LocalizationTestBase
             new() { Name = "Sheet2" },
         };
 
-        var cut = RenderComponent<TmSpreadsheetSheetTabs>(parameters => parameters
+        var cut = Render<TmSpreadsheetSheetTabs>(parameters => parameters
             .Add(p => p.Sheets, sheets)
             .Add(p => p.ActiveIndex, 0));
 
@@ -37,7 +37,7 @@ public class TmSpreadsheetSheetTabsTests : LocalizationTestBase
             new() { Name = "Sheet2" },
         };
 
-        var cut = RenderComponent<TmSpreadsheetSheetTabs>(parameters => parameters
+        var cut = Render<TmSpreadsheetSheetTabs>(parameters => parameters
             .Add(p => p.Sheets, sheets)
             .Add(p => p.ActiveIndex, 1));
 
@@ -56,7 +56,7 @@ public class TmSpreadsheetSheetTabsTests : LocalizationTestBase
         };
         int? receivedIndex = null;
 
-        var cut = RenderComponent<TmSpreadsheetSheetTabs>(parameters => parameters
+        var cut = Render<TmSpreadsheetSheetTabs>(parameters => parameters
             .Add(p => p.Sheets, sheets)
             .Add(p => p.ActiveIndex, 0)
             .Add(p => p.OnActiveSheetChanged, EventCallback.Factory.Create<int>(this, i => receivedIndex = i)));
@@ -73,7 +73,7 @@ public class TmSpreadsheetSheetTabsTests : LocalizationTestBase
         var sheets = new List<SpreadsheetSheet> { new() { Name = "Sheet1" } };
         bool fired = false;
 
-        var cut = RenderComponent<TmSpreadsheetSheetTabs>(parameters => parameters
+        var cut = Render<TmSpreadsheetSheetTabs>(parameters => parameters
             .Add(p => p.Sheets, sheets)
             .Add(p => p.ActiveIndex, 0)
             .Add(p => p.OnAddSheetRequested, EventCallback.Factory.Create(this, () => fired = true)));
@@ -94,7 +94,7 @@ public class TmSpreadsheetSheetTabsTests : LocalizationTestBase
         };
         int? receivedIndex = null;
 
-        var cut = RenderComponent<TmSpreadsheetSheetTabs>(parameters => parameters
+        var cut = Render<TmSpreadsheetSheetTabs>(parameters => parameters
             .Add(p => p.Sheets, sheets)
             .Add(p => p.ActiveIndex, 0)
             .Add(p => p.OnDeleteSheetRequested, EventCallback.Factory.Create<int>(this, i => receivedIndex = i)));
@@ -110,7 +110,7 @@ public class TmSpreadsheetSheetTabsTests : LocalizationTestBase
     {
         var sheets = new List<SpreadsheetSheet> { new() { Name = "Sheet1" } };
 
-        var cut = RenderComponent<TmSpreadsheetSheetTabs>(parameters => parameters
+        var cut = Render<TmSpreadsheetSheetTabs>(parameters => parameters
             .Add(p => p.Sheets, sheets)
             .Add(p => p.ActiveIndex, 0));
 
@@ -122,7 +122,7 @@ public class TmSpreadsheetSheetTabsTests : LocalizationTestBase
     {
         var sheets = new List<SpreadsheetSheet> { new() { Name = "Sheet1" } };
 
-        var cut = RenderComponent<TmSpreadsheetSheetTabs>(parameters => parameters
+        var cut = Render<TmSpreadsheetSheetTabs>(parameters => parameters
             .Add(p => p.Sheets, sheets)
             .Add(p => p.ActiveIndex, 0));
 
@@ -139,7 +139,7 @@ public class TmSpreadsheetSheetTabsTests : LocalizationTestBase
         var sheets = new List<SpreadsheetSheet> { new() { Name = "Sheet1" } };
         (int Index, string NewName)? received = null;
 
-        var cut = RenderComponent<TmSpreadsheetSheetTabs>(parameters => parameters
+        var cut = Render<TmSpreadsheetSheetTabs>(parameters => parameters
             .Add(p => p.Sheets, sheets)
             .Add(p => p.ActiveIndex, 0)
             .Add(p => p.OnRenameSheetRequested, EventCallback.Factory.Create<(int, string)>(this, v => received = v)));

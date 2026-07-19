@@ -127,13 +127,13 @@ public sealed class TmModelingLocalizationM15Tests : LocalizationTestBase
 
         var rendered = new[]
         {
-            RenderComponent<TmModelingEditor>().Markup,
-            RenderComponent<TmModelingModelTree>().Markup,
-            RenderComponent<TmModelingViewSelector>(parameters => parameters.Add(p => p.NotationKey, "bpmn")).Markup,
-            RenderComponent<TmModelingDiagramPreview>().Markup,
-            RenderComponent<TmModelingSourcePanel>().Markup,
-            RenderComponent<TmModelingIssuePanel>(parameters => parameters.Add(p => p.Issues, CreateIssues())).Markup,
-            RenderComponent<TmModelingInspector>(parameters => parameters.Add(p => p.Element, CreateElement())).Markup
+            Render<TmModelingEditor>().Markup,
+            Render<TmModelingModelTree>().Markup,
+            Render<TmModelingViewSelector>(parameters => parameters.Add(p => p.NotationKey, "bpmn")).Markup,
+            Render<TmModelingDiagramPreview>().Markup,
+            Render<TmModelingSourcePanel>().Markup,
+            Render<TmModelingIssuePanel>(parameters => parameters.Add(p => p.Issues, CreateIssues())).Markup,
+            Render<TmModelingInspector>(parameters => parameters.Add(p => p.Element, CreateElement())).Markup
         };
 
         var markup = string.Join(Environment.NewLine, rendered);
@@ -160,7 +160,7 @@ public sealed class TmModelingLocalizationM15Tests : LocalizationTestBase
             ["TmModelingIssuePanel_Error"] = "Localized error"
         });
 
-        using var cut = RenderComponent<TmModelingIssuePanel>(parameters => parameters
+        using var cut = Render<TmModelingIssuePanel>(parameters => parameters
             .Add(p => p.Issues, CreateIssues()));
 
         cut.Markup.Should().Contain("Localized info");
@@ -175,7 +175,7 @@ public sealed class TmModelingLocalizationM15Tests : LocalizationTestBase
     {
         Services.AddSingleton<ITmLocalizer>(new MockTmLocalizer(new Dictionary<string, string>()));
 
-        using var cut = RenderComponent<TmModelingSourcePanel>();
+        using var cut = Render<TmModelingSourcePanel>();
 
         cut.Find("[data-testid='modeling-source-panel']").Should().NotBeNull();
         cut.Markup.Should().Contain("[TmModelingSourcePanel_Title]");
@@ -188,7 +188,7 @@ public sealed class TmModelingLocalizationM15Tests : LocalizationTestBase
         UseCzechLocalization();
         Services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingModelProvider>(new CzechTestProvider()));
 
-        using var cut = RenderComponent<TmModelingEditor>(parameters => parameters
+        using var cut = Render<TmModelingEditor>(parameters => parameters
             .Add(p => p.ProviderKey, CzechTestProvider.Key));
 
         cut.WaitForAssertion(() =>

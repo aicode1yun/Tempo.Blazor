@@ -17,7 +17,7 @@ public class TmDiagramTemplateCardTests : DiagramTestBase
             Tags = ["process", "basic"]
         };
 
-        var cut = RenderComponent<TmDiagramTemplateCard>(parameters => parameters
+        var cut = Render<TmDiagramTemplateCard>(parameters => parameters
             .Add(p => p.Template, template)
             .Add(p => p.Selected, false));
 
@@ -33,7 +33,7 @@ public class TmDiagramTemplateCardTests : DiagramTestBase
     {
         var template = new DiagramTemplate { Id = "t1", Name = "Blank", Category = "General" };
 
-        var cut = RenderComponent<TmDiagramTemplateCard>(parameters => parameters
+        var cut = Render<TmDiagramTemplateCard>(parameters => parameters
             .Add(p => p.Template, template)
             .Add(p => p.Selected, false));
 
@@ -51,7 +51,7 @@ public class TmDiagramTemplateCardTests : DiagramTestBase
             ThumbnailUrl = "thumb.png"
         };
 
-        var cut = RenderComponent<TmDiagramTemplateCard>(parameters => parameters
+        var cut = Render<TmDiagramTemplateCard>(parameters => parameters
             .Add(p => p.Template, template)
             .Add(p => p.BaseUri, "https://example.com/")
             .Add(p => p.Selected, false));
@@ -65,7 +65,7 @@ public class TmDiagramTemplateCardTests : DiagramTestBase
     {
         var template = new DiagramTemplate { Id = "t1", Name = "Blank", Category = "General" };
 
-        var cut = RenderComponent<TmDiagramTemplateCard>(parameters => parameters
+        var cut = Render<TmDiagramTemplateCard>(parameters => parameters
             .Add(p => p.Template, template)
             .Add(p => p.Selected, true));
 
@@ -78,7 +78,7 @@ public class TmDiagramTemplateCardTests : DiagramTestBase
         var clicked = false;
         var template = new DiagramTemplate { Id = "t1", Name = "Blank", Category = "General" };
 
-        var cut = RenderComponent<TmDiagramTemplateCard>(parameters => parameters
+        var cut = Render<TmDiagramTemplateCard>(parameters => parameters
             .Add(p => p.Template, template)
             .Add(p => p.Selected, false)
             .Add(p => p.OnClick, () => clicked = true));

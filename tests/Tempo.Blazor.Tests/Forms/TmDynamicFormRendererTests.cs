@@ -18,7 +18,7 @@ public class TmDynamicFormRendererTests : LocalizationTestBase
             new() { Name = "name", FieldType = DynamicFieldType.Text, Label = "Full Name" }
         };
 
-        var cut = RenderComponent<TmDynamicFormRenderer>(p => p
+        var cut = Render<TmDynamicFormRenderer>(p => p
             .Add(x => x.Fields, fields)
             .Add(x => x.Values, new Dictionary<string, object?>()));
 
@@ -34,7 +34,7 @@ public class TmDynamicFormRendererTests : LocalizationTestBase
             new() { Name = "notes", FieldType = DynamicFieldType.TextArea, Label = "Notes" }
         };
 
-        var cut = RenderComponent<TmDynamicFormRenderer>(p => p
+        var cut = Render<TmDynamicFormRenderer>(p => p
             .Add(x => x.Fields, fields)
             .Add(x => x.Values, new Dictionary<string, object?>()));
 
@@ -49,7 +49,7 @@ public class TmDynamicFormRendererTests : LocalizationTestBase
             new() { Name = "age", FieldType = DynamicFieldType.Number, Label = "Age" }
         };
 
-        var cut = RenderComponent<TmDynamicFormRenderer>(p => p
+        var cut = Render<TmDynamicFormRenderer>(p => p
             .Add(x => x.Fields, fields)
             .Add(x => x.Values, new Dictionary<string, object?>()));
 
@@ -64,7 +64,7 @@ public class TmDynamicFormRendererTests : LocalizationTestBase
             new() { Name = "agree", FieldType = DynamicFieldType.Checkbox, Label = "I agree" }
         };
 
-        var cut = RenderComponent<TmDynamicFormRenderer>(p => p
+        var cut = Render<TmDynamicFormRenderer>(p => p
             .Add(x => x.Fields, fields)
             .Add(x => x.Values, new Dictionary<string, object?>()));
 
@@ -87,7 +87,7 @@ public class TmDynamicFormRendererTests : LocalizationTestBase
             }
         };
 
-        var cut = RenderComponent<TmDynamicFormRenderer>(p => p
+        var cut = Render<TmDynamicFormRenderer>(p => p
             .Add(x => x.Fields, fields)
             .Add(x => x.Values, new Dictionary<string, object?>()));
 
@@ -102,7 +102,7 @@ public class TmDynamicFormRendererTests : LocalizationTestBase
             new() { Name = "name", FieldType = DynamicFieldType.Text, Label = "Name", Required = true }
         };
 
-        var cut = RenderComponent<TmDynamicFormRenderer>(p => p
+        var cut = Render<TmDynamicFormRenderer>(p => p
             .Add(x => x.Fields, fields)
             .Add(x => x.Values, new Dictionary<string, object?>()));
 
@@ -117,7 +117,7 @@ public class TmDynamicFormRendererTests : LocalizationTestBase
             new() { Name = "name", FieldType = DynamicFieldType.Text, Label = "Name", Disabled = true }
         };
 
-        var cut = RenderComponent<TmDynamicFormRenderer>(p => p
+        var cut = Render<TmDynamicFormRenderer>(p => p
             .Add(x => x.Fields, fields)
             .Add(x => x.Values, new Dictionary<string, object?>()));
 
@@ -132,7 +132,7 @@ public class TmDynamicFormRendererTests : LocalizationTestBase
             new() { Name = "name", FieldType = DynamicFieldType.Text, Label = "Name", DefaultValue = "John" }
         };
 
-        var cut = RenderComponent<TmDynamicFormRenderer>(p => p
+        var cut = Render<TmDynamicFormRenderer>(p => p
             .Add(x => x.Fields, fields)
             .Add(x => x.Values, new Dictionary<string, object?>()));
 
@@ -148,7 +148,7 @@ public class TmDynamicFormRendererTests : LocalizationTestBase
             new() { Name = "last", FieldType = DynamicFieldType.Text, Label = "Last" }
         };
 
-        var cut = RenderComponent<TmDynamicFormRenderer>(p => p
+        var cut = Render<TmDynamicFormRenderer>(p => p
             .Add(x => x.Fields, fields)
             .Add(x => x.Columns, 2)
             .Add(x => x.Values, new Dictionary<string, object?>()));
@@ -165,7 +165,7 @@ public class TmDynamicFormRendererTests : LocalizationTestBase
             new() { Name = "notes", FieldType = DynamicFieldType.TextArea, Label = "Notes" }
         };
 
-        var cut = RenderComponent<TmDynamicFormRenderer>(p => p
+        var cut = Render<TmDynamicFormRenderer>(p => p
             .Add(x => x.Fields, fields)
             .Add(x => x.ReadOnly, true)
             .Add(x => x.Values, new Dictionary<string, object?>()));
@@ -185,7 +185,7 @@ public class TmDynamicFormRendererTests : LocalizationTestBase
             new() { Name = "email", FieldType = DynamicFieldType.Text, Label = "Email", HelpText = "Enter valid email" }
         };
 
-        var cut = RenderComponent<TmDynamicFormRenderer>(p => p
+        var cut = Render<TmDynamicFormRenderer>(p => p
             .Add(x => x.Fields, fields)
             .Add(x => x.Values, new Dictionary<string, object?>()));
 
@@ -201,7 +201,7 @@ public class TmDynamicFormRendererTests : LocalizationTestBase
             new() { Name = "name", FieldType = DynamicFieldType.Text, Label = "Name" }
         };
 
-        var cut = RenderComponent<TmDynamicFormRenderer>(p => p
+        var cut = Render<TmDynamicFormRenderer>(p => p
             .Add(x => x.Fields, fields)
             .Add(x => x.Values, new Dictionary<string, object?>())
             .Add(x => x.OnFieldChanged, EventCallback.Factory.Create<(string, object?)>(this, v => changed = v)));

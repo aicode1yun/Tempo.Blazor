@@ -12,7 +12,7 @@ public class TmSigningChoiceStepTests : LocalizationTestBase
     [Fact]
     public void Render_Select_RendersSelectOptions()
     {
-        var cut = RenderComponent<TmSigningChoiceStep>(parameters => parameters
+        var cut = Render<TmSigningChoiceStep>(parameters => parameters
             .Add(p => p.Field, CreateChoiceField(SigningFieldType.Select)));
 
         cut.Find(".tm-signing-choice-step__select").Should().NotBeNull();
@@ -27,7 +27,7 @@ public class TmSigningChoiceStepTests : LocalizationTestBase
         field.Options[0].Labels.Translations["cs"] = "Jedna";
         field.Options[1].Labels.Translations["cs"] = "Dvě";
 
-        var cut = RenderComponent<TmSigningChoiceStep>(parameters => parameters
+        var cut = Render<TmSigningChoiceStep>(parameters => parameters
             .Add(p => p.Field, field)
             .Add(p => p.Culture, "cs-CZ")
             .Add(p => p.ValueChanged, EventCallback.Factory.Create<object?>(this, changed => value = changed)));
@@ -42,7 +42,7 @@ public class TmSigningChoiceStepTests : LocalizationTestBase
     [Fact]
     public void Render_Radio_RendersRadioOptions()
     {
-        var cut = RenderComponent<TmSigningChoiceStep>(parameters => parameters
+        var cut = Render<TmSigningChoiceStep>(parameters => parameters
             .Add(p => p.Field, CreateChoiceField(SigningFieldType.Radio)));
 
         cut.FindAll("input[type='radio']").Should().HaveCount(2);
@@ -56,7 +56,7 @@ public class TmSigningChoiceStepTests : LocalizationTestBase
         field.Options[0].Labels.Translations["cs"] = "Jedna";
         field.Options[1].Labels.Translations["cs"] = "Dvě";
 
-        var cut = RenderComponent<TmSigningChoiceStep>(parameters => parameters
+        var cut = Render<TmSigningChoiceStep>(parameters => parameters
             .Add(p => p.Field, field)
             .Add(p => p.Culture, "cs-CZ")
             .Add(p => p.ValueChanged, EventCallback.Factory.Create<object?>(this, changed => value = changed)));
@@ -71,7 +71,7 @@ public class TmSigningChoiceStepTests : LocalizationTestBase
     [Fact]
     public void Render_Multiple_RendersCheckboxOptions()
     {
-        var cut = RenderComponent<TmSigningChoiceStep>(parameters => parameters
+        var cut = Render<TmSigningChoiceStep>(parameters => parameters
             .Add(p => p.Field, CreateChoiceField(SigningFieldType.Multiple)));
 
         cut.FindAll("input[type='checkbox']").Should().HaveCount(2);
@@ -85,7 +85,7 @@ public class TmSigningChoiceStepTests : LocalizationTestBase
         field.Options[0].Labels.Translations["cs"] = "Jedna";
         field.Options[1].Labels.Translations["cs"] = "Dvě";
 
-        var cut = RenderComponent<TmSigningChoiceStep>(parameters => parameters
+        var cut = Render<TmSigningChoiceStep>(parameters => parameters
             .Add(p => p.Field, field)
             .Add(p => p.Culture, "cs-CZ")
             .Add(p => p.ValueChanged, EventCallback.Factory.Create<object?>(this, changed => value = changed)));
@@ -101,7 +101,7 @@ public class TmSigningChoiceStepTests : LocalizationTestBase
     [Fact]
     public void Render_CheckboxGroup_RendersFieldsAsCheckboxes()
     {
-        var cut = RenderComponent<TmSigningChoiceStep>(parameters => parameters
+        var cut = Render<TmSigningChoiceStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Uuid = "group", Type = SigningFieldType.Checkbox })
             .Add(p => p.Fields, [
                 new SigningField { Uuid = "a", Name = "Consent A", Type = SigningFieldType.Checkbox },
@@ -115,7 +115,7 @@ public class TmSigningChoiceStepTests : LocalizationTestBase
     [Fact]
     public void Render_AnonymousCheckbox_UsesInstruction()
     {
-        var cut = RenderComponent<TmSigningChoiceStep>(parameters => parameters
+        var cut = Render<TmSigningChoiceStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Internal", Type = SigningFieldType.Checkbox })
             .Add(p => p.AnonymousCheckbox, true));
 
@@ -125,7 +125,7 @@ public class TmSigningChoiceStepTests : LocalizationTestBase
     [Fact]
     public void RequiredChoice_EmptySelect_ShowsValidation()
     {
-        var cut = RenderComponent<TmSigningChoiceStep>(parameters => parameters
+        var cut = Render<TmSigningChoiceStep>(parameters => parameters
             .Add(p => p.Field, CreateChoiceField(SigningFieldType.Select, required: true)));
 
         cut.Find("select").Change(string.Empty);

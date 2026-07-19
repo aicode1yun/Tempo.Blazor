@@ -22,7 +22,7 @@ public class TmDataTableAriaSortTests : LocalizationTestBase
     ];
 
     private IRenderedComponent<TmDataTable<SortPerson>> RenderWithSortableNameColumn()
-        => RenderComponent<TmDataTable<SortPerson>>(p =>
+        => Render<TmDataTable<SortPerson>>(p =>
         {
             p.Add(c => c.Items, People);
             p.AddChildContent(b =>

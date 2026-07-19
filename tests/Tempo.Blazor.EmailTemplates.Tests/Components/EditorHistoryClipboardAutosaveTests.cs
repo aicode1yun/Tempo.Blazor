@@ -12,7 +12,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.EmailTemplates.Tests.Components;
 
-public class EditorHistoryClipboardAutosaveTests : TestContext
+public class EditorHistoryClipboardAutosaveTests : BunitContext
 {
     public EditorHistoryClipboardAutosaveTests()
     {
@@ -40,7 +40,7 @@ public class EditorHistoryClipboardAutosaveTests : TestContext
     public void Undo_AfterAddingBlock_RemovesIt()
     {
         var doc = new EmailTemplateDocument();
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
 
         cut.Find("[data-tm-block=\"text\"]").Click();
         cut.FindAll("[data-tm-block-id]").Should().HaveCount(1);
@@ -54,7 +54,7 @@ public class EditorHistoryClipboardAutosaveTests : TestContext
     public void Redo_ReappliesUndoneChange()
     {
         var doc = new EmailTemplateDocument();
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
 
         cut.Find("[data-tm-block=\"text\"]").Click();
         cut.Find("[data-tm-undo]").Click();
@@ -67,7 +67,7 @@ public class EditorHistoryClipboardAutosaveTests : TestContext
     public void CtrlZ_Undoes()
     {
         var doc = new EmailTemplateDocument();
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
 
         cut.Find("[data-tm-block=\"text\"]").Click();
         cut.Find("[data-tm-email-editor]").KeyDown(new KeyboardEventArgs { Key = "z", CtrlKey = true });
@@ -79,7 +79,7 @@ public class EditorHistoryClipboardAutosaveTests : TestContext
     public void CopyPaste_DuplicatesSelectedBlock()
     {
         var doc = OneBlock(out var blockId);
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
 
         cut.Find($"[data-tm-block-id=\"{blockId}\"]").Click();          // select
         var editor = cut.Find("[data-tm-email-editor]");
@@ -96,7 +96,7 @@ public class EditorHistoryClipboardAutosaveTests : TestContext
         EmailTemplateDocument? saved = null;
         var doc = new EmailTemplateDocument();
 
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p
+        var cut = Render<TmEmailTemplateEditor>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.TimeProvider, time)
             .Add(c => c.AutoSave, new AutoSaveOptions { Enabled = true, Interval = TimeSpan.FromSeconds(2) })
@@ -117,7 +117,7 @@ public class EditorHistoryClipboardAutosaveTests : TestContext
         var fired = false;
         var doc = new EmailTemplateDocument();
 
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p
+        var cut = Render<TmEmailTemplateEditor>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.TimeProvider, time)
             .Add(c => c.OnAutoSave, _ => fired = true));

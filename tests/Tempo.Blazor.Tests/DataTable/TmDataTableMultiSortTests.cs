@@ -102,7 +102,7 @@ public class TmDataTableMultiSortTests : LocalizationTestBase
     }
 
     private IRenderedComponent<TmDataTable<Person>> RenderTable(IDataTableDataProvider<Person>? provider = null, IEnumerable<Person>? items = null)
-        => RenderComponent<TmDataTable<Person>>(p =>
+        => Render<TmDataTable<Person>>(p =>
         {
             p.Add(c => c.ViewContext, "multisort-test");
             if (provider is not null) p.Add(c => c.DataProvider, provider);

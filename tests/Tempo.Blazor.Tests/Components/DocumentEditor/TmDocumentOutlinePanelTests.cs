@@ -23,7 +23,7 @@ public class TmDocumentOutlinePanelTests : LocalizationTestBase
     [Fact]
     public void OutlinePanel_HasExpectedTestId()
     {
-        var cut = RenderComponent<TmDocumentOutlinePanel>(parameters => parameters
+        var cut = Render<TmDocumentOutlinePanel>(parameters => parameters
             .Add(p => p.Outline, EmptyOutline));
 
         cut.Find("[data-testid='document-outline-panel']").Should().NotBeNull();
@@ -32,7 +32,7 @@ public class TmDocumentOutlinePanelTests : LocalizationTestBase
     [Fact]
     public void OutlinePanel_EmptyOutline_ShowsEmptyMessage()
     {
-        var cut = RenderComponent<TmDocumentOutlinePanel>(parameters => parameters
+        var cut = Render<TmDocumentOutlinePanel>(parameters => parameters
             .Add(p => p.Outline, EmptyOutline));
 
         cut.Find("[data-testid='document-outline-empty']").Should().NotBeNull();
@@ -42,7 +42,7 @@ public class TmDocumentOutlinePanelTests : LocalizationTestBase
     [Fact]
     public void OutlinePanel_WithItems_RendersAllItems()
     {
-        var cut = RenderComponent<TmDocumentOutlinePanel>(parameters => parameters
+        var cut = Render<TmDocumentOutlinePanel>(parameters => parameters
             .Add(p => p.Outline, SampleOutline));
 
         cut.FindAll("[data-testid='document-outline-item']").Should().HaveCount(3);
@@ -51,7 +51,7 @@ public class TmDocumentOutlinePanelTests : LocalizationTestBase
     [Fact]
     public void OutlinePanel_ItemsShowHeadingText()
     {
-        var cut = RenderComponent<TmDocumentOutlinePanel>(parameters => parameters
+        var cut = Render<TmDocumentOutlinePanel>(parameters => parameters
             .Add(p => p.Outline, SampleOutline));
 
         var items = cut.FindAll("[data-testid='document-outline-item']");
@@ -63,7 +63,7 @@ public class TmDocumentOutlinePanelTests : LocalizationTestBase
     [Fact]
     public void OutlinePanel_ItemsHaveDataLevel()
     {
-        var cut = RenderComponent<TmDocumentOutlinePanel>(parameters => parameters
+        var cut = Render<TmDocumentOutlinePanel>(parameters => parameters
             .Add(p => p.Outline, SampleOutline));
 
         var items = cut.FindAll("[data-testid='document-outline-item']");
@@ -76,7 +76,7 @@ public class TmDocumentOutlinePanelTests : LocalizationTestBase
     public void OutlinePanel_ClickItem_InvokesNavigateCallback()
     {
         string? navigatedBlockId = null;
-        var cut = RenderComponent<TmDocumentOutlinePanel>(parameters => parameters
+        var cut = Render<TmDocumentOutlinePanel>(parameters => parameters
             .Add(p => p.Outline, SampleOutline)
             .Add(p => p.OnNavigateToBlock, EventCallback.Factory.Create<string>(this, id => navigatedBlockId = id)));
 
@@ -89,7 +89,7 @@ public class TmDocumentOutlinePanelTests : LocalizationTestBase
     [Fact]
     public void OutlinePanel_WithItems_RendersMinimapMarkers()
     {
-        var cut = RenderComponent<TmDocumentOutlinePanel>(parameters => parameters
+        var cut = Render<TmDocumentOutlinePanel>(parameters => parameters
             .Add(p => p.Outline, SampleOutline));
 
         cut.Find("[data-testid='document-outline-minimap']").Should().NotBeNull();
@@ -100,7 +100,7 @@ public class TmDocumentOutlinePanelTests : LocalizationTestBase
     public void OutlinePanel_ClickMinimapMarker_InvokesNavigateCallback()
     {
         string? navigatedBlockId = null;
-        var cut = RenderComponent<TmDocumentOutlinePanel>(parameters => parameters
+        var cut = Render<TmDocumentOutlinePanel>(parameters => parameters
             .Add(p => p.Outline, SampleOutline)
             .Add(p => p.OnNavigateToBlock, EventCallback.Factory.Create<string>(this, id => navigatedBlockId = id)));
 
@@ -112,7 +112,7 @@ public class TmDocumentOutlinePanelTests : LocalizationTestBase
     [Fact]
     public void OutlinePanel_ActiveBlockId_HighlightsMatchingHeading()
     {
-        var cut = RenderComponent<TmDocumentOutlinePanel>(parameters => parameters
+        var cut = Render<TmDocumentOutlinePanel>(parameters => parameters
             .Add(p => p.Outline, SampleOutline)
             .Add(p => p.ActiveBlockId, "h2"));
 
@@ -128,11 +128,11 @@ public class TmDocumentOutlinePanelTests : LocalizationTestBase
     [Fact]
     public void OutlinePanel_NullOutline_ThrowsOrRendersEmpty()
     {
-        var act = () => RenderComponent<TmDocumentOutlinePanel>(parameters => parameters
+        var act = () => Render<TmDocumentOutlinePanel>(parameters => parameters
             .Add(p => p.Outline, null!));
 
         act.Should().NotThrow();
-        var cut = RenderComponent<TmDocumentOutlinePanel>(parameters => parameters
+        var cut = Render<TmDocumentOutlinePanel>(parameters => parameters
             .Add(p => p.Outline, null!));
         cut.Find("[data-testid='document-outline-empty']").Should().NotBeNull();
     }

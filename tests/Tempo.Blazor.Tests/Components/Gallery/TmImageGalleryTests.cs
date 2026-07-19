@@ -33,7 +33,7 @@ public class TmImageGalleryTests : LocalizationTestBase
     [Fact]
     public void TmImageGallery_Renders_Gallery()
     {
-        var cut = RenderComponent<TmImageGallery>(p => p
+        var cut = Render<TmImageGallery>(p => p
             .Add(c => c.Images, MakeImages(3)));
 
         cut.Find(".tm-image-gallery").Should().NotBeNull();
@@ -42,7 +42,7 @@ public class TmImageGalleryTests : LocalizationTestBase
     [Fact]
     public void TmImageGallery_Renders_Item_Per_Image()
     {
-        var cut = RenderComponent<TmImageGallery>(p => p
+        var cut = Render<TmImageGallery>(p => p
             .Add(c => c.Images, MakeImages(3)));
 
         cut.FindAll(".tm-gallery-item").Count.Should().Be(3);
@@ -51,7 +51,7 @@ public class TmImageGalleryTests : LocalizationTestBase
     [Fact]
     public void TmImageGallery_Loading_Shows_Spinner()
     {
-        var cut = RenderComponent<TmImageGallery>(p => p
+        var cut = Render<TmImageGallery>(p => p
             .Add(c => c.Images, MakeImages(0))
             .Add(c => c.IsLoading, true));
 
@@ -61,7 +61,7 @@ public class TmImageGalleryTests : LocalizationTestBase
     [Fact]
     public void TmImageGallery_Empty_Shows_EmptyState()
     {
-        var cut = RenderComponent<TmImageGallery>(p => p
+        var cut = Render<TmImageGallery>(p => p
             .Add(c => c.Images, MakeImages(0))
             .Add(c => c.EmptyTitle, "No images found"));
 
@@ -75,7 +75,7 @@ public class TmImageGalleryTests : LocalizationTestBase
             "http://example.com/full.jpg",
             "http://example.com/thumb.jpg",
             "Test");
-        var cut = RenderComponent<TmImageGallery>(p => p
+        var cut = Render<TmImageGallery>(p => p
             .Add(c => c.Images, new List<IGalleryImage> { img }));
 
         cut.Find(".tm-gallery-item img").GetAttribute("src")
@@ -89,7 +89,7 @@ public class TmImageGalleryTests : LocalizationTestBase
             "http://example.com/full.jpg",
             null,
             "Test");
-        var cut = RenderComponent<TmImageGallery>(p => p
+        var cut = Render<TmImageGallery>(p => p
             .Add(c => c.Images, new List<IGalleryImage> { img }));
 
         cut.Find(".tm-gallery-item img").GetAttribute("src")
@@ -100,7 +100,7 @@ public class TmImageGalleryTests : LocalizationTestBase
     public void TmImageGallery_Item_Shows_Title()
     {
         var img = new TestGalleryImage("img1", null, null, "My Photo");
-        var cut = RenderComponent<TmImageGallery>(p => p
+        var cut = Render<TmImageGallery>(p => p
             .Add(c => c.Images, new List<IGalleryImage> { img }));
 
         cut.Find(".tm-gallery-item-title").TextContent.Should().Contain("My Photo");
@@ -111,7 +111,7 @@ public class TmImageGalleryTests : LocalizationTestBase
     {
         IGalleryImage? clicked = null;
         var img = new TestGalleryImage("img1", "http://example.com/img.jpg", null, "Test");
-        var cut = RenderComponent<TmImageGallery>(p => p
+        var cut = Render<TmImageGallery>(p => p
             .Add(c => c.Images, new List<IGalleryImage> { img })
             .Add(c => c.OnImageClick, EventCallback.Factory.Create<IGalleryImage>(
                 this, i => clicked = i)));

@@ -23,14 +23,14 @@ public class TmNotificationBellTests : LocalizationTestBase
     public void Bell_ShowsBadge_WhenUnreadNotifications()
     {
         _store.PublishAsync(MakeNotification("alice", "Test")).Wait();
-        var cut = RenderComponent<TmNotificationBell>();
+        var cut = Render<TmNotificationBell>();
         cut.FindAll(".tm-notification-bell__badge").Should().HaveCount(1);
     }
 
     [Fact]
     public void Bell_HidesBadge_WhenNoUnread()
     {
-        var cut = RenderComponent<TmNotificationBell>();
+        var cut = Render<TmNotificationBell>();
         cut.FindAll(".tm-notification-bell__badge").Should().BeEmpty();
     }
 
@@ -38,7 +38,7 @@ public class TmNotificationBellTests : LocalizationTestBase
     public void Bell_Click_OpensPanel()
     {
         _store.PublishAsync(MakeNotification("alice", "Test")).Wait();
-        var cut = RenderComponent<TmNotificationBell>();
+        var cut = Render<TmNotificationBell>();
         cut.Find(".tm-notification-bell__button").Click();
         cut.FindAll(".tm-notification-bell__dropdown").Should().HaveCount(1);
     }
@@ -47,7 +47,7 @@ public class TmNotificationBellTests : LocalizationTestBase
     public void Bell_MarkAllRead_ClearsBadge()
     {
         _store.PublishAsync(MakeNotification("alice", "Test")).Wait();
-        var cut = RenderComponent<TmNotificationBell>();
+        var cut = Render<TmNotificationBell>();
         cut.Find(".tm-notification-bell__button").Click();
         cut.Find(".tm-notification-bell__mark-all").Click();
         cut.FindAll(".tm-notification-bell__badge").Should().BeEmpty();
@@ -57,7 +57,7 @@ public class TmNotificationBellTests : LocalizationTestBase
     public void Bell_Notification_RendersMessage()
     {
         _store.PublishAsync(MakeNotification("alice", "Deploy complete")).Wait();
-        var cut = RenderComponent<TmNotificationBell>();
+        var cut = Render<TmNotificationBell>();
         cut.Find(".tm-notification-bell__button").Click();
         cut.Find(".tm-notification-bell__message").TextContent.Should().Contain("Deploy complete");
     }
@@ -65,7 +65,7 @@ public class TmNotificationBellTests : LocalizationTestBase
     [Fact]
     public void Bell_Empty_RendersEmptyState()
     {
-        var cut = RenderComponent<TmNotificationBell>();
+        var cut = Render<TmNotificationBell>();
         cut.Find(".tm-notification-bell__button").Click();
         cut.Find(".tm-notification-bell__empty").Should().NotBeNull();
     }
@@ -76,7 +76,7 @@ public class TmNotificationBellTests : LocalizationTestBase
         _store.PublishAsync(MakeNotification("alice", "Unread 1")).Wait();
         _store.MarkAllAsReadAsync("demo").Wait();
         _store.PublishAsync(MakeNotification("bob", "Unread 2")).Wait();
-        var cut = RenderComponent<TmNotificationBell>(p => p.Add(c => c.CurrentUserId, "demo"));
+        var cut = Render<TmNotificationBell>(p => p.Add(c => c.CurrentUserId, "demo"));
         cut.Find(".tm-notification-bell__button").Click();
         cut.Find(".tm-notification-bell__filter").Click(); // switch to only unread
         cut.FindAll(".tm-notification-bell__item").Should().HaveCount(1);

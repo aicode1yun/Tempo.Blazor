@@ -182,7 +182,7 @@ public sealed class TmNotionAiMenuTests : LocalizationTestBase
         RecordingAIProvider provider,
         Action<ComponentParameterCollectionBuilder<TmNotionAiMenu>>? configure = null)
     {
-        return RenderComponent<TmNotionAiMenu>(parameters =>
+        return Render<TmNotionAiMenu>(parameters =>
         {
             parameters.Add(p => p.Visible, true);
             parameters.Add(p => p.Top, 12);

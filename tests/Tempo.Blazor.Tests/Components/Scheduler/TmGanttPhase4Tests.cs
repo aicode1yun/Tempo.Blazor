@@ -63,7 +63,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     {
         var task = MakeTask("1");
         task.Description = "My description text";
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p.Add(x => x.Task, task));
+        var cut = Render<TmGanttTaskPanel>(p => p.Add(x => x.Task, task));
 
         cut.Find("[data-testid='task-description']").Should().NotBeNull();
     }
@@ -103,7 +103,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     public void TmGanttTaskPanel_Renders_Attachment_List_And_Upload_Button()
     {
         var task = MakeTask("1", attachments: 1);
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p.Add(x => x.Task, task));
+        var cut = Render<TmGanttTaskPanel>(p => p.Add(x => x.Task, task));
 
         cut.Find("[data-testid='attachment-list']").Should().NotBeNull();
         cut.Find("[data-testid='attachment-upload']").Should().NotBeNull();
@@ -113,7 +113,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     public void TmGantt_Tree_Row_Shows_Attachment_Count_Icon_When_Task_Has_Attachments()
     {
         var task = MakeTask("1", attachments: 2);
-        var cut = RenderComponent<TmGantt>(p => p.Add(x => x.Items, new[] { task }));
+        var cut = Render<TmGantt>(p => p.Add(x => x.Items, new[] { task }));
 
         cut.Find("[data-testid='attachment-count-1']").Should().NotBeNull();
     }
@@ -152,7 +152,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     public void TmGanttTaskPanel_Renders_Comment_List()
     {
         var task = MakeTask("1", comments: 1);
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p.Add(x => x.Task, task));
+        var cut = Render<TmGanttTaskPanel>(p => p.Add(x => x.Task, task));
 
         cut.Find("[data-testid='comment-list']").Should().NotBeNull();
     }
@@ -166,7 +166,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
             "1",
             "Hello <span class=\"tm-gantt__mention\">@bob</span> please review this",
             TmCommentBodyFormat.Html));
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p.Add(x => x.Task, task));
+        var cut = Render<TmGanttTaskPanel>(p => p.Add(x => x.Task, task));
 
         cut.Find(".tm-gantt__mention").TextContent.Should().Be("@bob");
     }
@@ -190,7 +190,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     public void TmGantt_Tree_Row_Shows_Comment_Count_Icon_When_Task_Has_Comments()
     {
         var task = MakeTask("1", comments: 3);
-        var cut = RenderComponent<TmGantt>(p => p.Add(x => x.Items, new[] { task }));
+        var cut = Render<TmGantt>(p => p.Add(x => x.Items, new[] { task }));
 
         cut.Find("[data-testid='comment-count-1']").Should().NotBeNull();
     }
@@ -274,7 +274,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     public void TmGantt_Has_OnExportRequested_Parameter()
     {
         var fired = false;
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.OnExportRequested, EventCallback.Factory.Create<GanttExportOptions>(this, _ => fired = true)));
 
@@ -284,7 +284,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     [Fact]
     public void TmGanttExportDialog_Renders_Preview_And_Format_Options()
     {
-        var cut = RenderComponent<TmGanttExportDialog>(p => p
+        var cut = Render<TmGanttExportDialog>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnExport, EventCallback.Factory.Create<GanttExportOptions>(this, _ => { }))
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => { })));
@@ -419,7 +419,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Has_OnImportCompleted_And_OnImportError_Parameters()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.OnImportCompleted, EventCallback.Factory.Create<IReadOnlyList<TmWorkItem>>(this, _ => { }))
             .Add(x => x.OnImportError,     EventCallback.Factory.Create<string>(this, _ => { })));
@@ -432,7 +432,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     public void TmGanttImportMappingDialog_Renders_Mapping_Selects_For_Source_Columns()
     {
         var cols = new[] { "Task Name", "Start Date", "End Date" };
-        var cut = RenderComponent<TmGanttImportMappingDialog>(p => p
+        var cut = Render<TmGanttImportMappingDialog>(p => p
             .Add(x => x.SourceColumns, cols)
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnImport, EventCallback.Factory.Create<IReadOnlyList<GanttColumnMapping>>(this, _ => { }))
@@ -468,7 +468,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
             Activity("h1", DateTimeOffset.UtcNow, "Alice", "StatusChanged", "t1", null, "Done"),
             Activity("h2", DateTimeOffset.UtcNow, "Bob",   "PriorityChanged", "t2", "Low", "High"),
         };
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.History, history));
 
@@ -495,7 +495,7 @@ public class TmGanttPhase4Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Has_OnTimeTravelRequested_And_OnRollbackRequested_Parameters()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.OnTimeTravelRequested,  EventCallback.Factory.Create<DateTime>(this, _ => { }))
             .Add(x => x.OnRollbackRequested,    EventCallback.Factory.Create<TmActivityEntry>(this, _ => { })));

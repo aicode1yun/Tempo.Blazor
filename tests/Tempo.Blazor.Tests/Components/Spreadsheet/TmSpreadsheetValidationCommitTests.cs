@@ -14,7 +14,7 @@ public class TmSpreadsheetValidationCommitTests : LocalizationTestBase
     [Fact]
     public async Task Commit_InvalidValue_StopStyle_ShowsErrorAndBlocksCommit()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
 
         sheet.DataValidations.Add(new SpreadsheetDataValidation
@@ -47,7 +47,7 @@ public class TmSpreadsheetValidationCommitTests : LocalizationTestBase
     [Fact]
     public async Task Commit_InvalidValue_StopStyle_DismissClosesAlert()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
 
         sheet.DataValidations.Add(new SpreadsheetDataValidation
@@ -75,7 +75,7 @@ public class TmSpreadsheetValidationCommitTests : LocalizationTestBase
     [Fact]
     public async Task Commit_InvalidValue_WarningStyle_ShowsConfirmDialog()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
 
         sheet.DataValidations.Add(new SpreadsheetDataValidation
@@ -108,7 +108,7 @@ public class TmSpreadsheetValidationCommitTests : LocalizationTestBase
     [Fact]
     public async Task Commit_InvalidValue_WarningStyle_ConfirmCommitsValue()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
 
         sheet.DataValidations.Add(new SpreadsheetDataValidation
@@ -137,7 +137,7 @@ public class TmSpreadsheetValidationCommitTests : LocalizationTestBase
     [Fact]
     public async Task Commit_InvalidValue_WarningStyle_CancelDoesNotCommit()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
 
         sheet.DataValidations.Add(new SpreadsheetDataValidation
@@ -166,7 +166,7 @@ public class TmSpreadsheetValidationCommitTests : LocalizationTestBase
     [Fact]
     public async Task Commit_ValidValue_IsCommittedWithoutDialog()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.Workbook.ActiveSheet!;
 
         sheet.DataValidations.Add(new SpreadsheetDataValidation

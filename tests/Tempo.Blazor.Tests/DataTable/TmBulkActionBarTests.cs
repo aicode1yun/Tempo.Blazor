@@ -12,7 +12,7 @@ public class TmBulkActionBarTests : LocalizationTestBase
     [Fact]
     public void BulkActionBar_ZeroCount_IsHidden()
     {
-        var cut = RenderComponent<TmBulkActionBar>(p => p
+        var cut = Render<TmBulkActionBar>(p => p
             .Add(x => x.SelectedCount, 0));
 
         cut.FindAll(".tm-bulk-action-bar").Should().BeEmpty();
@@ -21,7 +21,7 @@ public class TmBulkActionBarTests : LocalizationTestBase
     [Fact]
     public void BulkActionBar_PositiveCount_IsVisible()
     {
-        var cut = RenderComponent<TmBulkActionBar>(p => p
+        var cut = Render<TmBulkActionBar>(p => p
             .Add(x => x.SelectedCount, 3));
 
         cut.Find(".tm-bulk-action-bar").Should().NotBeNull();
@@ -30,7 +30,7 @@ public class TmBulkActionBarTests : LocalizationTestBase
     [Fact]
     public void BulkActionBar_ShowsSelectedCount()
     {
-        var cut = RenderComponent<TmBulkActionBar>(p => p
+        var cut = Render<TmBulkActionBar>(p => p
             .Add(x => x.SelectedCount, 5));
 
         cut.Find(".tm-bulk-action-bar__count").TextContent.Should().Contain("5");
@@ -39,7 +39,7 @@ public class TmBulkActionBarTests : LocalizationTestBase
     [Fact]
     public void BulkActionBar_HasRoleToolbar()
     {
-        var cut = RenderComponent<TmBulkActionBar>(p => p
+        var cut = Render<TmBulkActionBar>(p => p
             .Add(x => x.SelectedCount, 1));
 
         cut.Find("[role='toolbar']").Should().NotBeNull();
@@ -49,7 +49,7 @@ public class TmBulkActionBarTests : LocalizationTestBase
     public void BulkActionBar_ClearButton_FiresEvent()
     {
         bool cleared = false;
-        var cut = RenderComponent<TmBulkActionBar>(p => p
+        var cut = Render<TmBulkActionBar>(p => p
             .Add(x => x.SelectedCount, 3)
             .Add(x => x.OnClearSelection, EventCallback.Factory.Create(this, () => cleared = true)));
 
@@ -61,7 +61,7 @@ public class TmBulkActionBarTests : LocalizationTestBase
     [Fact]
     public void BulkActionBar_Actions_RendersChildContent()
     {
-        var cut = RenderComponent<TmBulkActionBar>(p => p
+        var cut = Render<TmBulkActionBar>(p => p
             .Add(x => x.SelectedCount, 2)
             .AddChildContent("<button>Delete Selected</button>"));
 
@@ -71,7 +71,7 @@ public class TmBulkActionBarTests : LocalizationTestBase
     [Fact]
     public void BulkActionBar_CustomClass_IsApplied()
     {
-        var cut = RenderComponent<TmBulkActionBar>(p => p
+        var cut = Render<TmBulkActionBar>(p => p
             .Add(x => x.SelectedCount, 1)
             .Add(x => x.Class, "my-bar"));
 

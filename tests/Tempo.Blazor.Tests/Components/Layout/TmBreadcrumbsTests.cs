@@ -25,7 +25,7 @@ public class TmBreadcrumbsTests : LocalizationTestBase
     [Fact]
     public void TmBreadcrumbs_Renders_Nav_Element()
     {
-        var cut = RenderComponent<TmBreadcrumbs>(p => p
+        var cut = Render<TmBreadcrumbs>(p => p
             .Add(c => c.Items, TwoItems));
 
         cut.Find("nav").Should().NotBeNull();
@@ -34,7 +34,7 @@ public class TmBreadcrumbsTests : LocalizationTestBase
     [Fact]
     public void TmBreadcrumbs_Has_Base_CssClass()
     {
-        var cut = RenderComponent<TmBreadcrumbs>(p => p
+        var cut = Render<TmBreadcrumbs>(p => p
             .Add(c => c.Items, TwoItems));
 
         cut.Find("nav").ClassList.Should().Contain("tm-breadcrumbs");
@@ -43,7 +43,7 @@ public class TmBreadcrumbsTests : LocalizationTestBase
     [Fact]
     public void TmBreadcrumbs_Renders_All_Items()
     {
-        var cut = RenderComponent<TmBreadcrumbs>(p => p
+        var cut = Render<TmBreadcrumbs>(p => p
             .Add(c => c.Items, ThreeItems));
 
         cut.FindAll(".tm-breadcrumb-item").Count.Should().Be(3);
@@ -52,7 +52,7 @@ public class TmBreadcrumbsTests : LocalizationTestBase
     [Fact]
     public void TmBreadcrumbs_Last_Item_Has_Current_Class()
     {
-        var cut = RenderComponent<TmBreadcrumbs>(p => p
+        var cut = Render<TmBreadcrumbs>(p => p
             .Add(c => c.Items, ThreeItems));
 
         var items = cut.FindAll(".tm-breadcrumb-item");
@@ -62,7 +62,7 @@ public class TmBreadcrumbsTests : LocalizationTestBase
     [Fact]
     public void TmBreadcrumbs_Last_Item_Has_No_Link()
     {
-        var cut = RenderComponent<TmBreadcrumbs>(p => p
+        var cut = Render<TmBreadcrumbs>(p => p
             .Add(c => c.Items, ThreeItems));
 
         // The last item (Users) has no href, so it should not render an <a>
@@ -73,7 +73,7 @@ public class TmBreadcrumbsTests : LocalizationTestBase
     [Fact]
     public void TmBreadcrumbs_Non_Last_Item_With_Href_Is_Link()
     {
-        var cut = RenderComponent<TmBreadcrumbs>(p => p
+        var cut = Render<TmBreadcrumbs>(p => p
             .Add(c => c.Items, ThreeItems));
 
         var firstItem = cut.FindAll(".tm-breadcrumb-item").First();
@@ -83,7 +83,7 @@ public class TmBreadcrumbsTests : LocalizationTestBase
     [Fact]
     public void TmBreadcrumbs_Separators_Between_Items()
     {
-        var cut = RenderComponent<TmBreadcrumbs>(p => p
+        var cut = Render<TmBreadcrumbs>(p => p
             .Add(c => c.Items, ThreeItems));
 
         // 3 items → 2 separators
@@ -93,7 +93,7 @@ public class TmBreadcrumbsTests : LocalizationTestBase
     [Fact]
     public void TmBreadcrumbs_Empty_Items_Renders_Nothing()
     {
-        var cut = RenderComponent<TmBreadcrumbs>(p => p
+        var cut = Render<TmBreadcrumbs>(p => p
             .Add(c => c.Items, new List<BreadcrumbItem>()));
 
         cut.FindAll("nav").Should().BeEmpty();

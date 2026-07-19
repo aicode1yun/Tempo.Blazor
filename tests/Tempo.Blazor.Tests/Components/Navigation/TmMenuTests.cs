@@ -11,7 +11,7 @@ public class TmMenuTests : LocalizationTestBase
     [Fact]
     public void TmMenu_Renders_Items()
     {
-        var cut = RenderComponent<TmMenu>(p => p
+        var cut = Render<TmMenu>(p => p
             .Add(x => x.Items, new[]
             {
                 new MenuItem { Text = "Home", Icon = "home" },
@@ -24,7 +24,7 @@ public class TmMenuTests : LocalizationTestBase
     [Fact]
     public void TmMenu_Horizontal_Has_Horizontal_Class()
     {
-        var cut = RenderComponent<TmMenu>(p => p
+        var cut = Render<TmMenu>(p => p
             .Add(x => x.Orientation, MenuOrientation.Horizontal));
 
         cut.Find(".tm-menu--horizontal").Should().NotBeNull();
@@ -36,7 +36,7 @@ public class TmMenuTests : LocalizationTestBase
         MenuItem? clicked = null;
         var items = new[] { new MenuItem { Text = "Home" } };
 
-        var cut = RenderComponent<TmMenu>(p => p
+        var cut = Render<TmMenu>(p => p
             .Add(x => x.Items, items)
             .Add(x => x.OnItemClick, EventCallback.Factory.Create<MenuItem>(this, i => clicked = i)));
 
@@ -50,7 +50,7 @@ public class TmMenuTests : LocalizationTestBase
         MenuItem? clicked = null;
         var items = new[] { new MenuItem { Text = "Home", Disabled = true } };
 
-        var cut = RenderComponent<TmMenu>(p => p
+        var cut = Render<TmMenu>(p => p
             .Add(x => x.Items, items)
             .Add(x => x.OnItemClick, EventCallback.Factory.Create<MenuItem>(this, i => clicked = i)));
 
@@ -62,7 +62,7 @@ public class TmMenuTests : LocalizationTestBase
     {
         var items = new[] { new MenuItem { Text = "Home", Href = "/home" } };
 
-        var cut = RenderComponent<TmMenu>(p => p
+        var cut = Render<TmMenu>(p => p
             .Add(x => x.Items, items));
 
         cut.Find("a.tm-menu__link").GetAttribute("href").Should().Be("/home");
@@ -78,7 +78,7 @@ public class TmMenuTests : LocalizationTestBase
             new MenuItem { Text = "About" }
         };
 
-        var cut = RenderComponent<TmMenu>(p => p
+        var cut = Render<TmMenu>(p => p
             .Add(x => x.Items, items));
 
         cut.FindAll(".tm-menu__separator").Count.Should().Be(1);

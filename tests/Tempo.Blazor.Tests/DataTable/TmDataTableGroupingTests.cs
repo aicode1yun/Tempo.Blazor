@@ -29,7 +29,7 @@ public class TmDataTableGroupingTests : LocalizationTestBase
         bool groupsCollapsedByDefault = true,
         EventCallback<IReadOnlyList<string>>? onGroupingChanged = null)
     {
-        return RenderComponent<TmDataTable<GroupPerson>>(p =>
+        return Render<TmDataTable<GroupPerson>>(p =>
         {
             p.Add(c => c.Items, People);
             p.Add(c => c.ShowGrouping, showGrouping);
@@ -137,7 +137,7 @@ public class TmDataTableGroupingTests : LocalizationTestBase
     [Fact]
     public async Task DataTable_Grouped_RowAttributes_Applies_CustomAttributes_ToLeafRows()
     {
-        var cut = RenderComponent<TmDataTable<GroupPerson>>(p =>
+        var cut = Render<TmDataTable<GroupPerson>>(p =>
         {
             p.Add(c => c.Items, People);
             p.Add(c => c.ShowGrouping, true);
@@ -175,7 +175,7 @@ public class TmDataTableGroupingTests : LocalizationTestBase
     [Fact]
     public async Task DataTable_Grouped_RowAttributes_Drops_ReservedNames_OnLeafRows()
     {
-        var cut = RenderComponent<TmDataTable<GroupPerson>>(p =>
+        var cut = Render<TmDataTable<GroupPerson>>(p =>
         {
             p.Add(c => c.Items, People);
             p.Add(c => c.ShowGrouping, true);
@@ -375,7 +375,7 @@ public class TmDataTableGroupingTests : LocalizationTestBase
                     PageSize = 25
                 }));
 
-        var cut = RenderComponent<TmDataTable<GroupPerson>>(p =>
+        var cut = Render<TmDataTable<GroupPerson>>(p =>
         {
             p.Add(c => c.DataProvider, provider);
             p.Add(c => c.ShowGrouping, true);

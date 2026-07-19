@@ -32,7 +32,7 @@ public class TmDataTableSearchTests : LocalizationTestBase
     [Fact]
     public void TmDataTable_SearchText_SetExternally_FiltersClientItems()
     {
-        var cut = RenderComponent<TmDataTable<SearchPerson>>(p => p
+        var cut = Render<TmDataTable<SearchPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.SearchText, "Bob")
             .AddChildContent(NameColumn));
@@ -44,7 +44,7 @@ public class TmDataTableSearchTests : LocalizationTestBase
     [Fact]
     public void TmDataTable_SearchText_SetExternally_WithShowSearchFalse_FiltersItems()
     {
-        var cut = RenderComponent<TmDataTable<SearchPerson>>(p => p
+        var cut = Render<TmDataTable<SearchPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.SearchText, "Alice")
             .Add(c => c.ShowSearch, false)
@@ -59,7 +59,7 @@ public class TmDataTableSearchTests : LocalizationTestBase
     public void TmDataTable_SearchTextChanged_Fires_WhenInternalInputChanges()
     {
         string? captured = null;
-        var cut = RenderComponent<TmDataTable<SearchPerson>>(p => p
+        var cut = Render<TmDataTable<SearchPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.SearchTextChanged, (string value) => captured = value)
             .AddChildContent(NameColumn));
@@ -83,7 +83,7 @@ public class TmDataTableSearchTests : LocalizationTestBase
                 PageSize = call.Arg<DataTableQuery>().PageSize
             }));
 
-        var cut = RenderComponent<TmDataTable<SearchPerson>>(p => p
+        var cut = Render<TmDataTable<SearchPerson>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.ViewContext, "search-test")
             .Add(c => c.SearchText, "server-term")
@@ -99,7 +99,7 @@ public class TmDataTableSearchTests : LocalizationTestBase
     [Fact]
     public void TmDataTable_UncontrolledSearch_PersistsAfterParentRerender()
     {
-        var cut = RenderComponent<TmDataTable<SearchPerson>>(p => p
+        var cut = Render<TmDataTable<SearchPerson>>(p => p
             .Add(c => c.Items, People)
             .AddChildContent(NameColumn));
 
@@ -107,7 +107,7 @@ public class TmDataTableSearchTests : LocalizationTestBase
         input.Input("Bob");
 
         // Simulate an unrelated parent rerender (no SearchText parameter change)
-        cut.SetParametersAndRender();
+        cut.Render();
 
         cut.FindAll("tbody tr").Count.Should().Be(1);
         cut.Find("tbody tr").TextContent.Should().Contain("Bob");
@@ -126,17 +126,17 @@ public class TmDataTableSearchTests : LocalizationTestBase
                 PageSize = call.Arg<DataTableQuery>().PageSize
             }));
 
-        var cut = RenderComponent<TmDataTable<SearchPerson>>(p => p
+        var cut = Render<TmDataTable<SearchPerson>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.ViewContext, "search-test")
             .AddChildContent(NameColumn));
 
         await cut.InvokeAsync(() => cut.Render());
 
-        cut.SetParametersAndRender(p => p.Add(c => c.SearchText, "alpha"));
+        cut.Render(p => p.Add(c => c.SearchText, "alpha"));
         await cut.InvokeAsync(() => cut.Render());
 
-        cut.SetParametersAndRender(p => p.Add(c => c.SearchText, "beta"));
+        cut.Render(p => p.Add(c => c.SearchText, "beta"));
         await cut.InvokeAsync(() => cut.Render());
 
         await provider.Received(3).GetDataAsync(
@@ -167,14 +167,14 @@ public class TmDataTableSearchTests : LocalizationTestBase
 
         IRenderedComponent<TmDataTable<SearchPerson>>? cut = null;
         var searchText = string.Empty;
-        cut = RenderComponent<TmDataTable<SearchPerson>>(p => p
+        cut = Render<TmDataTable<SearchPerson>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.ViewContext, "search-test")
             .Add(c => c.SearchText, searchText)
             .Add(c => c.SearchTextChanged, (string value) =>
             {
                 searchText = value;
-                cut!.SetParametersAndRender(pp => pp.Add(c => c.SearchText, value));
+                cut!.Render(pp => pp.Add(c => c.SearchText, value));
             })
             .AddChildContent(NameColumn));
 

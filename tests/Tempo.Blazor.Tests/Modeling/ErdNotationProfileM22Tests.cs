@@ -98,7 +98,7 @@ public sealed class ErdNotationProfileM22Tests : LocalizationTestBase
     {
         Services.AddSingleton<IModelingNotationProfile, ErdNotationProfile>();
 
-        using var cut = RenderComponent<TmModelingViewSelector>(parameters => parameters
+        using var cut = Render<TmModelingViewSelector>(parameters => parameters
             .Add(p => p.NotationKey, "erd"));
 
         var notationOptions = cut.Find("[data-testid='modeling-notation-select']").QuerySelectorAll("option");

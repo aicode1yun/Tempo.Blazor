@@ -32,7 +32,7 @@ public class TmNotionWireframeBlockLiveRefreshTests : LocalizationTestBase
         var notifier = new FakeDocumentChangeNotifier();
         var content = new WireframeBlockContent { WireframeDocumentId = id, SvgPreviewCache = "<svg id=\"v1\"/>" };
 
-        var cut = RenderComponent<TmNotionWireframeBlock>(p => p
+        var cut = Render<TmNotionWireframeBlock>(p => p
             .AddCascadingValue(Context(lib, notifier))
             .Add(c => c.Content, content));
 
@@ -49,7 +49,7 @@ public class TmNotionWireframeBlockLiveRefreshTests : LocalizationTestBase
         WireframeBlockContent? saved = null;
         var content = new WireframeBlockContent { WireframeDocumentId = id, SvgPreviewCache = "<svg id=\"v1\"/>" };
 
-        var cut = RenderComponent<TmNotionWireframeBlock>(p => p
+        var cut = Render<TmNotionWireframeBlock>(p => p
             .AddCascadingValue(Context(lib, notifier))
             .Add(c => c.Content, content)
             .Add(c => c.OnContentSaved, c => saved = c));
@@ -79,7 +79,7 @@ public class TmNotionWireframeBlockLiveRefreshTests : LocalizationTestBase
         var notifier = new FakeDocumentChangeNotifier();
         var content = new WireframeBlockContent { WireframeDocumentId = id, SvgPreviewCache = "<svg id=\"v1\"/>" };
 
-        var cut = RenderComponent<TmNotionWireframeBlock>(p => p
+        var cut = Render<TmNotionWireframeBlock>(p => p
             .AddCascadingValue(Context(lib, notifier))
             .Add(c => c.Content, content));
         cut.WaitForState(() => notifier.IsSubscribed(TempoDocumentKind.Wireframe, id));
@@ -97,19 +97,19 @@ public class TmNotionWireframeBlockLiveRefreshTests : LocalizationTestBase
     }
 
     [Fact]
-    public void Dispose_Unsubscribes()
+    public async Task Dispose_Unsubscribes()
     {
         var lib = new InMemoryDocumentLibraryProvider(DocumentLibraryCapabilities.All);
         var id = lib.AddDocument(TempoDocumentKind.Wireframe, "Home", "/", previewSvg: "<svg id=\"v1\"/>");
         var notifier = new FakeDocumentChangeNotifier();
         var content = new WireframeBlockContent { WireframeDocumentId = id, SvgPreviewCache = "<svg id=\"v1\"/>" };
 
-        var cut = RenderComponent<TmNotionWireframeBlock>(p => p
+        var cut = Render<TmNotionWireframeBlock>(p => p
             .AddCascadingValue(Context(lib, notifier))
             .Add(c => c.Content, content));
         cut.WaitForState(() => notifier.IsSubscribed(TempoDocumentKind.Wireframe, id));
 
-        DisposeComponents();
+        await DisposeComponentsAsync();
 
         notifier.IsSubscribed(TempoDocumentKind.Wireframe, id).Should().BeFalse();
     }

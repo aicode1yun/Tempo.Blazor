@@ -11,7 +11,7 @@ public class DocumentEditorToolbarModeTests : LocalizationTestBase
     [Fact]
     public void Toolbar_DefaultModeIsRibbon()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         var toolbar = cut.Find("[data-testid='document-toolbar']");
         toolbar.GetAttribute("data-toolbar-mode").Should().Be(nameof(DocumentToolbarMode.Ribbon));
@@ -21,7 +21,7 @@ public class DocumentEditorToolbarModeTests : LocalizationTestBase
     [Fact]
     public void Toolbar_CompactModeAddsCompactClassAndKeepsIconButtonsAccessible()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ToolbarMode, DocumentToolbarMode.Compact));
 
         var toolbar = cut.Find("[data-testid='document-toolbar']");
@@ -33,7 +33,7 @@ public class DocumentEditorToolbarModeTests : LocalizationTestBase
     [Fact]
     public void Toolbar_DistractionFreeModeHidesRibbonShell()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ToolbarMode, DocumentToolbarMode.DistractionFree));
 
         var toolbar = cut.Find("[data-testid='document-toolbar']");

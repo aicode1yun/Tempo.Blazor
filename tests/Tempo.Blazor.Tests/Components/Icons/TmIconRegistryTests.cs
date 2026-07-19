@@ -29,7 +29,7 @@ public class TmIconRegistryTests : LocalizationTestBase, IDisposable
         const string customSvg = "<circle cx=\"12\" cy=\"12\" r=\"10\"/>";
         IconRegistry.Register("my-custom-icon", customSvg);
 
-        var cut = RenderComponent<TmIcon>(p => p.Add(c => c.Name, "my-custom-icon"));
+        var cut = Render<TmIcon>(p => p.Add(c => c.Name, "my-custom-icon"));
 
         cut.Markup.Should().Contain("circle");
     }
@@ -51,7 +51,7 @@ public class TmIconRegistryTests : LocalizationTestBase, IDisposable
     public void IconRegistry_Unknown_Icon_Renders_Fallback_Span()
     {
         // RED: Icon not found anywhere → render <span class="tm-icon-unknown">
-        var cut = RenderComponent<TmIcon>(p => p.Add(c => c.Name, "completely-unknown-xyz-icon"));
+        var cut = Render<TmIcon>(p => p.Add(c => c.Name, "completely-unknown-xyz-icon"));
 
         cut.Find("span.tm-icon-unknown").Should().NotBeNull();
     }
@@ -63,7 +63,7 @@ public class TmIconRegistryTests : LocalizationTestBase, IDisposable
         var provider = new TestIconProvider("provider-icon", "<line x1=\"0\" y1=\"0\" x2=\"24\" y2=\"24\"/>");
         IconRegistry.RegisterProvider(provider);
 
-        var cut = RenderComponent<TmIcon>(p => p.Add(c => c.Name, "provider-icon"));
+        var cut = Render<TmIcon>(p => p.Add(c => c.Name, "provider-icon"));
 
         cut.Markup.Should().Contain("line");
         provider.WasCalled.Should().BeTrue();

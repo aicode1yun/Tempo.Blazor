@@ -17,7 +17,7 @@ public class TmFileDropZoneLocalizationTests : LocalizationTestBase
         // Czech localizer is registered
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmFileDropZone>();
+        var cut = Render<TmFileDropZone>();
 
         // Must render the localized "Přetáhněte soubory sem" (not hardcoded English)
         cut.Find(".tm-file-drop-zone__hint").TextContent
@@ -29,7 +29,7 @@ public class TmFileDropZoneLocalizationTests : LocalizationTestBase
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmFileDropZone>();
+        var cut = Render<TmFileDropZone>();
 
         cut.Find(".tm-file-drop-zone__browse").TextContent
             .Should().Contain("Vybrat soubory");
@@ -40,7 +40,7 @@ public class TmFileDropZoneLocalizationTests : LocalizationTestBase
     {
         // English (default) – already registered by base class
 
-        var cut = RenderComponent<TmFileDropZone>();
+        var cut = Render<TmFileDropZone>();
 
         cut.Find(".tm-file-drop-zone__hint").TextContent
             .Should().Contain("Drag and drop files here");
@@ -50,7 +50,7 @@ public class TmFileDropZoneLocalizationTests : LocalizationTestBase
     public void TmFileDropZone_ChildContent_Overrides_DefaultHint()
     {
         // When ChildContent is provided, the default hint must NOT appear
-        var cut = RenderComponent<TmFileDropZone>(p => p
+        var cut = Render<TmFileDropZone>(p => p
             .AddChildContent("<span class=\"custom-slot\">Custom content</span>"));
 
         cut.FindAll(".tm-file-drop-zone__hint").Should().BeEmpty();

@@ -23,7 +23,7 @@ public sealed class CanvasEngineSigningToolbarTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedEmptyDocument("signing-toolbar-roles");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = Render<TmDocumentEditor>(parameters => parameters
             .Add(p => p.DocumentId, "signing-toolbar-roles")
             .Add(p => p.Provider, provider)
             .Add(p => p.SigningRoles, new[] { new SigningSubmitterRole { Uuid = "signer", Name = "Signer", Color = "#2563eb" } }));
@@ -42,7 +42,7 @@ public sealed class CanvasEngineSigningToolbarTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedEmptyDocument("signing-toolbar-noroles");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = Render<TmDocumentEditor>(parameters => parameters
             .Add(p => p.DocumentId, "signing-toolbar-noroles")
             .Add(p => p.Provider, provider));
 

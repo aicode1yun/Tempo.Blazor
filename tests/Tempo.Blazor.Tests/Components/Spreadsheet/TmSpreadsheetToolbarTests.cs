@@ -11,7 +11,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     [Fact]
     public void Render_Default_DisplaysAllToolGroups()
     {
-        var cut = RenderComponent<TmSpreadsheetToolbar>();
+        var cut = Render<TmSpreadsheetToolbar>();
 
         cut.FindAll(".tm-spreadsheet-toolbar__button").Count.Should().BeGreaterThan(5);
         cut.FindAll(".tm-spreadsheet-toolbar__group").Count.Should().BeGreaterThan(3);
@@ -20,7 +20,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     [Fact]
     public void UndoButton_Disabled_WhenCannotUndo()
     {
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.CanUndo, false));
 
         var undoBtn = cut.FindAll(".tm-spreadsheet-toolbar__button")[0];
@@ -30,7 +30,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     [Fact]
     public void UndoButton_Enabled_WhenCanUndo()
     {
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.CanUndo, true));
 
         var undoBtn = cut.FindAll(".tm-spreadsheet-toolbar__button")[0];
@@ -40,7 +40,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     [Fact]
     public void BoldButton_Active_WhenIsBold()
     {
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.IsBold, true));
 
         var buttons = cut.FindAll(".tm-spreadsheet-toolbar__button");
@@ -52,7 +52,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void BoldButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnBoldToggle, EventCallback.Factory.Create(this, () => fired = true)));
 
         var buttons = cut.FindAll(".tm-spreadsheet-toolbar__button");
@@ -66,7 +66,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void ItalicButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnItalicToggle, EventCallback.Factory.Create(this, () => fired = true)));
 
         var buttons = cut.FindAll(".tm-spreadsheet-toolbar__button");
@@ -80,7 +80,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void UnderlineButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnUnderlineToggle, EventCallback.Factory.Create(this, () => fired = true)));
 
         var buttons = cut.FindAll(".tm-spreadsheet-toolbar__button");
@@ -93,7 +93,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     [Fact]
     public void AlignLeftButton_Active_WhenAlignLeft()
     {
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.SelectedHorizontalAlign, "left"));
 
         var buttons = cut.FindAll(".tm-spreadsheet-toolbar__button");
@@ -105,7 +105,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void AlignCenterButton_Click_FiresEvent()
     {
         string? align = null;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnAlignChanged, EventCallback.Factory.Create<string?>(this, v => align = v)));
 
         var buttons = cut.FindAll(".tm-spreadsheet-toolbar__button");
@@ -119,7 +119,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void UndoButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.CanUndo, true)
             .Add(p => p.OnUndo, EventCallback.Factory.Create(this, () => fired = true)));
 
@@ -133,7 +133,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void RedoButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.CanRedo, true)
             .Add(p => p.OnRedo, EventCallback.Factory.Create(this, () => fired = true)));
 
@@ -147,7 +147,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void FontFamily_Changed_FiresEvent()
     {
         string? font = null;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnFontFamilyChanged, EventCallback.Factory.Create<string?>(this, v => font = v)));
 
         // The TmSelect component renders a select element
@@ -161,7 +161,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void NumberFormat_Select_FiresEvent()
     {
         string? format = null;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnNumberFormatChanged, EventCallback.Factory.Create<string?>(this, v => format = v)));
 
         var selects = cut.FindAll("select");
@@ -176,7 +176,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void IncreaseDecimals_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnIncreaseDecimals, EventCallback.Factory.Create(this, () => fired = true)));
 
         var buttons = cut.FindAll(".tm-spreadsheet-toolbar__button");
@@ -190,7 +190,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void DecreaseDecimals_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnDecreaseDecimals, EventCallback.Factory.Create(this, () => fired = true)));
 
         var buttons = cut.FindAll(".tm-spreadsheet-toolbar__button");
@@ -204,7 +204,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void CopyButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnCopy, EventCallback.Factory.Create(this, () => fired = true)));
 
         var btn = cut.FindAll(".tm-spreadsheet-toolbar__button")
@@ -218,7 +218,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void CutButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnCut, EventCallback.Factory.Create(this, () => fired = true)));
 
         var btn = cut.FindAll(".tm-spreadsheet-toolbar__button")
@@ -232,7 +232,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void PasteButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnPaste, EventCallback.Factory.Create(this, () => fired = true)));
 
         var btn = cut.FindAll(".tm-spreadsheet-toolbar__button")
@@ -246,7 +246,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void InsertRowButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnInsertRow, EventCallback.Factory.Create(this, () => fired = true)));
 
         var btn = cut.FindAll(".tm-spreadsheet-toolbar__button")
@@ -260,7 +260,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void DeleteRowButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnDeleteRow, EventCallback.Factory.Create(this, () => fired = true)));
 
         var btn = cut.FindAll(".tm-spreadsheet-toolbar__button")
@@ -274,7 +274,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void InsertColumnButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnInsertColumn, EventCallback.Factory.Create(this, () => fired = true)));
 
         var btn = cut.FindAll(".tm-spreadsheet-toolbar__button")
@@ -288,7 +288,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void DeleteColumnButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnDeleteColumn, EventCallback.Factory.Create(this, () => fired = true)));
 
         var btn = cut.FindAll(".tm-spreadsheet-toolbar__button")
@@ -303,7 +303,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     [Fact]
     public void Render_DisplaysTabHeaders()
     {
-        var cut = RenderComponent<TmSpreadsheetToolbar>();
+        var cut = Render<TmSpreadsheetToolbar>();
         var tabs = cut.FindAll(".tm-spreadsheet-toolbar__tab");
         tabs.Count.Should().Be(5);
         tabs[0].TextContent.Should().Contain("Home");
@@ -316,7 +316,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     [Fact]
     public void Click_InsertTab_SwitchesContent()
     {
-        var cut = RenderComponent<TmSpreadsheetToolbar>();
+        var cut = Render<TmSpreadsheetToolbar>();
         var tabs = cut.FindAll(".tm-spreadsheet-toolbar__tab");
         tabs[1].Click(); // Insert tab
 
@@ -330,7 +330,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void InsertLinkButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnInsertLink, EventCallback.Factory.Create(this, () => fired = true)));
 
         var tabs = cut.FindAll(".tm-spreadsheet-toolbar__tab");
@@ -347,7 +347,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void InsertImageButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnInsertImage, EventCallback.Factory.Create(this, () => fired = true)));
 
         var tabs = cut.FindAll(".tm-spreadsheet-toolbar__tab");
@@ -364,7 +364,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void MergeCellsButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnMergeCells, EventCallback.Factory.Create(this, () => fired = true)));
 
         var tabs = cut.FindAll(".tm-spreadsheet-toolbar__tab");
@@ -381,7 +381,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void ToggleGridLinesButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnToggleGridLines, EventCallback.Factory.Create(this, () => fired = true)));
 
         var tabs = cut.FindAll(".tm-spreadsheet-toolbar__tab");
@@ -398,7 +398,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void OpenButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnOpen, EventCallback.Factory.Create(this, () => fired = true)));
 
         var tabs = cut.FindAll(".tm-spreadsheet-toolbar__tab");
@@ -415,7 +415,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
     public void DownloadButton_Click_FiresEvent()
     {
         bool fired = false;
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.OnDownload, EventCallback.Factory.Create(this, () => fired = true)));
 
         var tabs = cut.FindAll(".tm-spreadsheet-toolbar__tab");
@@ -436,7 +436,7 @@ public class TmSpreadsheetToolbarTests : LocalizationTestBase
             new() { IconName = "star", Title = "My Tool", Tab = "Home", Order = 0 }
         };
 
-        var cut = RenderComponent<TmSpreadsheetToolbar>(parameters => parameters
+        var cut = Render<TmSpreadsheetToolbar>(parameters => parameters
             .Add(p => p.CustomTools, customTools));
 
         var groups = cut.FindAll(".tm-spreadsheet-toolbar__group");

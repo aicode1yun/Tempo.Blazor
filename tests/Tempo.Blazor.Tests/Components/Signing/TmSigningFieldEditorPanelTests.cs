@@ -12,7 +12,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     [Fact]
     public void Render_NoSelectedField_ShowsEmptyState()
     {
-        var cut = RenderComponent<TmSigningFieldEditorPanel>();
+        var cut = Render<TmSigningFieldEditorPanel>();
 
         cut.Find(".tm-signing-field-editor-panel__empty").TextContent.Should().Contain("Select a field");
     }
@@ -20,7 +20,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     [Fact]
     public void Render_WithField_ShowsPanelTitle()
     {
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField()));
 
         cut.Find(".tm-signing-field-editor-panel__title").TextContent.Should().Contain("Full name");
@@ -30,7 +30,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void ChangeType_InvokesFieldChanged()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -46,7 +46,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
         SigningField? captured = null;
         var field = CreateChoiceField(SigningFieldType.Select);
         field.DefaultValue = "option-a";
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, field)
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, changed => captured = changed)));
 
@@ -62,7 +62,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void ChangeType_ToChoice_AddsDefaultOptionsWhenMissing()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, changed => captured = changed)));
 
@@ -76,7 +76,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     [Fact]
     public void ReadOnly_DisablesControls()
     {
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.ReadOnly, true));
 
@@ -88,7 +88,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void EditName_InvokesFieldChanged()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -102,7 +102,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void EditTitle_InvokesFieldChanged()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -116,7 +116,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void EditDescription_InvokesFieldChanged()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -130,7 +130,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void ToggleRequired_InvokesFieldChanged()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -144,7 +144,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void ToggleReadOnly_InvokesFieldChanged()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -158,7 +158,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void TogglePrefillable_InvokesFieldChanged()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -172,7 +172,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void SelectSubmitterRole_InvokesFieldChanged()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.SubmitterRoles, CreateRoles())
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
@@ -189,7 +189,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     [InlineData(SigningFieldType.Multiple)]
     public void ChoiceField_RendersOptionsEditor(SigningFieldType type)
     {
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateChoiceField(type)));
 
         cut.Find(".tm-signing-field-editor-panel__options").TextContent.Should().Contain("Options");
@@ -199,7 +199,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void AddOption_InvokesFieldChanged()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateChoiceField(SigningFieldType.Select))
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -214,7 +214,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void RenameOption_InvokesFieldChanged()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateChoiceField(SigningFieldType.Select))
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -228,7 +228,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void RemoveOption_InvokesFieldChanged()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateChoiceField(SigningFieldType.Select))
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -242,7 +242,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void MoveOptionDown_ReordersOptions()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateChoiceField(SigningFieldType.Select))
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -257,7 +257,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void DefaultValueSelect_UpdatesDefaultValue()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateChoiceField(SigningFieldType.Select))
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -271,7 +271,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void OptionMapButton_InvokesMappingCallback()
     {
         TmSigningFieldOptionAreaMappingEventArgs? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateChoiceField(SigningFieldType.Radio))
                       .Add(p => p.OptionAreaMappingRequested, EventCallback.Factory.Create<TmSigningFieldOptionAreaMappingEventArgs>(this, args => captured = args)));
 
@@ -288,7 +288,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
         SigningField? captured = null;
         var field = CreateField();
         field.Validation = new SigningFieldValidation { Pattern = "\\d+" };
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, field)
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, changed => captured = changed)));
 
@@ -302,7 +302,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void ValidationRegex_UpdatesPattern()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -317,7 +317,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void TextLengthValidation_UpdatesMinMaxAndMessage()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -335,7 +335,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void LocalizationEditor_UpdatesLocalizedFieldText()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" })
                       .Add(p => p.ShowLocalizationEditor, true)
@@ -360,7 +360,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void LocalizationEditor_UpdatesOptionLabelWithoutChangingValue()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateChoiceField(SigningFieldType.Select))
                       .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" })
                       .Add(p => p.ShowLocalizationEditor, true)
@@ -378,7 +378,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     [Fact]
     public void LocalizationEditor_IsHiddenByDefault()
     {
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" }));
 
@@ -388,7 +388,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     [Fact]
     public void LocalizationEditor_ShowsTemplateLanguage()
     {
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" })
                       .Add(p => p.FallbackCulture, "cs-CZ")
@@ -404,7 +404,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     [Fact]
     public void LocalizationEditor_ShowsMissingTranslationWarningForActiveCulture()
     {
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" })
                       .Add(p => p.ShowLocalizationEditor, true));
@@ -424,7 +424,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
         field.Titles.Translations["en-US"] = "Full legal name";
         field.Descriptions.Translations["en-US"] = "Use your legal name.";
 
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, field)
                       .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" })
                       .Add(p => p.ShowLocalizationEditor, true));
@@ -436,7 +436,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void NumberValidation_UpdatesMinMaxStep()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField(type: SigningFieldType.Number))
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -454,7 +454,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void DateValidation_UpdatesMinMaxAndFormat()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField(type: SigningFieldType.Date))
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -472,7 +472,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void SignaturePreferences_UpdateFormatAndSignatureId()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField(type: SigningFieldType.Signature))
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -488,7 +488,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void StampPreferences_UpdateWithLogo()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField(type: SigningFieldType.Stamp))
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -502,7 +502,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void TextPreferences_UpdateFontAlignAndColor()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -522,7 +522,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void CopyToAllPagesButton_InvokesCallback()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.CopyToAllPagesRequested, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
 
@@ -535,7 +535,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     [Fact]
     public void ConditionButton_OpensConditionBuilder()
     {
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.Fields, CreateFields()));
 
@@ -549,9 +549,9 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     [Fact]
     public void FormulaButton_RendersOnlyForNumberOrPayment()
     {
-        var textCut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var textCut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField()));
-        var numberCut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var numberCut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField(type: SigningFieldType.Number)));
 
         textCut.FindAll(".tm-signing-field-editor-panel__open-formula").Should().BeEmpty();
@@ -562,7 +562,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void ConditionBuilderChange_WritesConditionsToField()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField())
                       .Add(p => p.Fields, CreateFields())
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
@@ -582,13 +582,13 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     {
         SigningField? current = CreateField();
         IRenderedComponent<TmSigningFieldEditorPanel>? cut = null;
-        cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, current)
                       .Add(p => p.Fields, CreateFields())
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field =>
                       {
                           current = field;
-                          cut!.SetParametersAndRender(parameters => parameters.Add(p => p.Field, current));
+                          cut!.Render(parameters => parameters.Add(p => p.Field, current));
                       })));
 
         cut.Find(".tm-signing-field-editor-panel__open-conditions").Click();
@@ -603,7 +603,7 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     public void FormulaSave_WritesFormulaToPreferences()
     {
         SigningField? captured = null;
-        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+        var cut = Render<TmSigningFieldEditorPanel>(parameters =>
             parameters.Add(p => p.Field, CreateField(type: SigningFieldType.Number))
                       .Add(p => p.Fields, CreateFormulaFields())
                       .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));

@@ -12,7 +12,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     [Fact]
     public void Render_Default_RendersRootDrawModeCanvasAndClearButton()
     {
-        var cut = RenderComponent<TmSignatureCapture>();
+        var cut = Render<TmSignatureCapture>();
 
         var root = cut.Find(".tm-signature-capture");
         root.GetAttribute("data-mode").Should().Be("Draw");
@@ -23,7 +23,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     [Fact]
     public void Render_ClassAndAdditionalAttributes_AreApplied()
     {
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.Class, "custom-signature")
                       .AddUnmatched("data-testid", "signature"));
 
@@ -35,7 +35,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     [Fact]
     public void Render_WithValue_ShowsPreview()
     {
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.Value, "data:image/png;base64,abc"));
 
         cut.Find(".tm-signature-capture__preview").Should().NotBeNull();
@@ -45,7 +45,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     public void ModeTabClick_InvokesModeChanged()
     {
         TmSignatureCaptureMode? capturedMode = null;
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.Mode, TmSignatureCaptureMode.Typed)
                       .Add(p => p.ModeChanged, EventCallback.Factory.Create<TmSignatureCaptureMode>(this, mode => capturedMode = mode)));
 
@@ -60,7 +60,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     [Fact]
     public void Render_Disabled_AppliesStateAndDisablesControls()
     {
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.Disabled, true));
 
         var root = cut.Find(".tm-signature-capture");
@@ -72,7 +72,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     [Fact]
     public void Draw_PointerEvents_RenderStroke()
     {
-        var cut = RenderComponent<TmSignatureCapture>();
+        var cut = Render<TmSignatureCapture>();
 
         var canvas = cut.Find("svg.tm-signature-capture__canvas");
         canvas.TriggerEvent("onpointerdown", new PointerEventArgs { OffsetX = 10, OffsetY = 10 });
@@ -84,7 +84,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     [Fact]
     public void Draw_PointerDown_AttemptsPointerCapture()
     {
-        var cut = RenderComponent<TmSignatureCapture>();
+        var cut = Render<TmSignatureCapture>();
 
         var canvas = cut.Find("svg.tm-signature-capture__canvas");
         canvas.TriggerEvent("onpointerdown", new PointerEventArgs { OffsetX = 10, OffsetY = 10, PointerId = 7 });
@@ -98,7 +98,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
         string? captured = null;
         TmSignatureCaptureChangedEventArgs? changed = null;
 
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value))
                       .Add(p => p.Changed, EventCallback.Factory.Create<TmSignatureCaptureChangedEventArgs>(this, args => changed = args)));
 
@@ -117,7 +117,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     public void Draw_PointerLeave_DoesNotEndStrokeAndAllowsReturnToCanvas()
     {
         string? captured = null;
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
 
         var canvas = cut.Find("svg.tm-signature-capture__canvas");
@@ -134,7 +134,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     public void Draw_ReturningAfterPointerWasReleasedOutside_CommitsStroke()
     {
         string? captured = null;
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
 
         var canvas = cut.Find("svg.tm-signature-capture__canvas");
@@ -151,7 +151,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     public async Task ClearAsync_ClearsValueAndStrokes()
     {
         string? captured = "initial";
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
 
         var canvas = cut.Find("svg.tm-signature-capture__canvas");
@@ -169,7 +169,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     [Fact]
     public void Render_RequiredEmpty_IsInvalid()
     {
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.Required, true));
 
         var root = cut.Find(".tm-signature-capture");
@@ -183,7 +183,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
         JSInterop.Setup<string>("tmSignatureCapture.exportPng", _ => true).SetResult("data:image/png;base64,abc");
         string? captured = null;
 
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.ExportFormat, TmSignatureCaptureExportFormat.PngDataUrl)
                       .Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
 
@@ -201,7 +201,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     {
         string? captured = null;
 
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.ExportFormat, TmSignatureCaptureExportFormat.PngDataUrl)
                       .Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
 
@@ -217,7 +217,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     public void TypedMode_InputGeneratesTypedSignatureValue()
     {
         string? captured = null;
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.Mode, TmSignatureCaptureMode.Typed)
                       .Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
 
@@ -231,7 +231,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     public void TypedMode_ScriptExport_UsesSignatureFontStack()
     {
         string? captured = null;
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.Mode, TmSignatureCaptureMode.Typed)
                       .Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
 
@@ -278,7 +278,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     [Fact]
     public void TypedMode_Initials_UsesShorterLabel()
     {
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.Mode, TmSignatureCaptureMode.Typed)
                       .Add(p => p.Initials, true));
 
@@ -291,7 +291,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     [Fact]
     public void TypedMode_FontSelection_ChangesPreviewClass()
     {
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.Mode, TmSignatureCaptureMode.Typed)
                       .Add(p => p.TypedFont, "serif"));
 
@@ -305,13 +305,13 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     public void TypedMode_UserSelectedFont_IsNotResetByParentRerenderWithSameParameter()
     {
         string? captured = null;
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.Mode, TmSignatureCaptureMode.Typed)
                       .Add(p => p.TypedFont, "serif")
                       .Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
 
         cut.Find("select.tm-signature-capture__font").Change("script");
-        cut.SetParametersAndRender(parameters => parameters.Add(p => p.TypedFont, "serif"));
+        cut.Render(parameters => parameters.Add(p => p.TypedFont, "serif"));
         cut.Find("input.tm-signature-capture__typed-input").Change("Tyll");
 
         cut.Find(".tm-signature-capture__typed-preview")
@@ -325,7 +325,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     public void UploadMode_RendersImageInputAndUploadCallback()
     {
         var requested = false;
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.Mode, TmSignatureCaptureMode.Upload)
                       .Add(p => p.OnUploadRequested, EventCallback.Factory.Create(this, () => requested = true)));
 
@@ -338,7 +338,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     [Fact]
     public void UploadMode_WithValue_RendersReuploadButton()
     {
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.Mode, TmSignatureCaptureMode.Upload)
                       .Add(p => p.Value, "data:image/png;base64,abc"));
 
@@ -349,7 +349,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     public void Advanced_RequireReason_RendersReasonAndIncludesItInChangedPayload()
     {
         TmSignatureCaptureChangedEventArgs? changed = null;
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.RequireReason, true)
                       .Add(p => p.Changed, EventCallback.Factory.Create<TmSignatureCaptureChangedEventArgs>(this, args => changed = args)));
 
@@ -368,7 +368,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     public void Advanced_RememberSignature_RendersCheckboxAndIncludesItInChangedPayload()
     {
         TmSignatureCaptureChangedEventArgs? changed = null;
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.ShowRememberSignature, true)
                       .Add(p => p.Changed, EventCallback.Factory.Create<TmSignatureCaptureChangedEventArgs>(this, args => changed = args)));
 
@@ -387,7 +387,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     public void Advanced_ShowQrSigningButton_InvokesCallback()
     {
         var invoked = false;
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.ShowQrSigningButton, true)
                       .Add(p => p.OnQrSigningRequested, EventCallback.Factory.Create(this, () => invoked = true)));
 
@@ -402,7 +402,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     [Fact]
     public void Advanced_ShowConfirmButton_RendersDisabledUntilSignatureExists()
     {
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.ShowConfirmButton, true));
 
         var confirm = cut.Find(".tm-signature-capture__confirm");
@@ -415,7 +415,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     public void Advanced_ConfirmButton_InvokesConfirmedWithCurrentSignature()
     {
         TmSignatureCaptureChangedEventArgs? confirmed = null;
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.ShowConfirmButton, true)
                       .Add(p => p.Confirmed, EventCallback.Factory.Create<TmSignatureCaptureChangedEventArgs>(this, args => confirmed = args)));
 
@@ -434,7 +434,7 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     [Fact]
     public void Advanced_PreviousValue_RendersReusePreview()
     {
-        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+        var cut = Render<TmSignatureCapture>(parameters =>
             parameters.Add(p => p.PreviousValue, "data:image/png;base64,previous"));
 
         cut.Find(".tm-signature-capture__previous").Should().NotBeNull();

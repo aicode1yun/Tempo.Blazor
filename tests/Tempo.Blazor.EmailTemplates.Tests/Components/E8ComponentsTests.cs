@@ -11,7 +11,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.EmailTemplates.Tests.Components;
 
-public class E8ComponentsTests : TestContext
+public class E8ComponentsTests : BunitContext
 {
     public E8ComponentsTests()
     {
@@ -45,7 +45,7 @@ public class E8ComponentsTests : TestContext
             new TemplateVariableInfo("orders", VariableKind.Collection),
         };
 
-        var cut = RenderComponent<TmEmailVariablePicker>(p => p
+        var cut = Render<TmEmailVariablePicker>(p => p
             .Add(c => c.Variables, vars)
             .Add(c => c.OnInsert, t => inserted = t));
 
@@ -60,7 +60,7 @@ public class E8ComponentsTests : TestContext
     [Fact]
     public void Preview_RendersSandboxedIframeWithContent()
     {
-        var cut = RenderComponent<TmEmailTemplatePreview>(p => p
+        var cut = Render<TmEmailTemplatePreview>(p => p
             .Add(c => c.Document, DocWithText("Welcome aboard")));
 
         var frame = cut.Find("[data-tm-preview-frame]");
@@ -71,7 +71,7 @@ public class E8ComponentsTests : TestContext
     [Fact]
     public void Preview_TextToggle_ShowsPlainText()
     {
-        var cut = RenderComponent<TmEmailTemplatePreview>(p => p
+        var cut = Render<TmEmailTemplatePreview>(p => p
             .Add(c => c.Document, DocWithText("Plain content here")));
 
         cut.Find("[data-tm-preview-view=\"text\"]").Click();
@@ -82,7 +82,7 @@ public class E8ComponentsTests : TestContext
     [Fact]
     public void Preview_UpdatesWhenVariablesJsonChanges()
     {
-        var cut = RenderComponent<TmEmailTemplatePreview>(p => p
+        var cut = Render<TmEmailTemplatePreview>(p => p
             .Add(c => c.Document, DocWithText("Hello {{ first_name }}"))
             .Add(c => c.VariablesJson, "{\"first_name\":\"Alice\"}"));
 
@@ -90,7 +90,7 @@ public class E8ComponentsTests : TestContext
 
         // Parent (the send form) supplies fresh values as the user types — the live
         // preview must adopt them, not stay pinned to the first snapshot.
-        cut.SetParametersAndRender(p => p.Add(c => c.VariablesJson, "{\"first_name\":\"Bob\"}"));
+        cut.Render(p => p.Add(c => c.VariablesJson, "{\"first_name\":\"Bob\"}"));
 
         var srcdoc = cut.Find("[data-tm-preview-frame]").GetAttribute("srcdoc");
         srcdoc.Should().Contain("Bob");
@@ -102,7 +102,7 @@ public class E8ComponentsTests : TestContext
     [Fact]
     public void ExportDialog_ShowsGeneratedMjml()
     {
-        var cut = RenderComponent<TmEmailExportDialog>(p => p
+        var cut = Render<TmEmailExportDialog>(p => p
             .Add(c => c.Show, true)
             .Add(c => c.Document, DocWithText("hello")));
 
@@ -115,7 +115,7 @@ public class E8ComponentsTests : TestContext
     public void ImportDialog_ParsesMjml_AndConfirms()
     {
         EmailTemplateDocument? imported = null;
-        var cut = RenderComponent<TmEmailImportDialog>(p => p
+        var cut = Render<TmEmailImportDialog>(p => p
             .Add(c => c.Show, true)
             .Add(c => c.OnImport, d => imported = d));
 
@@ -131,7 +131,7 @@ public class E8ComponentsTests : TestContext
     public void ImportDialog_InvalidMjml_ShowsErrors_NoConfirm()
     {
         EmailTemplateDocument? imported = null;
-        var cut = RenderComponent<TmEmailImportDialog>(p => p
+        var cut = Render<TmEmailImportDialog>(p => p
             .Add(c => c.Show, true)
             .Add(c => c.OnImport, d => imported = d));
 
@@ -156,7 +156,7 @@ public class E8ComponentsTests : TestContext
         doc.Sections.Add(section);
 
         Guid? navigated = null;
-        var cut = RenderComponent<TmEmailValidationPanel>(p => p
+        var cut = Render<TmEmailValidationPanel>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.OnNavigate, id => navigated = id));
 
@@ -177,7 +177,7 @@ public class E8ComponentsTests : TestContext
         section.Columns.Add(col);
         doc.Sections.Add(section);
 
-        var cut = RenderComponent<TmEmailValidationPanel>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailValidationPanel>(p => p.Add(c => c.Document, doc));
 
         cut.FindAll("[data-tm-validation-ok]").Should().ContainSingle();
     }

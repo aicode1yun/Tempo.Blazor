@@ -24,7 +24,7 @@ public class TmDataTableVirtualGroupingTests : LocalizationTestBase
     private IRenderedComponent<TmDataTable<VirtualGroupPerson>> RenderVirtualGroupTable(
         bool groupsCollapsedByDefault = true)
     {
-        return RenderComponent<TmDataTable<VirtualGroupPerson>>(p =>
+        return Render<TmDataTable<VirtualGroupPerson>>(p =>
         {
             p.Add(c => c.Items, People);
             p.Add(c => c.ScrollMode, DataTableScrollMode.Virtualized);

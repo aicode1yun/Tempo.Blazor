@@ -23,7 +23,7 @@ public class DocumentEditorToolbarOverflowControllerTests : LocalizationTestBase
         var module = JSInterop.SetupModule(OverflowModulePath);
         module.SetupVoid("createOverflowController", _ => true).SetVoidResult();
 
-        RenderComponent<TmDocumentEditorToolbar>();
+        Render<TmDocumentEditorToolbar>();
 
         var invocation = module.Invocations.Should()
             .ContainSingle(item => item.Identifier == "createOverflowController",
@@ -41,7 +41,7 @@ public class DocumentEditorToolbarOverflowControllerTests : LocalizationTestBase
         var module = JSInterop.SetupModule(OverflowModulePath);
         module.SetupVoid("createOverflowController", _ => true).SetVoidResult();
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(
             true, ["bold", "italic", "underline", "strikethrough", "link", "clearFormatting", "alignLeft", "alignCenter"]));
         cut.Find("[data-testid='document-toolbar-more']").Click();
@@ -58,7 +58,7 @@ public class DocumentEditorToolbarOverflowControllerTests : LocalizationTestBase
         module.SetupVoid("createOverflowController", _ => true).SetVoidResult();
         module.SetupVoid("disposeOverflowController", _ => true).SetVoidResult();
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         await cut.Instance.DisposeAsync();
 
         module.Invocations.Should().Contain(item => item.Identifier == "disposeOverflowController",
@@ -71,7 +71,7 @@ public class DocumentEditorToolbarOverflowControllerTests : LocalizationTestBase
         var module = JSInterop.SetupModule(OverflowModulePath);
         module.SetupVoid("createOverflowController", _ => true).SetVoidResult();
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         cut.Find("[data-testid='document-toolbar-more']").HasAttribute("hidden").Should().BeTrue(
             "bez hlášení z JS controlleru se More tlačítko nesmí ukázat");
 

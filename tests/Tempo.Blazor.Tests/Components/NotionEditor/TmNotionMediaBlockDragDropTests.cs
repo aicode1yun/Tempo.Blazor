@@ -46,7 +46,7 @@ public class TmNotionMediaBlockDragDropTests : LocalizationTestBase
     public void ImageBlock_WithoutFileProvider_NoDropOverlay()
     {
         var ctx = BuildContext(fileProvider: null);
-        var cut = RenderComponent<TmNotionImageBlock>(p => p
+        var cut = Render<TmNotionImageBlock>(p => p
             .Add(x => x.Content,  EmptyImageContent())
             .Add(x => x.ReadOnly, false)
             .AddCascadingValue(ctx));
@@ -60,7 +60,7 @@ public class TmNotionMediaBlockDragDropTests : LocalizationTestBase
     public void ImageBlock_WithFileProvider_ShowsDropOverlay()
     {
         var ctx = BuildContext(fileProvider: MockFileProvider());
-        var cut = RenderComponent<TmNotionImageBlock>(p => p
+        var cut = Render<TmNotionImageBlock>(p => p
             .Add(x => x.Content,  EmptyImageContent())
             .Add(x => x.ReadOnly, false)
             .AddCascadingValue(ctx));
@@ -74,7 +74,7 @@ public class TmNotionMediaBlockDragDropTests : LocalizationTestBase
     public async Task ImageBlock_DragEnter_OverlayBecomesActive()
     {
         var ctx = BuildContext(fileProvider: MockFileProvider());
-        var cut = RenderComponent<TmNotionImageBlock>(p => p
+        var cut = Render<TmNotionImageBlock>(p => p
             .Add(x => x.Content,  EmptyImageContent())
             .Add(x => x.ReadOnly, false)
             .AddCascadingValue(ctx));
@@ -92,7 +92,7 @@ public class TmNotionMediaBlockDragDropTests : LocalizationTestBase
     public async Task ImageBlock_DragLeave_OverlayBecomesInactive()
     {
         var ctx = BuildContext(fileProvider: MockFileProvider());
-        var cut = RenderComponent<TmNotionImageBlock>(p => p
+        var cut = Render<TmNotionImageBlock>(p => p
             .Add(x => x.Content,  EmptyImageContent())
             .Add(x => x.ReadOnly, false)
             .AddCascadingValue(ctx));
@@ -111,7 +111,7 @@ public class TmNotionMediaBlockDragDropTests : LocalizationTestBase
     public void PdfBlock_WithFileProvider_ShowsDropOverlay()
     {
         var ctx = BuildContext(fileProvider: MockFileProvider());
-        var cut = RenderComponent<TmNotionPdfBlock>(p => p
+        var cut = Render<TmNotionPdfBlock>(p => p
             .Add(x => x.Content,  EmptyPdfContent())
             .Add(x => x.ReadOnly, false)
             .AddCascadingValue(ctx));
@@ -125,7 +125,7 @@ public class TmNotionMediaBlockDragDropTests : LocalizationTestBase
     public void FileBlock_WithFileProvider_ShowsDropOverlay()
     {
         var ctx = BuildContext(fileProvider: MockFileProvider());
-        var cut = RenderComponent<TmNotionFileBlock>(p => p
+        var cut = Render<TmNotionFileBlock>(p => p
             .Add(x => x.Content,  EmptyFileContent())
             .Add(x => x.ReadOnly, false)
             .AddCascadingValue(ctx));

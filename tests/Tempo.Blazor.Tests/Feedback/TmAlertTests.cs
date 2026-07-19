@@ -14,7 +14,7 @@ public class TmAlertTests : LocalizationTestBase
     [Fact]
     public void Alert_RendersWithRoleAlert()
     {
-        var cut = RenderComponent<TmAlert>(p => p
+        var cut = Render<TmAlert>(p => p
             .Add(x => x.Severity, AlertSeverity.Info)
             .AddChildContent("Test message"));
 
@@ -24,7 +24,7 @@ public class TmAlertTests : LocalizationTestBase
     [Fact]
     public void Alert_RendersChildContent()
     {
-        var cut = RenderComponent<TmAlert>(p => p
+        var cut = Render<TmAlert>(p => p
             .Add(x => x.Severity, AlertSeverity.Info)
             .AddChildContent("Something important"));
 
@@ -34,7 +34,7 @@ public class TmAlertTests : LocalizationTestBase
     [Fact]
     public void Alert_RendersTitle()
     {
-        var cut = RenderComponent<TmAlert>(p => p
+        var cut = Render<TmAlert>(p => p
             .Add(x => x.Severity, AlertSeverity.Warning)
             .Add(x => x.Title, "Heads up!")
             .AddChildContent("Description text"));
@@ -51,7 +51,7 @@ public class TmAlertTests : LocalizationTestBase
     [InlineData(AlertSeverity.Error, "tm-alert--error")]
     public void Alert_Severity_AppliesCssClass(AlertSeverity severity, string expectedClass)
     {
-        var cut = RenderComponent<TmAlert>(p => p
+        var cut = Render<TmAlert>(p => p
             .Add(x => x.Severity, severity)
             .AddChildContent("Content"));
 
@@ -66,7 +66,7 @@ public class TmAlertTests : LocalizationTestBase
     [InlineData(AlertVariant.Outlined, "tm-alert--outlined")]
     public void Alert_Variant_AppliesCssClass(AlertVariant variant, string expectedClass)
     {
-        var cut = RenderComponent<TmAlert>(p => p
+        var cut = Render<TmAlert>(p => p
             .Add(x => x.Severity, AlertSeverity.Info)
             .Add(x => x.Variant, variant)
             .AddChildContent("Content"));
@@ -79,7 +79,7 @@ public class TmAlertTests : LocalizationTestBase
     [Fact]
     public void Alert_AutoIcon_RendersIconForSeverity()
     {
-        var cut = RenderComponent<TmAlert>(p => p
+        var cut = Render<TmAlert>(p => p
             .Add(x => x.Severity, AlertSeverity.Success)
             .AddChildContent("Done"));
 
@@ -89,7 +89,7 @@ public class TmAlertTests : LocalizationTestBase
     [Fact]
     public void Alert_CustomIcon_RendersSpecifiedIcon()
     {
-        var cut = RenderComponent<TmAlert>(p => p
+        var cut = Render<TmAlert>(p => p
             .Add(x => x.Severity, AlertSeverity.Info)
             .Add(x => x.Icon, "star")
             .AddChildContent("Custom icon"));
@@ -102,7 +102,7 @@ public class TmAlertTests : LocalizationTestBase
     [Fact]
     public void Alert_Dismissable_ShowsDismissButton()
     {
-        var cut = RenderComponent<TmAlert>(p => p
+        var cut = Render<TmAlert>(p => p
             .Add(x => x.Severity, AlertSeverity.Info)
             .Add(x => x.Dismissable, true)
             .AddChildContent("Can dismiss"));
@@ -113,7 +113,7 @@ public class TmAlertTests : LocalizationTestBase
     [Fact]
     public void Alert_NotDismissable_NoDismissButton()
     {
-        var cut = RenderComponent<TmAlert>(p => p
+        var cut = Render<TmAlert>(p => p
             .Add(x => x.Severity, AlertSeverity.Info)
             .AddChildContent("No dismiss"));
 
@@ -124,7 +124,7 @@ public class TmAlertTests : LocalizationTestBase
     public void Alert_DismissClick_FiresOnDismiss()
     {
         bool dismissed = false;
-        var cut = RenderComponent<TmAlert>(p => p
+        var cut = Render<TmAlert>(p => p
             .Add(x => x.Severity, AlertSeverity.Warning)
             .Add(x => x.Dismissable, true)
             .Add(x => x.OnDismiss, EventCallback.Factory.Create(this, () => dismissed = true))
@@ -138,7 +138,7 @@ public class TmAlertTests : LocalizationTestBase
     [Fact]
     public void Alert_DismissClick_HidesAlert()
     {
-        var cut = RenderComponent<TmAlert>(p => p
+        var cut = Render<TmAlert>(p => p
             .Add(x => x.Severity, AlertSeverity.Info)
             .Add(x => x.Dismissable, true)
             .AddChildContent("Going away"));
@@ -153,7 +153,7 @@ public class TmAlertTests : LocalizationTestBase
     [Fact]
     public void Alert_Actions_RendersActionsSlot()
     {
-        var cut = RenderComponent<TmAlert>(p => p
+        var cut = Render<TmAlert>(p => p
             .Add(x => x.Severity, AlertSeverity.Error)
             .Add(x => x.Actions, (RenderFragment)(b => { b.AddMarkupContent(0, "<button>Retry</button>"); }))
             .AddChildContent("Something failed"));
@@ -166,7 +166,7 @@ public class TmAlertTests : LocalizationTestBase
     [Fact]
     public void Alert_CustomClass_IsApplied()
     {
-        var cut = RenderComponent<TmAlert>(p => p
+        var cut = Render<TmAlert>(p => p
             .Add(x => x.Severity, AlertSeverity.Info)
             .Add(x => x.Class, "my-alert")
             .AddChildContent("Custom"));

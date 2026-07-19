@@ -11,7 +11,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.EmailTemplates.Tests.Components;
 
-public class CanvasDragDropTests : TestContext
+public class CanvasDragDropTests : BunitContext
 {
     public CanvasDragDropTests()
     {
@@ -32,7 +32,7 @@ public class CanvasDragDropTests : TestContext
         section.Columns.Add(col);
         doc.Sections.Add(section);
 
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
 
         // Begin dragging a Button from the toolbox; drop zones then appear.
         cut.Find("[data-tm-block=\"button\"]").TriggerEvent("ondragstart", new DragEventArgs());
@@ -57,7 +57,7 @@ public class CanvasDragDropTests : TestContext
         section.Columns.Add(c2);
         doc.Sections.Add(section);
 
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
 
         cut.Find($"[data-tm-block-id=\"{moving.Id}\"]").TriggerEvent("ondragstart", new DragEventArgs());
         cut.Find($"[data-tm-drop-col=\"{c2.Id}\"][data-tm-drop-index=\"0\"]").TriggerEvent("ondrop", new DragEventArgs());
@@ -78,7 +78,7 @@ public class CanvasDragDropTests : TestContext
         section.Columns.Add(col);
         doc.Sections.Add(section);
 
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
 
         // No transient insert-between zones while idle…
         cut.FindAll(".tm-email-canvas-dropzone").Should().BeEmpty();
@@ -96,7 +96,7 @@ public class CanvasDragDropTests : TestContext
         section.Columns.Add(col);
         doc.Sections.Add(section);
 
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
 
         cut.Find("[data-tm-block=\"text\"]").TriggerEvent("ondragstart", new DragEventArgs());
         cut.Find($"[data-tm-drop-empty][data-tm-drop-col=\"{col.Id}\"]").TriggerEvent("ondrop", new DragEventArgs());

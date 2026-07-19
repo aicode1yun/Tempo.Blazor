@@ -27,7 +27,7 @@ public class TmSpreadsheetFilterDropdownTests : LocalizationTestBase
     public void Renders_SortOptions_SearchAndValues_Localized()
     {
         var sheet = BuildSheet();
-        var cut = RenderComponent<TmSpreadsheetFilterDropdown>(p => p
+        var cut = Render<TmSpreadsheetFilterDropdown>(p => p
             .Add(c => c.Sheet, sheet)
             .Add(c => c.Filter, Filter())
             .Add(c => c.ColumnIndex, 0)
@@ -50,7 +50,7 @@ public class TmSpreadsheetFilterDropdownTests : LocalizationTestBase
         SpreadsheetColumnFilter? applied = null;
         var applyHandled = false;
 
-        var cut = RenderComponent<TmSpreadsheetFilterDropdown>(p => p
+        var cut = Render<TmSpreadsheetFilterDropdown>(p => p
             .Add(c => c.Sheet, sheet)
             .Add(c => c.Filter, Filter())
             .Add(c => c.ColumnIndex, 0)
@@ -82,7 +82,7 @@ public class TmSpreadsheetFilterDropdownTests : LocalizationTestBase
         var sheet = BuildSheet();
         int? sortedColumn = null;
 
-        var cut = RenderComponent<TmSpreadsheetFilterDropdown>(p => p
+        var cut = Render<TmSpreadsheetFilterDropdown>(p => p
             .Add(c => c.Sheet, sheet)
             .Add(c => c.Filter, Filter())
             .Add(c => c.ColumnIndex, 0)

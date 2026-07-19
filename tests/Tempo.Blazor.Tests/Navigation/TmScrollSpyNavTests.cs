@@ -23,7 +23,7 @@ public class TmScrollSpyNavTests : LocalizationTestBase
     [Fact]
     public void ScrollSpyNav_DefaultsActiveToFirstVisibleItem_WithAriaCurrent()
     {
-        var cut = RenderComponent<TmScrollSpyNav>(p => p.Add(x => x.Items, Items));
+        var cut = Render<TmScrollSpyNav>(p => p.Add(x => x.Items, Items));
 
         var introButton = cut.Find("[data-testid='tm-scroll-spy-nav-intro']");
         introButton.GetAttribute("aria-current").Should().Be("true");
@@ -37,7 +37,7 @@ public class TmScrollSpyNavTests : LocalizationTestBase
     [Fact]
     public void ScrollSpyNav_HiddenItems_AreExcludedFromRender()
     {
-        var cut = RenderComponent<TmScrollSpyNav>(p => p.Add(x => x.Items, Items));
+        var cut = Render<TmScrollSpyNav>(p => p.Add(x => x.Items, Items));
 
         cut.FindAll("[data-testid='tm-scroll-spy-nav-hidden-section']").Should().BeEmpty();
     }
@@ -45,7 +45,7 @@ public class TmScrollSpyNavTests : LocalizationTestBase
     [Fact]
     public void ScrollSpyNav_RendersItemsInOrder()
     {
-        var cut = RenderComponent<TmScrollSpyNav>(p => p.Add(x => x.Items, Items));
+        var cut = Render<TmScrollSpyNav>(p => p.Add(x => x.Items, Items));
 
         var labels = cut.FindAll(".tm-scroll-spy-nav__label").Select(e => e.TextContent).ToArray();
         labels.Should().Equal("Introduction", "Details", "Summary");
@@ -54,7 +54,7 @@ public class TmScrollSpyNavTests : LocalizationTestBase
     [Fact]
     public void ScrollSpyNav_ActiveIdParameter_DrivesActiveItem()
     {
-        var cut = RenderComponent<TmScrollSpyNav>(p => p
+        var cut = Render<TmScrollSpyNav>(p => p
             .Add(x => x.Items, Items)
             .Add(x => x.ActiveId, "summary"));
 
@@ -67,7 +67,7 @@ public class TmScrollSpyNavTests : LocalizationTestBase
     {
         string? changedTo = null;
         string? navigatedTo = null;
-        var cut = RenderComponent<TmScrollSpyNav>(p => p
+        var cut = Render<TmScrollSpyNav>(p => p
             .Add(x => x.Items, Items)
             .Add(x => x.ActiveIdChanged, id => changedTo = id)
             .Add(x => x.OnNavigate, id => navigatedTo = id));
@@ -86,7 +86,7 @@ public class TmScrollSpyNavTests : LocalizationTestBase
         var module = JSInterop.SetupModule(ModulePath);
         module.SetupVoid("scrollTo", _ => true).SetVoidResult();
 
-        var cut = RenderComponent<TmScrollSpyNav>(p => p
+        var cut = Render<TmScrollSpyNav>(p => p
             .Add(x => x.Items, Items)
             .Add(x => x.EnableScrollSpy, false));
 
@@ -102,7 +102,7 @@ public class TmScrollSpyNavTests : LocalizationTestBase
         var module = JSInterop.SetupModule(ModulePath);
         module.SetupVoid("observe", _ => true).SetVoidResult();
 
-        var cut = RenderComponent<TmScrollSpyNav>(p => p
+        var cut = Render<TmScrollSpyNav>(p => p
             .Add(x => x.Items, Items)
             .Add(x => x.EnableScrollSpy, true)
             .Add(x => x.ScrollOffset, 200));
@@ -116,7 +116,7 @@ public class TmScrollSpyNavTests : LocalizationTestBase
         var module = JSInterop.SetupModule(ModulePath);
         module.SetupVoid("observe", _ => true).SetVoidResult();
 
-        var cut = RenderComponent<TmScrollSpyNav>(p => p
+        var cut = Render<TmScrollSpyNav>(p => p
             .Add(x => x.Items, Items)
             .Add(x => x.EnableScrollSpy, false));
 
@@ -127,7 +127,7 @@ public class TmScrollSpyNavTests : LocalizationTestBase
     public async Task ScrollSpyNav_SetActiveFromScroll_UpdatesActiveItemAndFiresChanged()
     {
         string? changedTo = null;
-        var cut = RenderComponent<TmScrollSpyNav>(p => p
+        var cut = Render<TmScrollSpyNav>(p => p
             .Add(x => x.Items, Items)
             .Add(x => x.EnableScrollSpy, true)
             .Add(x => x.ActiveIdChanged, id => changedTo = id));
@@ -141,7 +141,7 @@ public class TmScrollSpyNavTests : LocalizationTestBase
     [Fact]
     public void ScrollSpyNav_ItemTemplate_OverridesDefaultLabelRendering()
     {
-        var cut = RenderComponent<TmScrollSpyNav>(p => p
+        var cut = Render<TmScrollSpyNav>(p => p
             .Add(x => x.Items, Items)
             .Add(x => x.ItemTemplate, item => builder =>
             {
@@ -158,7 +158,7 @@ public class TmScrollSpyNavTests : LocalizationTestBase
     [Fact]
     public void ScrollSpyNav_UsesNativeButtonElements_ForKeyboardFocusability()
     {
-        var cut = RenderComponent<TmScrollSpyNav>(p => p.Add(x => x.Items, Items));
+        var cut = Render<TmScrollSpyNav>(p => p.Add(x => x.Items, Items));
 
         var button = cut.Find("[data-testid='tm-scroll-spy-nav-intro']");
         button.TagName.Should().Be("BUTTON");
@@ -168,13 +168,13 @@ public class TmScrollSpyNavTests : LocalizationTestBase
     [Fact]
     public void ScrollSpyNav_Title_RendersOnlyInSideRailVariant()
     {
-        var sideRail = RenderComponent<TmScrollSpyNav>(p => p
+        var sideRail = Render<TmScrollSpyNav>(p => p
             .Add(x => x.Items, Items)
             .Add(x => x.Title, "On this page")
             .Add(x => x.Variant, ScrollSpyNavVariant.SideRail));
         sideRail.Find(".tm-scroll-spy-nav__title").TextContent.Should().Be("On this page");
 
-        var breadcrumb = RenderComponent<TmScrollSpyNav>(p => p
+        var breadcrumb = Render<TmScrollSpyNav>(p => p
             .Add(x => x.Items, Items)
             .Add(x => x.Title, "On this page")
             .Add(x => x.Variant, ScrollSpyNavVariant.Breadcrumb));
@@ -184,7 +184,7 @@ public class TmScrollSpyNavTests : LocalizationTestBase
     [Fact]
     public void ScrollSpyNav_Variant_Breadcrumb_AppliesBreadcrumbClass()
     {
-        var cut = RenderComponent<TmScrollSpyNav>(p => p
+        var cut = Render<TmScrollSpyNav>(p => p
             .Add(x => x.Items, Items)
             .Add(x => x.Variant, ScrollSpyNavVariant.Breadcrumb));
 

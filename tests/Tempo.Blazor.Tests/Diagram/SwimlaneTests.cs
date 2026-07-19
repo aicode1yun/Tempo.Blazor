@@ -280,7 +280,7 @@ public class SwimlaneTests : DiagramTestBase
             ]
         };
 
-        var cut = RenderComponent<TmDiagramCanvas>(parameters => parameters
+        var cut = Render<TmDiagramCanvas>(parameters => parameters
             .Add(p => p.Document, doc));
 
         var headers = cut.FindAll(".tm-diagram-node__swimlane-header span");

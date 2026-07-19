@@ -12,7 +12,7 @@ public class TmSplitterTests : LocalizationTestBase
     [Fact]
     public void TmSplitter_Renders_Panes()
     {
-        var cut = RenderComponent<TmSplitter>(p => p
+        var cut = Render<TmSplitter>(p => p
             .AddChildContent<TmSplitterPane>(pane1 => pane1.AddChildContent("Pane 1"))
             .AddChildContent<TmSplitterPane>(pane2 => pane2.AddChildContent("Pane 2")));
 
@@ -22,7 +22,7 @@ public class TmSplitterTests : LocalizationTestBase
     [Fact]
     public void TmSplitter_Vertical_Has_Vertical_Class()
     {
-        var cut = RenderComponent<TmSplitter>(p => p
+        var cut = Render<TmSplitter>(p => p
             .Add(x => x.Orientation, SplitterOrientation.Vertical)
             .AddChildContent<TmSplitterPane>(pane1 => pane1.AddChildContent("Pane 1"))
             .AddChildContent<TmSplitterPane>(pane2 => pane2.AddChildContent("Pane 2")));
@@ -33,7 +33,7 @@ public class TmSplitterTests : LocalizationTestBase
     [Fact]
     public void TmSplitter_Resizer_Bar_Renders()
     {
-        var cut = RenderComponent<TmSplitter>(p => p
+        var cut = Render<TmSplitter>(p => p
             .AddChildContent<TmSplitterPane>(pane1 => pane1.AddChildContent("Pane 1"))
             .AddChildContent<TmSplitterPane>(pane2 => pane2.AddChildContent("Pane 2")));
 
@@ -43,7 +43,7 @@ public class TmSplitterTests : LocalizationTestBase
     [Fact]
     public void TmSplitter_Pane_Collapsible_Renders_Collapse_Button()
     {
-        var cut = RenderComponent<TmSplitter>(p => p
+        var cut = Render<TmSplitter>(p => p
             .AddChildContent<TmSplitterPane>(pane1 => pane1
                 .Add(x => x.Collapsible, true)
                 .AddChildContent("Pane 1"))
@@ -55,7 +55,7 @@ public class TmSplitterTests : LocalizationTestBase
     [Fact]
     public void TmSplitter_Pane_Size_Applies_Style()
     {
-        var cut = RenderComponent<TmSplitter>(p => p
+        var cut = Render<TmSplitter>(p => p
             .AddChildContent<TmSplitterPane>(pane1 => pane1
                 .Add(x => x.Size, "200px")
                 .AddChildContent("Pane 1"))
@@ -68,7 +68,7 @@ public class TmSplitterTests : LocalizationTestBase
     [Fact]
     public void TmSplitter_Pane_MinMaxSize_Applies_Style()
     {
-        var cut = RenderComponent<TmSplitter>(p => p
+        var cut = Render<TmSplitter>(p => p
             .AddChildContent<TmSplitterPane>(pane1 => pane1
                 .Add(x => x.MinSize, "100px")
                 .Add(x => x.MaxSize, "400px")
@@ -84,7 +84,7 @@ public class TmSplitterTests : LocalizationTestBase
     [Fact]
     public void TmSplitter_Pane_Collapsed_Applies_Collapsed_Class()
     {
-        var cut = RenderComponent<TmSplitter>(p => p
+        var cut = Render<TmSplitter>(p => p
             .AddChildContent<TmSplitterPane>(pane1 => pane1
                 .Add(x => x.Collapsed, true)
                 .AddChildContent("Pane 1"))
@@ -98,7 +98,7 @@ public class TmSplitterTests : LocalizationTestBase
     public void TmSplitter_Collapse_Button_Toggles_Collapsed()
     {
         bool collapsed = false;
-        var cut = RenderComponent<TmSplitter>(p => p
+        var cut = Render<TmSplitter>(p => p
             .AddChildContent<TmSplitterPane>(pane1 => pane1
                 .Add(x => x.Collapsible, true)
                 .Add(x => x.Collapsed, collapsed)
@@ -115,7 +115,7 @@ public class TmSplitterTests : LocalizationTestBase
     [Fact]
     public void TmSplitter_Last_Pane_Has_No_Resizer()
     {
-        var cut = RenderComponent<TmSplitter>(p => p
+        var cut = Render<TmSplitter>(p => p
             .AddChildContent<TmSplitterPane>(pane1 => pane1.AddChildContent("Pane 1"))
             .AddChildContent<TmSplitterPane>(pane2 => pane2.AddChildContent("Pane 2"))
             .AddChildContent<TmSplitterPane>(pane3 => pane3.AddChildContent("Pane 3")));
@@ -126,7 +126,7 @@ public class TmSplitterTests : LocalizationTestBase
     [Fact]
     public void TmSplitter_Drag_Horizontal_Updates_Pane_Size()
     {
-        var cut = RenderComponent<TmSplitter>(p => p
+        var cut = Render<TmSplitter>(p => p
             .AddChildContent<TmSplitterPane>(pane1 => pane1
                 .Add(x => x.Size, "200px")
                 .AddChildContent("Pane 1"))
@@ -143,7 +143,7 @@ public class TmSplitterTests : LocalizationTestBase
     [Fact]
     public void TmSplitter_Drag_Vertical_Updates_Pane_Size()
     {
-        var cut = RenderComponent<TmSplitter>(p => p
+        var cut = Render<TmSplitter>(p => p
             .Add(x => x.Orientation, SplitterOrientation.Vertical)
             .AddChildContent<TmSplitterPane>(pane1 => pane1
                 .Add(x => x.Size, "200px")
@@ -161,7 +161,7 @@ public class TmSplitterTests : LocalizationTestBase
     [Fact]
     public void TmSplitter_Drag_Left_Decreases_Pane_Size()
     {
-        var cut = RenderComponent<TmSplitter>(p => p
+        var cut = Render<TmSplitter>(p => p
             .AddChildContent<TmSplitterPane>(pane1 => pane1
                 .Add(x => x.Size, "200px")
                 .AddChildContent("Pane 1"))
@@ -178,7 +178,7 @@ public class TmSplitterTests : LocalizationTestBase
     [Fact]
     public void TmSplitter_Drag_NonLeftButton_Ignored()
     {
-        var cut = RenderComponent<TmSplitter>(p => p
+        var cut = Render<TmSplitter>(p => p
             .AddChildContent<TmSplitterPane>(pane1 => pane1
                 .Add(x => x.Size, "200px")
                 .AddChildContent("Pane 1"))

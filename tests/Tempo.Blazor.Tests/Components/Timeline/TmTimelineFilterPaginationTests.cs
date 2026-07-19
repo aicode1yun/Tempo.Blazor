@@ -51,7 +51,7 @@ public class TmTimelineFilterPaginationTests : LocalizationTestBase
     [Fact]
     public void No_PageSize_Renders_All_And_No_LoadMore()
     {
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, Many(5)));
 
         cut.FindAll(".tm-timeline-entry").Count.Should().Be(5);
@@ -63,7 +63,7 @@ public class TmTimelineFilterPaginationTests : LocalizationTestBase
     [Fact]
     public void Filter_Param_Narrows_Entries_By_Text()
     {
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, Mixed())
             .Add(c => c.Filter, "bug"));
 
@@ -74,7 +74,7 @@ public class TmTimelineFilterPaginationTests : LocalizationTestBase
     [Fact]
     public void EntryTypeFilter_Param_Narrows_Entries_By_Type()
     {
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, Many(6)) // 3 comment (odd), 3 status_change (even)
             .Add(c => c.EntryTypeFilter, "comment"));
 
@@ -86,7 +86,7 @@ public class TmTimelineFilterPaginationTests : LocalizationTestBase
     [Fact]
     public void PageSize_Limits_Rendered_Count()
     {
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, Many(5))
             .Add(c => c.PageSize, 2));
 
@@ -97,7 +97,7 @@ public class TmTimelineFilterPaginationTests : LocalizationTestBase
     [Fact]
     public void LoadMore_Grows_Rendered_Count_Then_Disappears()
     {
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, Many(5))
             .Add(c => c.PageSize, 2));
 
@@ -117,7 +117,7 @@ public class TmTimelineFilterPaginationTests : LocalizationTestBase
     [Fact]
     public void FilterBar_Search_Input_Narrows_Entries()
     {
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, Mixed())
             .Add(c => c.ShowFilterBar, true));
 
@@ -131,7 +131,7 @@ public class TmTimelineFilterPaginationTests : LocalizationTestBase
     [Fact]
     public void FilterBar_Renders_Type_Options_From_Entries()
     {
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, Many(4))
             .Add(c => c.ShowFilterBar, true));
 
@@ -146,7 +146,7 @@ public class TmTimelineFilterPaginationTests : LocalizationTestBase
     {
         var provider = new FakeProvider(Many(10));
 
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.PageSize, 3));
 
@@ -160,7 +160,7 @@ public class TmTimelineFilterPaginationTests : LocalizationTestBase
     {
         var provider = new FakeProvider(Many(10));
 
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.PageSize, 3));
 
@@ -177,7 +177,7 @@ public class TmTimelineFilterPaginationTests : LocalizationTestBase
     {
         var provider = new FakeProvider(Mixed());
 
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.Filter, "bug"));
 

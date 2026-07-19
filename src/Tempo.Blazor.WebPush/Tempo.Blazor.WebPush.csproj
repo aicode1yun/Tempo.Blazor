@@ -23,6 +23,8 @@
 
   <ItemGroup>
     <PackageReference Include="WebPush" Version="1.0.12" />
+    <!-- Transitive pin: WebPush 1.0.12 pulls Newtonsoft.Json 10.0.3 (NU1903 high vulnerability GHSA-5crp-9r3c-p9vr) -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">

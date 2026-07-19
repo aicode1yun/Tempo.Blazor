@@ -20,7 +20,7 @@ public class TmKycWizardTests : LocalizationTestBase
     private IRenderedComponent<TmKycWizard> Render(
         IKycProvider provider,
         Action<Bunit.ComponentParameterCollectionBuilder<TmKycWizard>>? configure = null)
-        => RenderComponent<TmKycWizard>(p =>
+        => Render<TmKycWizard>(p =>
         {
             p.Add(x => x.Provider, provider);
             configure?.Invoke(p);

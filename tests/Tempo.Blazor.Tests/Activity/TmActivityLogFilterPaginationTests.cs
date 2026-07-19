@@ -36,7 +36,7 @@ public class TmActivityLogFilterPaginationTests : LocalizationTestBase
     [Fact]
     public void ActivityLog_NoNewParams_RendersAllTimelineItems()
     {
-        var cut = RenderComponent<TmActivityLog>(p => p
+        var cut = Render<TmActivityLog>(p => p
             .Add(c => c.TimelineEntries, Many(4)));
 
         cut.FindAll(".tm-timeline-item").Count.Should().Be(4);
@@ -46,7 +46,7 @@ public class TmActivityLogFilterPaginationTests : LocalizationTestBase
     [Fact]
     public void ActivityLog_TimelineFilter_Narrows_Timeline()
     {
-        var cut = RenderComponent<TmActivityLog>(p => p
+        var cut = Render<TmActivityLog>(p => p
             .Add(c => c.TimelineEntries, Mixed())
             .Add(c => c.TimelineFilter, "bug"));
 
@@ -56,7 +56,7 @@ public class TmActivityLogFilterPaginationTests : LocalizationTestBase
     [Fact]
     public void ActivityLog_TimelinePageSize_Limits_And_LoadMore_Grows()
     {
-        var cut = RenderComponent<TmActivityLog>(p => p
+        var cut = Render<TmActivityLog>(p => p
             .Add(c => c.TimelineEntries, Many(5))
             .Add(c => c.TimelinePageSize, 2));
 

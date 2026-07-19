@@ -82,7 +82,7 @@ public class WireframeExportTests : LocalizationTestBase
     [Fact]
     public void Dialog_Renders_WhenShowIsTrue()
     {
-        var cut = RenderComponent<TmWireframeExportDialog>(parameters => parameters
+        var cut = Render<TmWireframeExportDialog>(parameters => parameters
             .Add(p => p.Show, true)
             .Add(p => p.DefaultFileName, "test"));
 
@@ -92,7 +92,7 @@ public class WireframeExportTests : LocalizationTestBase
     [Fact]
     public void Dialog_DoesNotRenderContent_WhenShowIsFalse()
     {
-        var cut = RenderComponent<TmWireframeExportDialog>(parameters => parameters
+        var cut = Render<TmWireframeExportDialog>(parameters => parameters
             .Add(p => p.Show, false));
 
         // Modal is rendered but hidden; check that inner content is not present
@@ -102,7 +102,7 @@ public class WireframeExportTests : LocalizationTestBase
     [Fact]
     public void Dialog_ContainsFormatSelect()
     {
-        var cut = RenderComponent<TmWireframeExportDialog>(parameters => parameters
+        var cut = Render<TmWireframeExportDialog>(parameters => parameters
             .Add(p => p.Show, true));
 
         var selects = cut.FindAll("select");
@@ -112,7 +112,7 @@ public class WireframeExportTests : LocalizationTestBase
     [Fact]
     public void Dialog_ContainsScaleSelect_WhenPngSelected()
     {
-        var cut = RenderComponent<TmWireframeExportDialog>(parameters => parameters
+        var cut = Render<TmWireframeExportDialog>(parameters => parameters
             .Add(p => p.Show, true));
 
         // Default format is png, so scale select should be visible
@@ -123,7 +123,7 @@ public class WireframeExportTests : LocalizationTestBase
     public void Dialog_OnExport_EmitsResult()
     {
         WireframeExportDialogResult? captured = null;
-        var cut = RenderComponent<TmWireframeExportDialog>(parameters => parameters
+        var cut = Render<TmWireframeExportDialog>(parameters => parameters
             .Add(p => p.Show, true)
             .Add(p => p.OnExport, EventCallback.Factory.Create<WireframeExportDialogResult>(this, r => captured = r)));
 
@@ -142,7 +142,7 @@ public class WireframeExportTests : LocalizationTestBase
     public void Dialog_OnClose_EmitsEvent()
     {
         var closed = false;
-        var cut = RenderComponent<TmWireframeExportDialog>(parameters => parameters
+        var cut = Render<TmWireframeExportDialog>(parameters => parameters
             .Add(p => p.Show, true)
             .Add(p => p.OnClose, EventCallback.Factory.Create(this, () => closed = true)));
 

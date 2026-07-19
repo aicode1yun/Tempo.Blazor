@@ -34,7 +34,7 @@ public class TmDataTableToolbarTests : LocalizationTestBase
     [Fact]
     public void TmDataTable_ShowToolbar_False_HidesToolbarAndControls()
     {
-        var cut = RenderComponent<TmDataTable<ToolbarPerson>>(p => p
+        var cut = Render<TmDataTable<ToolbarPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.ShowToolbar, false));
 
@@ -47,7 +47,7 @@ public class TmDataTableToolbarTests : LocalizationTestBase
     [Fact]
     public void TmDataTable_ShowToolbar_True_WithNoVisibleControls_DoesNotRenderEmptyToolbar()
     {
-        var cut = RenderComponent<TmDataTable<ToolbarPerson>>(p => p
+        var cut = Render<TmDataTable<ToolbarPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.ShowToolbar, true)
             .Add(c => c.ShowSearch, false)
@@ -64,7 +64,7 @@ public class TmDataTableToolbarTests : LocalizationTestBase
         provider.GetViewsAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IEnumerable<DataTableView>>([]));
 
-        var cut = RenderComponent<TmDataTable<ToolbarPerson>>(p => p
+        var cut = Render<TmDataTable<ToolbarPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.ViewProvider, provider)
             .Add(c => c.ViewContext, "test-context")
@@ -76,7 +76,7 @@ public class TmDataTableToolbarTests : LocalizationTestBase
     [Fact]
     public void TmDataTable_ShowToolbar_True_WithControls_RendersToolbar()
     {
-        var cut = RenderComponent<TmDataTable<ToolbarPerson>>(p => p
+        var cut = Render<TmDataTable<ToolbarPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.ShowToolbar, true));
 
@@ -91,7 +91,7 @@ public class TmDataTableToolbarTests : LocalizationTestBase
     [InlineData(DataToolbarMode.ContentOnly, false, false)]
     public void TmDataTable_ToolbarMode_RendersExpectedSearchAndColumnPicker(DataToolbarMode mode, bool expectSearch, bool expectColumnPicker)
     {
-        var cut = RenderComponent<TmDataTable<ToolbarPerson>>(p => p
+        var cut = Render<TmDataTable<ToolbarPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.ToolbarMode, mode)
             .AddChildContent(Columns));
@@ -107,7 +107,7 @@ public class TmDataTableToolbarTests : LocalizationTestBase
         provider.GetViewsAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IEnumerable<DataTableView>>([]));
 
-        var cut = RenderComponent<TmDataTable<ToolbarPerson>>(p => p
+        var cut = Render<TmDataTable<ToolbarPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.ViewContext, "test-context")
             .Add(c => c.ViewProvider, provider)
@@ -127,7 +127,7 @@ public class TmDataTableToolbarTests : LocalizationTestBase
         provider.GetViewsAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IEnumerable<DataTableView>>([]));
 
-        var cut = RenderComponent<TmDataTable<ToolbarPerson>>(p => p
+        var cut = Render<TmDataTable<ToolbarPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.ViewContext, "test-context")
             .Add(c => c.ViewProvider, provider)
@@ -146,7 +146,7 @@ public class TmDataTableToolbarTests : LocalizationTestBase
         provider.GetViewsAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IEnumerable<DataTableView>>([]));
 
-        var cut = RenderComponent<TmDataTable<ToolbarPerson>>(p => p
+        var cut = Render<TmDataTable<ToolbarPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.ViewContext, "test-context")
             .Add(c => c.ViewProvider, provider)

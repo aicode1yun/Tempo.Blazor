@@ -22,7 +22,7 @@ public class TmMultiViewListGenericTests : LocalizationTestBase
         ListViewMode viewMode = ListViewMode.Table,
         List<MvlProject>? items = null)
     {
-        return RenderComponent<TmMultiViewList<MvlProject>>(p =>
+        return Render<TmMultiViewList<MvlProject>>(p =>
         {
             p.Add(c => c.Items, items ?? Projects);
             p.Add(c => c.ViewMode, viewMode);
@@ -90,7 +90,7 @@ public class TmMultiViewListGenericTests : LocalizationTestBase
     [Fact]
     public void MultiViewList_Generic_CardTemplate_OverridesDefault()
     {
-        var cut = RenderComponent<TmMultiViewList<MvlProject>>(p =>
+        var cut = Render<TmMultiViewList<MvlProject>>(p =>
         {
             p.Add(c => c.Items, Projects);
             p.Add(c => c.ViewMode, ListViewMode.Card);
@@ -111,7 +111,7 @@ public class TmMultiViewListGenericTests : LocalizationTestBase
     [Fact]
     public void MultiViewList_Generic_ListItemTemplate_OverridesDefault()
     {
-        var cut = RenderComponent<TmMultiViewList<MvlProject>>(p =>
+        var cut = Render<TmMultiViewList<MvlProject>>(p =>
         {
             p.Add(c => c.Items, Projects);
             p.Add(c => c.ViewMode, ListViewMode.List);
@@ -131,7 +131,7 @@ public class TmMultiViewListGenericTests : LocalizationTestBase
     [Fact]
     public void MultiViewList_Generic_TableColumns_OverridesDefault()
     {
-        var cut = RenderComponent<TmMultiViewList<MvlProject>>(p =>
+        var cut = Render<TmMultiViewList<MvlProject>>(p =>
         {
             p.Add(c => c.Items, Projects);
             p.Add(c => c.ViewMode, ListViewMode.Table);
@@ -159,7 +159,7 @@ public class TmMultiViewListGenericTests : LocalizationTestBase
             new("2", "AutoItem2", "AutoSub2"),
         };
 
-        var cut = RenderComponent<TmMultiViewList<AutoMappedItem>>(p =>
+        var cut = Render<TmMultiViewList<AutoMappedItem>>(p =>
         {
             p.Add(c => c.Items, items);
             p.Add(c => c.ViewMode, ListViewMode.Table);
@@ -208,7 +208,7 @@ public class TmMultiViewListGenericTests : LocalizationTestBase
     [Fact]
     public void MultiViewList_Generic_Empty_RendersEmptyState()
     {
-        var cut = RenderComponent<TmMultiViewList<MvlProject>>(p =>
+        var cut = Render<TmMultiViewList<MvlProject>>(p =>
         {
             p.Add(c => c.Items, new List<MvlProject>());
             p.Add(c => c.TitleField, x => x.Name);
@@ -224,7 +224,7 @@ public class TmMultiViewListGenericTests : LocalizationTestBase
     public void MultiViewList_Generic_RowClick_FiresCallback()
     {
         MvlProject? clicked = null;
-        var cut = RenderComponent<TmMultiViewList<MvlProject>>(p =>
+        var cut = Render<TmMultiViewList<MvlProject>>(p =>
         {
             p.Add(c => c.Items, Projects);
             p.Add(c => c.TitleField, x => x.Name);

@@ -10,7 +10,7 @@ public class TmBarcodeTests : LocalizationTestBase
     [Fact]
     public void TmBarcode_Code128_Renders_Svg()
     {
-        var cut = RenderComponent<TmBarcode>(p => p
+        var cut = Render<TmBarcode>(p => p
             .Add(x => x.Value, "TEST1234")
             .Add(x => x.Format, BarcodeFormat.Code128));
 
@@ -20,7 +20,7 @@ public class TmBarcodeTests : LocalizationTestBase
     [Fact]
     public void TmBarcode_DisplayValue_Renders_Text()
     {
-        var cut = RenderComponent<TmBarcode>(p => p
+        var cut = Render<TmBarcode>(p => p
             .Add(x => x.Value, "TEST1234")
             .Add(x => x.Format, BarcodeFormat.Code128)
             .Add(x => x.DisplayValue, true));
@@ -32,7 +32,7 @@ public class TmBarcodeTests : LocalizationTestBase
     [Fact]
     public void TmBarcode_Invalid_Value_Renders_Error()
     {
-        var cut = RenderComponent<TmBarcode>(p => p
+        var cut = Render<TmBarcode>(p => p
             .Add(x => x.Value, "TEST!@#")
             .Add(x => x.Format, BarcodeFormat.EAN13));
 
@@ -42,7 +42,7 @@ public class TmBarcodeTests : LocalizationTestBase
     [Fact]
     public void TmBarcode_Width_Applies_To_Svg()
     {
-        var cut = RenderComponent<TmBarcode>(p => p
+        var cut = Render<TmBarcode>(p => p
             .Add(x => x.Value, "TEST1234")
             .Add(x => x.Format, BarcodeFormat.Code128)
             .Add(x => x.Width, 300));
@@ -54,7 +54,7 @@ public class TmBarcodeTests : LocalizationTestBase
     [Fact]
     public void TmBarcode_Height_Applies_To_Svg()
     {
-        var cut = RenderComponent<TmBarcode>(p => p
+        var cut = Render<TmBarcode>(p => p
             .Add(x => x.Value, "TEST1234")
             .Add(x => x.Format, BarcodeFormat.Code128)
             .Add(x => x.Height, 120));
@@ -66,7 +66,7 @@ public class TmBarcodeTests : LocalizationTestBase
     [Fact]
     public void TmBarcode_DisplayValue_Exactly_One_Text_Element()
     {
-        var cut = RenderComponent<TmBarcode>(p => p
+        var cut = Render<TmBarcode>(p => p
             .Add(x => x.Value, "TEST1234")
             .Add(x => x.Format, BarcodeFormat.Code128)
             .Add(x => x.DisplayValue, true));
@@ -77,7 +77,7 @@ public class TmBarcodeTests : LocalizationTestBase
     [Fact]
     public void TmBarcode_DisplayValue_False_Removes_ZXing_Text()
     {
-        var cut = RenderComponent<TmBarcode>(p => p
+        var cut = Render<TmBarcode>(p => p
             .Add(x => x.Value, "TEST1234")
             .Add(x => x.Format, BarcodeFormat.Code128)
             .Add(x => x.DisplayValue, false));
@@ -89,7 +89,7 @@ public class TmBarcodeTests : LocalizationTestBase
     [Fact]
     public void TmBarcode_Empty_Value_Renders_Nothing()
     {
-        var cut = RenderComponent<TmBarcode>(p => p.Add(x => x.Value, ""));
+        var cut = Render<TmBarcode>(p => p.Add(x => x.Value, ""));
         cut.FindAll("svg").Count.Should().Be(0);
     }
 }

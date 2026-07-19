@@ -14,7 +14,7 @@ public class TmDatePickerIconTests : LocalizationTestBase
     [Fact]
     public void DatePicker_RendersCalendarSvgIcon_InsideIconSlot()
     {
-        var cut = RenderComponent<TmDatePicker>();
+        var cut = Render<TmDatePicker>();
 
         var iconSlot = cut.Find(".tm-date-picker-icon");
         var svg = iconSlot.QuerySelector("svg.tm-icon");
@@ -24,7 +24,7 @@ public class TmDatePickerIconTests : LocalizationTestBase
     [Fact]
     public void DatePicker_IconSlot_IsAriaHidden()
     {
-        var cut = RenderComponent<TmDatePicker>();
+        var cut = Render<TmDatePicker>();
 
         cut.Find(".tm-date-picker-icon").GetAttribute("aria-hidden").Should().Be("true");
     }

@@ -24,7 +24,7 @@ public class TmModalTests : LocalizationTestBase
     public void Modal_IsVisible_WhenShowTrue()
     {
         // Act
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, "Test Modal")
             .AddChildContent("<p>Modal content</p>"));
@@ -37,7 +37,7 @@ public class TmModalTests : LocalizationTestBase
     [Fact]
     public void Modal_HasDialogAccessibilityAttributes()
     {
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, "Accessible modal"));
 
@@ -54,11 +54,11 @@ public class TmModalTests : LocalizationTestBase
     [Fact]
     public void Modal_OpenThenClose_FocusTrapLifecycle_DoesNotThrow()
     {
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, "Trap"));
 
-        var act = () => cut.SetParametersAndRender(p => p.Add(m => m.Show, false));
+        var act = () => cut.Render(p => p.Add(m => m.Show, false));
         act.Should().NotThrow();
     }
 
@@ -66,7 +66,7 @@ public class TmModalTests : LocalizationTestBase
     public void Modal_IsHidden_WhenShowFalse()
     {
         // Act
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, false)
             .Add(m => m.Title, "Test Modal"));
 
@@ -81,7 +81,7 @@ public class TmModalTests : LocalizationTestBase
         const string title = "My Modal Title";
 
         // Act
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, title));
 
@@ -96,7 +96,7 @@ public class TmModalTests : LocalizationTestBase
         const string content = "This is the modal body content";
 
         // Act
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, "Test")
             .AddChildContent(content));
@@ -114,7 +114,7 @@ public class TmModalTests : LocalizationTestBase
     {
         // Arrange
         bool closeCalled = false;
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, "Test")
             .Add(m => m.OnClose, EventCallback.Factory.Create(this, () => closeCalled = true))
@@ -132,7 +132,7 @@ public class TmModalTests : LocalizationTestBase
     {
         // Arrange
         bool closeCalled = false;
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, "Test")
             .Add(m => m.OnClose, EventCallback.Factory.Create(this, () => closeCalled = true))
@@ -150,7 +150,7 @@ public class TmModalTests : LocalizationTestBase
     {
         // Arrange
         bool closeCalled = false;
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, "Test")
             .Add(m => m.ShowCloseButton, true)
@@ -168,7 +168,7 @@ public class TmModalTests : LocalizationTestBase
     {
         // Arrange
         bool closeCalled = false;
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, "Test")
             .Add(m => m.CloseOnEscape, true)
@@ -194,7 +194,7 @@ public class TmModalTests : LocalizationTestBase
     public void Modal_AppliesSizeClass(ModalSize size, string expectedClass)
     {
         // Act
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, "Test")
             .Add(m => m.Size, size));
@@ -211,7 +211,7 @@ public class TmModalTests : LocalizationTestBase
     public void Modal_HasAnimationClasses()
     {
         // Act
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, "Test")
             .Add(m => m.Animated, true));
@@ -224,12 +224,12 @@ public class TmModalTests : LocalizationTestBase
     public void Modal_Show_AddsVisibleClass()
     {
         // Arrange
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, false)
             .Add(m => m.Title, "Test"));
 
         // Act
-        cut.SetParametersAndRender(p => p.Add(m => m.Show, true));
+        cut.Render(p => p.Add(m => m.Show, true));
 
         // Assert
         cut.Find(".tm-modal-overlay").ClassList.Should().Contain("tm-modal--visible");
@@ -243,7 +243,7 @@ public class TmModalTests : LocalizationTestBase
     public void Modal_ShowFooter_RendersFooter()
     {
         // Act
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, "Test")
             .Add(m => m.ShowFooter, true)
@@ -262,7 +262,7 @@ public class TmModalTests : LocalizationTestBase
     public void Modal_HasRoleDialog()
     {
         // Act
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, "Test"));
 
@@ -274,7 +274,7 @@ public class TmModalTests : LocalizationTestBase
     public void Modal_HasAriaModal()
     {
         // Act
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, "Test"));
 
@@ -286,7 +286,7 @@ public class TmModalTests : LocalizationTestBase
     public void Modal_HasAriaLabelledBy()
     {
         // Act
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, "Test Title"));
 
@@ -311,7 +311,7 @@ public class TmModalTests : LocalizationTestBase
     public void Modal_AppliesPositionClass(ModalPosition position, string expectedClass)
     {
         // Act
-        var cut = RenderComponent<TmModal>(p => p
+        var cut = Render<TmModal>(p => p
             .Add(m => m.Show, true)
             .Add(m => m.Title, "Test")
             .Add(m => m.Position, position));

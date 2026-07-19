@@ -58,7 +58,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
     {
         Services.AddSingleton(BuildRegistry("TmButton"));
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>();
+        var cut = Render<TmWireframeDesignerCanvas>();
 
         cut.Find(".tm-wd-canvas-wrap").Should().NotBeNull();
     }
@@ -68,7 +68,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
     {
         Services.AddSingleton(BuildRegistry("TmButton"));
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>();
+        var cut = Render<TmWireframeDesignerCanvas>();
 
         cut.Find("svg.tm-wd-canvas__svg").Should().NotBeNull();
     }
@@ -78,7 +78,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
     {
         Services.AddSingleton(BuildRegistry("TmButton"));
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>();
+        var cut = Render<TmWireframeDesignerCanvas>();
 
         cut.Find("svg").GetAttribute("aria-label").Should().Be("Wireframe canvas");
     }
@@ -90,7 +90,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
     {
         Services.AddSingleton(BuildRegistry("TmButton"));
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(p => p
+        var cut = Render<TmWireframeDesignerCanvas>(p => p
             .Add(x => x.ShowGrid, true));
 
         // Grid is rendered inside <defs> as <pattern> elements
@@ -102,7 +102,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
     {
         Services.AddSingleton(BuildRegistry("TmButton"));
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(p => p
+        var cut = Render<TmWireframeDesignerCanvas>(p => p
             .Add(x => x.ShowGrid, false));
 
         cut.FindAll("pattern").Should().BeEmpty();
@@ -118,7 +118,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
 
         var doc = DocWith(("TmButton", 0, 0), ("TmCard", 100, 50));
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(p => p
+        var cut = Render<TmWireframeDesignerCanvas>(p => p
             .Add(x => x.Document, doc));
 
         cut.FindAll("g[data-el-id]").Should().HaveCount(2);
@@ -131,7 +131,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
 
         var doc = DocWith(("TmButton", 10, 20));
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(p => p
+        var cut = Render<TmWireframeDesignerCanvas>(p => p
             .Add(x => x.Document, doc));
 
         var g = cut.Find("g[data-el-id]");
@@ -145,7 +145,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
 
         var doc = DocWith(("TmButton", 10, 20));
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(p => p
+        var cut = Render<TmWireframeDesignerCanvas>(p => p
             .Add(x => x.Document, doc));
 
         var g = cut.Find("g[data-el-id]");
@@ -164,7 +164,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
         el2.ZIndex = 1;
         doc.Elements.AddRange([el1, el2]);
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(p => p
+        var cut = Render<TmWireframeDesignerCanvas>(p => p
             .Add(x => x.Document, doc));
 
         var groups = cut.FindAll("g[data-el-id]");
@@ -177,7 +177,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
     {
         Services.AddSingleton(BuildRegistry());
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(p => p
+        var cut = Render<TmWireframeDesignerCanvas>(p => p
             .Add(x => x.Document, (WireframeDocument?)null));
 
         cut.FindAll("g[data-el-id]").Should().BeEmpty();
@@ -193,7 +193,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
 
         var doc = DocWith(("UnknownWidget", 0, 0));
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(p => p
+        var cut = Render<TmWireframeDesignerCanvas>(p => p
             .Add(x => x.Document, doc));
 
         // A group is rendered even for unknown types (fallback shape)
@@ -210,7 +210,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
 
         var doc = DocWith(($"app:{appId}:InvoiceCard", 0, 0));
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(p => p
+        var cut = Render<TmWireframeDesignerCanvas>(p => p
             .Add(x => x.Document, doc)
             .Add(x => x.ComponentScope, WireframeComponentScope.ForApp(appId)));
 
@@ -227,7 +227,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
 
         var doc = DocWith(("TmButton", 0, 0));
 
-        var act = () => RenderComponent<TmWireframeDesignerCanvas>(p => p
+        var act = () => Render<TmWireframeDesignerCanvas>(p => p
             .Add(x => x.Document, doc)
             .Add(x => x.ReadOnly, true));
 
@@ -241,7 +241,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
     {
         Services.AddSingleton(BuildRegistry());
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(p => p
+        var cut = Render<TmWireframeDesignerCanvas>(p => p
             .Add(x => x.Class, "extra-class"));
 
         cut.Find(".tm-wd-canvas-wrap").ClassList.Should().Contain("extra-class");
@@ -257,7 +257,7 @@ public class TmWireframeDesignerCanvasTests : LocalizationTestBase
 
         var doc = new WireframeDocument { Width = 1440, Height = 900 };
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(p => p
+        var cut = Render<TmWireframeDesignerCanvas>(p => p
             .Add(x => x.Document, doc)
             .Add(x => x.ShowGrid, false));
 

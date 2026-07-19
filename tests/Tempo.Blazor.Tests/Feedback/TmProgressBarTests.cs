@@ -11,7 +11,7 @@ public class TmProgressBarTests : LocalizationTestBase
     [Fact]
     public void ProgressBar_Renders_WithRoleProgressbar()
     {
-        var cut = RenderComponent<TmProgressBar>(p => p.Add(x => x.Value, 50));
+        var cut = Render<TmProgressBar>(p => p.Add(x => x.Value, 50));
 
         cut.Find("[role='progressbar']").Should().NotBeNull();
     }
@@ -19,7 +19,7 @@ public class TmProgressBarTests : LocalizationTestBase
     [Fact]
     public void ProgressBar_AriaValues_AreSet()
     {
-        var cut = RenderComponent<TmProgressBar>(p => p.Add(x => x.Value, 60));
+        var cut = Render<TmProgressBar>(p => p.Add(x => x.Value, 60));
 
         var bar = cut.Find("[role='progressbar']");
         bar.GetAttribute("aria-valuenow").Should().Be("60");
@@ -30,7 +30,7 @@ public class TmProgressBarTests : LocalizationTestBase
     [Fact]
     public void ProgressBar_Fill_HasCorrectWidth()
     {
-        var cut = RenderComponent<TmProgressBar>(p => p.Add(x => x.Value, 75));
+        var cut = Render<TmProgressBar>(p => p.Add(x => x.Value, 75));
 
         var fill = cut.Find(".tm-progress-bar__fill");
         fill.GetAttribute("style").Should().Contain("75");
@@ -39,7 +39,7 @@ public class TmProgressBarTests : LocalizationTestBase
     [Fact]
     public void ProgressBar_ZeroValue_HasZeroWidth()
     {
-        var cut = RenderComponent<TmProgressBar>(p => p.Add(x => x.Value, 0));
+        var cut = Render<TmProgressBar>(p => p.Add(x => x.Value, 0));
 
         var fill = cut.Find(".tm-progress-bar__fill");
         fill.GetAttribute("style").Should().Contain("0");
@@ -48,7 +48,7 @@ public class TmProgressBarTests : LocalizationTestBase
     [Fact]
     public void ProgressBar_HundredPercent_HasFullWidth()
     {
-        var cut = RenderComponent<TmProgressBar>(p => p.Add(x => x.Value, 100));
+        var cut = Render<TmProgressBar>(p => p.Add(x => x.Value, 100));
 
         var fill = cut.Find(".tm-progress-bar__fill");
         fill.GetAttribute("style").Should().Contain("100");
@@ -62,7 +62,7 @@ public class TmProgressBarTests : LocalizationTestBase
     [InlineData(ProgressBarSize.Lg, "tm-progress-bar--lg")]
     public void ProgressBar_Size_AppliesCss(ProgressBarSize size, string expected)
     {
-        var cut = RenderComponent<TmProgressBar>(p => p
+        var cut = Render<TmProgressBar>(p => p
             .Add(x => x.Value, 50)
             .Add(x => x.Size, size));
 
@@ -78,7 +78,7 @@ public class TmProgressBarTests : LocalizationTestBase
     [InlineData(ProgressBarVariant.Gradient, "tm-progress-bar--gradient")]
     public void ProgressBar_Variant_AppliesCss(ProgressBarVariant variant, string expected)
     {
-        var cut = RenderComponent<TmProgressBar>(p => p
+        var cut = Render<TmProgressBar>(p => p
             .Add(x => x.Value, 50)
             .Add(x => x.Variant, variant));
 
@@ -90,7 +90,7 @@ public class TmProgressBarTests : LocalizationTestBase
     [Fact]
     public void ProgressBar_ShowLabel_RendersPercentage()
     {
-        var cut = RenderComponent<TmProgressBar>(p => p
+        var cut = Render<TmProgressBar>(p => p
             .Add(x => x.Value, 42)
             .Add(x => x.ShowLabel, true));
 
@@ -102,7 +102,7 @@ public class TmProgressBarTests : LocalizationTestBase
     [Fact]
     public void ProgressBar_Striped_HasClass()
     {
-        var cut = RenderComponent<TmProgressBar>(p => p
+        var cut = Render<TmProgressBar>(p => p
             .Add(x => x.Value, 50)
             .Add(x => x.Striped, true));
 
@@ -112,7 +112,7 @@ public class TmProgressBarTests : LocalizationTestBase
     [Fact]
     public void ProgressBar_Animated_HasClass()
     {
-        var cut = RenderComponent<TmProgressBar>(p => p
+        var cut = Render<TmProgressBar>(p => p
             .Add(x => x.Value, 50)
             .Add(x => x.Animated, true));
 
@@ -124,7 +124,7 @@ public class TmProgressBarTests : LocalizationTestBase
     [Fact]
     public void ProgressBar_Indeterminate_HasClass()
     {
-        var cut = RenderComponent<TmProgressBar>(p => p.Add(x => x.Indeterminate, true));
+        var cut = Render<TmProgressBar>(p => p.Add(x => x.Indeterminate, true));
 
         cut.Find(".tm-progress-bar").ClassList.Should().Contain("tm-progress-bar--indeterminate");
     }
@@ -141,7 +141,7 @@ public class TmProgressBarTests : LocalizationTestBase
             new(10, "#ef4444", "Failed"),
         };
 
-        var cut = RenderComponent<TmProgressBar>(p => p
+        var cut = Render<TmProgressBar>(p => p
             .Add(x => x.Value, 60)
             .Add(x => x.Segments, segments));
 
@@ -154,7 +154,7 @@ public class TmProgressBarTests : LocalizationTestBase
     [Fact]
     public void ProgressBar_CustomClass_IsApplied()
     {
-        var cut = RenderComponent<TmProgressBar>(p => p
+        var cut = Render<TmProgressBar>(p => p
             .Add(x => x.Value, 50)
             .Add(x => x.Class, "my-progress"));
 

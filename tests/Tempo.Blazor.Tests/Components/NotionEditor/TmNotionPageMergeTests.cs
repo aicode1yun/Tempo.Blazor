@@ -244,7 +244,7 @@ public sealed class TmNotionPageMergeTests : LocalizationTestBase
         var context = new NotionEditorContext { BlockProvider = provider };
         var page    = new NotionPage { Id = PageId, Title = "Page" };
 
-        var cut = RenderComponent<TmNotionPage>(parameters => parameters
+        var cut = Render<TmNotionPage>(parameters => parameters
             .AddCascadingValue(context)
             .Add(p => p.Page, page)
             .Add(p => p.ReadOnly, readOnly));

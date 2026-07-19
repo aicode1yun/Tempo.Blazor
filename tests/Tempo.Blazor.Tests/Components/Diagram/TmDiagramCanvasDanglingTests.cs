@@ -34,7 +34,7 @@ public class TmDiagramCanvasDanglingTests : LocalizationTestBase
             TargetNodeId = "n1",
         });
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -64,7 +64,7 @@ public class TmDiagramCanvasDanglingTests : LocalizationTestBase
             TargetPoint = new DiagramPoint(300, 200),
         });
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -99,7 +99,7 @@ public class TmDiagramCanvasDanglingTests : LocalizationTestBase
             TargetNodeId = "n2",
         });
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 

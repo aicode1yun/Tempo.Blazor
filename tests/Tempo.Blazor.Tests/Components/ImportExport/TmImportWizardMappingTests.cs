@@ -21,7 +21,7 @@ public class TmImportWizardMappingTests : LocalizationTestBase
         Action<ImportMappingResult> onMapped, IImportFileParser? parser = null)
     {
         parser ??= new CsvImportFileParser();
-        return RenderComponent<TmImportWizard>(p => p
+        return Render<TmImportWizard>(p => p
             .Add(c => c.Parser, parser)
             .Add(c => c.TargetFields, TargetFields)
             .Add(c => c.OnMapped, EventCallback.Factory.Create<ImportMappingResult>(this, onMapped)));
@@ -98,7 +98,7 @@ public class TmImportWizardMappingTests : LocalizationTestBase
     [Fact]
     public void No_Parser_Renders_No_Mapping_Panel()
     {
-        var cut = RenderComponent<TmImportWizard>(p => p
+        var cut = Render<TmImportWizard>(p => p
             .AddChildContent<TmImportWizardStep>(sp => sp
                 .Add(s => s.Title, "Step 1")
                 .AddChildContent("<p>Content</p>")));

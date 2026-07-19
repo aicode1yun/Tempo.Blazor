@@ -12,7 +12,7 @@ public class TmDrawerAccessibilityTests : LocalizationTestBase
     [Fact]
     public void Drawer_HasAriaLabelledBy_WhenTitleSet()
     {
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.Title, "Test Drawer")
             .AddChildContent("Body content"));
@@ -28,7 +28,7 @@ public class TmDrawerAccessibilityTests : LocalizationTestBase
     [Fact]
     public void Drawer_NoAriaLabelledBy_WhenHeaderContentUsed()
     {
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.HeaderContent, (RenderFragment)(b =>
                 b.AddMarkupContent(0, "<span>Custom Header</span>")))

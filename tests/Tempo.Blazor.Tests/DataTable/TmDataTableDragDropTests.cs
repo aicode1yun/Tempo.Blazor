@@ -20,7 +20,7 @@ public class TmDataTableDragDropTests : LocalizationTestBase
 
     private IRenderedComponent<TmDataTable<DndPerson>> RenderDndTable()
     {
-        return RenderComponent<TmDataTable<DndPerson>>(p =>
+        return Render<TmDataTable<DndPerson>>(p =>
         {
             p.Add(c => c.Items, People);
             p.Add(c => c.ShowGrouping, true);

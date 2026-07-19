@@ -83,7 +83,7 @@ public class TmChartNewTypesTests : LocalizationTestBase
     private IRenderedComponent<TmChart> Render(
         ChartType type, ChartData? data,
         Action<Bunit.ComponentParameterCollectionBuilder<TmChart>>? configure = null)
-        => RenderComponent<TmChart>(p =>
+        => Render<TmChart>(p =>
         {
             p.Add(x => x.Type, type);
             if (data is not null)

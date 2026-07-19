@@ -75,7 +75,7 @@ public class TmDocumentEditorLocalizationTests : LocalizationTestBase
             ["TmDocumentEditor_TemplatePreview"] = "LOC preview"
         });
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.CanExportPdf, true)
             .Add(p => p.CanPreviewTemplate, true));
 

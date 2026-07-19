@@ -112,7 +112,7 @@ public sealed class TmNotionSmartLinkTests : LocalizationTestBase
             SmartLinkProvider = smartLinkProvider
         };
 
-        return RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        return Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(component => component.Value, context)
             .AddChildContent<TmNotionBlock>(child => child
                 .Add(component => component.Block, block)

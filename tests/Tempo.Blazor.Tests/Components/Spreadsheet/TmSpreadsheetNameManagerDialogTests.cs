@@ -16,7 +16,7 @@ public class TmSpreadsheetNameManagerDialogTests : LocalizationTestBase
         var workbook = new SpreadsheetWorkbook();
         workbook.NamedRanges.Add(new SpreadsheetNamedRange { Name = "Sales", RefersTo = "A1:A10" });
 
-        var cut = RenderComponent<TmSpreadsheetNameManagerDialog>(
+        var cut = Render<TmSpreadsheetNameManagerDialog>(
             parameters => parameters.Add(p => p.Workbook, workbook));
 
         cut.Find(".tm-spreadsheet-name-manager__title").TextContent.Should().Be("Name Manager");
@@ -30,7 +30,7 @@ public class TmSpreadsheetNameManagerDialogTests : LocalizationTestBase
         workbook.NamedRanges.Add(new SpreadsheetNamedRange { Name = "Sales", RefersTo = "A1:A10" });
         workbook.NamedRanges.Add(new SpreadsheetNamedRange { Name = "Tax", RefersTo = "B1", Scope = NamedRangeScope.Sheet, SheetIndex = 0 });
 
-        var cut = RenderComponent<TmSpreadsheetNameManagerDialog>(
+        var cut = Render<TmSpreadsheetNameManagerDialog>(
             parameters => parameters.Add(p => p.Workbook, workbook));
 
         var rows = cut.FindAll("tbody tr");
@@ -46,7 +46,7 @@ public class TmSpreadsheetNameManagerDialogTests : LocalizationTestBase
         workbook.NamedRanges.Add(new SpreadsheetNamedRange { Name = "Sales", RefersTo = "A1" });
         workbook.NamedRanges.Add(new SpreadsheetNamedRange { Name = "Costs", RefersTo = "B1" });
 
-        var cut = RenderComponent<TmSpreadsheetNameManagerDialog>(
+        var cut = Render<TmSpreadsheetNameManagerDialog>(
             parameters => parameters.Add(p => p.Workbook, workbook));
 
         var filterInput = cut.Find(".tm-spreadsheet-name-manager__filter");
@@ -63,7 +63,7 @@ public class TmSpreadsheetNameManagerDialogTests : LocalizationTestBase
         var workbook = new SpreadsheetWorkbook();
         workbook.NamedRanges.Add(new SpreadsheetNamedRange { Name = "Sales", RefersTo = "A1" });
 
-        var cut = RenderComponent<TmSpreadsheetNameManagerDialog>(
+        var cut = Render<TmSpreadsheetNameManagerDialog>(
             parameters => parameters.Add(p => p.Workbook, workbook));
 
         cut.Find("tbody tr").Click();
@@ -79,7 +79,7 @@ public class TmSpreadsheetNameManagerDialogTests : LocalizationTestBase
         var workbook = new SpreadsheetWorkbook();
         var fired = false;
 
-        var cut = RenderComponent<TmSpreadsheetNameManagerDialog>(
+        var cut = Render<TmSpreadsheetNameManagerDialog>(
             parameters => parameters
                 .Add(p => p.Workbook, workbook)
                 .Add(p => p.OnNew, () => fired = true));
@@ -96,7 +96,7 @@ public class TmSpreadsheetNameManagerDialogTests : LocalizationTestBase
         workbook.NamedRanges.Add(range);
         SpreadsheetNamedRange? deleted = null;
 
-        var cut = RenderComponent<TmSpreadsheetNameManagerDialog>(
+        var cut = Render<TmSpreadsheetNameManagerDialog>(
             parameters => parameters
                 .Add(p => p.Workbook, workbook)
                 .Add(p => p.OnDelete, r => deleted = r));

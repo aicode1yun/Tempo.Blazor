@@ -13,7 +13,7 @@ public class TmSpreadsheetNamedRangeEditDialogTests : LocalizationTestBase
     public void NewMode_Renders_TitleAndEmptyFields()
     {
         var workbook = new SpreadsheetWorkbook();
-        var cut = RenderComponent<TmSpreadsheetNamedRangeEditDialog>(
+        var cut = Render<TmSpreadsheetNamedRangeEditDialog>(
             parameters => parameters.Add(p => p.Workbook, workbook));
 
         cut.Find(".tm-spreadsheet-named-range-edit__title").TextContent.Should().Be("New Name");
@@ -27,7 +27,7 @@ public class TmSpreadsheetNamedRangeEditDialogTests : LocalizationTestBase
         var workbook = new SpreadsheetWorkbook();
         var range = new SpreadsheetNamedRange { Name = "Sales", RefersTo = "A1:A10", Scope = NamedRangeScope.Sheet, SheetIndex = 0, Comment = "Q1" };
 
-        var cut = RenderComponent<TmSpreadsheetNamedRangeEditDialog>(
+        var cut = Render<TmSpreadsheetNamedRangeEditDialog>(
             parameters => parameters
                 .Add(p => p.Workbook, workbook)
                 .Add(p => p.Range, range));
@@ -41,7 +41,7 @@ public class TmSpreadsheetNamedRangeEditDialogTests : LocalizationTestBase
     public void Save_WithEmptyName_ShowsError()
     {
         var workbook = new SpreadsheetWorkbook();
-        var cut = RenderComponent<TmSpreadsheetNamedRangeEditDialog>(
+        var cut = Render<TmSpreadsheetNamedRangeEditDialog>(
             parameters => parameters.Add(p => p.Workbook, workbook));
 
         cut.Find(".tm-spreadsheet-named-range-edit__btn--ok").Click();
@@ -55,7 +55,7 @@ public class TmSpreadsheetNamedRangeEditDialogTests : LocalizationTestBase
         var workbook = new SpreadsheetWorkbook();
         SpreadsheetNamedRange? saved = null;
 
-        var cut = RenderComponent<TmSpreadsheetNamedRangeEditDialog>(
+        var cut = Render<TmSpreadsheetNamedRangeEditDialog>(
             parameters => parameters
                 .Add(p => p.Workbook, workbook)
                 .Add(p => p.OnSave, r => saved = r));
@@ -75,7 +75,7 @@ public class TmSpreadsheetNamedRangeEditDialogTests : LocalizationTestBase
         var workbook = new SpreadsheetWorkbook();
         var fired = false;
 
-        var cut = RenderComponent<TmSpreadsheetNamedRangeEditDialog>(
+        var cut = Render<TmSpreadsheetNamedRangeEditDialog>(
             parameters => parameters
                 .Add(p => p.Workbook, workbook)
                 .Add(p => p.OnCancel, () => fired = true));

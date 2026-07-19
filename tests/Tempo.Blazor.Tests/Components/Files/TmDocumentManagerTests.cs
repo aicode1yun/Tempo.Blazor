@@ -221,7 +221,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     [Fact]
     public void DocumentManager_Renders_Container()
     {
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         cut.Find(".tm-file-manager").Should().NotBeNull();
@@ -230,7 +230,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     [Fact]
     public void DocumentManager_Renders_With_Custom_Meta_Template()
     {
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, CreateMockProvider())
             .Add(c => c.ItemMetaTemplate, MetaTemplate));
 
@@ -241,7 +241,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     [Fact]
     public void DocumentManager_Permissions_Hide_Delete_Button()
     {
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, CreateMockProvider(withPermissions: true))
             .Add(c => c.RespectPermissions, true));
 
@@ -256,7 +256,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     [Fact]
     public void DocumentManager_Permissions_Hide_Rename_Button()
     {
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, CreateMockProvider(withPermissions: true))
             .Add(c => c.RespectPermissions, true));
 
@@ -271,7 +271,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     [Fact]
     public void DocumentManager_Permissions_Hide_Item_With_CanRead_False()
     {
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, CreateMockProvider(hideDocs: true))
             .Add(c => c.RespectPermissions, true));
 
@@ -288,7 +288,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     public async Task DocumentManager_NewFolder_Custom_Form_Submits()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.NewFolderForm, NewFolderForm));
 
@@ -318,7 +318,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     [Fact]
     public void DocumentManager_Upload_Button_Renders_When_UploadForm_Provided()
     {
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, CreateMockProvider())
             .Add(c => c.UploadForm, UploadForm));
 
@@ -330,7 +330,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     [Fact]
     public void DocumentManager_Upload_Button_Hidden_When_No_UploadForm()
     {
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         // Without UploadForm, the toolbar shows the default InputFile label which also contains "Upload"
@@ -344,7 +344,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     public async Task DocumentManager_Upload_Custom_Form_Submits()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.UploadForm, UploadForm));
 
@@ -370,7 +370,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     public async Task DocumentManager_Upload_Form_Cancels()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.UploadForm, UploadForm));
 
@@ -392,7 +392,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     public async Task DocumentManager_Multiple_Attachments_Upload_In_Initial_Upload()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.UploadForm, UploadForm)
             .Add(c => c.AllowMultipleAttachments, true));
@@ -440,7 +440,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
             };
         }
 
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.DetailPanel, DetailPanel)
             .Add(c => c.AllowMultipleAttachments, true));
@@ -461,7 +461,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     public async Task DocumentManager_Attachment_Upload_Adds_To_Item()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.EditForm, EditForm)
             .Add(c => c.AllowMultipleAttachments, true));
@@ -506,7 +506,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
             };
         }
 
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.AllowMultipleAttachments, true));
 
@@ -524,7 +524,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     public async Task DocumentManager_Delete_Custom_Form_Confirms()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.DeleteForm, DeleteForm));
 
@@ -553,7 +553,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     public async Task DocumentManager_Edit_Form_Submits_Metadata()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.EditForm, EditForm));
 
@@ -586,7 +586,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     public void DocumentManager_DetailPanel_Renders()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.DetailPanel, DetailPanel));
 
@@ -607,7 +607,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     [Fact]
     public void DocumentManager_ContextMenu_Renders()
     {
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, CreateMockProvider())
             .Add(c => c.ItemContextMenu, ContextMenu));
 
@@ -624,7 +624,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     [Fact]
     public void DocumentManager_Keyboard_Enter_Navigates_Folder()
     {
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         var wrapper = cut.Find(".tm-file-manager");
@@ -639,7 +639,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     public void DocumentManager_Id_Used_Not_Path()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+        var cut = Render<TmDocumentManager<TestMetadata>>(p => p
             .Add(c => c.DataProvider, provider));
 
         // Select Documents folder

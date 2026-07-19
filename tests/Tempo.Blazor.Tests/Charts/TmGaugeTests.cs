@@ -11,7 +11,7 @@ public class TmGaugeTests : LocalizationTestBase
     [Fact]
     public void ArcGauge_RendersArcPath()
     {
-        var cut = RenderComponent<TmGauge>(p => p
+        var cut = Render<TmGauge>(p => p
             .Add(x => x.Type, GaugeType.Arc)
             .Add(x => x.Value, 65));
 
@@ -23,7 +23,7 @@ public class TmGaugeTests : LocalizationTestBase
     [Fact]
     public void CircularGauge_RendersCirclePath()
     {
-        var cut = RenderComponent<TmGauge>(p => p
+        var cut = Render<TmGauge>(p => p
             .Add(x => x.Type, GaugeType.Circular)
             .Add(x => x.Value, 65));
 
@@ -33,7 +33,7 @@ public class TmGaugeTests : LocalizationTestBase
     [Fact]
     public void LinearGauge_RendersRectBar()
     {
-        var cut = RenderComponent<TmGauge>(p => p
+        var cut = Render<TmGauge>(p => p
             .Add(x => x.Type, GaugeType.Linear)
             .Add(x => x.Value, 65));
 
@@ -51,7 +51,7 @@ public class TmGaugeTests : LocalizationTestBase
             new(80, 100, "#ef4444")
         };
 
-        var cut = RenderComponent<TmGauge>(p => p
+        var cut = Render<TmGauge>(p => p
             .Add(x => x.Type, GaugeType.Linear)
             .Add(x => x.Value, 65)
             .Add(x => x.Ranges, ranges));
@@ -62,7 +62,7 @@ public class TmGaugeTests : LocalizationTestBase
     [Fact]
     public void Gauge_ValueLabel_Displayed()
     {
-        var cut = RenderComponent<TmGauge>(p => p
+        var cut = Render<TmGauge>(p => p
             .Add(x => x.Type, GaugeType.Circular)
             .Add(x => x.Value, 65)
             .Add(x => x.ShowValue, true));
@@ -73,7 +73,7 @@ public class TmGaugeTests : LocalizationTestBase
     [Fact]
     public void Gauge_LabelFormat_Applied()
     {
-        var cut = RenderComponent<TmGauge>(p => p
+        var cut = Render<TmGauge>(p => p
             .Add(x => x.Type, GaugeType.Circular)
             .Add(x => x.Value, 65)
             .Add(x => x.ShowValue, true)
@@ -85,7 +85,7 @@ public class TmGaugeTests : LocalizationTestBase
     [Fact]
     public void Gauge_ValueWithinMinMax()
     {
-        var cut = RenderComponent<TmGauge>(p => p
+        var cut = Render<TmGauge>(p => p
             .Add(x => x.Type, GaugeType.Linear)
             .Add(x => x.Value, 150)
             .Add(x => x.Min, 0)
@@ -102,7 +102,7 @@ public class TmGaugeTests : LocalizationTestBase
     [Fact]
     public void CustomClass_Applied()
     {
-        var cut = RenderComponent<TmGauge>(p => p
+        var cut = Render<TmGauge>(p => p
             .Add(x => x.Type, GaugeType.Arc)
             .Add(x => x.Value, 50)
             .Add(x => x.Class, "my-gauge"));
@@ -113,7 +113,7 @@ public class TmGaugeTests : LocalizationTestBase
     [Fact]
     public void Animated_HasAnimatedClass()
     {
-        var cut = RenderComponent<TmGauge>(p => p
+        var cut = Render<TmGauge>(p => p
             .Add(x => x.Type, GaugeType.Arc)
             .Add(x => x.Value, 50)
             .Add(x => x.Animated, true));

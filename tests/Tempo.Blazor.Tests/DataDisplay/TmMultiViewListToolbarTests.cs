@@ -34,7 +34,7 @@ public class TmMultiViewListToolbarTests : LocalizationTestBase
     [Fact]
     public void MultiViewList_ShowToolbar_False_HidesToolbarAndControls()
     {
-        var cut = RenderComponent<TmMultiViewList<MvlToolbarItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlToolbarItem>>(p => p
             .Add(c => c.Items, SampleItems())
             .Add(c => c.ShowToolbar, false));
 
@@ -47,7 +47,7 @@ public class TmMultiViewListToolbarTests : LocalizationTestBase
     [Fact]
     public void MultiViewList_ShowToolbar_True_WithNoVisibleControls_DoesNotRenderEmptyToolbar()
     {
-        var cut = RenderComponent<TmMultiViewList<MvlToolbarItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlToolbarItem>>(p => p
             .Add(c => c.Items, SampleItems())
             .Add(c => c.ShowToolbar, true)
             .Add(c => c.ShowSearch, false)
@@ -64,7 +64,7 @@ public class TmMultiViewListToolbarTests : LocalizationTestBase
         provider.GetViewsAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IEnumerable<DataTableView>>([]));
 
-        var cut = RenderComponent<TmMultiViewList<MvlToolbarItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlToolbarItem>>(p => p
             .Add(c => c.Items, SampleItems())
             .Add(c => c.ViewProvider, provider)
             .Add(c => c.ViewContext, "test-context")
@@ -76,7 +76,7 @@ public class TmMultiViewListToolbarTests : LocalizationTestBase
     [Fact]
     public void MultiViewList_ShowToolbar_True_WithControls_RendersToolbar()
     {
-        var cut = RenderComponent<TmMultiViewList<MvlToolbarItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlToolbarItem>>(p => p
             .Add(c => c.Items, SampleItems())
             .Add(c => c.ShowToolbar, true));
 
@@ -91,7 +91,7 @@ public class TmMultiViewListToolbarTests : LocalizationTestBase
     [InlineData(DataToolbarMode.ContentOnly, false, false)]
     public void MultiViewList_ToolbarMode_RendersExpectedSearchAndSwitcher(DataToolbarMode mode, bool expectSearch, bool expectSwitcher)
     {
-        var cut = RenderComponent<TmMultiViewList<MvlToolbarItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlToolbarItem>>(p => p
             .Add(c => c.Items, SampleItems())
             .Add(c => c.ToolbarMode, mode));
 
@@ -106,7 +106,7 @@ public class TmMultiViewListToolbarTests : LocalizationTestBase
         provider.GetViewsAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IEnumerable<DataTableView>>([]));
 
-        var cut = RenderComponent<TmMultiViewList<MvlToolbarItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlToolbarItem>>(p => p
             .Add(c => c.Items, SampleItems())
             .Add(c => c.ViewContext, "test-context")
             .Add(c => c.ViewProvider, provider)
@@ -125,7 +125,7 @@ public class TmMultiViewListToolbarTests : LocalizationTestBase
         provider.GetViewsAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IEnumerable<DataTableView>>([]));
 
-        var cut = RenderComponent<TmMultiViewList<MvlToolbarItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlToolbarItem>>(p => p
             .Add(c => c.Items, SampleItems())
             .Add(c => c.ViewContext, "test-context")
             .Add(c => c.ViewProvider, provider)
@@ -145,7 +145,7 @@ public class TmMultiViewListToolbarTests : LocalizationTestBase
         provider.GetViewsAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IEnumerable<DataTableView>>([]));
 
-        var cut = RenderComponent<TmMultiViewList<MvlToolbarItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlToolbarItem>>(p => p
             .Add(c => c.Items, SampleItems())
             .Add(c => c.ViewContext, "test-context")
             .Add(c => c.ViewProvider, provider)

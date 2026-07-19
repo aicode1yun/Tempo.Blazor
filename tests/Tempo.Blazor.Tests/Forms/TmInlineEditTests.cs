@@ -13,7 +13,7 @@ public class TmInlineEditTests : LocalizationTestBase
     [Fact]
     public void InlineEdit_DisplayMode_ShowsValue()
     {
-        var cut = RenderComponent<TmInlineEdit>(p => p
+        var cut = Render<TmInlineEdit>(p => p
             .Add(c => c.Value, "Test Value"));
 
         cut.Find(".tm-inline-edit").Should().NotBeNull();
@@ -24,7 +24,7 @@ public class TmInlineEditTests : LocalizationTestBase
     [Fact]
     public void InlineEdit_ClickValue_EntersEditMode()
     {
-        var cut = RenderComponent<TmInlineEdit>(p => p
+        var cut = Render<TmInlineEdit>(p => p
             .Add(c => c.Value, "Hello"));
 
         cut.Find(".tm-inline-edit-display").Click();
@@ -37,7 +37,7 @@ public class TmInlineEditTests : LocalizationTestBase
     public void InlineEdit_EnterKey_SavesValue()
     {
         string? saved = null;
-        var cut = RenderComponent<TmInlineEdit>(p => p
+        var cut = Render<TmInlineEdit>(p => p
             .Add(c => c.Value, "Original")
             .Add(c => c.OnSave, EventCallback.Factory.Create<string>(this, v => saved = v)));
 
@@ -53,7 +53,7 @@ public class TmInlineEditTests : LocalizationTestBase
     public void InlineEdit_EscapeKey_CancelsEdit()
     {
         string? saved = null;
-        var cut = RenderComponent<TmInlineEdit>(p => p
+        var cut = Render<TmInlineEdit>(p => p
             .Add(c => c.Value, "Original")
             .Add(c => c.OnSave, EventCallback.Factory.Create<string>(this, v => saved = v)));
 
@@ -69,7 +69,7 @@ public class TmInlineEditTests : LocalizationTestBase
     public void InlineEdit_Validation_ShowsError()
     {
         string? saved = null;
-        var cut = RenderComponent<TmInlineEdit>(p => p
+        var cut = Render<TmInlineEdit>(p => p
             .Add(c => c.Value, "Hello")
             .Add(c => c.OnSave, EventCallback.Factory.Create<string>(this, v => saved = v))
             .Add(c => c.Validate, v => string.IsNullOrWhiteSpace(v) ? "Value is required" : null));
@@ -86,7 +86,7 @@ public class TmInlineEditTests : LocalizationTestBase
     [Fact]
     public void InlineEdit_Disabled_CannotEdit()
     {
-        var cut = RenderComponent<TmInlineEdit>(p => p
+        var cut = Render<TmInlineEdit>(p => p
             .Add(c => c.Value, "Read Only")
             .Add(c => c.Disabled, true));
 

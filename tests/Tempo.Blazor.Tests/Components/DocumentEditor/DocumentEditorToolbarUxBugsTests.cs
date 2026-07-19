@@ -22,7 +22,7 @@ public class DocumentEditorToolbarUxBugsTests : LocalizationTestBase
     public void ChangeCase_SelectResetsToPlaceholderAfterSelection()
     {
         string? received = null;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.ShowAdvancedCharacterFormatting, true)
             .Add(x => x.OnChangeCase, EventCallback.Factory.Create<string>(this, v => received = v)));
 
@@ -46,7 +46,7 @@ public class DocumentEditorToolbarUxBugsTests : LocalizationTestBase
     public void FontSelects_HaveOnlyChangeHandler_NoInputHandler()
     {
         var invoked = 0;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.OnFontSizeChanged, EventCallback.Factory.Create<double>(this, _ => invoked++)));
 
         var fontSize = cut.Find("[data-testid='document-font-size']");
@@ -67,7 +67,7 @@ public class DocumentEditorToolbarUxBugsTests : LocalizationTestBase
     [Fact]
     public void LayoutTab_PageOrientation_HasOnlySegmentedButtons()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         cut.Find("[data-testid='document-ribbon-tab-layout']").Click();
         cut.Find("[data-testid='document-page-layout']").Click();
 
@@ -82,7 +82,7 @@ public class DocumentEditorToolbarUxBugsTests : LocalizationTestBase
     [Fact]
     public void LayoutTab_HeaderFooterToggles_CarryDataCommand()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         cut.Find("[data-testid='document-ribbon-tab-layout']").Click();
 
         cut.Find("[data-testid='document-different-first-page']").GetAttribute("data-command")
@@ -96,7 +96,7 @@ public class DocumentEditorToolbarUxBugsTests : LocalizationTestBase
     [Fact]
     public void OverflowMenu_EmptyFilter_KeepsSearchVisible_WithNoResultsMessage()
     {
-        var cut = RenderComponent<TmDocumentToolbarOverflowMenu>(p => p
+        var cut = Render<TmDocumentToolbarOverflowMenu>(p => p
             .Add(x => x.IsOverflowing, true)
             .Add(x => x.IsOpen, true)
             .Add(x => x.ShowSearch, true)
@@ -113,7 +113,7 @@ public class DocumentEditorToolbarUxBugsTests : LocalizationTestBase
     public void OverflowMenu_FilterChange_ResetsActiveIndex()
     {
         var groups = BuildGroups("bold", "italic", "underline");
-        var cut = RenderComponent<TmDocumentToolbarOverflowMenu>(p => p
+        var cut = Render<TmDocumentToolbarOverflowMenu>(p => p
             .Add(x => x.IsOverflowing, true)
             .Add(x => x.IsOpen, true)
             .Add(x => x.ShowSearch, true)
@@ -125,7 +125,7 @@ public class DocumentEditorToolbarUxBugsTests : LocalizationTestBase
         cut.FindAll("[role='menuitem']")[2].ClassList.Should().Contain("tm-document-editor__overflow-menu-item--active");
 
         // Změna filtru (jiná množina výsledků) → aktivní index se resetuje na první item.
-        cut.SetParametersAndRender(p => p
+        cut.Render(p => p
             .Add(x => x.SearchQuery, "b")
             .Add(x => x.Groups, BuildGroups("bold", "italic")));
 
@@ -137,7 +137,7 @@ public class DocumentEditorToolbarUxBugsTests : LocalizationTestBase
     {
         var executed = new List<string>();
         var parentKeys = new List<string>();
-        var cut = RenderComponent<TmDocumentToolbarOverflowMenu>(p => p
+        var cut = Render<TmDocumentToolbarOverflowMenu>(p => p
             .Add(x => x.IsOverflowing, true)
             .Add(x => x.IsOpen, true)
             .Add(x => x.Groups, BuildGroups("bold"))

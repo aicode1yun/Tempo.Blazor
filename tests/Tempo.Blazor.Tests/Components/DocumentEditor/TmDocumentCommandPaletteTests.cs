@@ -12,7 +12,7 @@ public class TmDocumentCommandPaletteTests : LocalizationTestBase
     [Fact]
     public void Closed_DoesNotRender()
     {
-        var cut = RenderComponent<TmDocumentCommandPalette>(parameters =>
+        var cut = Render<TmDocumentCommandPalette>(parameters =>
             parameters.Add(p => p.IsOpen, false)
                       .Add(p => p.Commands, MakeCommands()));
 
@@ -22,7 +22,7 @@ public class TmDocumentCommandPaletteTests : LocalizationTestBase
     [Fact]
     public void Open_RendersOnlyVisibleCommands()
     {
-        var cut = RenderComponent<TmDocumentCommandPalette>(parameters =>
+        var cut = Render<TmDocumentCommandPalette>(parameters =>
             parameters.Add(p => p.IsOpen, true)
                       .Add(p => p.Commands, MakeCommands()));
 
@@ -35,7 +35,7 @@ public class TmDocumentCommandPaletteTests : LocalizationTestBase
     [Fact]
     public void Search_FiltersByLabelCategoryAndName()
     {
-        var cut = RenderComponent<TmDocumentCommandPalette>(parameters =>
+        var cut = Render<TmDocumentCommandPalette>(parameters =>
             parameters.Add(p => p.IsOpen, true)
                       .Add(p => p.Commands, MakeCommands()));
 
@@ -50,7 +50,7 @@ public class TmDocumentCommandPaletteTests : LocalizationTestBase
     public void DisabledCommand_RendersReasonAndDoesNotExecute()
     {
         string? executed = null;
-        var cut = RenderComponent<TmDocumentCommandPalette>(parameters =>
+        var cut = Render<TmDocumentCommandPalette>(parameters =>
             parameters.Add(p => p.IsOpen, true)
                       .Add(p => p.Commands, MakeCommands())
                       .Add(p => p.OnExecuteCommand, EventCallback.Factory.Create<string>(this, name => executed = name)));
@@ -71,7 +71,7 @@ public class TmDocumentCommandPaletteTests : LocalizationTestBase
     public void EnabledCommand_ClickExecutesCommand()
     {
         string? executed = null;
-        var cut = RenderComponent<TmDocumentCommandPalette>(parameters =>
+        var cut = Render<TmDocumentCommandPalette>(parameters =>
             parameters.Add(p => p.IsOpen, true)
                       .Add(p => p.Commands, MakeCommands())
                       .Add(p => p.OnExecuteCommand, EventCallback.Factory.Create<string>(this, name => executed = name)));
@@ -85,7 +85,7 @@ public class TmDocumentCommandPaletteTests : LocalizationTestBase
     public void CloseButton_FiresCloseCallback()
     {
         var closed = false;
-        var cut = RenderComponent<TmDocumentCommandPalette>(parameters =>
+        var cut = Render<TmDocumentCommandPalette>(parameters =>
             parameters.Add(p => p.IsOpen, true)
                       .Add(p => p.Commands, MakeCommands())
                       .Add(p => p.OnClose, EventCallback.Factory.Create(this, () => closed = true)));

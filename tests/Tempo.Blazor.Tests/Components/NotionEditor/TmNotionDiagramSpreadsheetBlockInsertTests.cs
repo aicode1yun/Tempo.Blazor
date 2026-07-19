@@ -33,7 +33,7 @@ public class TmNotionDiagramSpreadsheetBlockInsertTests : LocalizationTestBase
     [Fact]
     public void Diagram_Placeholder_ShowsInsertExisting_WithLibrary()
     {
-        var cut = RenderComponent<TmNotionDiagramBlock>(p => p
+        var cut = Render<TmNotionDiagramBlock>(p => p
             .AddCascadingValue(Context(library: new InMemoryDocumentLibraryProvider(DocumentLibraryCapabilities.All)))
             .Add(c => c.Content, (IDiagramBlockContent?)null));
 
@@ -47,7 +47,7 @@ public class TmNotionDiagramSpreadsheetBlockInsertTests : LocalizationTestBase
         var id = lib.AddDocument(TempoDocumentKind.Diagram, "Flow", "/", previewSvg: "<svg id=\"d\"/>");
         DiagramBlockContent? saved = null;
 
-        var cut = RenderComponent<TmNotionDiagramBlock>(p => p
+        var cut = Render<TmNotionDiagramBlock>(p => p
             .AddCascadingValue(Context(library: lib))
             .Add(c => c.Content, (IDiagramBlockContent?)null)
             .Add(c => c.OnContentSaved, c => saved = c));
@@ -71,7 +71,7 @@ public class TmNotionDiagramSpreadsheetBlockInsertTests : LocalizationTestBase
         lib.AddDocument(TempoDocumentKind.Diagram, "Source", "/", previewSvg: "<svg/>", id: sourceId);
         DiagramBlockContent? saved = null;
 
-        var cut = RenderComponent<TmNotionDiagramBlock>(p => p
+        var cut = Render<TmNotionDiagramBlock>(p => p
             .AddCascadingValue(Context(library: lib, diagram: diagrams))
             .Add(c => c.Content, (IDiagramBlockContent?)null)
             .Add(c => c.OnContentSaved, c => saved = c));
@@ -93,7 +93,7 @@ public class TmNotionDiagramSpreadsheetBlockInsertTests : LocalizationTestBase
         var lib = new InMemoryDocumentLibraryProvider(DocumentLibraryCapabilities.All);
         var content = new DiagramBlockContent { DiagramDocumentId = Guid.NewGuid(), SvgPreviewCache = "<svg/>" };
 
-        var cut = RenderComponent<TmNotionDiagramBlock>(p => p
+        var cut = Render<TmNotionDiagramBlock>(p => p
             .AddCascadingValue(Context(library: lib))
             .Add(c => c.Content, content));
 
@@ -106,7 +106,7 @@ public class TmNotionDiagramSpreadsheetBlockInsertTests : LocalizationTestBase
     [Fact]
     public void Spreadsheet_Placeholder_ShowsInsertExisting_WithLibrary()
     {
-        var cut = RenderComponent<TmNotionSpreadsheetBlock>(p => p
+        var cut = Render<TmNotionSpreadsheetBlock>(p => p
             .AddCascadingValue(Context(library: new InMemoryDocumentLibraryProvider(DocumentLibraryCapabilities.All)))
             .Add(c => c.Content, (ISpreadsheetBlockContent?)null));
 
@@ -120,7 +120,7 @@ public class TmNotionDiagramSpreadsheetBlockInsertTests : LocalizationTestBase
         var id = lib.AddDocument(TempoDocumentKind.Spreadsheet, "Budget", "/");
         SpreadsheetBlockContent? saved = null;
 
-        var cut = RenderComponent<TmNotionSpreadsheetBlock>(p => p
+        var cut = Render<TmNotionSpreadsheetBlock>(p => p
             .AddCascadingValue(Context(library: lib))
             .Add(c => c.Content, (ISpreadsheetBlockContent?)null)
             .Add(c => c.OnContentSaved, c => saved = c));
@@ -143,7 +143,7 @@ public class TmNotionDiagramSpreadsheetBlockInsertTests : LocalizationTestBase
         lib.AddDocument(TempoDocumentKind.Spreadsheet, "Source", "/", id: sourceId);
         SpreadsheetBlockContent? saved = null;
 
-        var cut = RenderComponent<TmNotionSpreadsheetBlock>(p => p
+        var cut = Render<TmNotionSpreadsheetBlock>(p => p
             .AddCascadingValue(Context(library: lib, spreadsheet: sheets))
             .Add(c => c.Content, (ISpreadsheetBlockContent?)null)
             .Add(c => c.OnContentSaved, c => saved = c));
@@ -165,7 +165,7 @@ public class TmNotionDiagramSpreadsheetBlockInsertTests : LocalizationTestBase
         var lib = new InMemoryDocumentLibraryProvider(DocumentLibraryCapabilities.All);
         var content = new SpreadsheetBlockContent { SpreadsheetDocumentId = Guid.NewGuid() };
 
-        var cut = RenderComponent<TmNotionSpreadsheetBlock>(p => p
+        var cut = Render<TmNotionSpreadsheetBlock>(p => p
             .AddCascadingValue(Context(library: lib))
             .Add(c => c.Content, content));
 

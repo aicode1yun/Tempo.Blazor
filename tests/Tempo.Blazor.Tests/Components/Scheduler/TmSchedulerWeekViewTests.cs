@@ -13,7 +13,7 @@ public class TmSchedulerWeekViewTests : LocalizationTestBase
     [Fact]
     public void Renders_Week_Container()
     {
-        var cut = RenderComponent<TmSchedulerWeekView>(p => p
+        var cut = Render<TmSchedulerWeekView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10)));
 
         cut.Find(".tm-scheduler-week").Should().NotBeNull();
@@ -22,7 +22,7 @@ public class TmSchedulerWeekViewTests : LocalizationTestBase
     [Fact]
     public void Contains_TimeGrid_With_Seven_Columns()
     {
-        var cut = RenderComponent<TmSchedulerWeekView>(p => p
+        var cut = Render<TmSchedulerWeekView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10)));
 
         cut.Find(".tm-scheduler-timegrid").Should().NotBeNull();
@@ -34,7 +34,7 @@ public class TmSchedulerWeekViewTests : LocalizationTestBase
     {
         // June 10, 2025 is Tuesday. With FirstDayOfWeek = 1 (Monday),
         // week should start on June 9 (Monday)
-        var cut = RenderComponent<TmSchedulerWeekView>(p => p
+        var cut = Render<TmSchedulerWeekView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.FirstDayOfWeek, 1));
 
@@ -51,7 +51,7 @@ public class TmSchedulerWeekViewTests : LocalizationTestBase
             new() { Title = "Wed Meeting", Start = new DateTime(2025, 6, 11, 14, 0, 0), End = new DateTime(2025, 6, 11, 15, 0, 0) },
         };
 
-        var cut = RenderComponent<TmSchedulerWeekView>(p => p
+        var cut = Render<TmSchedulerWeekView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.FirstDayOfWeek, 1)
             .Add(c => c.Events, events));
@@ -63,7 +63,7 @@ public class TmSchedulerWeekViewTests : LocalizationTestBase
     public void Slot_Click_Fires_Callback()
     {
         (DateTime Start, DateTime End)? slot = null;
-        var cut = RenderComponent<TmSchedulerWeekView>(p => p
+        var cut = Render<TmSchedulerWeekView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.OnSlotClick, EventCallback.Factory.Create<(DateTime, DateTime)>(this, s => slot = s)));
 
@@ -81,7 +81,7 @@ public class TmSchedulerWeekViewTests : LocalizationTestBase
             new() { Title = "Standup", Start = new DateTime(2025, 6, 9, 9, 0, 0), End = new DateTime(2025, 6, 9, 9, 30, 0) }
         };
 
-        var cut = RenderComponent<TmSchedulerWeekView>(p => p
+        var cut = Render<TmSchedulerWeekView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.FirstDayOfWeek, 1)
             .Add(c => c.Events, events)

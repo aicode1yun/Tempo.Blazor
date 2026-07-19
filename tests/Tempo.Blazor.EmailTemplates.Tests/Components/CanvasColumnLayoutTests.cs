@@ -9,7 +9,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.EmailTemplates.Tests.Components;
 
-public class CanvasColumnLayoutTests : TestContext
+public class CanvasColumnLayoutTests : BunitContext
 {
     public CanvasColumnLayoutTests()
     {
@@ -33,7 +33,7 @@ public class CanvasColumnLayoutTests : TestContext
         }
         doc.Sections.Add(section);
 
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
 
         var columns = cut.FindAll("[data-tm-column]");
         columns.Should().HaveCount(6);
@@ -55,7 +55,7 @@ public class CanvasColumnLayoutTests : TestContext
         section.Columns.Add(new EmailColumn());
         doc.Sections.Add(section);
 
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateEditor>(p => p.Add(c => c.Document, doc));
 
         foreach (var column in cut.FindAll("[data-tm-column]"))
         {

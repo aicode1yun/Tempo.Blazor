@@ -98,7 +98,7 @@ public sealed class TmNotionLabelEditorTests : LocalizationTestBase
             NavigateTo = navigateTo
         };
 
-        return RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        return Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(component => component.Value, context)
             .AddChildContent<TmNotionLabelEditor>(child => child
                 .Add(component => component.PageId, PageId)

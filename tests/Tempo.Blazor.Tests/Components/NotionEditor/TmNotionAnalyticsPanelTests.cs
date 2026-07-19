@@ -1,3 +1,4 @@
+using Bunit.Rendering;
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
@@ -70,7 +71,7 @@ public sealed class TmNotionAnalyticsPanelTests : LocalizationTestBase
         });
     }
 
-    private IRenderedFragment RenderPanel(INotionAnalyticsProvider provider)
+    private IRenderedComponent<ContainerFragment> RenderPanel(INotionAnalyticsProvider provider)
     {
         var context = new NotionEditorContext
         {

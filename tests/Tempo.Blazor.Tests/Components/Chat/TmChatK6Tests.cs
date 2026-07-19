@@ -15,7 +15,7 @@ public class TmChatK6Tests : LocalizationTestBase
     private static readonly ChatUser Bob = new("u2", "Bob", avatar: "B");
 
     private IRenderedComponent<TmChat> Render(IReadOnlyList<ChatMessage> messages, Action<ComponentParameterCollectionBuilder<TmChat>>? extra = null)
-        => RenderComponent<TmChat>(p =>
+        => Render<TmChat>(p =>
         {
             p.Add(c => c.CurrentUser, Me).Add(c => c.Messages, messages);
             extra?.Invoke(p);
@@ -212,7 +212,7 @@ public class TmChatK6Tests : LocalizationTestBase
         };
         var addedOnce = false;
 
-        var act = () => RenderComponent<TmChat>(p => p
+        var act = () => Render<TmChat>(p => p
             .Add(c => c.CurrentUser, Me)
             .Add(c => c.Messages, messages)
             .Add(c => c.OnMessageRead, EventCallback.Factory.Create<string>(this, _ =>

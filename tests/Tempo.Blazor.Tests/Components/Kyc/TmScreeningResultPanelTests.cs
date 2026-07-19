@@ -38,7 +38,7 @@ public class TmScreeningResultPanelTests : LocalizationTestBase
     private IRenderedComponent<TmScreeningResultPanel> Render(
         IScreeningProvider provider,
         Action<Bunit.ComponentParameterCollectionBuilder<TmScreeningResultPanel>>? configure = null)
-        => RenderComponent<TmScreeningResultPanel>(p =>
+        => Render<TmScreeningResultPanel>(p =>
         {
             p.Add(x => x.Provider, provider);
             p.Add(x => x.SubjectId, "subj-1");

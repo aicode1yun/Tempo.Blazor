@@ -20,14 +20,14 @@ public class TmToastTests : LocalizationTestBase
     [Fact]
     public void Container_Renders_WhenNoToasts_IsEmpty()
     {
-        var cut = RenderComponent<TmToastContainer>();
+        var cut = Render<TmToastContainer>();
         cut.FindAll(".tm-toast").Should().BeEmpty();
     }
 
     [Fact]
     public void Container_Renders_Toast_WhenServiceShowsCalled()
     {
-        var cut = RenderComponent<TmToastContainer>();
+        var cut = Render<TmToastContainer>();
         var svc = Services.GetRequiredService<ToastService>();
 
         svc.ShowSuccess("Hello!");
@@ -39,7 +39,7 @@ public class TmToastTests : LocalizationTestBase
     [Fact]
     public void Container_Renders_ToastMessage()
     {
-        var cut = RenderComponent<TmToastContainer>();
+        var cut = Render<TmToastContainer>();
         var svc = Services.GetRequiredService<ToastService>();
 
         svc.ShowInfo("Test message");
@@ -51,7 +51,7 @@ public class TmToastTests : LocalizationTestBase
     [Fact]
     public void Container_Renders_ToastTitle_WhenProvided()
     {
-        var cut = RenderComponent<TmToastContainer>();
+        var cut = Render<TmToastContainer>();
         var svc = Services.GetRequiredService<ToastService>();
 
         svc.ShowSuccess("Body", "Title Here");
@@ -63,7 +63,7 @@ public class TmToastTests : LocalizationTestBase
     [Fact]
     public void Container_NoTitle_WhenNotProvided()
     {
-        var cut = RenderComponent<TmToastContainer>();
+        var cut = Render<TmToastContainer>();
         var svc = Services.GetRequiredService<ToastService>();
 
         svc.ShowSuccess("Body only");
@@ -75,7 +75,7 @@ public class TmToastTests : LocalizationTestBase
     [Fact]
     public void Container_SeverityClass_Success()
     {
-        var cut = RenderComponent<TmToastContainer>();
+        var cut = Render<TmToastContainer>();
         var svc = Services.GetRequiredService<ToastService>();
 
         svc.ShowSuccess("OK");
@@ -87,7 +87,7 @@ public class TmToastTests : LocalizationTestBase
     [Fact]
     public void Container_SeverityClass_Error()
     {
-        var cut = RenderComponent<TmToastContainer>();
+        var cut = Render<TmToastContainer>();
         var svc = Services.GetRequiredService<ToastService>();
 
         svc.ShowError("Fail");
@@ -99,7 +99,7 @@ public class TmToastTests : LocalizationTestBase
     [Fact]
     public void Container_SeverityClass_Warning()
     {
-        var cut = RenderComponent<TmToastContainer>();
+        var cut = Render<TmToastContainer>();
         var svc = Services.GetRequiredService<ToastService>();
 
         svc.ShowWarning("Careful");
@@ -111,7 +111,7 @@ public class TmToastTests : LocalizationTestBase
     [Fact]
     public void Container_SeverityClass_Info()
     {
-        var cut = RenderComponent<TmToastContainer>();
+        var cut = Render<TmToastContainer>();
         var svc = Services.GetRequiredService<ToastService>();
 
         svc.ShowInfo("FYI");
@@ -123,21 +123,21 @@ public class TmToastTests : LocalizationTestBase
     [Fact]
     public void Container_PositionClass_TopRight()
     {
-        var cut = RenderComponent<TmToastContainer>(p => p.Add(c => c.Position, ToastPosition.TopRight));
+        var cut = Render<TmToastContainer>(p => p.Add(c => c.Position, ToastPosition.TopRight));
         cut.Find(".tm-toast-container").ClassList.Should().Contain("tm-toast-container--top-right");
     }
 
     [Fact]
     public void Container_PositionClass_BottomLeft()
     {
-        var cut = RenderComponent<TmToastContainer>(p => p.Add(c => c.Position, ToastPosition.BottomLeft));
+        var cut = Render<TmToastContainer>(p => p.Add(c => c.Position, ToastPosition.BottomLeft));
         cut.Find(".tm-toast-container").ClassList.Should().Contain("tm-toast-container--bottom-left");
     }
 
     [Fact]
     public void Container_DismissButton_RemovesToast()
     {
-        var cut = RenderComponent<TmToastContainer>();
+        var cut = Render<TmToastContainer>();
         var svc = Services.GetRequiredService<ToastService>();
 
         svc.ShowSuccess("Bye");
@@ -153,7 +153,7 @@ public class TmToastTests : LocalizationTestBase
     [Fact]
     public void Container_MaxVisible_LimitsRenderedToasts()
     {
-        var cut = RenderComponent<TmToastContainer>(p => p.Add(c => c.MaxVisible, 2));
+        var cut = Render<TmToastContainer>(p => p.Add(c => c.MaxVisible, 2));
         var svc = Services.GetRequiredService<ToastService>();
 
         svc.ShowSuccess("One");
@@ -168,7 +168,7 @@ public class TmToastTests : LocalizationTestBase
     [Fact]
     public void Container_MultipleToasts_RendersAll()
     {
-        var cut = RenderComponent<TmToastContainer>();
+        var cut = Render<TmToastContainer>();
         var svc = Services.GetRequiredService<ToastService>();
 
         svc.ShowSuccess("One");
@@ -181,7 +181,7 @@ public class TmToastTests : LocalizationTestBase
     [Fact]
     public void Container_HasIcon_PerSeverity()
     {
-        var cut = RenderComponent<TmToastContainer>();
+        var cut = Render<TmToastContainer>();
         var svc = Services.GetRequiredService<ToastService>();
 
         svc.ShowSuccess("With icon");
@@ -193,7 +193,7 @@ public class TmToastTests : LocalizationTestBase
     [Fact]
     public void Container_HasProgressBar()
     {
-        var cut = RenderComponent<TmToastContainer>();
+        var cut = Render<TmToastContainer>();
         var svc = Services.GetRequiredService<ToastService>();
 
         svc.ShowInfo("Progress");
@@ -205,7 +205,7 @@ public class TmToastTests : LocalizationTestBase
     [Fact]
     public void Container_HasAriaRole_Alert()
     {
-        var cut = RenderComponent<TmToastContainer>();
+        var cut = Render<TmToastContainer>();
         var svc = Services.GetRequiredService<ToastService>();
 
         svc.ShowError("Alert!");

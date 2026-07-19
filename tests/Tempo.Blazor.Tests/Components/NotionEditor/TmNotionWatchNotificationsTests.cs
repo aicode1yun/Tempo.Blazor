@@ -60,7 +60,7 @@ public sealed class TmNotionWatchNotificationsTests : LocalizationTestBase
     [Fact]
     public void WatchButton_TogglesWatch_AndIncludeChildren()
     {
-        var cut = RenderComponent<TmNotionWatchButton>(parameters => parameters
+        var cut = Render<TmNotionWatchButton>(parameters => parameters
             .Add(p => p.Provider, _watchProvider)
             .Add(p => p.PageId, "page-1")
             .Add(p => p.UserId, "alice"));
@@ -88,7 +88,7 @@ public sealed class TmNotionWatchNotificationsTests : LocalizationTestBase
         }).Wait();
 
         var nav = (FakeNavManager)Services.GetRequiredService<NavigationManager>();
-        var cut = RenderComponent<TmNotionNotificationCenter>(parameters => parameters
+        var cut = Render<TmNotionNotificationCenter>(parameters => parameters
             .Add(p => p.CurrentUserId, "alice")
             .Add(p => p.PollInterval, TimeSpan.Zero));
 

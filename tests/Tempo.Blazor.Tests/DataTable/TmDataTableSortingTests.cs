@@ -19,7 +19,7 @@ public class TmDataTableSortingTests : LocalizationTestBase
     private IRenderedComponent<TmDataTable<SortPerson>> RenderWithSortableNameColumn(
         Action<ComponentParameterCollectionBuilder<TmDataTable<SortPerson>>>? extra = null)
     {
-        return RenderComponent<TmDataTable<SortPerson>>(p =>
+        return Render<TmDataTable<SortPerson>>(p =>
         {
             p.Add(c => c.Items, People);
             p.AddChildContent(b =>

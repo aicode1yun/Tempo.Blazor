@@ -15,7 +15,7 @@ public class TmSigningDateStepTests : LocalizationTestBase
     [InlineData("datetime-local", "datetime-local")]
     public void Render_Format_RendersExpectedInputType(string? format, string expectedType)
     {
-        var cut = RenderComponent<TmSigningDateStep>(parameters => parameters
+        var cut = Render<TmSigningDateStep>(parameters => parameters
             .Add(p => p.Field, new SigningField
             {
                 Name = "Date",
@@ -29,7 +29,7 @@ public class TmSigningDateStepTests : LocalizationTestBase
     [Fact]
     public void Render_DateToken_NormalizesMinToToday()
     {
-        var cut = RenderComponent<TmSigningDateStep>(parameters => parameters
+        var cut = Render<TmSigningDateStep>(parameters => parameters
             .Add(p => p.Field, new SigningField
             {
                 Name = "Date",
@@ -44,7 +44,7 @@ public class TmSigningDateStepTests : LocalizationTestBase
     public void TodayButton_SetsValue()
     {
         string? captured = null;
-        var cut = RenderComponent<TmSigningDateStep>(parameters => parameters
+        var cut = Render<TmSigningDateStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Date", Type = SigningFieldType.Date })
             .Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
 

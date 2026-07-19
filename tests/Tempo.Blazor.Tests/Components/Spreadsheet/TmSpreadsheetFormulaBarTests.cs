@@ -11,7 +11,7 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
     [Fact]
     public void Render_Default_DisplaysCellReferenceAndValue()
     {
-        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+        var cut = Render<TmSpreadsheetFormulaBar>(parameters => parameters
             .Add(p => p.ActiveCellRef, "B2")
             .Add(p => p.DisplayValue, "Hello"));
 
@@ -22,7 +22,7 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
     [Fact]
     public void Render_EmptyCell_ShowsPlaceholder()
     {
-        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+        var cut = Render<TmSpreadsheetFormulaBar>(parameters => parameters
             .Add(p => p.ActiveCellRef, "A1")
             .Add(p => p.DisplayValue, (string?)null));
 
@@ -32,7 +32,7 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
     [Fact]
     public void Click_Display_StartsEditing()
     {
-        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+        var cut = Render<TmSpreadsheetFormulaBar>(parameters => parameters
             .Add(p => p.ActiveCellRef, "A1")
             .Add(p => p.DisplayValue, "Test"));
 
@@ -46,7 +46,7 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
     {
         string? committed = null;
         (int RowDelta, int ColDelta) navigation = (0, 0);
-        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+        var cut = Render<TmSpreadsheetFormulaBar>(parameters => parameters
             .Add(p => p.ActiveCellRef, "A1")
             .Add(p => p.DisplayValue, "Old")
             .Add(p => p.IsEditing, true)
@@ -69,7 +69,7 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
     {
         string? committed = null;
         (int RowDelta, int ColDelta) navigation = (0, 0);
-        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+        var cut = Render<TmSpreadsheetFormulaBar>(parameters => parameters
             .Add(p => p.ActiveCellRef, "A2")
             .Add(p => p.DisplayValue, "Old")
             .Add(p => p.IsEditing, true)
@@ -91,7 +91,7 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
     public void Escape_CancelsEdit()
     {
         bool cancelled = false;
-        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+        var cut = Render<TmSpreadsheetFormulaBar>(parameters => parameters
             .Add(p => p.ActiveCellRef, "A1")
             .Add(p => p.DisplayValue, "Old")
             .Add(p => p.IsEditing, true)
@@ -108,7 +108,7 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
     public void F2_RequestsTransferToInlineEditor()
     {
         var transferRequested = false;
-        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+        var cut = Render<TmSpreadsheetFormulaBar>(parameters => parameters
             .Add(p => p.ActiveCellRef, "A1")
             .Add(p => p.DisplayValue, "=SUM(A1:B2)")
             .Add(p => p.IsEditing, true)
@@ -124,7 +124,7 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
     public void EditStarted_EventFires()
     {
         bool started = false;
-        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+        var cut = Render<TmSpreadsheetFormulaBar>(parameters => parameters
             .Add(p => p.ActiveCellRef, "A1")
             .Add(p => p.DisplayValue, "Test")
             .Add(p => p.OnEditStarted, EventCallback.Factory.Create(this, () => started = true)));
@@ -138,7 +138,7 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
     public void ValueChanged_EventFiresOnInput()
     {
         string? changed = null;
-        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+        var cut = Render<TmSpreadsheetFormulaBar>(parameters => parameters
             .Add(p => p.ActiveCellRef, "A1")
             .Add(p => p.DisplayValue, "Test")
             .Add(p => p.IsEditing, true)
@@ -152,7 +152,7 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
     [Fact]
     public void DisplayValueChange_DuringEditing_DoesNotOverwriteLocalFormulaSession()
     {
-        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+        var cut = Render<TmSpreadsheetFormulaBar>(parameters => parameters
             .Add(p => p.ActiveCellRef, "A1")
             .Add(p => p.DisplayValue, "=A1+B2")
             .Add(p => p.IsEditing, true));
@@ -160,7 +160,7 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
         var input = cut.Find(".tm-spreadsheet-formula-bar__input");
         input.Input("=SUM(C1:C3)");
 
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.ActiveCellRef, "A1")
             .Add(p => p.DisplayValue, "=Z9+Y8")
             .Add(p => p.IsEditing, true));
@@ -175,7 +175,7 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
     public void NameBox_Enter_NavigatesToRef()
     {
         string? navigated = null;
-        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+        var cut = Render<TmSpreadsheetFormulaBar>(parameters => parameters
             .Add(p => p.ActiveCellRef, "A1")
             .Add(p => p.DisplayValue, "Test")
             .Add(p => p.OnNavigateToRef, EventCallback.Factory.Create<string>(this, v => navigated = v)));
@@ -190,7 +190,7 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
     [Fact]
     public void NameBox_Escape_RevertsToActiveCellRef()
     {
-        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+        var cut = Render<TmSpreadsheetFormulaBar>(parameters => parameters
             .Add(p => p.ActiveCellRef, "C3")
             .Add(p => p.DisplayValue, "Test"));
 

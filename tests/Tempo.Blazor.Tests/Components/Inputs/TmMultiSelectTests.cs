@@ -26,7 +26,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_Renders_With_Placeholder_When_Empty()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -38,7 +38,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_Renders_Label_When_Set()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -50,7 +50,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_No_Label_When_Null()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value));
@@ -63,7 +63,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_Chip_Mode_Shows_Chips_For_Selected_Values()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -79,7 +79,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     public void TmMultiSelect_Chip_Mode_Remove_Button_Fires_ValuesChanged()
     {
         IReadOnlyList<string>? captured = null;
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -98,7 +98,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_Delimiter_Mode_Shows_Comma_Separated_Text()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -113,7 +113,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_CheckBox_Mode_Shows_Selected_Count()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -128,7 +128,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_Popup_Hidden_By_Default()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value));
@@ -139,7 +139,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_Click_Opens_Popup()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value));
@@ -154,7 +154,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     public void TmMultiSelect_Open_Fires_OnOpen_Callback()
     {
         bool opened = false;
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -171,7 +171,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     public void TmMultiSelect_Click_Item_Adds_To_Values()
     {
         IReadOnlyList<string>? captured = null;
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -190,7 +190,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     public void TmMultiSelect_Click_Selected_Item_Removes_It()
     {
         IReadOnlyList<string>? captured = null;
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -212,7 +212,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     public void TmMultiSelect_Clear_Button_Clears_All_Values()
     {
         IReadOnlyList<string>? captured = null;
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -231,7 +231,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_Filter_Input_Filters_Visible_Items()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -251,7 +251,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     public void TmMultiSelect_Select_All_Selects_All_Visible_Items()
     {
         IReadOnlyList<string>? captured = null;
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -272,7 +272,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_Max_Selection_Disables_Remaining_Options()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -291,7 +291,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_HideSelectedItems_Hides_Selected_From_Dropdown()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -310,7 +310,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_Disabled_Does_Not_Open()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -323,7 +323,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_Disabled_Has_Disabled_CssClass()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -337,7 +337,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_Error_Shows_Error_Message()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -350,7 +350,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_HelpText_Shows_When_No_Error()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -373,7 +373,7 @@ public class TmMultiSelectTests : LocalizationTestBase
         };
 
         // Group by first letter
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, items)
             .Add(c => c.DisplayField, o => o.Label)
             .Add(c => c.ValueField, o => o.Value)
@@ -390,7 +390,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_ShowCheckBox_Renders_Checkboxes()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -404,7 +404,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_ShowCheckBox_Selected_Has_Checked_Class()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value)
@@ -421,7 +421,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_Has_Combobox_Role()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value));
@@ -433,7 +433,7 @@ public class TmMultiSelectTests : LocalizationTestBase
     [Fact]
     public void TmMultiSelect_Open_Sets_Aria_Expanded_True()
     {
-        var cut = RenderComponent<TmMultiSelect<SelectOption<string>, string>>(p => p
+        var cut = Render<TmMultiSelect<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, Display)
             .Add(c => c.ValueField, Value));

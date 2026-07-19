@@ -78,7 +78,7 @@ public sealed class TmNotionTemplateGalleryTests : LocalizationTestBase
     [Fact]
     public void RendersOnlyBlankTemplateWhenProviderIsMissing()
     {
-        var cut = RenderComponent<TmNotionTemplateGallery>(parameters => parameters
+        var cut = Render<TmNotionTemplateGallery>(parameters => parameters
             .Add(component => component.Visible, true));
 
         cut.WaitForAssertion(() =>
@@ -91,7 +91,7 @@ public sealed class TmNotionTemplateGalleryTests : LocalizationTestBase
     private IRenderedComponent<TmNotionTemplateGallery> RenderGallery(
         INotionTemplateProvider provider,
         EventCallback<NotionTemplateDto> selected = default)
-        => RenderComponent<TmNotionTemplateGallery>(parameters => parameters
+        => Render<TmNotionTemplateGallery>(parameters => parameters
             .Add(component => component.Visible, true)
             .Add(component => component.TemplateProvider, provider)
             .Add(component => component.OnTemplateSelected, selected));

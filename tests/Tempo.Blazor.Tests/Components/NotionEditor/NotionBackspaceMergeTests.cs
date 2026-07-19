@@ -24,7 +24,7 @@ public sealed class NotionBackspaceMergeTests : LocalizationTestBase
     public async Task TextBlock_BackspaceAtStart_RaisesMergeWithTheBlockHtml()
     {
         string? merged = null;
-        var cut = RenderComponent<TmNotionTextBlock>(parameters => parameters
+        var cut = Render<TmNotionTextBlock>(parameters => parameters
             .Add(p => p.Content, new TextBlockContent { Html = "beta" })
             .Add(p => p.OnMergeWithPrevious, html => merged = html));
 
@@ -37,7 +37,7 @@ public sealed class NotionBackspaceMergeTests : LocalizationTestBase
     public async Task TextBlock_BackspaceAtStart_SanitizesTheHtmlItHandsOver()
     {
         string? merged = null;
-        var cut = RenderComponent<TmNotionTextBlock>(parameters => parameters
+        var cut = Render<TmNotionTextBlock>(parameters => parameters
             .Add(p => p.Content, new TextBlockContent { Html = "beta" })
             .Add(p => p.OnMergeWithPrevious, html => merged = html));
 
@@ -54,7 +54,7 @@ public sealed class NotionBackspaceMergeTests : LocalizationTestBase
     {
         // The shared JS handler invokes this on every block; a block used standalone by a 2.0.x
         // consumer has no merge callback wired and must simply do nothing.
-        var cut = RenderComponent<TmNotionTextBlock>(parameters => parameters
+        var cut = Render<TmNotionTextBlock>(parameters => parameters
             .Add(p => p.Content, new TextBlockContent { Html = "beta" }));
 
         var act = async () => await cut.InvokeAsync(() => cut.Instance.OnBackspaceAtStart("beta"));
@@ -66,7 +66,7 @@ public sealed class NotionBackspaceMergeTests : LocalizationTestBase
     public async Task HeadingBlock_BackspaceAtStart_RaisesMerge()
     {
         string? merged = null;
-        var cut = RenderComponent<TmNotionHeadingBlock>(parameters => parameters
+        var cut = Render<TmNotionHeadingBlock>(parameters => parameters
             .Add(p => p.Content, new HeadingBlockContent { Html = "beta", Level = 1 })
             .Add(p => p.OnMergeWithPrevious, html => merged = html));
 
@@ -79,7 +79,7 @@ public sealed class NotionBackspaceMergeTests : LocalizationTestBase
     public async Task QuoteBlock_BackspaceAtStart_RaisesMerge()
     {
         string? merged = null;
-        var cut = RenderComponent<TmNotionQuoteBlock>(parameters => parameters
+        var cut = Render<TmNotionQuoteBlock>(parameters => parameters
             .Add(p => p.Content, new TextBlockContent { Html = "beta" })
             .Add(p => p.OnMergeWithPrevious, html => merged = html));
 
@@ -92,7 +92,7 @@ public sealed class NotionBackspaceMergeTests : LocalizationTestBase
     public async Task CalloutBlock_BackspaceAtStart_RaisesMerge()
     {
         string? merged = null;
-        var cut = RenderComponent<TmNotionCalloutBlock>(parameters => parameters
+        var cut = Render<TmNotionCalloutBlock>(parameters => parameters
             .Add(p => p.Content, new CalloutBlockContent { Html = "beta" })
             .Add(p => p.OnMergeWithPrevious, html => merged = html));
 
@@ -105,7 +105,7 @@ public sealed class NotionBackspaceMergeTests : LocalizationTestBase
     public async Task BulletListBlock_BackspaceAtStart_RaisesMerge()
     {
         string? merged = null;
-        var cut = RenderComponent<TmNotionBulletListBlock>(parameters => parameters
+        var cut = Render<TmNotionBulletListBlock>(parameters => parameters
             .Add(p => p.Content, new ListBlockContent { Html = "beta" })
             .Add(p => p.OnMergeWithPrevious, html => merged = html));
 
@@ -118,7 +118,7 @@ public sealed class NotionBackspaceMergeTests : LocalizationTestBase
     public async Task NumberedListBlock_BackspaceAtStart_RaisesMerge()
     {
         string? merged = null;
-        var cut = RenderComponent<TmNotionNumberedListBlock>(parameters => parameters
+        var cut = Render<TmNotionNumberedListBlock>(parameters => parameters
             .Add(p => p.Content, new ListBlockContent { Html = "beta" })
             .Add(p => p.OnMergeWithPrevious, html => merged = html));
 
@@ -131,7 +131,7 @@ public sealed class NotionBackspaceMergeTests : LocalizationTestBase
     public async Task TodoBlock_BackspaceAtStart_RaisesMerge()
     {
         string? merged = null;
-        var cut = RenderComponent<TmNotionTodoBlock>(parameters => parameters
+        var cut = Render<TmNotionTodoBlock>(parameters => parameters
             .AddCascadingValue(EditorContext())
             .Add(p => p.Content, new TodoBlockContent { Html = "beta" })
             .Add(p => p.OnMergeWithPrevious, html => merged = html));
@@ -145,7 +145,7 @@ public sealed class NotionBackspaceMergeTests : LocalizationTestBase
     public async Task ToggleBlock_BackspaceAtStart_RaisesMerge()
     {
         string? merged = null;
-        var cut = RenderComponent<TmNotionToggleBlock>(parameters => parameters
+        var cut = Render<TmNotionToggleBlock>(parameters => parameters
             .AddCascadingValue(EditorContext())
             .Add(p => p.Content, new ToggleBlockContent { Html = "beta" })
             .Add(p => p.OnMergeWithPrevious, html => merged = html));
@@ -170,7 +170,7 @@ public sealed class NotionBackspaceMergeTests : LocalizationTestBase
             ["TmNotionBlock_ListPlaceholder"] = "List item"
         });
 
-        var cut = RenderComponent<TmNotionBlock>(parameters => parameters
+        var cut = Render<TmNotionBlock>(parameters => parameters
             .AddCascadingValue(EditorContext())
             .Add(p => p.Block, new PageBlock
             {

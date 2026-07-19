@@ -66,7 +66,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Renders_WbsNumber_In_TreeRow()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleHierarchy()));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, SampleHierarchy()));
 
         var wbsElements = cut.FindAll("[data-testid='wbs-number']");
         wbsElements.Should().NotBeEmpty();
@@ -80,7 +80,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Has_InlineEditState_Fields()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(MakeTask("1", "T"))));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, Tasks(MakeTask("1", "T"))));
 
         // Access internal state via FindComponent; verify no inline edit by default
         cut.FindAll("input[data-testid='inline-edit-input']").Should().BeEmpty();
@@ -89,7 +89,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void TitleCell_In_InlineEditMode_Renders_Input()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(MakeTask("1", "Title Test"))));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, Tasks(MakeTask("1", "Title Test"))));
 
         var titleCell = cut.Find("[data-testid='tree-cell-title-1']");
         titleCell.DoubleClick();
@@ -104,7 +104,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     {
         TmWorkItem? updated = null;
         var task = MakeTask("1", "Original");
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(task));
             p.Add(c => c.OnTaskUpdated, (TmWorkItem t) => updated = t);
@@ -126,7 +126,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     {
         TmWorkItem? updated = null;
         var task = MakeTask("1", "Original");
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(task));
             p.Add(c => c.OnTaskUpdated, (TmWorkItem t) => updated = t);
@@ -148,7 +148,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     {
         TmWorkItem? updated = null;
         var task = MakeTask("1", "Original");
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(task));
             p.Add(c => c.OnTaskUpdated, (TmWorkItem t) => updated = t);
@@ -194,7 +194,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Has_Columns_Parameter_With_Defaults()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(MakeTask("1", "T"))));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, Tasks(MakeTask("1", "T"))));
 
         // Default columns include Title, Start, End, Progress
         cut.Instance.Columns.Should().NotBeEmpty();
@@ -212,7 +212,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
             new() { Key = GanttColumnKey.End, Visible = true, Order = 2 },
         };
 
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "T")));
             p.Add(c => c.Columns, cols);
@@ -230,7 +230,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
             new() { Key = GanttColumnKey.Progress, Visible = true, Order = 1 },
         };
 
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "T")));
             p.Add(c => c.Columns, cols);
@@ -249,7 +249,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
             new() { Key = GanttColumnKey.Progress, Visible = true, Order = 1 },
         };
 
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "T")));
             p.Add(c => c.Columns, cols);
@@ -272,7 +272,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
             new() { Key = GanttColumnKey.Progress, Visible = true, Order = 1 },
         };
 
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(task));
             p.Add(c => c.Columns, cols);
@@ -288,7 +288,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Has_AllowDependencyCreation_Parameter()
     {
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "T")));
             p.Add(c => c.AllowDependencyCreation, true);
@@ -300,7 +300,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void Bar_Has_DepHandle_Start_And_End_Elements()
     {
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "T")));
             p.Add(c => c.AllowDependencyCreation, true);
@@ -314,7 +314,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     public void OnDepDrop_Fires_OnDependencyAdded_With_FS_Dependency()
     {
         GanttDependency? added = null;
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "From"), MakeTask("2", "To")));
             p.Add(c => c.AllowDependencyCreation, true);
@@ -338,7 +338,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     public void Click_On_Dependency_Line_Selects_It()
     {
         var dep = new GanttDependency { Id = "d1", FromId = "1", ToId = "2" };
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "A"), MakeTask("2", "B")));
             p.Add(c => c.DependencyItems, new[] { dep });
@@ -353,7 +353,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     public void Selected_Dependency_Has_Highlighted_CSS_Class()
     {
         var dep = new GanttDependency { Id = "d1", FromId = "1", ToId = "2" };
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "A"), MakeTask("2", "B")));
             p.Add(c => c.DependencyItems, new[] { dep });
@@ -392,7 +392,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     public void BuildDependencyLines_SS_Uses_Start_Of_FromBar_To_Start_Of_ToBar()
     {
         var dep = new GanttDependency { Id = "d1", FromId = "1", ToId = "2", DepType = GanttDependencyType.StartToStart };
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(
                 new TmWorkItem { Id = "1", Title = "A", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5) },
@@ -416,7 +416,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     public void Dependency_With_Lag_Renders_Lag_Label()
     {
         var dep = new GanttDependency { Id = "d1", FromId = "1", ToId = "2", LagDays = 3 };
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(
                 new TmWorkItem { Id = "1", Title = "A", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 5) },
@@ -465,7 +465,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
             }
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         var avatars = cut.FindAll(".tm-gantt__bar-avatar");
         avatars.Should().HaveCount(3);
@@ -487,7 +487,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
             }
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         cut.FindAll(".tm-gantt__bar-avatar").Should().HaveCount(2);
         cut.FindAll(".tm-gantt__bar-avatar-overflow").Should().BeEmpty();
@@ -515,7 +515,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     public void TaskPanel_Title_Is_Editable_Input()
     {
         var task = MakeTask("1", "My Task");
-        var cut = RenderComponent<TmGanttTaskPanel>(p =>
+        var cut = Render<TmGanttTaskPanel>(p =>
         {
             p.Add(c => c.Task, task);
             p.Add(c => c.AllTasks, Tasks(task));
@@ -531,7 +531,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     public void TaskPanel_Renders_Duration_Field()
     {
         var task = new TmWorkItem { Id = "1", Title = "T", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 10) };
-        var cut = RenderComponent<TmGanttTaskPanel>(p =>
+        var cut = Render<TmGanttTaskPanel>(p =>
         {
             p.Add(c => c.Task, task);
             p.Add(c => c.AllTasks, Tasks(task));
@@ -545,7 +545,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     public void TaskPanel_Renders_Deadline_Date_Picker()
     {
         var task = MakeTask("1", "T");
-        var cut = RenderComponent<TmGanttTaskPanel>(p =>
+        var cut = Render<TmGanttTaskPanel>(p =>
         {
             p.Add(c => c.Task, task);
             p.Add(c => c.AllTasks, Tasks(task));
@@ -559,7 +559,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     public void TaskPanel_Renders_Estimation_And_TimeLog_Fields()
     {
         var task = new TmWorkItem { Id = "1", Title = "T", Start = new DateTime(2024, 6, 1), End = new DateTime(2024, 6, 10), EstimationHours = 40, LoggedHours = 12 };
-        var cut = RenderComponent<TmGanttTaskPanel>(p =>
+        var cut = Render<TmGanttTaskPanel>(p =>
         {
             p.Add(c => c.Task, task);
             p.Add(c => c.AllTasks, Tasks(task));
@@ -574,7 +574,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     public void TaskPanel_Renders_Color_Picker_With_12_Swatches()
     {
         var task = MakeTask("1", "T");
-        var cut = RenderComponent<TmGanttTaskPanel>(p =>
+        var cut = Render<TmGanttTaskPanel>(p =>
         {
             p.Add(c => c.Task, task);
             p.Add(c => c.AllTasks, Tasks(task));
@@ -642,7 +642,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Has_ZoomPreset_Parameter()
     {
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "T")));
             p.Add(c => c.ZoomPreset, GanttZoomPreset.Weeks);
@@ -654,7 +654,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Renders_Zoom_Slider()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(MakeTask("1", "T"))));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, Tasks(MakeTask("1", "T"))));
 
         cut.Find("[data-testid='gantt-zoom-slider']").Should().NotBeNull();
     }
@@ -662,7 +662,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Renders_TwoRow_Timeline_Header()
     {
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "T")));
             p.Add(c => c.ZoomPreset, GanttZoomPreset.Weeks);
@@ -688,7 +688,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void CurrentTimeMarker_Renders_Only_In_Hours_View()
     {
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "T")));
             p.Add(c => c.ZoomPreset, GanttZoomPreset.Hours);
@@ -700,7 +700,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void CurrentTimeMarker_Not_Rendered_In_Weeks_View()
     {
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "T")));
             p.Add(c => c.ZoomPreset, GanttZoomPreset.Weeks);
@@ -716,7 +716,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Has_ShowOverdueHighlight_Parameter()
     {
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "T")));
             p.Add(c => c.ShowOverdueHighlight, true);
@@ -736,7 +736,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
             PercentComplete = 0
         };
 
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(overdueTask));
             p.Add(c => c.ShowOverdueHighlight, true);
@@ -756,7 +756,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
             PercentComplete = 0
         };
 
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(overdueTask));
             p.Add(c => c.ShowOverdueHighlight, true);
@@ -776,7 +776,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
             PercentComplete = 0
         };
 
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(overdueTask));
             p.Add(c => c.ShowOverdueHighlight, false);
@@ -823,7 +823,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void Toolbar_Has_CascadeSort_Button()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(MakeTask("1", "T"))));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, Tasks(MakeTask("1", "T"))));
 
         cut.Find("[data-testid='gantt-cascade-sort']").Should().NotBeNull();
     }
@@ -838,7 +838,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
             new() { Id = "2", Title = "A", Start = new DateTime(2024, 6, 1),  End = new DateTime(2024, 6, 5) },
         };
 
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, tasks);
             p.Add(c => c.OnDataSorted, (IReadOnlyList<TmWorkItem> d) => sortedData = d);
@@ -857,7 +857,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Has_AllowBulkSelect_Parameter()
     {
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "T")));
             p.Add(c => c.AllowBulkSelect, true);
@@ -869,7 +869,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void TreeRow_Renders_Checkbox_When_AllowBulkSelect_True()
     {
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "T")));
             p.Add(c => c.AllowBulkSelect, true);
@@ -881,7 +881,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void TreeRow_Does_Not_Render_Checkbox_When_AllowBulkSelect_False()
     {
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "T")));
             p.Add(c => c.AllowBulkSelect, false);
@@ -910,7 +910,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     [Fact]
     public void Bulk_Toolbar_Visible_When_Tasks_Selected()
     {
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "T"), MakeTask("2", "T2")));
             p.Add(c => c.AllowBulkSelect, true);
@@ -927,7 +927,7 @@ public class TmGanttPhase2Tests : LocalizationTestBase
     public void OnBulkUpdate_Fires_When_Bulk_Status_Changed()
     {
         BulkUpdateArgs? fired = null;
-        var cut = RenderComponent<TmGantt>(p =>
+        var cut = Render<TmGantt>(p =>
         {
             p.Add(c => c.Items, Tasks(MakeTask("1", "T"), MakeTask("2", "T2")));
             p.Add(c => c.AllowBulkSelect, true);

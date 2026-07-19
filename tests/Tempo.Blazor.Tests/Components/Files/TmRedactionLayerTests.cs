@@ -24,7 +24,7 @@ public class TmRedactionLayerTests : LocalizationTestBase
 
     private IRenderedComponent<TmRedactionLayer> RenderImageMode(
         Action<Bunit.ComponentParameterCollectionBuilder<TmRedactionLayer>>? configure = null)
-        => RenderComponent<TmRedactionLayer>(p =>
+        => Render<TmRedactionLayer>(p =>
         {
             p.Add(x => x.ImageUrl, "/img/id-card.png");
             p.Add(x => x.DocumentId, "img-1");
@@ -198,7 +198,7 @@ public class TmRedactionLayerTests : LocalizationTestBase
     [Fact]
     public void PdfMode_RendersViewer_AndExportUsesThePdfPipeline()
     {
-        var cut = RenderComponent<TmRedactionLayer>(p =>
+        var cut = Render<TmRedactionLayer>(p =>
         {
             p.Add(x => x.Url, "/docs/contract.pdf");
             p.Add(x => x.DocumentId, "doc-1");

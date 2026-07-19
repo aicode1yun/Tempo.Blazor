@@ -12,7 +12,7 @@ public class TmSpreadsheetTextToColumnsDialogTests : LocalizationTestBase
     [Fact]
     public void Step1_ShowsModeChoices_Localized()
     {
-        var cut = RenderComponent<TmSpreadsheetTextToColumnsDialog>(p => p
+        var cut = Render<TmSpreadsheetTextToColumnsDialog>(p => p
             .Add(c => c.SourceRows, Sample));
 
         cut.Markup.Should().Contain("Text to columns");
@@ -23,7 +23,7 @@ public class TmSpreadsheetTextToColumnsDialogTests : LocalizationTestBase
     [Fact]
     public void Next_AdvancesToStep2_AndShowsDelimiters()
     {
-        var cut = RenderComponent<TmSpreadsheetTextToColumnsDialog>(p => p
+        var cut = Render<TmSpreadsheetTextToColumnsDialog>(p => p
             .Add(c => c.SourceRows, Sample));
 
         cut.Find(".tm-spreadsheet-t2c__btn--ok").Click(); // Next
@@ -35,7 +35,7 @@ public class TmSpreadsheetTextToColumnsDialogTests : LocalizationTestBase
     [Fact]
     public void LivePreview_UpdatesWhenSemicolonChosen()
     {
-        var cut = RenderComponent<TmSpreadsheetTextToColumnsDialog>(p => p
+        var cut = Render<TmSpreadsheetTextToColumnsDialog>(p => p
             .Add(c => c.SourceRows, Sample));
 
         cut.Find(".tm-spreadsheet-t2c__btn--ok").Click(); // → step 2 (comma default, no split on ';')
@@ -54,7 +54,7 @@ public class TmSpreadsheetTextToColumnsDialogTests : LocalizationTestBase
     public void Finish_ReturnsOptionsAndFormats()
     {
         SpreadsheetTextToColumnsResult? result = null;
-        var cut = RenderComponent<TmSpreadsheetTextToColumnsDialog>(p => p
+        var cut = Render<TmSpreadsheetTextToColumnsDialog>(p => p
             .Add(c => c.SourceRows, Sample)
             .Add(c => c.OnApply, EventCallback.Factory.Create<SpreadsheetTextToColumnsResult>(this, r => result = r)));
 

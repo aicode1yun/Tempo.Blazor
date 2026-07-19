@@ -14,7 +14,7 @@ public class TmSearchInputLocalizationTests : LocalizationTestBase
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmSearchInput>(p => p
+        var cut = Render<TmSearchInput>(p => p
             .Add(c => c.Value, "test")); // Value needed to render the clear button
 
         cut.Find(".tm-search-clear").GetAttribute("aria-label")
@@ -27,7 +27,7 @@ public class TmSearchInputLocalizationTests : LocalizationTestBase
         UseCzechLocalization();
 
         // No explicit Placeholder – must fallback to localizer
-        var cut = RenderComponent<TmSearchInput>();
+        var cut = Render<TmSearchInput>();
 
         cut.Find("input").GetAttribute("placeholder")
             .Should().Be("Hledat...");
@@ -38,7 +38,7 @@ public class TmSearchInputLocalizationTests : LocalizationTestBase
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmSearchInput>(p => p
+        var cut = Render<TmSearchInput>(p => p
             .Add(c => c.Placeholder, "Vlastní placeholder"));
 
         cut.Find("input").GetAttribute("placeholder")
@@ -48,7 +48,7 @@ public class TmSearchInputLocalizationTests : LocalizationTestBase
     [Fact]
     public void TmSearchInput_DefaultPlaceholder_English_ShowsEnglishText()
     {
-        var cut = RenderComponent<TmSearchInput>();
+        var cut = Render<TmSearchInput>();
 
         cut.Find("input").GetAttribute("placeholder")
             .Should().Be("Search...");

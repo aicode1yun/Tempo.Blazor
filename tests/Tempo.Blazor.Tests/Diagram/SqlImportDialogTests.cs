@@ -11,7 +11,7 @@ public class SqlImportDialogTests : DiagramTestBase
     [Fact]
     public async Task SqlImportDialog_RendersErrorForInvalidSql()
     {
-        var cut = RenderComponent<TmDiagramSqlImportDialog>(parameters => parameters
+        var cut = Render<TmDiagramSqlImportDialog>(parameters => parameters
             .Add(p => p.Show, true)
             .Add(p => p.OnClose, () => { })
             .Add(p => p.OnImport, (SqlImportResult r) => { }));
@@ -33,7 +33,7 @@ public class SqlImportDialogTests : DiagramTestBase
     [Fact]
     public void SqlImportDialog_RendersPreviewForValidSql()
     {
-        var cut = RenderComponent<TmDiagramSqlImportDialog>(parameters => parameters
+        var cut = Render<TmDiagramSqlImportDialog>(parameters => parameters
             .Add(p => p.Show, true)
             .Add(p => p.OnClose, () => { })
             .Add(p => p.OnImport, (SqlImportResult r) => { }));

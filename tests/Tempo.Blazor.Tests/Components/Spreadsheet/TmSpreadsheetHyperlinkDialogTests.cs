@@ -13,7 +13,7 @@ public class TmSpreadsheetHyperlinkDialogTests : LocalizationTestBase
     public void Renders_TitleAndTypeOptions()
     {
         var workbook = new SpreadsheetWorkbook();
-        var cut = RenderComponent<TmSpreadsheetHyperlinkDialog>(
+        var cut = Render<TmSpreadsheetHyperlinkDialog>(
             parameters => parameters.Add(p => p.Workbook, workbook));
 
         cut.Find(".tm-spreadsheet-hyperlink__title").TextContent.Should().Be("Hyperlink");
@@ -33,7 +33,7 @@ public class TmSpreadsheetHyperlinkDialogTests : LocalizationTestBase
             Tooltip = "Click"
         };
 
-        var cut = RenderComponent<TmSpreadsheetHyperlinkDialog>(
+        var cut = Render<TmSpreadsheetHyperlinkDialog>(
             parameters => parameters
                 .Add(p => p.Workbook, workbook)
                 .Add(p => p.Hyperlink, link));
@@ -47,7 +47,7 @@ public class TmSpreadsheetHyperlinkDialogTests : LocalizationTestBase
         var workbook = new SpreadsheetWorkbook();
         SpreadsheetHyperlink? saved = null;
 
-        var cut = RenderComponent<TmSpreadsheetHyperlinkDialog>(
+        var cut = Render<TmSpreadsheetHyperlinkDialog>(
             parameters => parameters
                 .Add(p => p.Workbook, workbook)
                 .Add(p => p.OnSave, h => saved = h));
@@ -68,7 +68,7 @@ public class TmSpreadsheetHyperlinkDialogTests : LocalizationTestBase
         var workbook = new SpreadsheetWorkbook();
         var fired = false;
 
-        var cut = RenderComponent<TmSpreadsheetHyperlinkDialog>(
+        var cut = Render<TmSpreadsheetHyperlinkDialog>(
             parameters => parameters
                 .Add(p => p.Workbook, workbook)
                 .Add(p => p.OnCancel, () => fired = true));

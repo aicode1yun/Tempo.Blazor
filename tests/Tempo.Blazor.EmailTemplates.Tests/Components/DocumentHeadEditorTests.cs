@@ -9,7 +9,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.EmailTemplates.Tests.Components;
 
-public class DocumentHeadEditorTests : TestContext
+public class DocumentHeadEditorTests : BunitContext
 {
     public DocumentHeadEditorTests()
     {
@@ -23,7 +23,7 @@ public class DocumentHeadEditorTests : TestContext
     [Fact]
     public void DocumentPanel_RendersFontAndStyleEditors()
     {
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p.Add(c => c.Document, new EmailTemplateDocument()));
+        var cut = Render<TmEmailPropertyPanel>(p => p.Add(c => c.Document, new EmailTemplateDocument()));
         cut.Find("[data-tm-head=\"fonts\"]").Should().NotBeNull();
         cut.Find("[data-tm-head=\"styles\"]").Should().NotBeNull();
     }
@@ -32,7 +32,7 @@ public class DocumentHeadEditorTests : TestContext
     public void AddingFont_AppendsToStyles()
     {
         var doc = new EmailTemplateDocument();
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p
+        var cut = Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.OnChanged, () => { }));
 
         cut.Find("[data-tm-head=\"fonts\"] [data-tm-list-add]").Click();

@@ -88,7 +88,7 @@ public sealed class TmNotionPageTreeBulkTests : LocalizationTestBase
             SearchProvider = provider
         };
 
-        return RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        return Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(component => component.Value, context)
             .AddChildContent<TmNotionPageTree>(child => child
                 .Add(component => component.RootPages, provider.RootPages)

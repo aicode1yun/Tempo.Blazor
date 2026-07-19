@@ -27,7 +27,7 @@ public sealed class TmNotionPageReactionsTests : LocalizationTestBase
     [Fact]
     public void Component_IsHiddenWithoutProvider()
     {
-        var cut = RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        var cut = Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(p => p.Value, new NotionEditorContext())
             .AddChildContent<TmNotionPageReactions>(child => child
                 .Add(p => p.PageId, PageId)));
@@ -72,7 +72,7 @@ public sealed class TmNotionPageReactionsTests : LocalizationTestBase
     }
 
     private IRenderedComponent<CascadingValue<NotionEditorContext>> RenderReactions(FakeReactionProvider provider)
-        => RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        => Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(p => p.Value, new NotionEditorContext
             {
                 CurrentUserId = "alice",

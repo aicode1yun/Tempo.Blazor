@@ -12,7 +12,7 @@ public class TmSignatureTests : LocalizationTestBase
     [Fact]
     public void TmSignature_Renders_Svg_Canvas()
     {
-        var cut = RenderComponent<TmSignature>();
+        var cut = Render<TmSignature>();
 
         cut.Find("svg.tm-signature__canvas").Should().NotBeNull();
     }
@@ -20,7 +20,7 @@ public class TmSignatureTests : LocalizationTestBase
     [Fact]
     public void TmSignature_Default_Dimensions_Are_400x200()
     {
-        var cut = RenderComponent<TmSignature>();
+        var cut = Render<TmSignature>();
         var svg = cut.Find("svg.tm-signature__canvas");
 
         svg.GetAttribute("width").Should().Be("400");
@@ -30,7 +30,7 @@ public class TmSignatureTests : LocalizationTestBase
     [Fact]
     public void TmSignature_Custom_Dimensions_Applied()
     {
-        var cut = RenderComponent<TmSignature>(p => p
+        var cut = Render<TmSignature>(p => p
             .Add(c => c.Width, 600)
             .Add(c => c.Height, 300));
 
@@ -42,7 +42,7 @@ public class TmSignatureTests : LocalizationTestBase
     [Fact]
     public void TmSignature_Clear_Button_Removes_Paths()
     {
-        var cut = RenderComponent<TmSignature>();
+        var cut = Render<TmSignature>();
 
         // Simulate a stroke via pointer events using TriggerEvent
         var svg = cut.Find("svg.tm-signature__canvas");
@@ -62,7 +62,7 @@ public class TmSignatureTests : LocalizationTestBase
     public void TmSignature_Clear_Resets_Value()
     {
         string? value = "initial";
-        var cut = RenderComponent<TmSignature>(p => p
+        var cut = Render<TmSignature>(p => p
             .Add(c => c.Value, "some-svg-data")
             .Add(c => c.ValueChanged, (string? v) => value = v));
 
@@ -74,7 +74,7 @@ public class TmSignatureTests : LocalizationTestBase
     [Fact]
     public void TmSignature_Disabled_Hides_Clear_Button()
     {
-        var cut = RenderComponent<TmSignature>(p => p
+        var cut = Render<TmSignature>(p => p
             .Add(c => c.Disabled, true));
 
         cut.FindAll(".tm-signature__clear").Should().BeEmpty();
@@ -83,7 +83,7 @@ public class TmSignatureTests : LocalizationTestBase
     [Fact]
     public void TmSignature_Disabled_Canvas_Has_Disabled_Class()
     {
-        var cut = RenderComponent<TmSignature>(p => p
+        var cut = Render<TmSignature>(p => p
             .Add(c => c.Disabled, true));
 
         cut.Find(".tm-signature--disabled").Should().NotBeNull();
@@ -92,7 +92,7 @@ public class TmSignatureTests : LocalizationTestBase
     [Fact]
     public void TmSignature_StrokeColor_Applied_To_Path()
     {
-        var cut = RenderComponent<TmSignature>(p => p
+        var cut = Render<TmSignature>(p => p
             .Add(c => c.StrokeColor, "#ff0000"));
 
         // Draw a stroke
@@ -108,7 +108,7 @@ public class TmSignatureTests : LocalizationTestBase
     [Fact]
     public void TmSignature_BackgroundColor_Applied_To_Svg()
     {
-        var cut = RenderComponent<TmSignature>(p => p
+        var cut = Render<TmSignature>(p => p
             .Add(c => c.BackgroundColor, "#f0f0f0"));
 
         var svg = cut.Find("svg.tm-signature__canvas");
@@ -118,7 +118,7 @@ public class TmSignatureTests : LocalizationTestBase
     [Fact]
     public void TmSignature_ShowClearButton_False_Hides_Button()
     {
-        var cut = RenderComponent<TmSignature>(p => p
+        var cut = Render<TmSignature>(p => p
             .Add(c => c.ShowClearButton, false));
 
         cut.FindAll(".tm-signature__clear").Should().BeEmpty();
@@ -128,7 +128,7 @@ public class TmSignatureTests : LocalizationTestBase
     public void TmSignature_ValueChanged_Fires_After_Stroke()
     {
         string? capturedValue = null;
-        var cut = RenderComponent<TmSignature>(p => p
+        var cut = Render<TmSignature>(p => p
             .Add(c => c.ValueChanged, (string? v) => capturedValue = v));
 
         var svg = cut.Find("svg.tm-signature__canvas");

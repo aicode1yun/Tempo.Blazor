@@ -56,7 +56,7 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
     {
         var provider = new RestrictionProvider();
 
-        var cut = RenderComponent<TmNotionRestrictionsDialog>(parameters => parameters
+        var cut = Render<TmNotionRestrictionsDialog>(parameters => parameters
             .Add(component => component.Visible, true)
             .Add(component => component.PageId, RestrictionProvider.PageId)
             .Add(component => component.Provider, provider));
@@ -93,7 +93,7 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
     {
         var provider = new RestrictionProvider { EffectivePermission = PageRestrictionPermission.View };
 
-        var cut = RenderComponent<TmNotionEditor>(parameters => parameters
+        var cut = Render<TmNotionEditor>(parameters => parameters
             .Add(component => component.DataProvider, provider)
             .Add(component => component.BlockProvider, provider)
             .Add(component => component.PermissionProvider, provider)
@@ -120,7 +120,7 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
         });
         var expectedGroups = new[] { "readers" };
 
-        var cut = RenderComponent<TmNotionEditor>(parameters => parameters
+        var cut = Render<TmNotionEditor>(parameters => parameters
             .Add(component => component.DataProvider, provider)
             .Add(component => component.BlockProvider, provider)
             .Add(component => component.AuthorizationProvider, authorization)
@@ -156,7 +156,7 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
             TmAuthorizationActions.Edit
         });
 
-        var cut = RenderComponent<TmNotionEditor>(parameters => parameters
+        var cut = Render<TmNotionEditor>(parameters => parameters
             .Add(component => component.DataProvider, provider)
             .Add(component => component.BlockProvider, provider)
             .Add(component => component.AuthorizationProvider, authorization)
@@ -178,7 +178,7 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
     {
         var provider = new RestrictionProvider();
 
-        var cut = RenderComponent<TmNotionEditor>(parameters => parameters
+        var cut = Render<TmNotionEditor>(parameters => parameters
             .Add(component => component.DataProvider, provider)
             .Add(component => component.BlockProvider, provider)
             .Add(component => component.ReadOnly, true)
@@ -197,7 +197,7 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
     {
         var provider = new ThrowingRestrictionProvider("raw connection string password");
 
-        var cut = RenderComponent<TmNotionRestrictionsDialog>(parameters => parameters
+        var cut = Render<TmNotionRestrictionsDialog>(parameters => parameters
             .Add(component => component.Visible, true)
             .Add(component => component.PageId, RestrictionProvider.PageId)
             .Add(component => component.Provider, provider));

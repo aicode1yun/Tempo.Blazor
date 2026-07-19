@@ -73,7 +73,7 @@ public class TmDataTableExportTests : LocalizationTestBase
     // ── Component export snapshot ─────────────────────────────────────────────
 
     private IRenderedComponent<TmDataTable<Person>> RenderTable(List<Person> items, int pageSize = 10)
-        => RenderComponent<TmDataTable<Person>>(p =>
+        => Render<TmDataTable<Person>>(p =>
         {
             p.Add(c => c.ViewContext, "export-test");
             p.Add(c => c.Items, items);

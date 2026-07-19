@@ -21,7 +21,7 @@ public class TmDataTableBasicTests : LocalizationTestBase
     [Fact]
     public void TmDataTable_Renders_Table_Element()
     {
-        var cut = RenderComponent<TmDataTable<BasicPerson>>(p => p
+        var cut = Render<TmDataTable<BasicPerson>>(p => p
             .Add(c => c.Items, People));
 
         cut.Find("table").Should().NotBeNull();
@@ -30,7 +30,7 @@ public class TmDataTableBasicTests : LocalizationTestBase
     [Fact]
     public void TmDataTable_Has_Base_CssClass()
     {
-        var cut = RenderComponent<TmDataTable<BasicPerson>>(p => p
+        var cut = Render<TmDataTable<BasicPerson>>(p => p
             .Add(c => c.Items, People));
 
         cut.Find("table").ClassList.Should().Contain("tm-data-table");
@@ -39,7 +39,7 @@ public class TmDataTableBasicTests : LocalizationTestBase
     [Fact]
     public void TmDataTable_Renders_Row_Per_Item()
     {
-        var cut = RenderComponent<TmDataTable<BasicPerson>>(p => p
+        var cut = Render<TmDataTable<BasicPerson>>(p => p
             .Add(c => c.Items, People));
 
         // 3 data rows in tbody
@@ -49,7 +49,7 @@ public class TmDataTableBasicTests : LocalizationTestBase
     [Fact]
     public void TmDataTable_Loading_Shows_Spinner()
     {
-        var cut = RenderComponent<TmDataTable<BasicPerson>>(p => p
+        var cut = Render<TmDataTable<BasicPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.IsLoading, true));
 
@@ -59,7 +59,7 @@ public class TmDataTableBasicTests : LocalizationTestBase
     [Fact]
     public void TmDataTable_Empty_Items_Shows_EmptyState()
     {
-        var cut = RenderComponent<TmDataTable<BasicPerson>>(p => p
+        var cut = Render<TmDataTable<BasicPerson>>(p => p
             .Add(c => c.Items, new List<BasicPerson>())
             .Add(c => c.EmptyTitle, "No data found"));
 
@@ -69,7 +69,7 @@ public class TmDataTableBasicTests : LocalizationTestBase
     [Fact]
     public void TmDataTable_Renders_Column_Headers()
     {
-        var cut = RenderComponent<TmDataTable<BasicPerson>>(p => p
+        var cut = Render<TmDataTable<BasicPerson>>(p => p
             .Add(c => c.Items, People)
             .AddChildContent(b =>
             {
@@ -86,7 +86,7 @@ public class TmDataTableBasicTests : LocalizationTestBase
     public void TmDataTable_RowClick_Fires_OnRowClick()
     {
         BasicPerson? clicked = null;
-        var cut = RenderComponent<TmDataTable<BasicPerson>>(p => p
+        var cut = Render<TmDataTable<BasicPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.OnRowClick, EventCallback.Factory.Create<BasicPerson>(this, p => clicked = p)));
 
@@ -99,7 +99,7 @@ public class TmDataTableBasicTests : LocalizationTestBase
     [Fact]
     public void TmDataTable_RowAttributes_Applies_CustomAttributes_ToRows()
     {
-        var cut = RenderComponent<TmDataTable<BasicPerson>>(p => p
+        var cut = Render<TmDataTable<BasicPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.RowAttributes, row => new Dictionary<string, object>
             {
@@ -122,7 +122,7 @@ public class TmDataTableBasicTests : LocalizationTestBase
     [Fact]
     public void TmDataTable_RowAttributes_Drops_ReservedNames_ToRows()
     {
-        var cut = RenderComponent<TmDataTable<BasicPerson>>(p => p
+        var cut = Render<TmDataTable<BasicPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.RowAttributes, row => new Dictionary<string, object>
             {

@@ -12,7 +12,7 @@ public class TmSigningAttachmentStepTests : LocalizationTestBase
     [Fact]
     public void Render_ImageStep_RendersUploadInput()
     {
-        var cut = RenderComponent<TmSigningAttachmentStep>(parameters => parameters
+        var cut = Render<TmSigningAttachmentStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Photo", Type = SigningFieldType.Image }));
 
         cut.Find(".tm-signing-attachment-step__input").Should().NotBeNull();
@@ -21,7 +21,7 @@ public class TmSigningAttachmentStepTests : LocalizationTestBase
     [Fact]
     public void Render_ImageAttachment_ShowsPreview()
     {
-        var cut = RenderComponent<TmSigningAttachmentStep>(parameters => parameters
+        var cut = Render<TmSigningAttachmentStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Photo", Type = SigningFieldType.Image })
             .Add(p => p.Attachments, [new TmSigningStepAttachment { Name = "photo.png", Url = "/photo.png" }]));
 
@@ -31,7 +31,7 @@ public class TmSigningAttachmentStepTests : LocalizationTestBase
     [Fact]
     public void Render_FileStep_AllowsMultipleUpload()
     {
-        var cut = RenderComponent<TmSigningAttachmentStep>(parameters => parameters
+        var cut = Render<TmSigningAttachmentStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Files", Type = SigningFieldType.File })
             .Add(p => p.AllowMultiple, true));
 
@@ -42,7 +42,7 @@ public class TmSigningAttachmentStepTests : LocalizationTestBase
     public void RemoveAttachment_InvokesAttachmentsChanged()
     {
         IReadOnlyList<TmSigningStepAttachment>? captured = null;
-        var cut = RenderComponent<TmSigningAttachmentStep>(parameters => parameters
+        var cut = Render<TmSigningAttachmentStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Files", Type = SigningFieldType.File })
             .Add(p => p.Attachments, [new TmSigningStepAttachment { Uuid = "file-1", Name = "contract.pdf" }])
             .Add(p => p.AttachmentsChanged, EventCallback.Factory.Create<IReadOnlyList<TmSigningStepAttachment>>(this, value => captured = value)));
@@ -55,7 +55,7 @@ public class TmSigningAttachmentStepTests : LocalizationTestBase
     [Fact]
     public void Render_Stamp_ShowsPlaceholderOrValue()
     {
-        var cut = RenderComponent<TmSigningAttachmentStep>(parameters => parameters
+        var cut = Render<TmSigningAttachmentStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Stamp", Type = SigningFieldType.Stamp })
             .Add(p => p.StampValue, "STAMP-001"));
 

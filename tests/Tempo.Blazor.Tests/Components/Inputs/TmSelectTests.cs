@@ -13,14 +13,14 @@ public class TmSelectTests : LocalizationTestBase
     [Fact]
     public void TmSelect_Renders_Select_Element()
     {
-        var cut = RenderComponent<TmSelect<string>>();
+        var cut = Render<TmSelect<string>>();
         cut.Find("select").Should().NotBeNull();
     }
 
     [Fact]
     public void TmSelect_Has_Base_CssClass()
     {
-        var cut = RenderComponent<TmSelect<string>>();
+        var cut = Render<TmSelect<string>>();
         cut.Find("select").ClassList.Should().Contain("tm-select");
     }
 
@@ -29,7 +29,7 @@ public class TmSelectTests : LocalizationTestBase
     {
         // Accessibility: a select with only a placeholder (no visible <label>) must still have
         // an accessible name so it passes axe select-name.
-        var cut = RenderComponent<TmSelect<string>>(p => p
+        var cut = Render<TmSelect<string>>(p => p
             .Add(x => x.Placeholder, "Filter by department"));
 
         cut.Find("select").GetAttribute("aria-label").Should().Be("Filter by department");
@@ -38,7 +38,7 @@ public class TmSelectTests : LocalizationTestBase
     [Fact]
     public void TmSelect_WithLabel_DoesNotSetAriaLabel()
     {
-        var cut = RenderComponent<TmSelect<string>>(p => p
+        var cut = Render<TmSelect<string>>(p => p
             .Add(x => x.Label, "Department")
             .Add(x => x.Placeholder, "Filter by department"));
 
@@ -49,21 +49,21 @@ public class TmSelectTests : LocalizationTestBase
     [Fact]
     public void TmSelect_Label_Renders_Label_Element()
     {
-        var cut = RenderComponent<TmSelect<string>>(p => p.Add(c => c.Label, "Status"));
+        var cut = Render<TmSelect<string>>(p => p.Add(c => c.Label, "Status"));
         cut.Find("label").TextContent.Trim().Should().Be("Status");
     }
 
     [Fact]
     public void TmSelect_No_Label_When_Null()
     {
-        var cut = RenderComponent<TmSelect<string>>();
+        var cut = Render<TmSelect<string>>();
         cut.FindAll("label").Should().BeEmpty();
     }
 
     [Fact]
     public void TmSelect_Placeholder_Renders_Disabled_Option()
     {
-        var cut = RenderComponent<TmSelect<string>>(p => p.Add(c => c.Placeholder, "Choose..."));
+        var cut = Render<TmSelect<string>>(p => p.Add(c => c.Placeholder, "Choose..."));
         var placeholderOption = cut.Find("option[disabled]");
         placeholderOption.TextContent.Should().Contain("Choose...");
     }
@@ -71,7 +71,7 @@ public class TmSelectTests : LocalizationTestBase
     [Fact]
     public void TmSelect_No_Placeholder_Option_When_Null()
     {
-        var cut = RenderComponent<TmSelect<string>>(p => p
+        var cut = Render<TmSelect<string>>(p => p
             .AddChildContent("<option value='a'>A</option>"));
         cut.FindAll("option[disabled]").Should().BeEmpty();
     }
@@ -79,35 +79,35 @@ public class TmSelectTests : LocalizationTestBase
     [Fact]
     public void TmSelect_Disabled_Sets_Disabled_Attribute()
     {
-        var cut = RenderComponent<TmSelect<string>>(p => p.Add(c => c.Disabled, true));
+        var cut = Render<TmSelect<string>>(p => p.Add(c => c.Disabled, true));
         cut.Find("select").HasAttribute("disabled").Should().BeTrue();
     }
 
     [Fact]
     public void TmSelect_Error_Adds_Error_CssClass()
     {
-        var cut = RenderComponent<TmSelect<string>>(p => p.Add(c => c.Error, "Required"));
+        var cut = Render<TmSelect<string>>(p => p.Add(c => c.Error, "Required"));
         cut.Find("select").ClassList.Should().Contain("tm-select-error");
     }
 
     [Fact]
     public void TmSelect_Error_Shows_Error_Message()
     {
-        var cut = RenderComponent<TmSelect<string>>(p => p.Add(c => c.Error, "Select a value"));
+        var cut = Render<TmSelect<string>>(p => p.Add(c => c.Error, "Select a value"));
         cut.Find("[data-testid='select-error']").TextContent.Should().Contain("Select a value");
     }
 
     [Fact]
     public void TmSelect_HelpText_Shown_When_No_Error()
     {
-        var cut = RenderComponent<TmSelect<string>>(p => p.Add(c => c.HelpText, "Pick one"));
+        var cut = Render<TmSelect<string>>(p => p.Add(c => c.HelpText, "Pick one"));
         cut.Find("[data-testid='select-help']").TextContent.Should().Contain("Pick one");
     }
 
     [Fact]
     public void TmSelect_ChildContent_Renders_Options()
     {
-        var cut = RenderComponent<TmSelect<string>>(p => p
+        var cut = Render<TmSelect<string>>(p => p
             .AddChildContent("<option value='a'>Alpha</option><option value='b'>Beta</option>"));
         cut.FindAll("option").Count.Should().BeGreaterThanOrEqualTo(2);
     }
@@ -116,7 +116,7 @@ public class TmSelectTests : LocalizationTestBase
     public void TmSelect_ValueChanged_Fires_On_Change()
     {
         string? captured = null;
-        var cut = RenderComponent<TmSelect<string>>(p => p
+        var cut = Render<TmSelect<string>>(p => p
             .Add(c => c.ValueChanged, EventCallback.Factory.Create<string?>(this, v => captured = v))
             .AddChildContent("<option value='alpha'>Alpha</option>"));
 
@@ -134,7 +134,7 @@ public class TmSelectTests : LocalizationTestBase
             new("editor", "Editor"),
             new("viewer", "Viewer"),
         };
-        var cut = RenderComponent<TmSelect<string>>(p => p.Add(c => c.Options, options));
+        var cut = Render<TmSelect<string>>(p => p.Add(c => c.Options, options));
 
         var rendered = cut.FindAll("option");
         rendered.Count.Should().Be(3);
@@ -152,7 +152,7 @@ public class TmSelectTests : LocalizationTestBase
             new("a", "Alpha"),
             new("b", "Beta"),
         };
-        var cut = RenderComponent<TmSelect<string>>(p => p
+        var cut = Render<TmSelect<string>>(p => p
             .Add(c => c.Options, options)
             .Add(c => c.Placeholder, "Choose..."));
 
@@ -171,7 +171,7 @@ public class TmSelectTests : LocalizationTestBase
             new("a", "Alpha"),
             new("b", "Beta", isDisabled: true),
         };
-        var cut = RenderComponent<TmSelect<string>>(p => p.Add(c => c.Options, options));
+        var cut = Render<TmSelect<string>>(p => p.Add(c => c.Options, options));
 
         var rendered = cut.FindAll("option");
         rendered[0].HasAttribute("disabled").Should().BeFalse();
@@ -187,7 +187,7 @@ public class TmSelectTests : LocalizationTestBase
             new("x", "Option X"),
             new("y", "Option Y"),
         };
-        var cut = RenderComponent<TmSelect<string>>(p => p
+        var cut = Render<TmSelect<string>>(p => p
             .Add(c => c.Options, options)
             .Add(c => c.ValueChanged, EventCallback.Factory.Create<string?>(this, v => captured = v)));
 
@@ -203,7 +203,7 @@ public class TmSelectTests : LocalizationTestBase
         {
             new("a", "From Options"),
         };
-        var cut = RenderComponent<TmSelect<string>>(p => p
+        var cut = Render<TmSelect<string>>(p => p
             .Add(c => c.Options, options)
             .AddChildContent("<option value='b'>From Child</option>"));
 
@@ -216,14 +216,14 @@ public class TmSelectTests : LocalizationTestBase
     [Fact]
     public void TmSelect_Required_SetsAriaRequiredOnSelectElement()
     {
-        var cut = RenderComponent<TmSelect<string>>(p => p.Add(c => c.Required, true));
+        var cut = Render<TmSelect<string>>(p => p.Add(c => c.Required, true));
         cut.Find("select").GetAttribute("aria-required").Should().Be("true");
     }
 
     [Fact]
     public void TmSelect_Required_AddsRequiredMarkerClassToLabel()
     {
-        var cut = RenderComponent<TmSelect<string>>(p => p
+        var cut = Render<TmSelect<string>>(p => p
             .Add(c => c.Label, "Status")
             .Add(c => c.Required, true));
         cut.Find("label").ClassList.Should().Contain("tm-input-label-required");
@@ -232,7 +232,7 @@ public class TmSelectTests : LocalizationTestBase
     [Fact]
     public void TmSelect_NotRequired_HasNoAriaRequiredAndNoMarker()
     {
-        var cut = RenderComponent<TmSelect<string>>(p => p.Add(c => c.Label, "Status"));
+        var cut = Render<TmSelect<string>>(p => p.Add(c => c.Label, "Status"));
         cut.Find("select").HasAttribute("aria-required").Should().BeFalse();
         cut.Find("label").ClassList.Should().NotContain("tm-input-label-required");
     }

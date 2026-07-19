@@ -11,7 +11,7 @@ public sealed class TmDocumentTableToolbarTests : LocalizationTestBase
     [Fact]
     public void Toolbar_RendersTableCommands()
     {
-        var cut = RenderComponent<TmDocumentTableToolbar>();
+        var cut = Render<TmDocumentTableToolbar>();
 
         cut.Find("[data-testid='document-table-toolbar']").Should().NotBeNull();
         cut.Find("[data-testid='document-table-toolbar-insert-row-before']").Should().NotBeNull();
@@ -30,7 +30,7 @@ public sealed class TmDocumentTableToolbarTests : LocalizationTestBase
     public void TablePropertiesPanel_RaisesLayoutChanged()
     {
         TableLayoutContent? received = null;
-        var cut = RenderComponent<TmDocumentTablePropertiesPanel>(parameters => parameters
+        var cut = Render<TmDocumentTablePropertiesPanel>(parameters => parameters
             .Add(p => p.Layout, new TableLayoutContent { Width = 320, Alignment = TableHorizontalAlignment.Left })
             .Add(p => p.LayoutChanged, value => received = value));
 
@@ -43,7 +43,7 @@ public sealed class TmDocumentTableToolbarTests : LocalizationTestBase
     [Fact]
     public void TablePropertiesPanel_TestIdRoot_DrivesTestIds()
     {
-        var cut = RenderComponent<TmDocumentTablePropertiesPanel>(parameters => parameters
+        var cut = Render<TmDocumentTablePropertiesPanel>(parameters => parameters
             .Add(p => p.Layout, new TableLayoutContent { Width = 200 })
             .Add(p => p.TestIdRoot, "tbl"));
 
@@ -55,7 +55,7 @@ public sealed class TmDocumentTableToolbarTests : LocalizationTestBase
     [Fact]
     public void TablePropertiesPanel_DeprecatedTestIdPrefix_ForwardsToTestIdRoot()
     {
-        var cut = RenderComponent<TmDocumentTablePropertiesPanel>(parameters => parameters
+        var cut = Render<TmDocumentTablePropertiesPanel>(parameters => parameters
             .Add(p => p.Layout, new TableLayoutContent { Width = 200 })
             .Add(p => p.TestIdPrefix, "legacy"));
 
@@ -66,7 +66,7 @@ public sealed class TmDocumentTableToolbarTests : LocalizationTestBase
     [Fact]
     public void TablePropertiesPanel_RendersAlignmentControls()
     {
-        var cut = RenderComponent<TmDocumentTablePropertiesPanel>(parameters => parameters
+        var cut = Render<TmDocumentTablePropertiesPanel>(parameters => parameters
             .Add(p => p.Layout, new TableLayoutContent { Alignment = TableHorizontalAlignment.Center }));
 
         cut.Find("[data-testid='document-table-properties-align-left']").Should().NotBeNull();
@@ -79,7 +79,7 @@ public sealed class TmDocumentTableToolbarTests : LocalizationTestBase
     public void CellPropertiesPanel_RaisesCellChanged()
     {
         TableCellContent? received = null;
-        var cut = RenderComponent<TmDocumentCellPropertiesPanel>(parameters => parameters
+        var cut = Render<TmDocumentCellPropertiesPanel>(parameters => parameters
             .Add(p => p.Cell, new TableCellContent { Id = "cell-1" })
             .Add(p => p.CellChanged, value => received = value));
 
@@ -92,7 +92,7 @@ public sealed class TmDocumentTableToolbarTests : LocalizationTestBase
     [Fact]
     public void CellPropertiesPanel_RendersSpanInfo()
     {
-        var cut = RenderComponent<TmDocumentCellPropertiesPanel>(parameters => parameters
+        var cut = Render<TmDocumentCellPropertiesPanel>(parameters => parameters
             .Add(p => p.Cell, new TableCellContent { ColumnSpan = 2, RowSpan = 3 }));
 
         cut.Find("[data-testid='document-cell-properties-span-info']")

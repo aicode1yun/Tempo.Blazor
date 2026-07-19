@@ -37,7 +37,7 @@ public class TmMultiViewListSelectionTests : LocalizationTestBase
     [Fact]
     public void AllowSelection_False_NoCheckboxes_InTableView()
     {
-        var cut = RenderComponent<TmMultiViewList<SelItem>>(p => p
+        var cut = Render<TmMultiViewList<SelItem>>(p => p
             .Add(c => c.Items, Items())
             .Add(c => c.AllowSelection, false));
 
@@ -47,7 +47,7 @@ public class TmMultiViewListSelectionTests : LocalizationTestBase
     [Fact]
     public void AllowSelection_False_NoCheckboxes_InCardView()
     {
-        var cut = RenderComponent<TmMultiViewList<SelItem>>(p => p
+        var cut = Render<TmMultiViewList<SelItem>>(p => p
             .Add(c => c.Items, Items())
             .Add(c => c.AllowSelection, false));
 
@@ -59,7 +59,7 @@ public class TmMultiViewListSelectionTests : LocalizationTestBase
     [Fact]
     public void AllowSelection_False_NoCheckboxes_InListView()
     {
-        var cut = RenderComponent<TmMultiViewList<SelItem>>(p => p
+        var cut = Render<TmMultiViewList<SelItem>>(p => p
             .Add(c => c.Items, Items())
             .Add(c => c.AllowSelection, false));
 
@@ -73,7 +73,7 @@ public class TmMultiViewListSelectionTests : LocalizationTestBase
     [Fact]
     public void AllowSelection_True_ShowsCheckboxes_InTableView()
     {
-        var cut = RenderComponent<TmMultiViewList<SelItem>>(p => p
+        var cut = Render<TmMultiViewList<SelItem>>(p => p
             .Add(c => c.Items, Items())
             .Add(c => c.AllowSelection, true));
 
@@ -85,7 +85,7 @@ public class TmMultiViewListSelectionTests : LocalizationTestBase
     public void AllowSelection_CheckRow_AddsIdToSelectedIds()
     {
         HashSet<string>? captured = null;
-        var cut = RenderComponent<TmMultiViewList<SelItem>>(p => p
+        var cut = Render<TmMultiViewList<SelItem>>(p => p
             .Add(c => c.Items, Items())
             .Add(c => c.AllowSelection, true)
             .Add(c => c.SelectedIdsChanged,
@@ -104,7 +104,7 @@ public class TmMultiViewListSelectionTests : LocalizationTestBase
         var selectedIds = new HashSet<string> { "1" };
         HashSet<string>? captured = null;
 
-        var cut = RenderComponent<TmMultiViewList<SelItem>>(p => p
+        var cut = Render<TmMultiViewList<SelItem>>(p => p
             .Add(c => c.Items, Items())
             .Add(c => c.AllowSelection, true)
             .Add(c => c.SelectedIds, selectedIds)
@@ -123,7 +123,7 @@ public class TmMultiViewListSelectionTests : LocalizationTestBase
     {
         HashSet<string>? captured = null;
         var items = Items(3);
-        var cut = RenderComponent<TmMultiViewList<SelItem>>(p => p
+        var cut = Render<TmMultiViewList<SelItem>>(p => p
             .Add(c => c.Items, items)
             .Add(c => c.AllowSelection, true)
             .Add(c => c.SelectedIdsChanged,
@@ -142,7 +142,7 @@ public class TmMultiViewListSelectionTests : LocalizationTestBase
         var allIds = new HashSet<string> { "1", "2", "3" };
         HashSet<string>? captured = null;
 
-        var cut = RenderComponent<TmMultiViewList<SelItem>>(p => p
+        var cut = Render<TmMultiViewList<SelItem>>(p => p
             .Add(c => c.Items, Items(3))
             .Add(c => c.AllowSelection, true)
             .Add(c => c.SelectedIds, allIds)
@@ -161,7 +161,7 @@ public class TmMultiViewListSelectionTests : LocalizationTestBase
     [Fact]
     public void AllowSelection_True_ShowsCheckboxes_InCardView()
     {
-        var cut = RenderComponent<TmMultiViewList<SelItem>>(p => p
+        var cut = Render<TmMultiViewList<SelItem>>(p => p
             .Add(c => c.Items, Items())
             .Add(c => c.AllowSelection, true));
 
@@ -174,7 +174,7 @@ public class TmMultiViewListSelectionTests : LocalizationTestBase
     public void AllowSelection_CardCheck_AddsIdToSelectedIds()
     {
         HashSet<string>? captured = null;
-        var cut = RenderComponent<TmMultiViewList<SelItem>>(p => p
+        var cut = Render<TmMultiViewList<SelItem>>(p => p
             .Add(c => c.Items, Items())
             .Add(c => c.AllowSelection, true)
             .Add(c => c.SelectedIdsChanged,
@@ -192,7 +192,7 @@ public class TmMultiViewListSelectionTests : LocalizationTestBase
     [Fact]
     public void AllowSelection_True_ShowsCheckboxes_InListView()
     {
-        var cut = RenderComponent<TmMultiViewList<SelItem>>(p => p
+        var cut = Render<TmMultiViewList<SelItem>>(p => p
             .Add(c => c.Items, Items())
             .Add(c => c.AllowSelection, true));
 
@@ -205,7 +205,7 @@ public class TmMultiViewListSelectionTests : LocalizationTestBase
     public void AllowSelection_ListCheck_AddsIdToSelectedIds()
     {
         HashSet<string>? captured = null;
-        var cut = RenderComponent<TmMultiViewList<SelItem>>(p => p
+        var cut = Render<TmMultiViewList<SelItem>>(p => p
             .Add(c => c.Items, Items())
             .Add(c => c.AllowSelection, true)
             .Add(c => c.SelectedIdsChanged,
@@ -223,7 +223,7 @@ public class TmMultiViewListSelectionTests : LocalizationTestBase
     [Fact]
     public void AllowSelection_SelectedRow_HasSelectedClass()
     {
-        var cut = RenderComponent<TmMultiViewList<SelItem>>(p => p
+        var cut = Render<TmMultiViewList<SelItem>>(p => p
             .Add(c => c.Items, Items())
             .Add(c => c.AllowSelection, true)
             .Add(c => c.SelectedIds, new HashSet<string> { "1" }));
@@ -234,7 +234,7 @@ public class TmMultiViewListSelectionTests : LocalizationTestBase
     [Fact]
     public void AllowSelection_SelectedCard_HasSelectedClass()
     {
-        var cut = RenderComponent<TmMultiViewList<SelItem>>(p => p
+        var cut = Render<TmMultiViewList<SelItem>>(p => p
             .Add(c => c.Items, Items())
             .Add(c => c.AllowSelection, true)
             .Add(c => c.SelectedIds, new HashSet<string> { "2" }));
@@ -247,7 +247,7 @@ public class TmMultiViewListSelectionTests : LocalizationTestBase
     [Fact]
     public void AllowSelection_SelectedListItem_HasSelectedClass()
     {
-        var cut = RenderComponent<TmMultiViewList<SelItem>>(p => p
+        var cut = Render<TmMultiViewList<SelItem>>(p => p
             .Add(c => c.Items, Items())
             .Add(c => c.AllowSelection, true)
             .Add(c => c.SelectedIds, new HashSet<string> { "3" }));

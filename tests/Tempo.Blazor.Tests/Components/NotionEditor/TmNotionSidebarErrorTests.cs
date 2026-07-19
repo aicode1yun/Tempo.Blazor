@@ -98,12 +98,12 @@ public sealed class TmNotionSidebarErrorTests : LocalizationTestBase
     }
 
     private IRenderedComponent<CascadingValue<NotionEditorContext>> RenderSidebar(NotionEditorContext context)
-        => RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        => Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(component => component.Value, context)
             .AddChildContent<TmNotionSidebar>());
 
     private IRenderedComponent<CascadingValue<NotionEditorContext>> RenderTrash(NotionEditorContext context)
-        => RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        => Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(component => component.Value, context)
             .AddChildContent<TmNotionSidebarTrash>());
 

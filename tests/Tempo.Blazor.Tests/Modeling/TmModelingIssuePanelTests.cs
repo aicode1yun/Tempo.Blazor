@@ -11,7 +11,7 @@ public sealed class TmModelingIssuePanelTests : LocalizationTestBase
     [Fact]
     public void Renders_issue_count_and_items()
     {
-        using var cut = RenderComponent<TmModelingIssuePanel>(parameters => parameters
+        using var cut = Render<TmModelingIssuePanel>(parameters => parameters
             .Add(p => p.Issues, CreateIssues()));
 
         cut.Find("[data-testid='modeling-issue-panel']").GetAttribute("data-issue-count").Should().Be("3");
@@ -22,7 +22,7 @@ public sealed class TmModelingIssuePanelTests : LocalizationTestBase
     public void Clicking_issue_emits_source_element_id()
     {
         ModelingIssueDto? selected = null;
-        using var cut = RenderComponent<TmModelingIssuePanel>(parameters => parameters
+        using var cut = Render<TmModelingIssuePanel>(parameters => parameters
             .Add(p => p.Issues, CreateIssues())
             .Add(p => p.OnIssueSelected, EventCallback.Factory.Create<ModelingIssueDto>(this, issue => selected = issue)));
 
@@ -35,7 +35,7 @@ public sealed class TmModelingIssuePanelTests : LocalizationTestBase
     [Fact]
     public void Severity_classes_match_each_issue_type()
     {
-        using var cut = RenderComponent<TmModelingIssuePanel>(parameters => parameters
+        using var cut = Render<TmModelingIssuePanel>(parameters => parameters
             .Add(p => p.Issues, CreateIssues()));
 
         cut.Find("[data-severity='info']").ClassList.Should().Contain("tm-modeling-issue-panel__item--info");
@@ -49,7 +49,7 @@ public sealed class TmModelingIssuePanelTests : LocalizationTestBase
     [Fact]
     public void Empty_issues_render_positive_empty_state()
     {
-        using var cut = RenderComponent<TmModelingIssuePanel>(parameters => parameters
+        using var cut = Render<TmModelingIssuePanel>(parameters => parameters
             .Add(p => p.Issues, Array.Empty<ModelingIssueDto>()));
 
         cut.Find("[data-testid='modeling-issue-empty']").TextContent.Should().Contain("No issues found");
@@ -60,7 +60,7 @@ public sealed class TmModelingIssuePanelTests : LocalizationTestBase
     public void Issue_without_source_is_ignored_on_click()
     {
         var selectedCount = 0;
-        using var cut = RenderComponent<TmModelingIssuePanel>(parameters => parameters
+        using var cut = Render<TmModelingIssuePanel>(parameters => parameters
             .Add(p => p.Issues, new[] { new ModelingIssueDto { Id = "orphan", Message = "No source" } })
             .Add(p => p.OnIssueSelected, EventCallback.Factory.Create<ModelingIssueDto>(this, _ => selectedCount++)));
 
@@ -82,7 +82,7 @@ public sealed class TmModelingIssuePanelTests : LocalizationTestBase
             })
             .ToArray();
 
-        using var cut = RenderComponent<TmModelingIssuePanel>(parameters => parameters
+        using var cut = Render<TmModelingIssuePanel>(parameters => parameters
             .Add(p => p.Issues, issues));
 
         cut.Find("[data-testid='modeling-issue-panel']").GetAttribute("data-issue-count").Should().Be("128");
@@ -93,7 +93,7 @@ public sealed class TmModelingIssuePanelTests : LocalizationTestBase
     public void Long_message_uses_wrapping_message_element()
     {
         var message = new string('A', 500);
-        using var cut = RenderComponent<TmModelingIssuePanel>(parameters => parameters
+        using var cut = Render<TmModelingIssuePanel>(parameters => parameters
             .Add(p => p.Issues, new[] { new ModelingIssueDto { Id = "long", SourceElementId = "task-long", Message = message } }));
 
         var messageElement = cut.Find(".tm-modeling-issue-panel__message");

@@ -10,7 +10,7 @@ public class TmSubmissionStatusTimelineTests : LocalizationTestBase
     [Fact]
     public void Render_MapsCoreLifecycleEvents()
     {
-        var cut = RenderComponent<TmSubmissionStatusTimeline>(parameters => parameters
+        var cut = Render<TmSubmissionStatusTimeline>(parameters => parameters
             .Add(p => p.Events,
             [
                 CreateEvent(SigningSubmissionStatusEventType.Sent, "Alex"),
@@ -29,7 +29,7 @@ public class TmSubmissionStatusTimelineTests : LocalizationTestBase
     [Fact]
     public void Render_EmailAndVerificationEventsWithMetadata()
     {
-        var cut = RenderComponent<TmSubmissionStatusTimeline>(parameters => parameters
+        var cut = Render<TmSubmissionStatusTimeline>(parameters => parameters
             .Add(p => p.Events,
             [
                 CreateEvent(SigningSubmissionStatusEventType.EmailBounced, "Alex", new Dictionary<string, string> { ["SMTP"] = "550" }),

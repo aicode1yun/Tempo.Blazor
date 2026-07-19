@@ -24,7 +24,7 @@ public class WireframeConnectorRenderTests : LocalizationTestBase
         doc.EnsureActivePage();
         doc.Elements.Add(new WireframeElement { Id = "e1", Type = "TmButton", X = 0, Y = 0, W = 100, H = 40 });
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(parameters =>
+        var cut = Render<TmWireframeDesignerCanvas>(parameters =>
             parameters.Add(p => p.Document, doc));
 
         cut.FindAll("[data-connector-id]").Should().BeEmpty();
@@ -39,7 +39,7 @@ public class WireframeConnectorRenderTests : LocalizationTestBase
         doc.Elements.Add(new WireframeElement { Id = "e2", Type = "TmButton", X = 200, Y = 0, W = 100, H = 40 });
         doc.Connectors.Add(new WireframeConnector { FromId = "e1", ToId = "e2", Routing = "straight" });
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(parameters =>
+        var cut = Render<TmWireframeDesignerCanvas>(parameters =>
             parameters.Add(p => p.Document, doc));
 
         var groups = cut.FindAll("[data-connector-id]");
@@ -59,7 +59,7 @@ public class WireframeConnectorRenderTests : LocalizationTestBase
         doc.Elements.Add(new WireframeElement { Id = "e2", Type = "TmButton", X = 200, Y = 0, W = 100, H = 40 });
         doc.Connectors.Add(new WireframeConnector { FromId = "e1", ToId = "e2" });
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(parameters =>
+        var cut = Render<TmWireframeDesignerCanvas>(parameters =>
             parameters.Add(p => p.Document, doc));
 
         var hit = cut.Find(".tm-wd-connector__hit");
@@ -77,7 +77,7 @@ public class WireframeConnectorRenderTests : LocalizationTestBase
         var conn = new WireframeConnector { FromId = "e1", ToId = "e2", EndArrow = "classic" };
         doc.Connectors.Add(conn);
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(parameters =>
+        var cut = Render<TmWireframeDesignerCanvas>(parameters =>
             parameters.Add(p => p.Document, doc));
 
         var defs = cut.Find("defs");
@@ -94,7 +94,7 @@ public class WireframeConnectorRenderTests : LocalizationTestBase
         doc.Elements.Add(new WireframeElement { Id = "e2", Type = "TmButton", X = 200, Y = 0, W = 100, H = 40 });
         doc.Connectors.Add(new WireframeConnector { FromId = "e1", ToId = "e2", Label = "Click me" });
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(parameters =>
+        var cut = Render<TmWireframeDesignerCanvas>(parameters =>
             parameters.Add(p => p.Document, doc));
 
         var text = cut.Find(".tm-wd-connector__label");
@@ -111,7 +111,7 @@ public class WireframeConnectorRenderTests : LocalizationTestBase
         var conn = new WireframeConnector { FromId = "e1", ToId = "e2" };
         doc.Connectors.Add(conn);
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(parameters =>
+        var cut = Render<TmWireframeDesignerCanvas>(parameters =>
             parameters.Add(p => p.Document, doc));
 
         // Simulate selection by invoking the JS callback
@@ -134,7 +134,7 @@ public class WireframeConnectorRenderTests : LocalizationTestBase
         doc.Connectors.Add(new WireframeConnector { FromId = "e1", ToId = "e2" });
         doc.Connectors.Add(new WireframeConnector { FromId = "e2", ToId = "e3" });
 
-        var cut = RenderComponent<TmWireframeDesignerCanvas>(parameters =>
+        var cut = Render<TmWireframeDesignerCanvas>(parameters =>
             parameters.Add(p => p.Document, doc));
 
         cut.FindAll("[data-connector-id]").Should().HaveCount(2);

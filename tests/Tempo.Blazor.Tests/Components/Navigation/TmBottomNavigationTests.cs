@@ -11,7 +11,7 @@ public class TmBottomNavigationTests : LocalizationTestBase
     [Fact]
     public void TmBottomNavigation_Renders_Items()
     {
-        var cut = RenderComponent<TmBottomNavigation>(p => p
+        var cut = Render<TmBottomNavigation>(p => p
             .Add(x => x.Items, new[]
             {
                 new BottomNavItem { Text = "Home", Icon = "home" },
@@ -33,7 +33,7 @@ public class TmBottomNavigationTests : LocalizationTestBase
             new BottomNavItem { Text = "Search", Icon = "search", Href = "/search" }
         };
 
-        var cut = RenderComponent<TmBottomNavigation>(p => p
+        var cut = Render<TmBottomNavigation>(p => p
             .Add(x => x.Items, items)
             .Add(x => x.OnItemClick, EventCallback.Factory.Create<BottomNavItem>(this, i => clicked = i)));
 
@@ -50,7 +50,7 @@ public class TmBottomNavigationTests : LocalizationTestBase
             new BottomNavItem { Text = "Search", Icon = "search" }
         };
 
-        var cut = RenderComponent<TmBottomNavigation>(p => p
+        var cut = Render<TmBottomNavigation>(p => p
             .Add(x => x.Items, items)
             .Add(x => x.SelectedItem, items[1]));
 
@@ -66,7 +66,7 @@ public class TmBottomNavigationTests : LocalizationTestBase
             new BottomNavItem { Text = "Home", Icon = "home", Href = "/home" }
         };
 
-        var cut = RenderComponent<TmBottomNavigation>(p => p
+        var cut = Render<TmBottomNavigation>(p => p
             .Add(x => x.Items, items));
 
         cut.Find("a.tm-bottom-nav__link").Should().NotBeNull();

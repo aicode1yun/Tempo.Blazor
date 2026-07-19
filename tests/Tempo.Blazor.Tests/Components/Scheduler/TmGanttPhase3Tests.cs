@@ -121,7 +121,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     public void TmGantt_Has_AutoSchedule_Parameter()
     {
         var tasks = new[] { T("1", 1, 5) };
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, tasks)
             .Add(x => x.AutoSchedule, true));
 
@@ -137,7 +137,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
         var tasks = new[] { predecessor, successor };
         var deps = new[] { Dep("1", "2") };
 
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, tasks)
             .Add(x => x.DependencyItems, deps)
             .Add(x => x.AutoSchedule, true)
@@ -215,7 +215,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Has_ShowCriticalPath_Parameter()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.ShowCriticalPath, true));
 
@@ -227,7 +227,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         // Single task with no deps: it IS the only task, so it's on the critical path
         var task = T("1", 1, 5);
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, new[] { task })
             .Add(x => x.ShowCriticalPath, true));
 
@@ -269,7 +269,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     public void TmGantt_Has_Baselines_And_ActiveBaselineId_Parameters()
     {
         var baseline = new GanttBaseline { Id = "b1", Name = "Baseline 1" };
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.Baselines, new[] { baseline })
             .Add(x => x.ActiveBaselineId, "b1"));
@@ -293,7 +293,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
             Tasks = new[] { baselineTask }
         };
 
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, new[] { task })
             .Add(x => x.Baselines, new[] { baseline })
             .Add(x => x.ActiveBaselineId, "b1"));
@@ -317,7 +317,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
             Tasks = new[] { baselineTask }
         };
 
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, new[] { task })
             .Add(x => x.Baselines, new[] { baseline })
             .Add(x => x.ActiveBaselineId, "b1"));
@@ -331,7 +331,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     {
         GanttBaseline? savedBaseline = null;
         var task = T("1", 1, 5);
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, new[] { task })
             .Add(x => x.OnBaselineSaved, (GanttBaseline b) => savedBaseline = b));
 
@@ -390,7 +390,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     public void TmGantt_Has_CustomFields_Parameter()
     {
         var field = new TmCustomFieldDefinition { Id = "f1", Name = "Notes", Type = TmCustomFieldType.Text };
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.CustomFields, new[] { field }));
 
@@ -401,7 +401,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     public void TmGantt_CustomField_Text_Renders_In_Header()
     {
         var field = new TmCustomFieldDefinition { Id = "f1", Name = "Notes", Type = TmCustomFieldType.Text };
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.CustomFields, new[] { field }));
 
@@ -418,7 +418,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
         };
         var field = new TmCustomFieldDefinition { Id = "f1", Name = "Notes", Type = TmCustomFieldType.Text };
 
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, new[] { task })
             .Add(x => x.CustomFields, new[] { field }));
 
@@ -434,7 +434,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
         };
         var field = new TmCustomFieldDefinition { Id = "f1", Name = "Notes", Type = TmCustomFieldType.Text };
 
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, new[] { task })
             .Add(x => x.CustomFields, new[] { field }));
 
@@ -456,7 +456,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
         };
         var field = new TmCustomFieldDefinition { Id = "f1", Name = "Notes", Type = TmCustomFieldType.Text };
 
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, new[] { task })
             .Add(x => x.CustomFields, new[] { field })
             .Add(x => x.OnCustomFieldChanged, ((string tid, string fid, string? v) args) =>
@@ -587,7 +587,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     public void TmGantt_Has_Filters_Parameter()
     {
         var filter = new GanttFilter("Status", GanttFilterOperator.Equals, "Done");
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.Filters, new[] { filter }));
 
@@ -604,7 +604,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
         };
         var filter = new GanttFilter("Status", GanttFilterOperator.Equals, "Done");
 
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, tasks)
             .Add(x => x.Filters, new[] { filter }));
 
@@ -616,7 +616,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Renders_Filter_Button_In_Toolbar()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>()));
 
         cut.Find("[data-testid='gantt-filter-btn']").Should().NotBeNull();
@@ -625,7 +625,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     [Fact]
     public void TmGantt_Filter_Panel_Toggles_On_Filter_Button_Click()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>()));
 
         cut.Find("[data-testid='gantt-filter-btn']").Click();
@@ -638,7 +638,7 @@ public class TmGanttPhase3Tests : LocalizationTestBase
     public void TmGantt_OnFiltersChanged_Fires_When_Filter_Applied()
     {
         IReadOnlyList<GanttFilter>? firedFilters = null;
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(x => x.Items, Array.Empty<TmWorkItem>())
             .Add(x => x.OnFiltersChanged,
                 (IReadOnlyList<GanttFilter> f) => firedFilters = f));

@@ -36,7 +36,7 @@ public class ArcSizeTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -65,7 +65,7 @@ public class ArcSizeTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+        var cut = Render<TmDiagramPropertiesPanel>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.SelectedIds, [edge.Id])
             .Add(c => c.ReadOnly, false));

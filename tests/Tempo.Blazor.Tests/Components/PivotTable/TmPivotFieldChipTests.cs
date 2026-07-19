@@ -23,7 +23,7 @@ public class TmPivotFieldChipTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldChip_Render_DisplaysFieldTitle()
     {
-        var cut = RenderComponent<TmPivotFieldChip<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldChip<Transaction>>(parameters => parameters
             .Add(p => p.Field, CategoryField)
             .Add(p => p.Area, PivotArea.Unused)
         );
@@ -40,7 +40,7 @@ public class TmPivotFieldChipTests : LocalizationTestBase
     [InlineData(PivotArea.Filter, "tm-pivot-field-chip--filter")]
     public void TmPivotFieldChip_Area_AppliesCorrectCssClass(PivotArea area, string expectedClass)
     {
-        var cut = RenderComponent<TmPivotFieldChip<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldChip<Transaction>>(parameters => parameters
             .Add(p => p.Field, CategoryField)
             .Add(p => p.Area, area)
         );
@@ -52,7 +52,7 @@ public class TmPivotFieldChipTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldChip_WithShowRemove_DisplaysRemoveButton()
     {
-        var cut = RenderComponent<TmPivotFieldChip<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldChip<Transaction>>(parameters => parameters
             .Add(p => p.Field, CategoryField)
             .Add(p => p.Area, PivotArea.Row)
             .Add(p => p.ShowRemove, true)
@@ -65,7 +65,7 @@ public class TmPivotFieldChipTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldChip_WithoutShowRemove_HidesRemoveButton()
     {
-        var cut = RenderComponent<TmPivotFieldChip<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldChip<Transaction>>(parameters => parameters
             .Add(p => p.Field, CategoryField)
             .Add(p => p.Area, PivotArea.Row)
             .Add(p => p.ShowRemove, false)
@@ -77,7 +77,7 @@ public class TmPivotFieldChipTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldChip_WithShowSettings_DisplaysSettingsButton()
     {
-        var cut = RenderComponent<TmPivotFieldChip<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldChip<Transaction>>(parameters => parameters
             .Add(p => p.Field, CategoryField)
             .Add(p => p.Area, PivotArea.Data)
             .Add(p => p.ShowSettings, true)
@@ -90,7 +90,7 @@ public class TmPivotFieldChipTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldChip_WithoutShowSettings_HidesSettingsButton()
     {
-        var cut = RenderComponent<TmPivotFieldChip<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldChip<Transaction>>(parameters => parameters
             .Add(p => p.Field, CategoryField)
             .Add(p => p.Area, PivotArea.Data)
             .Add(p => p.ShowSettings, false)
@@ -108,7 +108,7 @@ public class TmPivotFieldChipTests : LocalizationTestBase
     {
         var clicked = false;
 
-        var cut = RenderComponent<TmPivotFieldChip<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldChip<Transaction>>(parameters => parameters
             .Add(p => p.Field, CategoryField)
             .Add(p => p.Area, PivotArea.Row)
             .Add(p => p.ShowRemove, true)
@@ -126,7 +126,7 @@ public class TmPivotFieldChipTests : LocalizationTestBase
     {
         var clicked = false;
 
-        var cut = RenderComponent<TmPivotFieldChip<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldChip<Transaction>>(parameters => parameters
             .Add(p => p.Field, CategoryField)
             .Add(p => p.Area, PivotArea.Data)
             .Add(p => p.ShowSettings, true)
@@ -142,7 +142,7 @@ public class TmPivotFieldChipTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldChip_WithAllowDragDrop_SetsDraggableTrue()
     {
-        var cut = RenderComponent<TmPivotFieldChip<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldChip<Transaction>>(parameters => parameters
             .Add(p => p.Field, CategoryField)
             .Add(p => p.Area, PivotArea.Unused)
             .Add(p => p.AllowDragDrop, true)
@@ -155,7 +155,7 @@ public class TmPivotFieldChipTests : LocalizationTestBase
     [Fact]
     public void TmPivotFieldChip_WithoutAllowDragDrop_SetsDraggableFalse()
     {
-        var cut = RenderComponent<TmPivotFieldChip<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotFieldChip<Transaction>>(parameters => parameters
             .Add(p => p.Field, CategoryField)
             .Add(p => p.Area, PivotArea.Unused)
             .Add(p => p.AllowDragDrop, false)

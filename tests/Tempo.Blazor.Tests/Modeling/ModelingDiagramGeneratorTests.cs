@@ -361,7 +361,7 @@ public sealed class ModelingDiagramGeneratorTests : LocalizationTestBase
             [Relationship("flow-a-b", "task-a", "task-b", "sequenceFlow")]);
         var document = generator.Generate(model).Document!;
 
-        var cut = RenderComponent<TmDiagramEditor>(parameters => parameters
+        var cut = Render<TmDiagramEditor>(parameters => parameters
             .Add(editor => editor.Document, document)
             .Add(editor => editor.ReadOnly, true)
             .Add(editor => editor.ShowToolbar, false)

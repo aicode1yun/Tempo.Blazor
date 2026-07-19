@@ -13,7 +13,7 @@ public class TmActivityLogAccessibilityTests : LocalizationTestBase
     [Fact]
     public void ActivityLog_TabButtons_HaveIds()
     {
-        var cut = RenderComponent<TmActivityLog>(p => p
+        var cut = Render<TmActivityLog>(p => p
             .Add(x => x.ShowTimeline, true)
             .Add(x => x.ShowComments, true)
             .Add(x => x.ShowAttachments, true)
@@ -37,7 +37,7 @@ public class TmActivityLogAccessibilityTests : LocalizationTestBase
     [Fact]
     public void ActivityLog_TabPanel_HasAriaLabelledBy()
     {
-        var cut = RenderComponent<TmActivityLog>(p => p
+        var cut = Render<TmActivityLog>(p => p
             .Add(x => x.ShowTimeline, true)
             .Add(x => x.ShowComments, true)
             .Add(x => x.ShowAttachments, true)

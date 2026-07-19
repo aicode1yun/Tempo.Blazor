@@ -13,7 +13,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Renders_Container()
     {
-        var cut = RenderComponent<TmScheduler>();
+        var cut = Render<TmScheduler>();
 
         cut.Find(".tm-scheduler").Should().NotBeNull();
     }
@@ -21,7 +21,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Renders_Toolbar()
     {
-        var cut = RenderComponent<TmScheduler>();
+        var cut = Render<TmScheduler>();
 
         cut.Find(".tm-scheduler-toolbar").Should().NotBeNull();
     }
@@ -29,7 +29,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Toolbar_Shows_Navigation_Buttons()
     {
-        var cut = RenderComponent<TmScheduler>();
+        var cut = Render<TmScheduler>();
 
         cut.Find("[data-testid='scheduler-prev']").Should().NotBeNull();
         cut.Find("[data-testid='scheduler-today']").Should().NotBeNull();
@@ -39,7 +39,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Toolbar_Shows_View_Switcher()
     {
-        var cut = RenderComponent<TmScheduler>();
+        var cut = Render<TmScheduler>();
 
         cut.FindAll(".tm-scheduler-toolbar-view-btn").Count.Should().BeGreaterThanOrEqualTo(4);
     }
@@ -48,7 +48,7 @@ public class TmSchedulerTests : LocalizationTestBase
     public void View_Switcher_Changes_View()
     {
         TmScheduleViewType view = TmScheduleViewType.Month;
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Month)
             .Add(c => c.ViewChanged, EventCallback.Factory.Create<TmScheduleViewType>(this, v => view = v)));
 
@@ -63,7 +63,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Active_View_Button_Has_Active_Class()
     {
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Month));
 
         var monthBtn = cut.FindAll(".tm-scheduler-toolbar-view-btn")
@@ -75,7 +75,7 @@ public class TmSchedulerTests : LocalizationTestBase
     public void Next_Navigation_Changes_Date()
     {
         DateTime date = new DateTime(2025, 6, 15);
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Month)
             .Add(c => c.CurrentDate, date)
             .Add(c => c.CurrentDateChanged, EventCallback.Factory.Create<DateTime>(this, d => date = d)));
@@ -89,7 +89,7 @@ public class TmSchedulerTests : LocalizationTestBase
     public void Prev_Navigation_Changes_Date()
     {
         DateTime date = new DateTime(2025, 6, 15);
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Month)
             .Add(c => c.CurrentDate, date)
             .Add(c => c.CurrentDateChanged, EventCallback.Factory.Create<DateTime>(this, d => date = d)));
@@ -103,7 +103,7 @@ public class TmSchedulerTests : LocalizationTestBase
     public void Today_Navigation_Returns_To_Today()
     {
         DateTime date = new DateTime(2025, 1, 1);
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Month)
             .Add(c => c.CurrentDate, date)
             .Add(c => c.CurrentDateChanged, EventCallback.Factory.Create<DateTime>(this, d => date = d)));
@@ -116,7 +116,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Applies_Custom_Class()
     {
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.Class, "my-scheduler"));
 
         cut.Find(".tm-scheduler").ClassList.Should().Contain("my-scheduler");
@@ -125,7 +125,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Default_View_Is_Month()
     {
-        var cut = RenderComponent<TmScheduler>();
+        var cut = Render<TmScheduler>();
 
         cut.FindAll(".tm-scheduler-month").Count.Should().Be(1);
     }
@@ -133,7 +133,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Displays_Month_View_When_View_Is_Month()
     {
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Month));
 
         cut.FindAll(".tm-scheduler-month").Count.Should().Be(1);
@@ -143,7 +143,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Displays_Agenda_View_When_View_Is_Agenda()
     {
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Agenda));
 
         cut.FindAll(".tm-scheduler-agenda").Count.Should().Be(1);
@@ -153,7 +153,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Displays_Day_View_When_View_Is_Day()
     {
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Day));
 
         cut.FindAll(".tm-scheduler-day").Count.Should().Be(1);
@@ -163,7 +163,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Displays_Week_View_When_View_Is_Week()
     {
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Week));
 
         cut.FindAll(".tm-scheduler-week").Count.Should().Be(1);
@@ -174,7 +174,7 @@ public class TmSchedulerTests : LocalizationTestBase
     public void Day_Navigation_Changes_By_One_Day()
     {
         DateTime date = new DateTime(2025, 6, 15);
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Day)
             .Add(c => c.CurrentDate, date)
             .Add(c => c.CurrentDateChanged, EventCallback.Factory.Create<DateTime>(this, d => date = d)));
@@ -188,7 +188,7 @@ public class TmSchedulerTests : LocalizationTestBase
     public void Week_Navigation_Changes_By_Seven_Days()
     {
         DateTime date = new DateTime(2025, 6, 15);
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Week)
             .Add(c => c.CurrentDate, date)
             .Add(c => c.CurrentDateChanged, EventCallback.Factory.Create<DateTime>(this, d => date = d)));
@@ -201,7 +201,7 @@ public class TmSchedulerTests : LocalizationTestBase
     [Fact]
     public void Displays_Timeline_View_When_View_Is_Timeline()
     {
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Timeline));
 
         cut.FindAll(".tm-scheduler-timeline").Count.Should().Be(1);
@@ -222,7 +222,7 @@ public class TmSchedulerTests : LocalizationTestBase
             }
         };
 
-        var cut = RenderComponent<TmScheduler>(p => p
+        var cut = Render<TmScheduler>(p => p
             .Add(c => c.View, TmScheduleViewType.Month)
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 15))
             .Add(c => c.Events, events)

@@ -22,7 +22,7 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
     [Fact]
     public void Toolbar_HomeTabRendersRegistryBackedCommands()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         AssertCommand(cut, "document-save", "save");
         AssertCommand(cut, "document-undo", "undo");
@@ -53,7 +53,7 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
     {
         // Nativní selecty (font-family, font-size, change-case) preventDefault mít NESMÍ —
         // rušil by default akci otevírající popup (Fáze 13, DocumentEditorToolbarDropdownFixTests).
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         foreach (var testId in new[]
         {
@@ -92,7 +92,7 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
     [Fact]
     public void Toolbar_InsertTabRendersRegistryBackedCommands()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
 
@@ -105,7 +105,7 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
     public void Toolbar_InsertTabRendersSymbolPaletteWhenCanvasToolsEnabled()
     {
         string? insertedPreset = null;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ShowSymbolTools, true)
             .Add(p => p.OnInsertSymbol, EventCallback.Factory.Create<string>(this, value => insertedPreset = value)));
 
@@ -125,7 +125,7 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
     public void Toolbar_MathTabRendersEquationGalleryWhenCanvasToolsEnabled()
     {
         string? insertedPreset = null;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ShowEquationTools, true)
             .Add(p => p.OnInsertEquation, EventCallback.Factory.Create<string>(this, value => insertedPreset = value)));
 
@@ -144,7 +144,7 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
     [Fact]
     public void Toolbar_ReviewTabRendersRegistryBackedCommands()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
 
@@ -163,7 +163,7 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
     [Fact]
     public void Toolbar_ViewTabRendersRegistryBackedCommands()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ShowDebugTools, true)
             .Add(p => p.ShowPrintPreviewTools, true)
             .Add(p => p.CanExportPdf, true)
@@ -185,10 +185,10 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
     [Fact]
     public void Toolbar_HeaderFooterContextualTabRendersOnlyInHeaderFooterMode()
     {
-        var bodyCut = RenderComponent<TmDocumentEditorToolbar>();
+        var bodyCut = Render<TmDocumentEditorToolbar>();
         bodyCut.FindAll("[data-testid='document-ribbon-tab-header-footer']").Should().BeEmpty();
 
-        var headerCut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var headerCut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ActiveRegion, "Header"));
 
         headerCut.Find("[data-testid='document-ribbon-tab-header-footer']")

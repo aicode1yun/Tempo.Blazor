@@ -15,7 +15,7 @@ public class TmDataTablePaginationTests : LocalizationTestBase
     [Fact]
     public void DataTable_Pagination_Shows_TmPagination_For_MultiPage()
     {
-        var cut = RenderComponent<TmDataTable<PagePerson>>(p => p
+        var cut = Render<TmDataTable<PagePerson>>(p => p
             .Add(c => c.Items, MakePeople(50))
             .Add(c => c.DefaultPageSize, 10)
             .Add(c => c.ShowPagination, true));
@@ -27,7 +27,7 @@ public class TmDataTablePaginationTests : LocalizationTestBase
     [Fact]
     public void DataTable_Pagination_ShowsOnlyFirstPageRows()
     {
-        var cut = RenderComponent<TmDataTable<PagePerson>>(p => p
+        var cut = Render<TmDataTable<PagePerson>>(p => p
             .Add(c => c.Items, MakePeople(50))
             .Add(c => c.DefaultPageSize, 10));
 
@@ -37,7 +37,7 @@ public class TmDataTablePaginationTests : LocalizationTestBase
     [Fact]
     public void DataTable_Pagination_NextButton_LoadsNextPage()
     {
-        var cut = RenderComponent<TmDataTable<PagePerson>>(p =>
+        var cut = Render<TmDataTable<PagePerson>>(p =>
         {
             p.Add(c => c.Items, MakePeople(30));
             p.Add(c => c.DefaultPageSize, 10);
@@ -58,7 +58,7 @@ public class TmDataTablePaginationTests : LocalizationTestBase
     [Fact]
     public void DataTable_Pagination_PreviousButton_DisabledOnFirstPage()
     {
-        var cut = RenderComponent<TmDataTable<PagePerson>>(p => p
+        var cut = Render<TmDataTable<PagePerson>>(p => p
             .Add(c => c.Items, MakePeople(30))
             .Add(c => c.DefaultPageSize, 10));
 
@@ -68,7 +68,7 @@ public class TmDataTablePaginationTests : LocalizationTestBase
     [Fact]
     public void DataTable_Pagination_No_Pagination_For_Single_Page()
     {
-        var cut = RenderComponent<TmDataTable<PagePerson>>(p => p
+        var cut = Render<TmDataTable<PagePerson>>(p => p
             .Add(c => c.Items, MakePeople(5))
             .Add(c => c.DefaultPageSize, 10));
 
@@ -79,7 +79,7 @@ public class TmDataTablePaginationTests : LocalizationTestBase
     [Fact]
     public void DataTable_Pagination_ShowPagination_False_HidesPagination()
     {
-        var cut = RenderComponent<TmDataTable<PagePerson>>(p => p
+        var cut = Render<TmDataTable<PagePerson>>(p => p
             .Add(c => c.Items, MakePeople(50))
             .Add(c => c.DefaultPageSize, 10)
             .Add(c => c.ShowPagination, false));

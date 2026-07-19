@@ -22,7 +22,7 @@ public class TmTagPickerTests : LocalizationTestBase
     [Fact]
     public void TmTagPicker_Renders_TagPicker()
     {
-        var cut = RenderComponent<TmTagPicker>(p => p
+        var cut = Render<TmTagPicker>(p => p
             .Add(c => c.AllTags, AllTags)
             .Add(c => c.SelectedTags, new List<ITag>()));
 
@@ -32,7 +32,7 @@ public class TmTagPickerTests : LocalizationTestBase
     [Fact]
     public void TmTagPicker_Shows_Selected_Tags()
     {
-        var cut = RenderComponent<TmTagPicker>(p => p
+        var cut = Render<TmTagPicker>(p => p
             .Add(c => c.AllTags, AllTags)
             .Add(c => c.SelectedTags, new List<ITag>
             {
@@ -46,7 +46,7 @@ public class TmTagPickerTests : LocalizationTestBase
     [Fact]
     public void TmTagPicker_Click_Opens_Options()
     {
-        var cut = RenderComponent<TmTagPicker>(p => p
+        var cut = Render<TmTagPicker>(p => p
             .Add(c => c.AllTags, AllTags)
             .Add(c => c.SelectedTags, new List<ITag>()));
 
@@ -59,7 +59,7 @@ public class TmTagPickerTests : LocalizationTestBase
     public void TmTagPicker_Click_Option_Fires_OnTagsChanged()
     {
         IEnumerable<ITag>? updated = null;
-        var cut = RenderComponent<TmTagPicker>(p => p
+        var cut = Render<TmTagPicker>(p => p
             .Add(c => c.AllTags, AllTags)
             .Add(c => c.SelectedTags, new List<ITag>())
             .Add(c => c.OnTagsChanged,
@@ -76,7 +76,7 @@ public class TmTagPickerTests : LocalizationTestBase
     public void TmTagPicker_Remove_Chip_Fires_OnTagsChanged()
     {
         IEnumerable<ITag>? updated = null;
-        var cut = RenderComponent<TmTagPicker>(p => p
+        var cut = Render<TmTagPicker>(p => p
             .Add(c => c.AllTags, AllTags)
             .Add(c => c.SelectedTags, new List<ITag>
             {
@@ -94,7 +94,7 @@ public class TmTagPickerTests : LocalizationTestBase
     [Fact]
     public void TmTagPicker_AllowCreate_Shows_Create_Option()
     {
-        var cut = RenderComponent<TmTagPicker>(p => p
+        var cut = Render<TmTagPicker>(p => p
             .Add(c => c.AllTags, AllTags)
             .Add(c => c.SelectedTags, new List<ITag>())
             .Add(c => c.AllowCreate, true));
@@ -108,7 +108,7 @@ public class TmTagPickerTests : LocalizationTestBase
     [Fact]
     public void TmTagPicker_AllowCreate_DoesNotShow_CreateOption_WhenTagExists()
     {
-        var cut = RenderComponent<TmTagPicker>(p => p
+        var cut = Render<TmTagPicker>(p => p
             .Add(c => c.AllTags, AllTags)
             .Add(c => c.SelectedTags, new List<ITag>())
             .Add(c => c.AllowCreate, true));
@@ -123,7 +123,7 @@ public class TmTagPickerTests : LocalizationTestBase
     public void TmTagPicker_AllowCreate_ClickCreate_Fires_OnCreateTag()
     {
         string? createdName = null;
-        var cut = RenderComponent<TmTagPicker>(p => p
+        var cut = Render<TmTagPicker>(p => p
             .Add(c => c.AllTags, AllTags)
             .Add(c => c.SelectedTags, new List<ITag>())
             .Add(c => c.AllowCreate, true)
@@ -140,7 +140,7 @@ public class TmTagPickerTests : LocalizationTestBase
     [Fact]
     public void TmTagPicker_AllowCreate_ClickCreate_ClosesDropdown()
     {
-        var cut = RenderComponent<TmTagPicker>(p => p
+        var cut = Render<TmTagPicker>(p => p
             .Add(c => c.AllTags, AllTags)
             .Add(c => c.SelectedTags, new List<ITag>())
             .Add(c => c.AllowCreate, true)
@@ -156,7 +156,7 @@ public class TmTagPickerTests : LocalizationTestBase
     [Fact]
     public void TmTagPicker_SearchText_FiltersAvailableTags()
     {
-        var cut = RenderComponent<TmTagPicker>(p => p
+        var cut = Render<TmTagPicker>(p => p
             .Add(c => c.AllTags, AllTags)
             .Add(c => c.SelectedTags, new List<ITag>())
             .Add(c => c.AllowCreate, true));

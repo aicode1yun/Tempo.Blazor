@@ -22,7 +22,7 @@ public class TmDocumentCompareDialogRedlineTests : LocalizationTestBase
         await Seed(provider, "doc-v1", "Cena je 100 Kč.");
         DocumentCompareResult? exported = null;
 
-        var cut = RenderComponent<TmDocumentCompareDialog>(parameters => parameters
+        var cut = Render<TmDocumentCompareDialog>(parameters => parameters
             .Add(p => p.CurrentDocument, Document("current", "Cena je 200 Kč."))
             .Add(p => p.DocumentProvider, provider)
             .Add(p => p.OnExportRedline, EventCallback.Factory.Create<DocumentCompareResult>(this, result => exported = result)));
@@ -46,7 +46,7 @@ public class TmDocumentCompareDialogRedlineTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         await Seed(provider, "doc-same", "Stejný text.");
 
-        var cut = RenderComponent<TmDocumentCompareDialog>(parameters => parameters
+        var cut = Render<TmDocumentCompareDialog>(parameters => parameters
             .Add(p => p.CurrentDocument, Document("current", "Stejný text."))
             .Add(p => p.DocumentProvider, provider));
 

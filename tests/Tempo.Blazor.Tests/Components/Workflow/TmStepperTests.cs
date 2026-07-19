@@ -26,7 +26,7 @@ public class TmStepperTests : LocalizationTestBase
     [Fact]
     public void TmStepper_Renders_Stepper()
     {
-        var cut = RenderComponent<TmStepper>(p => p
+        var cut = Render<TmStepper>(p => p
             .Add(c => c.Steps, MakeSteps())
             .Add(c => c.ActiveStep, 0));
 
@@ -36,7 +36,7 @@ public class TmStepperTests : LocalizationTestBase
     [Fact]
     public void TmStepper_Renders_Step_Per_Item()
     {
-        var cut = RenderComponent<TmStepper>(p => p
+        var cut = Render<TmStepper>(p => p
             .Add(c => c.Steps, MakeSteps())
             .Add(c => c.ActiveStep, 0));
 
@@ -46,7 +46,7 @@ public class TmStepperTests : LocalizationTestBase
     [Fact]
     public void TmStepper_Active_Step_Has_Active_Class()
     {
-        var cut = RenderComponent<TmStepper>(p => p
+        var cut = Render<TmStepper>(p => p
             .Add(c => c.Steps, MakeSteps())
             .Add(c => c.ActiveStep, 1));
 
@@ -58,7 +58,7 @@ public class TmStepperTests : LocalizationTestBase
     [Fact]
     public void TmStepper_Completed_Steps_Have_Completed_Class()
     {
-        var cut = RenderComponent<TmStepper>(p => p
+        var cut = Render<TmStepper>(p => p
             .Add(c => c.Steps, MakeSteps())
             .Add(c => c.ActiveStep, 2));
 
@@ -72,7 +72,7 @@ public class TmStepperTests : LocalizationTestBase
     [Fact]
     public void TmStepper_Shows_Step_Labels()
     {
-        var cut = RenderComponent<TmStepper>(p => p
+        var cut = Render<TmStepper>(p => p
             .Add(c => c.Steps, MakeSteps())
             .Add(c => c.ActiveStep, 0));
 
@@ -84,7 +84,7 @@ public class TmStepperTests : LocalizationTestBase
     public void TmStepper_Click_Step_Fires_OnStepClick()
     {
         var clickedIndex = -1;
-        var cut = RenderComponent<TmStepper>(p => p
+        var cut = Render<TmStepper>(p => p
             .Add(c => c.Steps, MakeSteps())
             .Add(c => c.ActiveStep, 0)
             .Add(c => c.OnStepClick,

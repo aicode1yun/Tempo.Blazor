@@ -13,7 +13,7 @@ public class TmFormActionBarTests : LocalizationTestBase
     [Fact]
     public void FormActionBar_RendersAsToolbarRole()
     {
-        var cut = RenderComponent<TmFormActionBar>();
+        var cut = Render<TmFormActionBar>();
 
         cut.Find(".tm-form-action-bar").GetAttribute("role").Should().Be("toolbar");
     }
@@ -21,7 +21,7 @@ public class TmFormActionBarTests : LocalizationTestBase
     [Fact]
     public void FormActionBar_DefaultPosition_HasStaticClass()
     {
-        var cut = RenderComponent<TmFormActionBar>();
+        var cut = Render<TmFormActionBar>();
 
         cut.Find(".tm-form-action-bar").ClassList.Should().Contain("tm-form-action-bar--static");
     }
@@ -29,7 +29,7 @@ public class TmFormActionBarTests : LocalizationTestBase
     [Fact]
     public void FormActionBar_StickyTopPosition_HasStickyClass()
     {
-        var cut = RenderComponent<TmFormActionBar>(p => p.Add(x => x.Position, FormActionBarPosition.StickyTop));
+        var cut = Render<TmFormActionBar>(p => p.Add(x => x.Position, FormActionBarPosition.StickyTop));
 
         cut.Find(".tm-form-action-bar").ClassList.Should().Contain("tm-form-action-bar--sticky-top");
     }
@@ -37,7 +37,7 @@ public class TmFormActionBarTests : LocalizationTestBase
     [Fact]
     public void FormActionBar_FloatingBottomPosition_HasFloatingClass()
     {
-        var cut = RenderComponent<TmFormActionBar>(p => p.Add(x => x.Position, FormActionBarPosition.FloatingBottom));
+        var cut = Render<TmFormActionBar>(p => p.Add(x => x.Position, FormActionBarPosition.FloatingBottom));
 
         cut.Find(".tm-form-action-bar").ClassList.Should().Contain("tm-form-action-bar--floating-bottom");
     }
@@ -45,7 +45,7 @@ public class TmFormActionBarTests : LocalizationTestBase
     [Fact]
     public void FormActionBar_RendersAllFourActionAndStatusSlots()
     {
-        var cut = RenderComponent<TmFormActionBar>(p => p
+        var cut = Render<TmFormActionBar>(p => p
             .Add(x => x.ChildContent, "<span class='child'>Doc title</span>")
             .Add(x => x.Status, "<span class='status-text'>Saved</span>")
             .Add(x => x.PrimaryActions, "<button class='primary-btn'>Save</button>")
@@ -62,7 +62,7 @@ public class TmFormActionBarTests : LocalizationTestBase
     [Fact]
     public void FormActionBar_NoActionsProvided_DoesNotRenderEndWrapper()
     {
-        var cut = RenderComponent<TmFormActionBar>();
+        var cut = Render<TmFormActionBar>();
 
         cut.FindAll(".tm-form-action-bar__end").Should().BeEmpty();
     }
@@ -70,7 +70,7 @@ public class TmFormActionBarTests : LocalizationTestBase
     [Fact]
     public void FormActionBar_AriaLabel_SetsAttribute()
     {
-        var cut = RenderComponent<TmFormActionBar>(p => p.Add(x => x.AriaLabel, "Document actions"));
+        var cut = Render<TmFormActionBar>(p => p.Add(x => x.AriaLabel, "Document actions"));
 
         cut.Find(".tm-form-action-bar").GetAttribute("aria-label").Should().Be("Document actions");
     }
@@ -78,7 +78,7 @@ public class TmFormActionBarTests : LocalizationTestBase
     [Fact]
     public void FormActionBar_LiveMessage_RendersPoliteLiveRegion()
     {
-        var cut = RenderComponent<TmFormActionBar>(p => p.Add(x => x.LiveMessage, "All changes saved"));
+        var cut = Render<TmFormActionBar>(p => p.Add(x => x.LiveMessage, "All changes saved"));
 
         var region = cut.Find("[aria-live='polite']");
         region.TextContent.Should().Be("All changes saved");
@@ -87,7 +87,7 @@ public class TmFormActionBarTests : LocalizationTestBase
     [Fact]
     public void FormActionBar_TestId_SetsDataTestId()
     {
-        var cut = RenderComponent<TmFormActionBar>(p => p.Add(x => x.TestId, "save-bar"));
+        var cut = Render<TmFormActionBar>(p => p.Add(x => x.TestId, "save-bar"));
 
         cut.Find(".tm-form-action-bar").GetAttribute("data-testid").Should().Be("save-bar");
     }
@@ -95,7 +95,7 @@ public class TmFormActionBarTests : LocalizationTestBase
     [Fact]
     public void FormActionBar_Class_AppendsAdditionalClass()
     {
-        var cut = RenderComponent<TmFormActionBar>(p => p.Add(x => x.Class, "my-extra-class"));
+        var cut = Render<TmFormActionBar>(p => p.Add(x => x.Class, "my-extra-class"));
 
         cut.Find(".tm-form-action-bar").ClassList.Should().Contain("my-extra-class");
     }
@@ -106,7 +106,7 @@ public class TmFormActionBarTests : LocalizationTestBase
         var module = JSInterop.SetupModule(ModulePath);
         module.SetupVoid("register", _ => true).SetVoidResult();
 
-        var cut = RenderComponent<TmFormActionBar>(p => p.Add(x => x.ShowOnScroll, true));
+        var cut = Render<TmFormActionBar>(p => p.Add(x => x.ShowOnScroll, true));
 
         cut.Find(".tm-form-action-bar").ClassList.Should().Contain("tm-form-action-bar--show-on-scroll");
         module.Invocations.Should().Contain(invocation => invocation.Identifier == "register");
@@ -118,7 +118,7 @@ public class TmFormActionBarTests : LocalizationTestBase
         var module = JSInterop.SetupModule(ModulePath);
         module.SetupVoid("register", _ => true).SetVoidResult();
 
-        var cut = RenderComponent<TmFormActionBar>(p => p.Add(x => x.ShowOnScroll, false));
+        var cut = Render<TmFormActionBar>(p => p.Add(x => x.ShowOnScroll, false));
 
         cut.Find(".tm-form-action-bar").ClassList.Should().NotContain("tm-form-action-bar--show-on-scroll");
         module.Invocations.Should().NotContain(invocation => invocation.Identifier == "register");

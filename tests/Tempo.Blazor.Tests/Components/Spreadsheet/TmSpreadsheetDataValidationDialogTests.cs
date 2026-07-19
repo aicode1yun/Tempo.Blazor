@@ -14,7 +14,7 @@ public class TmSpreadsheetDataValidationDialogTests : LocalizationTestBase
     [Fact]
     public void Render_DefaultsToSettingsTab()
     {
-        var cut = RenderComponent<TmSpreadsheetDataValidationDialog>();
+        var cut = Render<TmSpreadsheetDataValidationDialog>();
 
         cut.Find(".tm-dvd__tab--active").TextContent.Trim().Should().Be("Settings");
         cut.Find(".tm-dvd__select").Should().NotBeNull("type select should be visible on Settings tab");
@@ -23,7 +23,7 @@ public class TmSpreadsheetDataValidationDialogTests : LocalizationTestBase
     [Fact]
     public void Render_ShowsThreeTabs()
     {
-        var cut = RenderComponent<TmSpreadsheetDataValidationDialog>();
+        var cut = Render<TmSpreadsheetDataValidationDialog>();
 
         var tabs = cut.FindAll(".tm-dvd__tab");
         tabs.Should().HaveCount(3);
@@ -37,7 +37,7 @@ public class TmSpreadsheetDataValidationDialogTests : LocalizationTestBase
     [Fact]
     public void ClickTab_InputMessage_ShowsInputFields()
     {
-        var cut = RenderComponent<TmSpreadsheetDataValidationDialog>();
+        var cut = Render<TmSpreadsheetDataValidationDialog>();
 
         cut.FindAll(".tm-dvd__tab")[1].Click();
 
@@ -48,7 +48,7 @@ public class TmSpreadsheetDataValidationDialogTests : LocalizationTestBase
     [Fact]
     public void ClickTab_ErrorAlert_ShowsErrorFields()
     {
-        var cut = RenderComponent<TmSpreadsheetDataValidationDialog>();
+        var cut = Render<TmSpreadsheetDataValidationDialog>();
 
         cut.FindAll(".tm-dvd__tab")[2].Click();
 
@@ -61,7 +61,7 @@ public class TmSpreadsheetDataValidationDialogTests : LocalizationTestBase
     [Fact]
     public void Settings_AnyType_HidesOperatorSelect()
     {
-        var cut = RenderComponent<TmSpreadsheetDataValidationDialog>();
+        var cut = Render<TmSpreadsheetDataValidationDialog>();
 
         // Default is "Any" — operator select should not be shown
         // Only the type select is rendered; no second <select>
@@ -71,7 +71,7 @@ public class TmSpreadsheetDataValidationDialogTests : LocalizationTestBase
     [Fact]
     public void Settings_WholeType_ShowsOperatorSelect()
     {
-        var cut = RenderComponent<TmSpreadsheetDataValidationDialog>();
+        var cut = Render<TmSpreadsheetDataValidationDialog>();
 
         // Change type to Whole
         cut.Find(".tm-dvd__select").Change("Whole");
@@ -82,7 +82,7 @@ public class TmSpreadsheetDataValidationDialogTests : LocalizationTestBase
     [Fact]
     public void Settings_ListType_HidesOperatorSelect()
     {
-        var cut = RenderComponent<TmSpreadsheetDataValidationDialog>();
+        var cut = Render<TmSpreadsheetDataValidationDialog>();
 
         cut.Find(".tm-dvd__select").Change("List");
 
@@ -94,7 +94,7 @@ public class TmSpreadsheetDataValidationDialogTests : LocalizationTestBase
     [Fact]
     public void Settings_ListType_ShowsDropDownCheckbox()
     {
-        var cut = RenderComponent<TmSpreadsheetDataValidationDialog>();
+        var cut = Render<TmSpreadsheetDataValidationDialog>();
 
         cut.Find(".tm-dvd__select").Change("List");
 
@@ -117,7 +117,7 @@ public class TmSpreadsheetDataValidationDialogTests : LocalizationTestBase
             AllowBlank = false
         };
 
-        var cut = RenderComponent<TmSpreadsheetDataValidationDialog>(p => p
+        var cut = Render<TmSpreadsheetDataValidationDialog>(p => p
             .Add(c => c.Validation, dv));
 
         // Type select should show "Whole number"
@@ -139,7 +139,7 @@ public class TmSpreadsheetDataValidationDialogTests : LocalizationTestBase
             InputMessage = new SpreadsheetInputMessage { Title = "Tip", Message = "Enter a number." }
         };
 
-        var cut = RenderComponent<TmSpreadsheetDataValidationDialog>(p => p
+        var cut = Render<TmSpreadsheetDataValidationDialog>(p => p
             .Add(c => c.Validation, dv));
 
         cut.FindAll(".tm-dvd__tab")[1].Click();
@@ -155,7 +155,7 @@ public class TmSpreadsheetDataValidationDialogTests : LocalizationTestBase
     public async Task Apply_EmitsValidationWithSelectedType()
     {
         SpreadsheetDataValidation? saved = null;
-        var cut = RenderComponent<TmSpreadsheetDataValidationDialog>(p => p
+        var cut = Render<TmSpreadsheetDataValidationDialog>(p => p
             .Add(c => c.Validation, new SpreadsheetDataValidation { Range = new SpreadsheetRange(0, 0, 0, 0) })
             .Add(c => c.OnSave, EventCallback.Factory.Create<SpreadsheetDataValidation>(this, dv => saved = dv)));
 
@@ -172,7 +172,7 @@ public class TmSpreadsheetDataValidationDialogTests : LocalizationTestBase
     public async Task Apply_WholeType_EmitsFormulas()
     {
         SpreadsheetDataValidation? saved = null;
-        var cut = RenderComponent<TmSpreadsheetDataValidationDialog>(p => p
+        var cut = Render<TmSpreadsheetDataValidationDialog>(p => p
             .Add(c => c.Validation, new SpreadsheetDataValidation { Range = new SpreadsheetRange(0, 0, 0, 0) })
             .Add(c => c.OnSave, EventCallback.Factory.Create<SpreadsheetDataValidation>(this, dv => saved = dv)));
 
@@ -191,7 +191,7 @@ public class TmSpreadsheetDataValidationDialogTests : LocalizationTestBase
     public async Task Cancel_InvokesOnClose()
     {
         var closed = false;
-        var cut = RenderComponent<TmSpreadsheetDataValidationDialog>(p => p
+        var cut = Render<TmSpreadsheetDataValidationDialog>(p => p
             .Add(c => c.OnClose, EventCallback.Factory.Create(this, () => closed = true)));
 
         await cut.InvokeAsync(() => cut.FindAll(".tm-dvd__actions button")[0].Click());
@@ -204,7 +204,7 @@ public class TmSpreadsheetDataValidationDialogTests : LocalizationTestBase
     {
         SpreadsheetDataValidation? saved = null;
         // No Validation param — defaults leave _showErrorAlert = true
-        var cut = RenderComponent<TmSpreadsheetDataValidationDialog>(p => p
+        var cut = Render<TmSpreadsheetDataValidationDialog>(p => p
             .Add(c => c.OnSave, EventCallback.Factory.Create<SpreadsheetDataValidation>(this, dv => saved = dv)));
 
         cut.FindAll(".tm-dvd__tab")[2].Click();
@@ -224,7 +224,7 @@ public class TmSpreadsheetDataValidationDialogTests : LocalizationTestBase
     public async Task Apply_NoErrorAlert_WhenShowErrorAlertUnchecked()
     {
         SpreadsheetDataValidation? saved = null;
-        var cut = RenderComponent<TmSpreadsheetDataValidationDialog>(p => p
+        var cut = Render<TmSpreadsheetDataValidationDialog>(p => p
             .Add(c => c.Validation, new SpreadsheetDataValidation { Range = new SpreadsheetRange(0, 0, 0, 0) })
             .Add(c => c.OnSave, EventCallback.Factory.Create<SpreadsheetDataValidation>(this, dv => saved = dv)));
 

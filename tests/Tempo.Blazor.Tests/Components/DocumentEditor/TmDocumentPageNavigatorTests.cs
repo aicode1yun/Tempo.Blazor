@@ -12,7 +12,7 @@ public sealed class TmDocumentPageNavigatorTests : LocalizationTestBase
     [Fact]
     public void PageNavigator_RendersPageCountAndItems()
     {
-        var cut = RenderComponent<TmDocumentPageNavigator>(parameters => parameters
+        var cut = Render<TmDocumentPageNavigator>(parameters => parameters
             .Add(p => p.Metrics, Metrics()));
 
         cut.Find("[data-testid='document-page-navigator']").Should().NotBeNull();
@@ -24,7 +24,7 @@ public sealed class TmDocumentPageNavigatorTests : LocalizationTestBase
     public void PageNavigator_ClickPage_InvokesNavigationCallback()
     {
         var navigated = -1;
-        var cut = RenderComponent<TmDocumentPageNavigator>(parameters => parameters
+        var cut = Render<TmDocumentPageNavigator>(parameters => parameters
             .Add(p => p.Metrics, Metrics())
             .Add(p => p.OnNavigateToPage, EventCallback.Factory.Create<int>(this, page => navigated = page)));
 
@@ -36,7 +36,7 @@ public sealed class TmDocumentPageNavigatorTests : LocalizationTestBase
     [Fact]
     public void PageNavigator_MarksActivePageAndOverflow()
     {
-        var cut = RenderComponent<TmDocumentPageNavigator>(parameters => parameters
+        var cut = Render<TmDocumentPageNavigator>(parameters => parameters
             .Add(p => p.Metrics, Metrics())
             .Add(p => p.ActivePageIndex, 2));
 

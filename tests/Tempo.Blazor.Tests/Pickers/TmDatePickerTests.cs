@@ -10,7 +10,7 @@ public class TmDatePickerTests : LocalizationTestBase
     [Fact]
     public void DatePicker_ClosedByDefault_ShowsInputOnly()
     {
-        var cut = RenderComponent<TmDatePicker>();
+        var cut = Render<TmDatePicker>();
 
         cut.FindAll(".tm-calendar").Should().BeEmpty();
         cut.FindAll(".tm-date-picker-trigger").Should().HaveCount(1);
@@ -19,7 +19,7 @@ public class TmDatePickerTests : LocalizationTestBase
     [Fact]
     public void DatePicker_ClickInput_OpensCalendar()
     {
-        var cut = RenderComponent<TmDatePicker>();
+        var cut = Render<TmDatePicker>();
 
         cut.Find(".tm-date-picker-trigger").Click();
 
@@ -30,7 +30,7 @@ public class TmDatePickerTests : LocalizationTestBase
     public void DatePicker_SelectDate_ClosesCalendarAndUpdatesValue()
     {
         DateOnly? captured = null;
-        var cut = RenderComponent<TmDatePicker>(p => p
+        var cut = Render<TmDatePicker>(p => p
             .Add(c => c.ValueChanged, (DateOnly? v) => captured = v));
 
         cut.Find(".tm-date-picker-trigger").Click();
@@ -46,7 +46,7 @@ public class TmDatePickerTests : LocalizationTestBase
     public void DatePicker_Value_Binding_Works()
     {
         var date = new DateOnly(2025, 6, 15);
-        var cut  = RenderComponent<TmDatePicker>(p => p.Add(c => c.Value, date));
+        var cut  = Render<TmDatePicker>(p => p.Add(c => c.Value, date));
 
         cut.Find(".tm-date-picker-trigger").TextContent.Should().Contain("15");
     }
@@ -55,7 +55,7 @@ public class TmDatePickerTests : LocalizationTestBase
     public void DatePicker_MinDate_DisablesEarlierDays()
     {
         var min = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 15);
-        var cut = RenderComponent<TmDatePicker>(p => p.Add(c => c.MinDate, min));
+        var cut = Render<TmDatePicker>(p => p.Add(c => c.MinDate, min));
 
         cut.Find(".tm-date-picker-trigger").Click();
 
@@ -66,7 +66,7 @@ public class TmDatePickerTests : LocalizationTestBase
     public void DatePicker_MaxDate_DisablesLaterDays()
     {
         var max = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 5);
-        var cut = RenderComponent<TmDatePicker>(p => p.Add(c => c.MaxDate, max));
+        var cut = Render<TmDatePicker>(p => p.Add(c => c.MaxDate, max));
 
         cut.Find(".tm-date-picker-trigger").Click();
 
@@ -76,7 +76,7 @@ public class TmDatePickerTests : LocalizationTestBase
     [Fact]
     public void DatePicker_Navigate_PrevMonth_ChangesDisplayMonth()
     {
-        var cut = RenderComponent<TmDatePicker>();
+        var cut = Render<TmDatePicker>();
         cut.Find(".tm-date-picker-trigger").Click();
 
         var titleBefore = cut.Find(".tm-cal-title").TextContent;
@@ -89,7 +89,7 @@ public class TmDatePickerTests : LocalizationTestBase
     [Fact]
     public void DatePicker_Navigate_NextMonth_ChangesDisplayMonth()
     {
-        var cut = RenderComponent<TmDatePicker>();
+        var cut = Render<TmDatePicker>();
         cut.Find(".tm-date-picker-trigger").Click();
 
         var titleBefore = cut.Find(".tm-cal-title").TextContent;
@@ -102,7 +102,7 @@ public class TmDatePickerTests : LocalizationTestBase
     [Fact]
     public void DatePicker_Today_Highlighted()
     {
-        var cut = RenderComponent<TmDatePicker>();
+        var cut = Render<TmDatePicker>();
         cut.Find(".tm-date-picker-trigger").Click();
 
         cut.FindAll(".tm-cal-day--today").Should().HaveCount(1);
@@ -112,7 +112,7 @@ public class TmDatePickerTests : LocalizationTestBase
     public void DatePicker_DayButtonsExposeIsoDateForAutomation()
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
-        var cut = RenderComponent<TmDatePicker>();
+        var cut = Render<TmDatePicker>();
         cut.Find(".tm-date-picker-trigger").Click();
 
         cut.Find($".tm-cal-day[data-date='{today:yyyy-MM-dd}']")
@@ -123,7 +123,7 @@ public class TmDatePickerTests : LocalizationTestBase
     public void DatePicker_SelectedDate_Highlighted()
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
-        var cut = RenderComponent<TmDatePicker>(p => p.Add(c => c.Value, today));
+        var cut = Render<TmDatePicker>(p => p.Add(c => c.Value, today));
         cut.Find(".tm-date-picker-trigger").Click();
 
         cut.FindAll(".tm-cal-day--selected").Should().HaveCount(1);
@@ -133,7 +133,7 @@ public class TmDatePickerTests : LocalizationTestBase
     public void DatePicker_ClearButton_ClearsValue()
     {
         DateOnly? captured = null;
-        var cut = RenderComponent<TmDatePicker>(p => p
+        var cut = Render<TmDatePicker>(p => p
             .Add(c => c.Value,        new DateOnly(2025, 1, 1))
             .Add(c => c.ValueChanged, (DateOnly? v) => captured = v));
 
@@ -145,7 +145,7 @@ public class TmDatePickerTests : LocalizationTestBase
     [Fact]
     public void DatePicker_Escape_ClosesCalendar()
     {
-        var cut = RenderComponent<TmDatePicker>();
+        var cut = Render<TmDatePicker>();
         cut.Find(".tm-date-picker-trigger").Click();
         cut.FindAll(".tm-calendar").Should().HaveCount(1);
 
@@ -158,7 +158,7 @@ public class TmDatePickerTests : LocalizationTestBase
     public void DatePicker_Format_AppliedToDisplayValue()
     {
         var date = new DateOnly(2025, 3, 5);
-        var cut  = RenderComponent<TmDatePicker>(p => p
+        var cut  = Render<TmDatePicker>(p => p
             .Add(c => c.Value,      date)
             .Add(c => c.DateFormat, "yyyy-MM-dd"));
 
@@ -170,14 +170,14 @@ public class TmDatePickerTests : LocalizationTestBase
     [Fact]
     public void DatePicker_Required_SetsAriaRequiredOnTrigger()
     {
-        var cut = RenderComponent<TmDatePicker>(p => p.Add(c => c.Required, true));
+        var cut = Render<TmDatePicker>(p => p.Add(c => c.Required, true));
         cut.Find(".tm-date-picker-trigger").GetAttribute("aria-required").Should().Be("true");
     }
 
     [Fact]
     public void DatePicker_Required_AddsRequiredMarkerClassToLabel()
     {
-        var cut = RenderComponent<TmDatePicker>(p => p
+        var cut = Render<TmDatePicker>(p => p
             .Add(c => c.Label, "Occurred")
             .Add(c => c.Required, true));
         cut.Find(".tm-picker-label").ClassList.Should().Contain("tm-input-label-required");
@@ -186,7 +186,7 @@ public class TmDatePickerTests : LocalizationTestBase
     [Fact]
     public void DatePicker_NotRequired_HasNoAriaRequiredAndNoMarker()
     {
-        var cut = RenderComponent<TmDatePicker>(p => p.Add(c => c.Label, "Occurred"));
+        var cut = Render<TmDatePicker>(p => p.Add(c => c.Label, "Occurred"));
         cut.Find(".tm-date-picker-trigger").HasAttribute("aria-required").Should().BeFalse();
         cut.Find(".tm-picker-label").ClassList.Should().NotContain("tm-input-label-required");
     }

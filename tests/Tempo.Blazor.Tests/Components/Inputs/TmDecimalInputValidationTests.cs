@@ -1,3 +1,4 @@
+using Bunit.Rendering;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Linq.Expressions;
@@ -24,7 +25,7 @@ public class TmDecimalInputValidationTests : LocalizationTestBase
     }
 
     /// <summary>Renders TmDecimalInput bound to <paramref name="model"/>.Price inside an EditForm with DataAnnotations.</summary>
-    private IRenderedFragment RenderInEditForm(OrderModel model, string? error = null)
+    private IRenderedComponent<ContainerFragment> RenderInEditForm(OrderModel model, string? error = null)
     {
         return Render(builder =>
         {
@@ -53,7 +54,7 @@ public class TmDecimalInputValidationTests : LocalizationTestBase
         });
     }
 
-    private static EditContext GetEditContext(IRenderedFragment cut) =>
+    private static EditContext GetEditContext(IRenderedComponent<ContainerFragment> cut) =>
         cut.FindComponent<EditForm>().Instance.EditContext!;
 
     /// <summary>Counts subscribers of EditContext's field-like OnValidationStateChanged event.</summary>
@@ -149,7 +150,7 @@ public class TmDecimalInputValidationTests : LocalizationTestBase
     [Fact]
     public void DecimalInput_ValidationOutsideEditForm_IsInert()
     {
-        var cut = RenderComponent<TmDecimalInput>(p => p
+        var cut = Render<TmDecimalInput>(p => p
             .Add(x => x.Culture, English)
             .Add(x => x.Value, 5m));
 
@@ -190,10 +191,10 @@ public class TmDecimalInputValidationTests : LocalizationTestBase
     [Fact]
     public void DecimalInput_FollowsTheModel_WhenTheFormModelIsSwapped()
     {
-        var cut = RenderComponent<SwappableModelHost>(p => p.Add(x => x.Model, new OrderModel()));
+        var cut = Render<SwappableModelHost>(p => p.Add(x => x.Model, new OrderModel()));
 
         var replacement = new OrderModel();
-        cut.SetParametersAndRender(p => p.Add(x => x.Model, replacement));
+        cut.Render(p => p.Add(x => x.Model, replacement));
 
         var editContext = cut.FindComponent<EditForm>().Instance.EditContext!;
         FieldIdentifier? changed = null;
@@ -252,11 +253,11 @@ public class TmDecimalInputValidationTests : LocalizationTestBase
     [Fact]
     public void DecimalInput_ReboundEditContext_RetargetsTheFieldIdentifier()
     {
-        var cut = RenderComponent<CascadingEditContextHost>(p => p.Add(x => x.Model, new OrderModel()));
+        var cut = Render<CascadingEditContextHost>(p => p.Add(x => x.Model, new OrderModel()));
         var original = cut.FindComponent<TmDecimalInput>().Instance;
 
         var replacement = new OrderModel();
-        cut.SetParametersAndRender(p => p.Add(x => x.Model, replacement));
+        cut.Render(p => p.Add(x => x.Model, replacement));
 
         cut.FindComponent<TmDecimalInput>().Instance.Should().BeSameAs(original,
             "a cascading value swap reuses the component — the stale field identifier is the whole point of this test");

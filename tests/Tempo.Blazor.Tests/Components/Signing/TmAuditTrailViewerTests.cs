@@ -10,7 +10,7 @@ public class TmAuditTrailViewerTests : LocalizationTestBase
     [Fact]
     public void Render_DocumentsSignersNetworkVerificationAndAuditPdf()
     {
-        var cut = RenderComponent<TmAuditTrailViewer>(parameters => parameters
+        var cut = Render<TmAuditTrailViewer>(parameters => parameters
             .Add(p => p.Trail, CreateTrail()));
 
         cut.Markup.Should().Contain("contract.pdf");
@@ -26,7 +26,7 @@ public class TmAuditTrailViewerTests : LocalizationTestBase
     [Fact]
     public void Render_AuditEvents()
     {
-        var cut = RenderComponent<TmAuditTrailViewer>(parameters => parameters
+        var cut = Render<TmAuditTrailViewer>(parameters => parameters
             .Add(p => p.Trail, CreateTrail()));
 
         cut.Markup.Should().Contain("Document opened");
@@ -36,7 +36,7 @@ public class TmAuditTrailViewerTests : LocalizationTestBase
     [Fact]
     public void Render_LocalizationSnapshotShowsCultureFallbackAndResolvedLabels()
     {
-        var cut = RenderComponent<TmAuditTrailViewer>(parameters => parameters
+        var cut = Render<TmAuditTrailViewer>(parameters => parameters
             .Add(p => p.Trail, CreateTrail())
             .Add(p => p.LocalizationSnapshot, CreateLocalizationSnapshot()));
 

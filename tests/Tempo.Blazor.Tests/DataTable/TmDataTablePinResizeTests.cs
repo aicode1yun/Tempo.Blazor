@@ -26,7 +26,7 @@ public class TmDataTablePinResizeTests : LocalizationTestBase
     }
 
     private IRenderedComponent<TmDataTable<Person>> Render(IDataTableLayoutStore? store = null, string ctx = "pin-test")
-        => RenderComponent<TmDataTable<Person>>(p =>
+        => Render<TmDataTable<Person>>(p =>
         {
             p.Add(c => c.ViewContext, ctx);
             if (store is not null) p.Add(c => c.LayoutStore, store);
@@ -73,7 +73,7 @@ public class TmDataTablePinResizeTests : LocalizationTestBase
     public async Task PinColumn_FiresLayoutChanged()
     {
         DataTableLayout? captured = null;
-        var cut = RenderComponent<TmDataTable<Person>>(p =>
+        var cut = Render<TmDataTable<Person>>(p =>
         {
             p.Add(c => c.ViewContext, "pin-test");
             p.Add(c => c.LayoutChanged, Microsoft.AspNetCore.Components.EventCallback.Factory.Create<DataTableLayout>(this, l => captured = l));

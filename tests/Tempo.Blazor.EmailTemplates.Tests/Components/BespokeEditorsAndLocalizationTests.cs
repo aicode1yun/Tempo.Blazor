@@ -12,7 +12,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.EmailTemplates.Tests.Components;
 
-public class BespokeEditorsAndLocalizationTests : TestContext
+public class BespokeEditorsAndLocalizationTests : BunitContext
 {
     public BespokeEditorsAndLocalizationTests()
     {
@@ -36,7 +36,7 @@ public class BespokeEditorsAndLocalizationTests : TestContext
 
     private IRenderedComponent<TmEmailPropertyPanel> Panel(EmailTemplateDocument doc, Guid? selected,
         Func<IBrowserFile, Task<string>>? upload = null)
-        => RenderComponent<TmEmailPropertyPanel>(p => p
+        => Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.SelectedId, selected)
             .Add(c => c.OnImageUpload, upload).Add(c => c.OnChanged, () => { }));
 
@@ -99,7 +99,7 @@ public class BespokeEditorsAndLocalizationTests : TestContext
     public void ImportDialog_JsonMode_ValidJson_Confirms()
     {
         EmailTemplateDocument? imported = null;
-        var cut = RenderComponent<TmEmailImportDialog>(p => p
+        var cut = Render<TmEmailImportDialog>(p => p
             .Add(c => c.Show, true).Add(c => c.OnImport, d => imported = d));
 
         cut.Find("[data-tm-import-mode=\"json\"]").Click();
@@ -114,7 +114,7 @@ public class BespokeEditorsAndLocalizationTests : TestContext
     public void ImportDialog_JsonMode_InvalidJson_ShowsError_NoConfirm()
     {
         EmailTemplateDocument? imported = null;
-        var cut = RenderComponent<TmEmailImportDialog>(p => p
+        var cut = Render<TmEmailImportDialog>(p => p
             .Add(c => c.Show, true).Add(c => c.OnImport, d => imported = d));
 
         cut.Find("[data-tm-import-mode=\"json\"]").Click();
@@ -137,7 +137,7 @@ public class BespokeEditorsAndLocalizationTests : TestContext
         try
         {
             CultureInfo.CurrentUICulture = new CultureInfo(culture);
-            var cut = RenderComponent<TmEmailTemplateEditor>(p => p.Add(c => c.Document, new EmailTemplateDocument()));
+            var cut = Render<TmEmailTemplateEditor>(p => p.Add(c => c.Document, new EmailTemplateDocument()));
 
             // The save button text comes from the real ITmEmailLocalizer (resx), not a key fallback.
             cut.Find("[data-tm-save]").TextContent.Should().Contain(expectedSave);

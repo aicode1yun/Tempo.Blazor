@@ -11,7 +11,7 @@ public class TmAttachmentManagerTests : LocalizationTestBase
     [Fact]
     public void AttachmentManager_WithoutProvider_ShowsDropZoneOnly()
     {
-        var cut = RenderComponent<TmAttachmentManager>();
+        var cut = Render<TmAttachmentManager>();
 
         cut.FindAll(".tm-file-drop-zone").Should().NotBeEmpty();
         cut.FindAll(".tm-attachment-list").Should().BeEmpty();
@@ -24,7 +24,7 @@ public class TmAttachmentManagerTests : LocalizationTestBase
         {
             Attachment("1", "report.pdf"),
         });
-        var cut = RenderComponent<TmAttachmentManager>(p => p
+        var cut = Render<TmAttachmentManager>(p => p
             .Add(c => c.AttachmentProvider, provider)
             .Add(c => c.FileProvider, provider)
             .Add(c => c.EntityId, "entity-123"));
@@ -40,7 +40,7 @@ public class TmAttachmentManagerTests : LocalizationTestBase
             Attachment("1", "document.pdf"),
             Attachment("2", "photo.jpg", "image/jpeg"),
         });
-        var cut = RenderComponent<TmAttachmentManager>(p => p
+        var cut = Render<TmAttachmentManager>(p => p
             .Add(c => c.AttachmentProvider, provider)
             .Add(c => c.FileProvider, provider)
             .Add(c => c.EntityId, "e1"));
@@ -55,7 +55,7 @@ public class TmAttachmentManagerTests : LocalizationTestBase
     public async Task AttachmentManager_Upload_UsesProvider()
     {
         var provider = new FakeAttachmentProvider([]);
-        var cut = RenderComponent<TmAttachmentManager>(p => p
+        var cut = Render<TmAttachmentManager>(p => p
             .Add(c => c.AttachmentProvider, provider)
             .Add(c => c.FileProvider, provider)
             .Add(c => c.EntityId, "entity-1"));

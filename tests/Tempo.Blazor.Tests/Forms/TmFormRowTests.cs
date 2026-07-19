@@ -10,7 +10,7 @@ public class TmFormRowTests : LocalizationTestBase
     [Fact]
     public void FormRow_RendersChildrenInRow()
     {
-        var cut = RenderComponent<TmFormRow>(p => p
+        var cut = Render<TmFormRow>(p => p
             .AddChildContent("<div class='col-a'>A</div><div class='col-b'>B</div>"));
 
         cut.Find(".tm-form-row").Should().NotBeNull();
@@ -21,7 +21,7 @@ public class TmFormRowTests : LocalizationTestBase
     [Fact]
     public void FormRow_Columns_AppliesGridClass()
     {
-        var cut = RenderComponent<TmFormRow>(p => p
+        var cut = Render<TmFormRow>(p => p
             .Add(c => c.Columns, 3)
             .AddChildContent("<div>A</div>"));
 

@@ -110,7 +110,7 @@ public sealed class CanvasEngineSigningFieldApiTests : LocalizationTestBase
     }
 
     private IRenderedComponent<TmDocumentCanvasEngineHost> RenderHost(IReadOnlyList<SigningSubmitterRole>? roles = null)
-        => RenderComponent<TmDocumentCanvasEngineHost>(parameters =>
+        => Render<TmDocumentCanvasEngineHost>(parameters =>
         {
             parameters.Add(p => p.Document, DocumentEditorDocument.Empty("signing-host"));
             parameters.Add(p => p.AriaLabel, "Document editor");

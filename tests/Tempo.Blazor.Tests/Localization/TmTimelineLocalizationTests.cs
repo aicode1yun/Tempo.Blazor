@@ -28,7 +28,7 @@ public class TmTimelineLocalizationTests : LocalizationTestBase
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, new[] { MakeEntry(isInternal: true) })
             .Add(c => c.ShowInternal, true));
 
@@ -39,7 +39,7 @@ public class TmTimelineLocalizationTests : LocalizationTestBase
     [Fact]
     public void TmTimeline_InternalBadge_English_ShowsEnglishText()
     {
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, new[] { MakeEntry(isInternal: true) })
             .Add(c => c.ShowInternal, true));
 
@@ -52,7 +52,7 @@ public class TmTimelineLocalizationTests : LocalizationTestBase
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, new[] { MakeEntry(timestamp: DateTimeOffset.Now.AddSeconds(-10)) })
             .Add(c => c.ShowInternal, true));
 
@@ -65,7 +65,7 @@ public class TmTimelineLocalizationTests : LocalizationTestBase
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, new[] { MakeEntry(timestamp: DateTimeOffset.Now.AddMinutes(-5)) })
             .Add(c => c.ShowInternal, true));
 
@@ -78,7 +78,7 @@ public class TmTimelineLocalizationTests : LocalizationTestBase
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmTimeline>(p => p
+        var cut = Render<TmTimeline>(p => p
             .Add(c => c.Entries, new[] { MakeEntry(timestamp: DateTimeOffset.Now.AddHours(-2)) })
             .Add(c => c.ShowInternal, true));
 

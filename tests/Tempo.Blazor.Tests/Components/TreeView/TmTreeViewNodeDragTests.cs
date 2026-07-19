@@ -34,7 +34,7 @@ public class TmTreeViewNodeDragTests : LocalizationTestBase
     [Fact]
     public void AllowNodeDrag_False_Nodes_Are_Not_Draggable()
     {
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowNodeDrag, false));
 
@@ -46,7 +46,7 @@ public class TmTreeViewNodeDragTests : LocalizationTestBase
     [Fact]
     public void AllowNodeDrag_False_RootDropZone_NotRendered()
     {
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowNodeDrag, false));
 
@@ -58,7 +58,7 @@ public class TmTreeViewNodeDragTests : LocalizationTestBase
     [Fact]
     public void AllowNodeDrag_True_Nodes_Have_Draggable_Attribute()
     {
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowNodeDrag, true));
 
@@ -72,7 +72,7 @@ public class TmTreeViewNodeDragTests : LocalizationTestBase
     {
         var dragDrop = Services.GetRequiredService<DragDropService>();
 
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowNodeDrag, true));
 
@@ -88,7 +88,7 @@ public class TmTreeViewNodeDragTests : LocalizationTestBase
     {
         var dragDrop = Services.GetRequiredService<DragDropService>();
 
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowNodeDrag, true));
 
@@ -103,7 +103,7 @@ public class TmTreeViewNodeDragTests : LocalizationTestBase
     {
         var dragDrop = Services.GetRequiredService<DragDropService>();
 
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowNodeDrag, true));
 
@@ -118,7 +118,7 @@ public class TmTreeViewNodeDragTests : LocalizationTestBase
     [Fact]
     public void AllowNodeDrag_True_DragStart_ShowsRootDropZone()
     {
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowNodeDrag, true));
 
@@ -131,7 +131,7 @@ public class TmTreeViewNodeDragTests : LocalizationTestBase
     [Fact]
     public void AllowNodeDrag_True_DragEnd_HidesRootDropZone()
     {
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowNodeDrag, true));
 
@@ -149,7 +149,7 @@ public class TmTreeViewNodeDragTests : LocalizationTestBase
     {
         TreeNodeMoveEventArgs<string>? received = null;
 
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowNodeDrag, true)
             .Add(c => c.OnNodeMove,
@@ -170,7 +170,7 @@ public class TmTreeViewNodeDragTests : LocalizationTestBase
     {
         TreeNodeMoveEventArgs<string>? received = null;
 
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowNodeDrag, true)
             .Add(c => c.OnNodeMove,
@@ -191,7 +191,7 @@ public class TmTreeViewNodeDragTests : LocalizationTestBase
     {
         TreeNodeMoveEventArgs<string>? received = null;
 
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowNodeDrag, true)
             .Add(c => c.OnNodeMove,
@@ -219,7 +219,7 @@ public class TmTreeViewNodeDragTests : LocalizationTestBase
         // Simulate external drag (MVL)
         dragDrop.StartDrag(["tc-001"], DragSource.MultiViewList);
 
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, TwoNodes())
             .Add(c => c.AllowDrop, true)
             .Add(c => c.AllowNodeDrag, true)

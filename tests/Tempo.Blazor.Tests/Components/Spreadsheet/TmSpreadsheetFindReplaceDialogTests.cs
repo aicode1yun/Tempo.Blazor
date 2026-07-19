@@ -12,7 +12,7 @@ public class TmSpreadsheetFindReplaceDialogTests : LocalizationTestBase
     [Fact]
     public void Render_ShowsFieldsOptionsAndButtons()
     {
-        var cut = RenderComponent<TmSpreadsheetFindReplaceDialog>();
+        var cut = Render<TmSpreadsheetFindReplaceDialog>();
 
         cut.FindAll(".tm-spreadsheet-find__query").Count.Should().Be(1);
         cut.FindAll(".tm-spreadsheet-find__replace").Count.Should().Be(1);
@@ -31,7 +31,7 @@ public class TmSpreadsheetFindReplaceDialogTests : LocalizationTestBase
     public void QueryInput_RaisesSearchWithQuery()
     {
         SpreadsheetSearchOptions? received = null;
-        var cut = RenderComponent<TmSpreadsheetFindReplaceDialog>(p => p
+        var cut = Render<TmSpreadsheetFindReplaceDialog>(p => p
             .Add(x => x.OnSearchRequested, EventCallback.Factory.Create<SpreadsheetSearchOptions>(this, o => received = o)));
 
         cut.Find(".tm-spreadsheet-find__query").Input("hello");
@@ -44,7 +44,7 @@ public class TmSpreadsheetFindReplaceDialogTests : LocalizationTestBase
     public void MatchCaseToggle_RaisesSearchWithOption()
     {
         SpreadsheetSearchOptions? received = null;
-        var cut = RenderComponent<TmSpreadsheetFindReplaceDialog>(p => p
+        var cut = Render<TmSpreadsheetFindReplaceDialog>(p => p
             .Add(x => x.OnSearchRequested, EventCallback.Factory.Create<SpreadsheetSearchOptions>(this, o => received = o)));
 
         var matchCase = cut.FindAll(".tm-spreadsheet-find__option input")[0];
@@ -58,7 +58,7 @@ public class TmSpreadsheetFindReplaceDialogTests : LocalizationTestBase
     public void InFormulasToggle_SetsSearchInFormulas()
     {
         SpreadsheetSearchOptions? received = null;
-        var cut = RenderComponent<TmSpreadsheetFindReplaceDialog>(p => p
+        var cut = Render<TmSpreadsheetFindReplaceDialog>(p => p
             .Add(x => x.OnSearchRequested, EventCallback.Factory.Create<SpreadsheetSearchOptions>(this, o => received = o)));
 
         cut.FindAll(".tm-spreadsheet-find__option input")[2].Change(true);
@@ -70,7 +70,7 @@ public class TmSpreadsheetFindReplaceDialogTests : LocalizationTestBase
     public void FindNextButton_FiresOnFindNext()
     {
         var fired = false;
-        var cut = RenderComponent<TmSpreadsheetFindReplaceDialog>(p => p
+        var cut = Render<TmSpreadsheetFindReplaceDialog>(p => p
             .Add(x => x.OnFindNext, EventCallback.Factory.Create(this, () => fired = true)));
 
         // First action button is Find previous, second is Find next.
@@ -83,7 +83,7 @@ public class TmSpreadsheetFindReplaceDialogTests : LocalizationTestBase
     public void ReplaceButton_FiresWithReplacementText()
     {
         string? received = null;
-        var cut = RenderComponent<TmSpreadsheetFindReplaceDialog>(p => p
+        var cut = Render<TmSpreadsheetFindReplaceDialog>(p => p
             .Add(x => x.OnReplaceRequested, EventCallback.Factory.Create<string>(this, s => received = s)));
 
         cut.Find(".tm-spreadsheet-find__replace").Input("world");
@@ -96,7 +96,7 @@ public class TmSpreadsheetFindReplaceDialogTests : LocalizationTestBase
     public void ReplaceAllButton_FiresWithReplacementText()
     {
         string? received = null;
-        var cut = RenderComponent<TmSpreadsheetFindReplaceDialog>(p => p
+        var cut = Render<TmSpreadsheetFindReplaceDialog>(p => p
             .Add(x => x.OnReplaceAllRequested, EventCallback.Factory.Create<string>(this, s => received = s)));
 
         cut.Find(".tm-spreadsheet-find__replace").Input("xyz");
@@ -109,7 +109,7 @@ public class TmSpreadsheetFindReplaceDialogTests : LocalizationTestBase
     public void CloseButton_FiresOnClose()
     {
         var fired = false;
-        var cut = RenderComponent<TmSpreadsheetFindReplaceDialog>(p => p
+        var cut = Render<TmSpreadsheetFindReplaceDialog>(p => p
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => fired = true)));
 
         cut.Find(".tm-spreadsheet-find__close").Click();
@@ -120,7 +120,7 @@ public class TmSpreadsheetFindReplaceDialogTests : LocalizationTestBase
     [Fact]
     public void Counter_ShowsMatchPosition()
     {
-        var cut = RenderComponent<TmSpreadsheetFindReplaceDialog>(p => p
+        var cut = Render<TmSpreadsheetFindReplaceDialog>(p => p
             .Add(x => x.MatchIndex, 3)
             .Add(x => x.MatchCount, 12));
 
@@ -130,7 +130,7 @@ public class TmSpreadsheetFindReplaceDialogTests : LocalizationTestBase
     [Fact]
     public void Counter_ShowsNoMatches_WhenQueryHasNoHits()
     {
-        var cut = RenderComponent<TmSpreadsheetFindReplaceDialog>(p => p
+        var cut = Render<TmSpreadsheetFindReplaceDialog>(p => p
             .Add(x => x.MatchCount, 0));
 
         cut.Find(".tm-spreadsheet-find__query").Input("missing");

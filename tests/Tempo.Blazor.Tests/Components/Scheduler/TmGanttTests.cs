@@ -27,7 +27,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Renders_Container()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         cut.Find(".tm-gantt").Should().NotBeNull();
@@ -36,7 +36,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Renders_Toolbar()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         cut.Find(".tm-gantt__toolbar").Should().NotBeNull();
@@ -45,7 +45,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Renders_Tree_With_Tasks()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var rows = cut.FindAll(".tm-gantt__tree-row");
@@ -55,7 +55,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Tree_Shows_Expand_Button_For_Parents()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var buttons = cut.FindAll(".tm-gantt__expand-btn");
@@ -65,7 +65,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Timeline_Header_Renders()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         cut.Find(".tm-gantt__timeline-header").Should().NotBeNull();
@@ -74,7 +74,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Task_Bars_Render()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var bars = cut.FindAll(".tm-gantt__bar, .tm-gantt__milestone");
@@ -84,7 +84,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Milestone_Rendered_As_Diamond()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var milestones = cut.FindAll(".tm-gantt__milestone");
@@ -94,7 +94,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Dependency_Lines_Render()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks())
             .Add(c => c.DependencyItems, GetSampleDependencies()));
 
@@ -106,7 +106,7 @@ public class TmGanttTests : LocalizationTestBase
     public void TmGantt_Select_Task_Highlights_Row()
     {
         TmWorkItem? selected = null;
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks())
             .Add(c => c.OnTaskSelected, t => selected = t));
 
@@ -120,7 +120,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Collapse_Parent_Hides_Children()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var expandBtn = cut.Find(".tm-gantt__expand-btn");
@@ -133,7 +133,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Custom_Class_Applied()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks())
             .Add(c => c.Class, "my-gantt"));
 
@@ -143,7 +143,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Default_View_Is_Week()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         // Week view header should contain "W" for week number
@@ -154,7 +154,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public void TmGantt_TimelineContent_HasExplicitHeight()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var content = cut.Find(".tm-gantt__timeline-content");
@@ -167,7 +167,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public void TmGantt_TimelineBody_HasVerticalScrollContainer()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var body = cut.Find(".tm-gantt__timeline-body");
@@ -177,7 +177,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public void TmGantt_TimelineContainer_HasHorizontalOverflow()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var timeline = cut.Find(".tm-gantt__timeline");
@@ -187,7 +187,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Panning_Class_Toggles_OnMouseDownUp()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var timeline = cut.Find(".tm-gantt__timeline");
@@ -205,7 +205,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public async Task TmGantt_Wheel_ShiftKey_Pans_Horizontally()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var timeline = cut.Find(".tm-gantt__timeline");
@@ -217,7 +217,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public async Task TmGantt_Wheel_CtrlKey_Zooms()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var timeline = cut.Find(".tm-gantt__timeline");
@@ -232,7 +232,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public async Task TmGantt_ScrollSync_TreeScroll_DoesNotThrow()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var treeBody = cut.Find(".tm-gantt__tree-body");
@@ -244,7 +244,7 @@ public class TmGanttTests : LocalizationTestBase
     [Fact]
     public async Task TmGantt_ScrollSync_TimelineBodyScroll_DoesNotThrow()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var timelineBody = cut.Find(".tm-gantt__timeline-body");

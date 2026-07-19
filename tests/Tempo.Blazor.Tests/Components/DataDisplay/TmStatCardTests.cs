@@ -11,7 +11,7 @@ public class TmStatCardTests : LocalizationTestBase
     [Fact]
     public void TmStatCard_Has_Base_CssClass()
     {
-        var cut = RenderComponent<TmStatCard>(p => p
+        var cut = Render<TmStatCard>(p => p
             .Add(c => c.Title, "Users")
             .Add(c => c.Value, "1,234"));
 
@@ -21,7 +21,7 @@ public class TmStatCardTests : LocalizationTestBase
     [Fact]
     public void TmStatCard_Renders_Value()
     {
-        var cut = RenderComponent<TmStatCard>(p => p
+        var cut = Render<TmStatCard>(p => p
             .Add(c => c.Title, "Users")
             .Add(c => c.Value, "1,234"));
 
@@ -31,7 +31,7 @@ public class TmStatCardTests : LocalizationTestBase
     [Fact]
     public void TmStatCard_Renders_Title()
     {
-        var cut = RenderComponent<TmStatCard>(p => p
+        var cut = Render<TmStatCard>(p => p
             .Add(c => c.Title, "Active users")
             .Add(c => c.Value, "42"));
 
@@ -41,7 +41,7 @@ public class TmStatCardTests : LocalizationTestBase
     [Fact]
     public void TmStatCard_Renders_SubValue_When_Set()
     {
-        var cut = RenderComponent<TmStatCard>(p => p
+        var cut = Render<TmStatCard>(p => p
             .Add(c => c.Title, "Revenue")
             .Add(c => c.Value, "$5,000")
             .Add(c => c.SubValue, "+12% this month"));
@@ -52,7 +52,7 @@ public class TmStatCardTests : LocalizationTestBase
     [Fact]
     public void TmStatCard_No_SubValue_When_Null()
     {
-        var cut = RenderComponent<TmStatCard>(p => p
+        var cut = Render<TmStatCard>(p => p
             .Add(c => c.Title, "Revenue")
             .Add(c => c.Value, "$5,000"));
 

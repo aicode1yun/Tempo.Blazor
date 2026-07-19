@@ -32,7 +32,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     [Fact]
     public void TmGanttTaskPanel_Renders_Fields_WhenTaskProvided()
     {
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
             .Add(c => c.AllTasks, new List<TmWorkItem>()));
 
@@ -54,7 +54,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
         {
             new() { Id = "d1", FromId = "2", ToId = "1", Type = 0 }
         };
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
             .Add(c => c.AllTasks, AllTasksWithTwo)
             .Add(c => c.Dependencies, deps));
@@ -74,7 +74,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
         {
             new() { Id = "d1", FromId = "2", ToId = "1", Type = 0 }
         };
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
             .Add(c => c.AllTasks, AllTasksWithTwo)
             .Add(c => c.Dependencies, deps)
@@ -96,7 +96,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     public void TmGanttTaskPanel_AddsDependency_OnAdd()
     {
         GanttDependency? added = null;
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
             .Add(c => c.AllTasks, AllTasksWithTwo)
             .Add(c => c.Dependencies, new List<GanttDependency>())
@@ -135,7 +135,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
         {
             new() { Id = "d1", FromId = "2", ToId = "1", Type = 0 }
         };
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
             .Add(c => c.AllTasks, AllTasksWithTwo)
             .Add(c => c.Dependencies, existingDeps)
@@ -170,7 +170,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
         {
             new() { Id = "d1", FromId = "1", ToId = "2", Type = 0 } // 1 -> 2
         };
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask()) // Task "1" is selected
             .Add(c => c.AllTasks, AllTasksWithTwo)
             .Add(c => c.Dependencies, existingDeps)
@@ -201,7 +201,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
         {
             new() { Id = "d1", FromId = "2", ToId = "1", Type = 0 }
         };
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
             .Add(c => c.AllTasks, AllTasksWithTwo)
             .Add(c => c.Dependencies, deps)
@@ -232,7 +232,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
         {
             new() { Id = "d1", FromId = "2", ToId = "1", Type = 0 }
         };
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
             .Add(c => c.AllTasks, AllTasksWithTwo)
             .Add(c => c.Dependencies, deps)
@@ -254,7 +254,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     [Fact]
     public void TmGanttTaskPanel_DoesNotRender_WhenNoTask()
     {
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.AllTasks, new List<TmWorkItem>()));
 
         cut.Nodes.Should().BeEmpty("panel should not render when Task is null");
@@ -267,7 +267,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     public void TmGanttTaskPanel_UpdatesTask_OnSave()
     {
         TmWorkItem? updated = null;
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
             .Add(c => c.AllTasks, new List<TmWorkItem>())
             .Add(c => c.OnTaskUpdated, t => updated = t));
@@ -290,7 +290,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     [Fact]
     public void TmGanttTaskPanel_Validation_StartAfterEnd_ShowsError()
     {
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
             .Add(c => c.AllTasks, new List<TmWorkItem>()));
 
@@ -312,7 +312,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
 
         // OnTaskUpdated should NOT have been invoked
         var updated = false;
-        cut.SetParametersAndRender(p => p.Add(c => c.OnTaskUpdated, _ => updated = true));
+        cut.Render(p => p.Add(c => c.OnTaskUpdated, _ => updated = true));
         saveBtn.Click();
         updated.Should().BeFalse("Save should not invoke OnTaskUpdated when validation fails");
     }
@@ -323,7 +323,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     [Fact]
     public void TmGanttTaskPanel_Cancel_ResetsChanges()
     {
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
             .Add(c => c.AllTasks, new List<TmWorkItem>()));
 
@@ -347,7 +347,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
         task.BudgetHours = 40.0;
         task.ActualCost  = 1200.50m;
 
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, task)
             .Add(c => c.AllTasks, new List<TmWorkItem>()));
 
@@ -363,7 +363,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
         task.BudgetHours = 40.0;
         task.ActualCost  = 500m;
 
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, task)
             .Add(c => c.AllTasks, new List<TmWorkItem>())
             .Add(c => c.OnTaskUpdated, EventCallback.Factory.Create<TmWorkItem>(this, t => saved = t)));
@@ -393,7 +393,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
             Notes      = "Morning work"
         });
 
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, task)
             .Add(c => c.AllTasks, new List<TmWorkItem>()));
 
@@ -412,7 +412,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
             StoppedAt = new DateTime(2024, 1, 1, 11, 0, 0)
         });
 
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, task)
             .Add(c => c.AllTasks, new List<TmWorkItem>()));
 
@@ -422,7 +422,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     [Fact]
     public void TmGanttTaskPanel_Shows_StartTimer_Button_When_No_Active_Timer()
     {
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
             .Add(c => c.AllTasks, new List<TmWorkItem>())
             .Add(c => c.ActiveTimerTaskId, (string?)null));
@@ -434,7 +434,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     [Fact]
     public void TmGanttTaskPanel_Shows_StopTimer_Button_When_This_Task_Is_Active()
     {
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())          // Task.Id == "1"
             .Add(c => c.AllTasks, new List<TmWorkItem>())
             .Add(c => c.ActiveTimerTaskId, "1"));
@@ -447,7 +447,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     public void TmGanttTaskPanel_StartTimer_Fires_OnTimerStarted_With_TaskId()
     {
         string? firedId = null;
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
             .Add(c => c.AllTasks, new List<TmWorkItem>())
             .Add(c => c.ActiveTimerTaskId, (string?)null)
@@ -462,7 +462,7 @@ public class TmGanttTaskPanelTests : LocalizationTestBase
     public void TmGanttTaskPanel_StopTimer_Fires_OnTimerStopped_With_Entry()
     {
         (string TaskId, GanttTimeLogEntry Entry)? fired = null;
-        var cut = RenderComponent<TmGanttTaskPanel>(p => p
+        var cut = Render<TmGanttTaskPanel>(p => p
             .Add(c => c.Task, CreateTask())
             .Add(c => c.AllTasks, new List<TmWorkItem>())
             .Add(c => c.ActiveTimerTaskId, "1")

@@ -16,7 +16,7 @@ public class TmDataTableMasterDetailTests : LocalizationTestBase
     private IRenderedComponent<TmDataTable<Person>> Render(
         RenderFragment<Person>? detail = null,
         Func<Person, Task>? onLoad = null)
-        => RenderComponent<TmDataTable<Person>>(p =>
+        => Render<TmDataTable<Person>>(p =>
         {
             p.Add(c => c.ViewContext, "md-test");
             p.Add(c => c.Items, new List<Person> { new("Ann") });

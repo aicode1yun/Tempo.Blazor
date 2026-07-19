@@ -28,7 +28,7 @@ public sealed class TmModelingViewSelectorTests : LocalizationTestBase
     [Fact]
     public void Changing_notation_updates_available_viewpoints()
     {
-        using var cut = RenderComponent<TmModelingViewSelector>(parameters => parameters
+        using var cut = Render<TmModelingViewSelector>(parameters => parameters
             .Add(p => p.NotationKey, "bpmn"));
 
         cut.Find("[data-testid='modeling-notation-select']").Change("archimate");
@@ -41,7 +41,7 @@ public sealed class TmModelingViewSelectorTests : LocalizationTestBase
     [Fact]
     public void Unknown_notation_shows_empty_viewpoint_state_without_exception()
     {
-        using var cut = RenderComponent<TmModelingViewSelector>(parameters => parameters
+        using var cut = Render<TmModelingViewSelector>(parameters => parameters
             .Add(p => p.NotationKey, "unknown"));
 
         cut.Find("[data-testid='modeling-view-selector']").Should().NotBeNull();
@@ -52,7 +52,7 @@ public sealed class TmModelingViewSelectorTests : LocalizationTestBase
     [Fact]
     public void Notation_without_viewpoints_disables_viewpoint_choice_with_message()
     {
-        using var cut = RenderComponent<TmModelingViewSelector>(parameters => parameters
+        using var cut = Render<TmModelingViewSelector>(parameters => parameters
             .Add(p => p.NotationKey, "custom-empty"));
 
         cut.FindAll("[data-testid='modeling-viewpoint-select']").Should().BeEmpty();
@@ -63,7 +63,7 @@ public sealed class TmModelingViewSelectorTests : LocalizationTestBase
     public void Selecting_viewpoint_emits_selected_value()
     {
         string? selected = null;
-        using var cut = RenderComponent<TmModelingViewSelector>(parameters => parameters
+        using var cut = Render<TmModelingViewSelector>(parameters => parameters
             .Add(p => p.NotationKey, "archimate")
             .Add(p => p.OnViewpointChanged, EventCallback.Factory.Create<string?>(this, value => selected = value)));
 
@@ -75,7 +75,7 @@ public sealed class TmModelingViewSelectorTests : LocalizationTestBase
     [Fact]
     public void Null_notation_shows_select_notation_prompt()
     {
-        using var cut = RenderComponent<TmModelingViewSelector>(parameters => parameters
+        using var cut = Render<TmModelingViewSelector>(parameters => parameters
             .Add(p => p.NotationKey, (string?)null));
 
         cut.Find("[data-testid='modeling-notation-select']").TextContent.Should().Contain("Select notation");

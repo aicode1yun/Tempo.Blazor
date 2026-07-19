@@ -16,7 +16,7 @@ public class TmFilterChipTests : LocalizationTestBase
     public void FilterChip_RendersFieldAndValue()
     {
         var filter = MakeFilter(label: "Status", display: "Active");
-        var cut = RenderComponent<TmFilterChip>(p => p.Add(c => c.Filter, filter));
+        var cut = Render<TmFilterChip>(p => p.Add(c => c.Filter, filter));
 
         cut.Markup.Should().Contain("Status");
         cut.Markup.Should().Contain("Active");
@@ -27,7 +27,7 @@ public class TmFilterChipTests : LocalizationTestBase
     {
         ActiveFilter? removed = null;
         var filter = MakeFilter();
-        var cut = RenderComponent<TmFilterChip>(p => p
+        var cut = Render<TmFilterChip>(p => p
             .Add(c => c.Filter,    filter)
             .Add(c => c.OnRemove,  (ActiveFilter f) => removed = f));
 
@@ -42,7 +42,7 @@ public class TmFilterChipTests : LocalizationTestBase
     {
         ActiveFilter? edited = null;
         var filter = MakeFilter();
-        var cut = RenderComponent<TmFilterChip>(p => p
+        var cut = Render<TmFilterChip>(p => p
             .Add(c => c.Filter,  filter)
             .Add(c => c.OnEdit,  (ActiveFilter f) => edited = f));
 

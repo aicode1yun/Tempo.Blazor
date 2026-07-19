@@ -11,7 +11,7 @@ public class TmFloatingActionButtonTests : LocalizationTestBase
     [Fact]
     public void TmFloatingActionButton_Renders_Circular_Button()
     {
-        var cut = RenderComponent<TmFloatingActionButton>();
+        var cut = Render<TmFloatingActionButton>();
         cut.Find(".tm-fab").Should().NotBeNull();
     }
 
@@ -19,7 +19,7 @@ public class TmFloatingActionButtonTests : LocalizationTestBase
     public void TmFloatingActionButton_Click_Fires_OnClick()
     {
         bool clicked = false;
-        var cut = RenderComponent<TmFloatingActionButton>(p => p
+        var cut = Render<TmFloatingActionButton>(p => p
             .Add(x => x.OnClick, EventCallback.Factory.Create(this, () => clicked = true)));
 
         cut.Find(".tm-fab__main").Click();
@@ -29,7 +29,7 @@ public class TmFloatingActionButtonTests : LocalizationTestBase
     [Fact]
     public void TmFloatingActionButton_Position_BottomRight_Has_Class()
     {
-        var cut = RenderComponent<TmFloatingActionButton>(p => p
+        var cut = Render<TmFloatingActionButton>(p => p
             .Add(x => x.Position, FabPosition.BottomRight));
 
         cut.Find(".tm-fab--bottomright").Should().NotBeNull();
@@ -44,7 +44,7 @@ public class TmFloatingActionButtonTests : LocalizationTestBase
             new FabItem { Icon = "delete", Label = "Delete" }
         };
 
-        var cut = RenderComponent<TmFloatingActionButton>(p => p
+        var cut = Render<TmFloatingActionButton>(p => p
             .Add(x => x.Items, items));
 
         cut.Find(".tm-fab__main").Click();
@@ -60,7 +60,7 @@ public class TmFloatingActionButtonTests : LocalizationTestBase
             new FabItem { Icon = "edit", Label = "Edit" }
         };
 
-        var cut = RenderComponent<TmFloatingActionButton>(p => p
+        var cut = Render<TmFloatingActionButton>(p => p
             .Add(x => x.Items, items)
             .Add(x => x.OnItemClick, EventCallback.Factory.Create<FabItem>(this, i => clicked = i)));
 

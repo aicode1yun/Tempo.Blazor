@@ -20,7 +20,7 @@ public class TmStockChartTests : LocalizationTestBase
     [Fact]
     public void Render_SvgElement_Exists()
     {
-        var cut = RenderComponent<TmStockChart>(p => p
+        var cut = Render<TmStockChart>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Type, StockChartType.Candlestick));
 
@@ -31,7 +31,7 @@ public class TmStockChartTests : LocalizationTestBase
     [Fact]
     public void Candlestick_RendersRects()
     {
-        var cut = RenderComponent<TmStockChart>(p => p
+        var cut = Render<TmStockChart>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Type, StockChartType.Candlestick));
 
@@ -48,7 +48,7 @@ public class TmStockChartTests : LocalizationTestBase
             new(new DateTime(2026, 1, 3), 106, 115, 104, 114, 1500)
         };
 
-        var cut = RenderComponent<TmStockChart>(p => p
+        var cut = Render<TmStockChart>(p => p
             .Add(x => x.Data, data)
             .Add(x => x.Type, StockChartType.Candlestick));
 
@@ -66,7 +66,7 @@ public class TmStockChartTests : LocalizationTestBase
             new(new DateTime(2026, 1, 4), 114, 114, 108, 110, 900)
         };
 
-        var cut = RenderComponent<TmStockChart>(p => p
+        var cut = Render<TmStockChart>(p => p
             .Add(x => x.Data, data)
             .Add(x => x.Type, StockChartType.Candlestick));
 
@@ -78,7 +78,7 @@ public class TmStockChartTests : LocalizationTestBase
     [Fact]
     public void Candlestick_Wicks_RenderedAsLines()
     {
-        var cut = RenderComponent<TmStockChart>(p => p
+        var cut = Render<TmStockChart>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Type, StockChartType.Candlestick));
 
@@ -89,7 +89,7 @@ public class TmStockChartTests : LocalizationTestBase
     [Fact]
     public void OHLC_RendersLines()
     {
-        var cut = RenderComponent<TmStockChart>(p => p
+        var cut = Render<TmStockChart>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Type, StockChartType.OHLC));
 
@@ -100,7 +100,7 @@ public class TmStockChartTests : LocalizationTestBase
     [Fact]
     public void Line_RendersPolyline()
     {
-        var cut = RenderComponent<TmStockChart>(p => p
+        var cut = Render<TmStockChart>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Type, StockChartType.Line));
 
@@ -110,7 +110,7 @@ public class TmStockChartTests : LocalizationTestBase
     [Fact]
     public void Volume_RendersBars_WhenShowVolumeTrue()
     {
-        var cut = RenderComponent<TmStockChart>(p => p
+        var cut = Render<TmStockChart>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Type, StockChartType.Candlestick)
             .Add(x => x.ShowVolume, true));
@@ -121,7 +121,7 @@ public class TmStockChartTests : LocalizationTestBase
     [Fact]
     public void Volume_Hidden_WhenShowVolumeFalse()
     {
-        var cut = RenderComponent<TmStockChart>(p => p
+        var cut = Render<TmStockChart>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Type, StockChartType.Candlestick)
             .Add(x => x.ShowVolume, false));
@@ -132,7 +132,7 @@ public class TmStockChartTests : LocalizationTestBase
     [Fact]
     public void CustomClass_Applied()
     {
-        var cut = RenderComponent<TmStockChart>(p => p
+        var cut = Render<TmStockChart>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Type, StockChartType.Candlestick)
             .Add(x => x.Class, "my-chart"));
@@ -143,7 +143,7 @@ public class TmStockChartTests : LocalizationTestBase
     [Fact]
     public void EmptyData_ShowsPlaceholder()
     {
-        var cut = RenderComponent<TmStockChart>(p => p
+        var cut = Render<TmStockChart>(p => p
             .Add(x => x.Data, new List<StockChartDataPoint>())
             .Add(x => x.Type, StockChartType.Candlestick));
 
@@ -153,7 +153,7 @@ public class TmStockChartTests : LocalizationTestBase
     [Fact]
     public void Animated_HasAnimatedClass()
     {
-        var cut = RenderComponent<TmStockChart>(p => p
+        var cut = Render<TmStockChart>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Type, StockChartType.Candlestick)
             .Add(x => x.Animated, true));

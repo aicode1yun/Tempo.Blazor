@@ -65,7 +65,7 @@ public class TmPdfAnnotatorTests : LocalizationTestBase
         IPdfAnnotationProvider? provider = null,
         Action<Bunit.ComponentParameterCollectionBuilder<TmPdfAnnotator>>? configure = null)
     {
-        return RenderComponent<TmPdfAnnotator>(p =>
+        return Render<TmPdfAnnotator>(p =>
         {
             p.Add(x => x.Url, DocUrl);
             p.Add(x => x.DocumentId, DocId);

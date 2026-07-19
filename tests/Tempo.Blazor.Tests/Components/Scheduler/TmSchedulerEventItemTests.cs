@@ -20,7 +20,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
     {
         var evt = Evt("Meeting", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0));
 
-        var cut = RenderComponent<TmSchedulerEventItem>(p => p
+        var cut = Render<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt));
 
         cut.Find(".tm-scheduler-event").Should().NotBeNull();
@@ -31,7 +31,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
     {
         var evt = Evt("Sprint Review", new DateTime(2025, 6, 10, 14, 0, 0), new DateTime(2025, 6, 10, 15, 0, 0));
 
-        var cut = RenderComponent<TmSchedulerEventItem>(p => p
+        var cut = Render<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt));
 
         cut.Find(".tm-scheduler-event-title").TextContent.Should().Contain("Sprint Review");
@@ -42,7 +42,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
     {
         var evt = Evt("Meeting", new DateTime(2025, 6, 10, 14, 30, 0), new DateTime(2025, 6, 10, 16, 0, 0));
 
-        var cut = RenderComponent<TmSchedulerEventItem>(p => p
+        var cut = Render<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt));
 
         var time = cut.Find(".tm-scheduler-event-time");
@@ -54,7 +54,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
     {
         var evt = Evt("Colored", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0), color: "#e74c3c");
 
-        var cut = RenderComponent<TmSchedulerEventItem>(p => p
+        var cut = Render<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt));
 
         var dot = cut.Find(".tm-scheduler-event-dot");
@@ -66,7 +66,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
     {
         var evt = Evt("Holiday", new DateTime(2025, 6, 10), new DateTime(2025, 6, 11), allDay: true);
 
-        var cut = RenderComponent<TmSchedulerEventItem>(p => p
+        var cut = Render<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt));
 
         var time = cut.Find(".tm-scheduler-event-time");
@@ -79,7 +79,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
         TmScheduleEvent? clicked = null;
         var evt = Evt("Review", new DateTime(2025, 6, 10, 15, 0, 0), new DateTime(2025, 6, 10, 16, 0, 0));
 
-        var cut = RenderComponent<TmSchedulerEventItem>(p => p
+        var cut = Render<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt)
             .Add(c => c.OnClick, EventCallback.Factory.Create<TmScheduleEvent>(this, e => clicked = e)));
 
@@ -94,7 +94,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
     {
         var evt = Evt("Custom", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0), cssClass: "urgent");
 
-        var cut = RenderComponent<TmSchedulerEventItem>(p => p
+        var cut = Render<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt));
 
         cut.Find(".tm-scheduler-event").ClassList.Should().Contain("urgent");
@@ -105,7 +105,7 @@ public class TmSchedulerEventItemTests : LocalizationTestBase
     {
         var evt = Evt("Custom Render", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0));
 
-        var cut = RenderComponent<TmSchedulerEventItem>(p => p
+        var cut = Render<TmSchedulerEventItem>(p => p
             .Add(c => c.Event, evt)
             .Add(c => c.EventTemplate, (RenderFragment<TmScheduleEvent>)(e => builder =>
             {

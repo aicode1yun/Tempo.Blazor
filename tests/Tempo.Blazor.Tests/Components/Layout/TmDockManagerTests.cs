@@ -15,7 +15,7 @@ public class TmDockManagerTests : LocalizationTestBase
     [Fact]
     public void TmDockManager_Renders_Multiple_Panes()
     {
-        var cut = RenderComponent<TmDockManager>(p => p
+        var cut = Render<TmDockManager>(p => p
             .AddChildContent<TmDockPane>(pane => pane
                 .Add(x => x.Id, "pane1")
                 .Add(x => x.Title, "Explorer")
@@ -46,7 +46,7 @@ public class TmDockManagerTests : LocalizationTestBase
     [Fact]
     public void TmDockManager_Drag_Pane_To_Right_Docks_It()
     {
-        var cut = RenderComponent<TmDockManager>(p => p
+        var cut = Render<TmDockManager>(p => p
             .AddChildContent<TmDockPane>(pane => pane
                 .Add(x => x.Id, "p1")
                 .Add(x => x.Title, "Properties")
@@ -73,7 +73,7 @@ public class TmDockManagerTests : LocalizationTestBase
     [Fact]
     public void TmDockManager_Float_Button_Creates_Floating_Window()
     {
-        var cut = RenderComponent<TmDockManager>(p => p
+        var cut = Render<TmDockManager>(p => p
             .AddChildContent<TmDockPane>(pane => pane
                 .Add(x => x.Id, "p1")
                 .Add(x => x.Title, "Terminal")
@@ -95,7 +95,7 @@ public class TmDockManagerTests : LocalizationTestBase
     [Fact]
     public void TmDockManager_Close_Button_Removes_Pane()
     {
-        var cut = RenderComponent<TmDockManager>(p => p
+        var cut = Render<TmDockManager>(p => p
             .AddChildContent<TmDockPane>(pane => pane
                 .Add(x => x.Id, "p1")
                 .Add(x => x.Title, "Output")
@@ -117,7 +117,7 @@ public class TmDockManagerTests : LocalizationTestBase
     [Fact]
     public void TmDockManager_Multiple_Center_Panes_Show_Tabs()
     {
-        var cut = RenderComponent<TmDockManager>(p => p
+        var cut = Render<TmDockManager>(p => p
             .AddChildContent<TmDockPane>(pane => pane
                 .Add(x => x.Id, "p1")
                 .Add(x => x.Title, "File A")
@@ -144,7 +144,7 @@ public class TmDockManagerTests : LocalizationTestBase
     [Fact]
     public void TmDockManager_Tab_Click_Switches_Active_Pane()
     {
-        var cut = RenderComponent<TmDockManager>(p => p
+        var cut = Render<TmDockManager>(p => p
             .AddChildContent<TmDockPane>(pane => pane
                 .Add(x => x.Id, "p1")
                 .Add(x => x.Title, "Alpha")

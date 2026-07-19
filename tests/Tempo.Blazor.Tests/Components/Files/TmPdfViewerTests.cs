@@ -19,7 +19,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithUrl_DisplaysViewerContainer()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf"));
 
         cut.Find(".tm-pdf-viewer").Should().NotBeNull();
@@ -30,7 +30,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithUrl_DisplaysCanvas()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf"));
 
         cut.Find("canvas.tm-pdf-viewer__canvas").Should().NotBeNull();
@@ -41,7 +41,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithShowToolbarTrue_DisplaysToolbar()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, true));
 
@@ -53,7 +53,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_AfterLoad_ToolbarContainsPageLabel()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, true));
 
@@ -69,7 +69,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_OnFirstPage_PreviousButtonDisabled()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, true));
 
@@ -86,7 +86,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_OnLastPage_NextButtonDisabled()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.Page, 10));
@@ -105,7 +105,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     public void ClickNextPage_IncrementsPage()
     {
         int capturedPage = 1;
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.PageChanged, EventCallback.Factory.Create<int>(this, p => capturedPage = p)));
@@ -126,7 +126,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     public void ClickPreviousPage_DecrementsPage()
     {
         int capturedPage = 2;
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.Page, 2)
@@ -148,7 +148,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     public void ClickZoomIn_IncreasesScale()
     {
         double capturedScale = 1.0;
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.ScaleChanged, EventCallback.Factory.Create<double>(this, s => capturedScale = s)));
@@ -169,7 +169,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     public void ClickZoomOut_DecreasesScale()
     {
         double capturedScale = 1.0;
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.Scale, 1.25)
@@ -190,7 +190,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_ZoomLabelShowsPercentage()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.Scale, 1.5));
@@ -207,7 +207,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithAllowDownloadTrue_DisplaysDownloadLink()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.AllowDownload, true));
 
@@ -220,7 +220,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_OpenLinkHasTargetBlank()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf"));
 
         var link = cut.Find("a[target='_blank']");
@@ -232,7 +232,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_InitialState_HasCanvasWrap()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf"));
 
         // Canvas wrap should always be present before fallback
@@ -244,7 +244,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WhenUseFallbackTrue_DisplaysEmbed()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf"));
 
         cut.InvokeAsync(() => cut.Instance.OnPdfLoadError("test error"));
@@ -258,7 +258,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_OnLoadError_SwitchesToFallback()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf"));
 
         cut.InvokeAsync(() => cut.Instance.OnPdfLoadError("test error"));
@@ -272,7 +272,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithClass_AppliesToRoot()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.Class, "my-pdf"));
 
@@ -285,7 +285,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithoutUrl_DisplaysEmptyState()
     {
-        var cut = RenderComponent<TmPdfViewer>();
+        var cut = Render<TmPdfViewer>();
 
         cut.Find(".tm-pdf-viewer__empty").Should().NotBeNull();
     }
@@ -295,7 +295,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithShowToolbarFalse_HidesToolbar()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, false));
 
@@ -307,7 +307,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithAllowDownloadFalse_HidesDownloadLink()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.AllowDownload, false));
 
@@ -319,7 +319,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithHeight_AppliesStyle()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.Height, "400px"));
 
@@ -332,7 +332,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_ScaleBinding_UpdatesZoomLabel()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.Scale, 0.75));
@@ -349,7 +349,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_PageBinding_UpdatesPageLabel()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.Page, 3));
@@ -366,7 +366,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithShowTextLayer_DisplaysTextLayer()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowTextLayer, true));
 
@@ -378,7 +378,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithAllowRotation_DisplaysRotateButton()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.AllowRotation, true));
@@ -397,7 +397,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     public async Task GoToPage_UpdatesCurrentPage()
     {
         int capturedPage = 1;
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.PageChanged, EventCallback.Factory.Create<int>(this, p => capturedPage = p)));
 
@@ -415,7 +415,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     public async Task SetScale_UpdatesScale()
     {
         double capturedScale = 1.0;
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ScaleChanged, EventCallback.Factory.Create<double>(this, s => capturedScale = s)));
 
@@ -436,7 +436,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithShowThumbnailsTrue_DisplaysThumbnailsSidebar()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowThumbnails, true));
 
@@ -448,7 +448,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithShowThumbnailsFalse_HidesThumbnailsSidebar()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowThumbnails, false));
 
@@ -460,7 +460,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithShowSearchTrue_DisplaysSearchBar()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowSearch, true));
 
@@ -472,7 +472,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithShowSearchFalse_HidesSearchBar()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowSearch, false));
 
@@ -484,7 +484,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithViewModeContinuous_DisplaysContinuousWrap()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ViewMode, PdfViewMode.Continuous));
 
@@ -496,7 +496,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithViewModeSinglePage_DisplaysCanvasWrap()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ViewMode, PdfViewMode.SinglePage));
 
@@ -509,7 +509,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     public void ClickViewModeToggle_ChangesViewMode()
     {
         PdfViewMode capturedMode = PdfViewMode.SinglePage;
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.ShowViewModeToggle, true)
@@ -532,7 +532,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public async Task RotateAsync_CyclesRotation()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.AllowRotation, true));
 
@@ -556,7 +556,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithShowSearchTrue_HasSearchInput()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowSearch, true));
 
@@ -568,7 +568,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithShowThumbnailsTrue_HasThumbnailsElement()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowThumbnails, true));
 
@@ -580,7 +580,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithShowToolbarAndSearch_HasSearchToggleButton()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.ShowSearch, true));
@@ -598,7 +598,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithThumbnails_BodyHasFlexLayout()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowThumbnails, true));
 
@@ -611,7 +611,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void ClickSearchToggle_TogglesSearchBarVisibility()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.ShowSearch, true));
@@ -636,7 +636,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     [Fact]
     public void OverlayContent_RendersInsideCanvasWrap()
     {
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.OverlayContent, builder =>
                       {
@@ -652,7 +652,7 @@ public class TmPdfViewerTests : LocalizationTestBase
     public void OnDocumentLoaded_FiresWithTotalPages()
     {
         var total = 0;
-        var cut = RenderComponent<TmPdfViewer>(parameters =>
+        var cut = Render<TmPdfViewer>(parameters =>
             parameters.Add(p => p.Url, "https://example.com/test.pdf")
                       .Add(p => p.OnDocumentLoaded, EventCallback.Factory.Create<int>(this, t => total = t)));
 

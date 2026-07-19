@@ -26,7 +26,7 @@ public sealed class TmNotionExcerptBlockTests : LocalizationTestBase
     {
         var content = new ExcerptBlockContent { Html = "Reusable <strong>summary</strong>" };
 
-        var cut = RenderComponent<TmNotionExcerptBlock>(parameters => parameters
+        var cut = Render<TmNotionExcerptBlock>(parameters => parameters
             .Add(component => component.Block, MakeBlock(content))
             .Add(component => component.Content, content));
 
@@ -43,7 +43,7 @@ public sealed class TmNotionExcerptBlockTests : LocalizationTestBase
         ExcerptBlockContent? saved = null;
         var content = new ExcerptBlockContent { Html = "Initial summary" };
 
-        var cut = RenderComponent<TmNotionExcerptBlock>(parameters => parameters
+        var cut = Render<TmNotionExcerptBlock>(parameters => parameters
             .Add(component => component.Block, MakeBlock(content))
             .Add(component => component.Content, content)
             .Add(component => component.OnContentChanged, EventCallback.Factory.Create<ExcerptBlockContent>(

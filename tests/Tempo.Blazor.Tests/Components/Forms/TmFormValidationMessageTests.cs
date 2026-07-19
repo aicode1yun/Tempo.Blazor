@@ -1,3 +1,4 @@
+using Bunit.Rendering;
 using System.Linq.Expressions;
 using Bunit;
 using FluentAssertions;
@@ -17,7 +18,7 @@ public class TmFormValidationMessageTests : LocalizationTestBase
         public string Name { get; set; } = "";
     }
 
-    private IRenderedFragment RenderWithEditForm(FormModel model, Expression<Func<object>> forExpr, string? cssClass = null)
+    private IRenderedComponent<ContainerFragment> RenderWithEditForm(FormModel model, Expression<Func<object>> forExpr, string? cssClass = null)
     {
         return Render(builder =>
         {
@@ -36,7 +37,7 @@ public class TmFormValidationMessageTests : LocalizationTestBase
         });
     }
 
-    private static void AddFieldError(IRenderedFragment cut, string fieldName, params string[] errors)
+    private static void AddFieldError(IRenderedComponent<ContainerFragment> cut, string fieldName, params string[] errors)
     {
         var editContext = cut.FindComponent<EditForm>().Instance.EditContext!;
         var field = editContext.Field(fieldName);

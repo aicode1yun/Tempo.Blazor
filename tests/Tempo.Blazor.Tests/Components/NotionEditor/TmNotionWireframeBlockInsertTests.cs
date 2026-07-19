@@ -31,7 +31,7 @@ public class TmNotionWireframeBlockInsertTests : LocalizationTestBase
     private IRenderedComponent<TmNotionWireframeBlock> Render(
         NotionEditorContext ctx, IWireframeBlockContent? content,
         Action<WireframeBlockContent>? onSaved = null, bool readOnly = false)
-        => RenderComponent<TmNotionWireframeBlock>(p =>
+        => Render<TmNotionWireframeBlock>(p =>
         {
             p.AddCascadingValue(ctx);
             p.Add(c => c.Content, content);

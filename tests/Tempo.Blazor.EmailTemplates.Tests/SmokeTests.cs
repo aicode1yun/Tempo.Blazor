@@ -3,7 +3,7 @@ using Tempo.Blazor.EmailTemplates;
 
 namespace Tempo.Blazor.EmailTemplates.Tests;
 
-public class SmokeTests : TestContext
+public class SmokeTests : BunitContext
 {
     [Fact]
     public void UiAssembly_IsResolvable()

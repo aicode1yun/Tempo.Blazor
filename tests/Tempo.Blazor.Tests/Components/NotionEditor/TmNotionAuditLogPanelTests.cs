@@ -1,3 +1,4 @@
+using Bunit.Rendering;
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
@@ -113,7 +114,7 @@ public sealed class TmNotionAuditLogPanelTests : LocalizationTestBase
         cut.WaitForAssertion(() => cut.Find("[data-testid='notion-audit-empty']").TextContent.Should().Contain("No audit entries"));
     }
 
-    private IRenderedFragment RenderPanel(ITmActivityProvider provider, int pageSize = 10)
+    private IRenderedComponent<ContainerFragment> RenderPanel(ITmActivityProvider provider, int pageSize = 10)
         => Render(builder =>
         {
             builder.OpenComponent<TmNotionAuditLogPanel>(0);

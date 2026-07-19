@@ -19,7 +19,7 @@ public class TmRadioGroupTests : LocalizationTestBase
     [Fact]
     public void TmRadioGroup_Renders_Wrapper_Element()
     {
-        var cut = RenderComponent<TmRadioGroup<string>>(p => p
+        var cut = Render<TmRadioGroup<string>>(p => p
             .Add(c => c.Options, SampleOptions)
             .Add(c => c.Name, "fruit"));
 
@@ -29,7 +29,7 @@ public class TmRadioGroupTests : LocalizationTestBase
     [Fact]
     public void TmRadioGroup_Renders_One_Radio_Per_Option()
     {
-        var cut = RenderComponent<TmRadioGroup<string>>(p => p
+        var cut = Render<TmRadioGroup<string>>(p => p
             .Add(c => c.Options, SampleOptions)
             .Add(c => c.Name, "fruit"));
 
@@ -39,7 +39,7 @@ public class TmRadioGroupTests : LocalizationTestBase
     [Fact]
     public void TmRadioGroup_Label_Renders_Group_Label()
     {
-        var cut = RenderComponent<TmRadioGroup<string>>(p => p
+        var cut = Render<TmRadioGroup<string>>(p => p
             .Add(c => c.Label, "Pick a fruit")
             .Add(c => c.Options, SampleOptions)
             .Add(c => c.Name, "fruit"));
@@ -50,7 +50,7 @@ public class TmRadioGroupTests : LocalizationTestBase
     [Fact]
     public void TmRadioGroup_Selected_Option_Has_Checked_Input()
     {
-        var cut = RenderComponent<TmRadioGroup<string>>(p => p
+        var cut = Render<TmRadioGroup<string>>(p => p
             .Add(c => c.Value, "banana")
             .Add(c => c.Options, SampleOptions)
             .Add(c => c.Name, "fruit"));
@@ -63,7 +63,7 @@ public class TmRadioGroupTests : LocalizationTestBase
     public void TmRadioGroup_ValueChanged_Fires_On_Click()
     {
         string? captured = null;
-        var cut = RenderComponent<TmRadioGroup<string>>(p => p
+        var cut = Render<TmRadioGroup<string>>(p => p
             .Add(c => c.Options, SampleOptions)
             .Add(c => c.Name, "fruit")
             .Add(c => c.ValueChanged, EventCallback.Factory.Create<string?>(this, v => captured = v)));
@@ -76,7 +76,7 @@ public class TmRadioGroupTests : LocalizationTestBase
     [Fact]
     public void TmRadioGroup_Default_Layout_Is_Vertical()
     {
-        var cut = RenderComponent<TmRadioGroup<string>>(p => p
+        var cut = Render<TmRadioGroup<string>>(p => p
             .Add(c => c.Options, SampleOptions)
             .Add(c => c.Name, "fruit"));
 
@@ -86,7 +86,7 @@ public class TmRadioGroupTests : LocalizationTestBase
     [Fact]
     public void TmRadioGroup_Horizontal_Layout_CssClass()
     {
-        var cut = RenderComponent<TmRadioGroup<string>>(p => p
+        var cut = Render<TmRadioGroup<string>>(p => p
             .Add(c => c.Layout, RadioLayout.Horizontal)
             .Add(c => c.Options, SampleOptions)
             .Add(c => c.Name, "fruit"));
@@ -97,7 +97,7 @@ public class TmRadioGroupTests : LocalizationTestBase
     [Fact]
     public void TmRadioGroup_Error_Shows_Error_Message()
     {
-        var cut = RenderComponent<TmRadioGroup<string>>(p => p
+        var cut = Render<TmRadioGroup<string>>(p => p
             .Add(c => c.Error, "Selection required")
             .Add(c => c.Options, SampleOptions)
             .Add(c => c.Name, "fruit"));
@@ -110,7 +110,7 @@ public class TmRadioGroupTests : LocalizationTestBase
     [Fact]
     public void TmRadioGroup_Required_SetsAriaRequiredOnRadiogroup()
     {
-        var cut = RenderComponent<TmRadioGroup<string>>(p => p
+        var cut = Render<TmRadioGroup<string>>(p => p
             .Add(c => c.Options, SampleOptions)
             .Add(c => c.Required, true));
         cut.Find("[role='radiogroup']").GetAttribute("aria-required").Should().Be("true");
@@ -119,7 +119,7 @@ public class TmRadioGroupTests : LocalizationTestBase
     [Fact]
     public void TmRadioGroup_Required_AddsRequiredMarkerClassToLabel()
     {
-        var cut = RenderComponent<TmRadioGroup<string>>(p => p
+        var cut = Render<TmRadioGroup<string>>(p => p
             .Add(c => c.Label, "Pick a fruit")
             .Add(c => c.Options, SampleOptions)
             .Add(c => c.Required, true));
@@ -129,7 +129,7 @@ public class TmRadioGroupTests : LocalizationTestBase
     [Fact]
     public void TmRadioGroup_NotRequired_HasNoAriaRequiredAndNoMarker()
     {
-        var cut = RenderComponent<TmRadioGroup<string>>(p => p
+        var cut = Render<TmRadioGroup<string>>(p => p
             .Add(c => c.Label, "Pick a fruit")
             .Add(c => c.Options, SampleOptions));
         cut.Find("[role='radiogroup']").HasAttribute("aria-required").Should().BeFalse();

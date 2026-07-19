@@ -29,7 +29,7 @@ public class TmActivityTimelineTests : LocalizationTestBase
     [Fact]
     public void Timeline_RendersEntries_InReverseChronologicalOrder()
     {
-        var cut = RenderComponent<TmActivityTimeline>(p => p
+        var cut = Render<TmActivityTimeline>(p => p
             .Add(c => c.Entries, TwoEntries()));
 
         var items = cut.FindAll(".tm-timeline-item");
@@ -43,7 +43,7 @@ public class TmActivityTimelineTests : LocalizationTestBase
     public void Timeline_EntryType_Comment_RendersCommentClass()
     {
         var entries = new[] { new TimelineEntry("e1", "comment", "Alice", null, DateTimeOffset.Now.AddMinutes(-5), null, "Hello") };
-        var cut = RenderComponent<TmActivityTimeline>(p => p.Add(c => c.Entries, entries));
+        var cut = Render<TmActivityTimeline>(p => p.Add(c => c.Entries, entries));
 
         cut.Find(".tm-timeline-comment").Should().NotBeNull();
     }
@@ -52,7 +52,7 @@ public class TmActivityTimelineTests : LocalizationTestBase
     public void Timeline_EntryType_StatusChange_RendersStatusClass()
     {
         var entries = new[] { new TimelineEntry("e1", "status_change", "Alice", null, DateTimeOffset.Now.AddMinutes(-5), null, "Active") };
-        var cut = RenderComponent<TmActivityTimeline>(p => p.Add(c => c.Entries, entries));
+        var cut = Render<TmActivityTimeline>(p => p.Add(c => c.Entries, entries));
 
         cut.Find(".tm-timeline-status_change").Should().NotBeNull();
     }
@@ -61,7 +61,7 @@ public class TmActivityTimelineTests : LocalizationTestBase
     public void Timeline_HtmlContent_RendersAsMarkupString()
     {
         var entries = new[] { new TimelineEntry("e1", "comment", "Alice", null, DateTimeOffset.Now.AddMinutes(-1), "<strong>bold text</strong>", null) };
-        var cut = RenderComponent<TmActivityTimeline>(p => p.Add(c => c.Entries, entries));
+        var cut = Render<TmActivityTimeline>(p => p.Add(c => c.Entries, entries));
 
         cut.Find("strong").TextContent.Should().Be("bold text");
     }
@@ -69,7 +69,7 @@ public class TmActivityTimelineTests : LocalizationTestBase
     [Fact]
     public void Timeline_Empty_RendersEmptyState()
     {
-        var cut = RenderComponent<TmActivityTimeline>(p => p
+        var cut = Render<TmActivityTimeline>(p => p
             .Add(c => c.Entries, Array.Empty<ITimelineEntry>()));
 
         cut.FindAll(".tm-timeline-item").Should().BeEmpty();
@@ -80,7 +80,7 @@ public class TmActivityTimelineTests : LocalizationTestBase
     public void Timeline_RelativeTime_UsesLocalizer()
     {
         var entries = new[] { new TimelineEntry("e1", "comment", "Alice", null, DateTimeOffset.Now.AddSeconds(-10), null, "Hi") };
-        var cut = RenderComponent<TmActivityTimeline>(p => p.Add(c => c.Entries, entries));
+        var cut = Render<TmActivityTimeline>(p => p.Add(c => c.Entries, entries));
 
         // FormatRelativeTime < 1 min → "Just now"
         cut.Find(".tm-timeline-time").TextContent.Should().NotBeNullOrWhiteSpace();
@@ -90,7 +90,7 @@ public class TmActivityTimelineTests : LocalizationTestBase
     public async Task Timeline_RefreshAsync_ReloadsEntries()
     {
         var entries = TwoEntries();
-        var cut = RenderComponent<TmActivityTimeline>(p => p.Add(c => c.Entries, entries));
+        var cut = Render<TmActivityTimeline>(p => p.Add(c => c.Entries, entries));
 
         cut.FindAll(".tm-timeline-item").Count.Should().Be(2);
 
@@ -103,7 +103,7 @@ public class TmActivityTimelineTests : LocalizationTestBase
     public void Timeline_AuthorAvatar_RendersWhenProvided()
     {
         var entries = new[] { new TimelineEntry("e1", "comment", "Alice", "https://example.com/avatar.png", DateTimeOffset.Now.AddMinutes(-1), null, "Hi") };
-        var cut = RenderComponent<TmActivityTimeline>(p => p.Add(c => c.Entries, entries));
+        var cut = Render<TmActivityTimeline>(p => p.Add(c => c.Entries, entries));
 
         cut.Find(".tm-timeline-avatar img").Should().NotBeNull();
     }
@@ -112,7 +112,7 @@ public class TmActivityTimelineTests : LocalizationTestBase
     public void Timeline_AuthorAvatar_RendersInitialsWhenMissing()
     {
         var entries = new[] { new TimelineEntry("e1", "comment", "Alice Smith", null, DateTimeOffset.Now.AddMinutes(-1), null, "Hi") };
-        var cut = RenderComponent<TmActivityTimeline>(p => p.Add(c => c.Entries, entries));
+        var cut = Render<TmActivityTimeline>(p => p.Add(c => c.Entries, entries));
 
         // TmAvatar without Src renders initials span
         cut.Find(".tm-timeline-avatar .tm-avatar").Should().NotBeNull();

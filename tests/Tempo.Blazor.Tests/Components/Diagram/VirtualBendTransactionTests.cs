@@ -37,7 +37,7 @@ public class VirtualBendTransactionTests : LocalizationTestBase
 
         var stack = new DiagramCommandStack();
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false)
             .Add(c => c.CommandStack, stack));
@@ -67,7 +67,7 @@ public class VirtualBendTransactionTests : LocalizationTestBase
 
         var stack = new DiagramCommandStack();
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false)
             .Add(c => c.CommandStack, stack));
@@ -103,7 +103,7 @@ public class VirtualBendTransactionTests : LocalizationTestBase
 
         var stack = new DiagramCommandStack();
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false)
             .Add(c => c.CommandStack, stack));
@@ -138,7 +138,7 @@ public class VirtualBendTransactionTests : LocalizationTestBase
 
         var stack = new DiagramCommandStack();
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false)
             .Add(c => c.CommandStack, stack));

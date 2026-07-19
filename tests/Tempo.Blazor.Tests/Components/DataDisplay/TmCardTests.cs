@@ -16,7 +16,7 @@ public class TmCardTests : LocalizationTestBase
     [Fact]
     public void TmCard_Renders_Div_Element()
     {
-        var cut = RenderComponent<TmCard>(p => p
+        var cut = Render<TmCard>(p => p
             .AddChildContent("Content"));
 
         cut.Find("div.tm-card").Should().NotBeNull();
@@ -25,7 +25,7 @@ public class TmCardTests : LocalizationTestBase
     [Fact]
     public void TmCard_Renders_ChildContent_In_CardContent()
     {
-        var cut = RenderComponent<TmCard>(p => p
+        var cut = Render<TmCard>(p => p
             .AddChildContent("Hello"));
 
         cut.Find(".tm-card-content").TextContent.Should().Contain("Hello");
@@ -34,7 +34,7 @@ public class TmCardTests : LocalizationTestBase
     [Fact]
     public void TmCard_Has_Base_CssClass()
     {
-        var cut = RenderComponent<TmCard>(p => p
+        var cut = Render<TmCard>(p => p
             .AddChildContent("Test"));
 
         cut.Find("div").ClassList.Should().Contain("tm-card");
@@ -48,7 +48,7 @@ public class TmCardTests : LocalizationTestBase
     [InlineData(CardVariant.Outlined, "tm-card-outlined")]
     public void TmCard_Applies_Variant_CssClass(CardVariant variant, string expectedClass)
     {
-        var cut = RenderComponent<TmCard>(p => p
+        var cut = Render<TmCard>(p => p
             .Add(c => c.Variant, variant)
             .AddChildContent("Test"));
 
@@ -58,7 +58,7 @@ public class TmCardTests : LocalizationTestBase
     [Fact]
     public void TmCard_Default_Variant_Is_Default()
     {
-        var cut = RenderComponent<TmCard>(p => p
+        var cut = Render<TmCard>(p => p
             .AddChildContent("Test"));
 
         cut.Find("div.tm-card").ClassList.Should().Contain("tm-card-default");
@@ -69,7 +69,7 @@ public class TmCardTests : LocalizationTestBase
     [Fact]
     public void TmCard_Header_Renders_CardHeader()
     {
-        var cut = RenderComponent<TmCard>(p => p
+        var cut = Render<TmCard>(p => p
             .Add(c => c.Header, "My Card")
             .AddChildContent("Content"));
 
@@ -79,7 +79,7 @@ public class TmCardTests : LocalizationTestBase
     [Fact]
     public void TmCard_No_Header_When_Header_Null()
     {
-        var cut = RenderComponent<TmCard>(p => p
+        var cut = Render<TmCard>(p => p
             .AddChildContent("Content"));
 
         cut.FindAll(".tm-card-header").Should().BeEmpty();
@@ -88,7 +88,7 @@ public class TmCardTests : LocalizationTestBase
     [Fact]
     public void TmCard_HeaderIcon_Renders_TmIcon_In_Header()
     {
-        var cut = RenderComponent<TmCard>(p => p
+        var cut = Render<TmCard>(p => p
             .Add(c => c.Header, "Stats")
             .Add(c => c.HeaderIcon, "bar-chart-2")
             .AddChildContent("Content"));
@@ -101,7 +101,7 @@ public class TmCardTests : LocalizationTestBase
     [Fact]
     public void TmCard_Footer_Renders_CardFooter()
     {
-        var cut = RenderComponent<TmCard>(p => p
+        var cut = Render<TmCard>(p => p
             .Add(c => c.Footer, "Footer text")
             .AddChildContent("Content"));
 
@@ -111,7 +111,7 @@ public class TmCardTests : LocalizationTestBase
     [Fact]
     public void TmCard_No_Footer_When_Footer_Null()
     {
-        var cut = RenderComponent<TmCard>(p => p
+        var cut = Render<TmCard>(p => p
             .AddChildContent("Content"));
 
         cut.FindAll(".tm-card-footer").Should().BeEmpty();
@@ -122,7 +122,7 @@ public class TmCardTests : LocalizationTestBase
     [Fact]
     public void TmCard_ExtraClass_Added_To_Root()
     {
-        var cut = RenderComponent<TmCard>(p => p
+        var cut = Render<TmCard>(p => p
             .Add(c => c.Class, "my-custom-class")
             .AddChildContent("Content"));
 
@@ -134,7 +134,7 @@ public class TmCardTests : LocalizationTestBase
     [Fact]
     public void TmCard_AdditionalAttributes_Applied_To_Root()
     {
-        var cut = RenderComponent<TmCard>(p => p
+        var cut = Render<TmCard>(p => p
             .AddUnmatched("data-testid", "my-card")
             .AddChildContent("Content"));
 

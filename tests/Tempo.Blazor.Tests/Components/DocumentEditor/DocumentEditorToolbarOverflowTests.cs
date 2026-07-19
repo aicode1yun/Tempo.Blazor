@@ -26,7 +26,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public void Toolbar_MoreButton_ExistsInDom()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         var btn = cut.Find("[data-testid='document-toolbar-more']");
         btn.Should().NotBeNull();
@@ -35,7 +35,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public void Toolbar_MoreButton_IsHiddenByDefault()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         var btn = cut.Find("[data-testid='document-toolbar-more']");
         btn.HasAttribute("hidden").Should().BeTrue("More button must be hidden until JS signals overflow");
@@ -44,7 +44,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public async Task Toolbar_MoreButton_IsVisibleWhenJsSignalsOverflow()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         await cut.InvokeAsync(() =>
             cut.Instance.SetOverflowingAsync(true, ["bold"]));
@@ -56,7 +56,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public async Task Toolbar_MoreButton_IsHiddenAgainWhenOverflowClears()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true, ["bold"]));
 
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(false, []));
@@ -70,7 +70,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public async Task Toolbar_OverflowMenuGroups_AreReusedAcrossRendersWithUnchangedState()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true, ["bold", "italic"]));
 
         var menu = cut.FindComponent<TmDocumentToolbarOverflowMenu>();
@@ -92,7 +92,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public async Task Toolbar_OverflowMenuGroups_RebuildWhenSearchQueryChanges()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(
             true, ["bold", "italic", "underline", "strikethrough", "superscript", "subscript", "smallCaps", "allCaps"]));
         cut.Find("[data-testid='document-toolbar-more']").Click();
@@ -112,7 +112,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public void Toolbar_OverflowMenu_IsNotRenderedByDefault()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         cut.FindAll("[data-testid='document-toolbar-more-menu']").Should().BeEmpty();
     }
@@ -120,7 +120,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public async Task Toolbar_MoreButton_Click_OpensOverflowMenu()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true, ["bold"]));
 
         cut.Find("[data-testid='document-toolbar-more']").Click();
@@ -131,7 +131,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public async Task Toolbar_MoreButton_SecondClick_ClosesOverflowMenu()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true, ["bold"]));
         cut.Find("[data-testid='document-toolbar-more']").Click();
 
@@ -143,7 +143,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public async Task Toolbar_OverflowMenu_ShowsButtonForEachOverflowedCommand()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true, ["bold", "italic"]));
         cut.Find("[data-testid='document-toolbar-more']").Click();
 
@@ -156,7 +156,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public async Task Toolbar_OverflowMenu_GroupsCommandsByToolbarGroup()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true, ["bold", "insertTable", "save"]));
         cut.Find("[data-testid='document-toolbar-more']").Click();
 
@@ -169,7 +169,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public async Task Toolbar_OverflowMenu_SortsCommandsByPriorityBeforeGroupOrder()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true, ["exportDocx", "bold", "viewDocumentJson", "save"]));
         cut.Find("[data-testid='document-toolbar-more']").Click();
 
@@ -183,7 +183,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public async Task Toolbar_OverflowMenu_ShowsSearchForLargeCommandSetsAndFilters()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true,
         [
             "save", "undo", "redo", "bold", "italic", "underline", "insertTable", "insertImage"
@@ -203,7 +203,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     public async Task Toolbar_OverflowMenu_CommandButton_FiresOnBoldCallback()
     {
         var boldFired = false;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.OnBold, () => { boldFired = true; }));
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true, ["bold"]));
         cut.Find("[data-testid='document-toolbar-more']").Click();
@@ -217,7 +217,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     public async Task Toolbar_OverflowMenu_CommandButton_FiresOnUndoCallback()
     {
         var undoFired = false;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.OnUndo, () => { undoFired = true; }));
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true, ["undo"]));
         cut.Find("[data-testid='document-toolbar-more']").Click();
@@ -231,7 +231,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     public async Task Toolbar_OverflowMenu_DisabledCommand_HasDisabledAttribute()
     {
         var registry = BuildRegistry(("bold", enabled: false, value: null));
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true, ["bold"]));
         cut.Find("[data-testid='document-toolbar-more']").Click();
@@ -244,7 +244,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     public async Task Toolbar_OverflowMenu_EnabledCommand_NotDisabled()
     {
         var registry = BuildRegistry(("bold", enabled: true, value: null));
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true, ["bold"]));
         cut.Find("[data-testid='document-toolbar-more']").Click();
@@ -256,7 +256,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public async Task Toolbar_MoreButton_AriaExpanded_ReflectsMenuState()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         await cut.InvokeAsync(() => cut.Instance.SetOverflowingAsync(true, ["bold"]));
 
         var btn = cut.Find("[data-testid='document-toolbar-more']");
@@ -271,7 +271,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public void RibbonTabs_HaveRovingTabindex_ActiveTabIsZero()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         var homeTab = cut.Find("[data-testid='document-ribbon-tab-home']");
         var insertTab = cut.Find("[data-testid='document-ribbon-tab-insert']");
@@ -283,7 +283,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public void RibbonTabs_RovingTabindex_UpdatesWhenTabSelected()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
 
@@ -296,7 +296,7 @@ public class DocumentEditorToolbarOverflowTests : LocalizationTestBase
     [Fact]
     public void RibbonButton_HasFixedSizeClass_InMarkup()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         var saveBtn = cut.Find("[data-testid='document-save']");
         saveBtn.ClassList.Should().Contain("tm-document-editor__ribbon-button",

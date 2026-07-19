@@ -66,7 +66,7 @@ public sealed class CanvasEngineContentControlPopoverTests : LocalizationTestBas
             """);
         module.SetupVoid("dispose", _ => true).SetVoidResult();
 
-        var cut = RenderComponent<TmDocumentCanvasEngineHost>(parameters =>
+        var cut = Render<TmDocumentCanvasEngineHost>(parameters =>
         {
             parameters.Add(p => p.Document, Tempo.Blazor.DocumentEditor.Models.DocumentEditorDocument.Empty("cc-host"));
             parameters.Add(p => p.AriaLabel, "Document editor");

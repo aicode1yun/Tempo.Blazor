@@ -13,7 +13,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithoutPage_DisplaysEmptyState()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>();
+        var cut = Render<TmDocumentPageViewer>();
 
         cut.Find(".tm-document-page-viewer").Should().NotBeNull();
         cut.Find(".tm-empty-state").TextContent.Should().Contain("No document page");
@@ -24,7 +24,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     {
         var page = CreatePage(label: "Contract page");
 
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, page));
 
         var image = cut.Find("img.tm-document-page-viewer__image");
@@ -35,7 +35,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithPage_SetsAspectRatioFromPageSize()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage(width: 612, height: 792)));
 
         cut.Find(".tm-document-page-viewer__page")
@@ -47,7 +47,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithScale_SetsPageScaleCssVariable()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.Scale, 1.25));
 
@@ -60,7 +60,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithInvalidScale_ClampsPageScale()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.Scale, 9)
                       .Add(p => p.MaxScale, 2));
@@ -74,7 +74,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     [Fact]
     public void Render_RootContainsClassAndAdditionalAttributes()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.Class, "custom-viewer")
                       .AddUnmatched("data-testid", "viewer"));
@@ -87,7 +87,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WhenLoading_DisplaysSkeletonState()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.IsLoading, true));
 
         cut.Find(".tm-document-page-viewer").GetAttribute("aria-busy").Should().Be("true");
@@ -98,7 +98,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithError_DisplaysAlertState()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Error, "Could not render page."));
 
         cut.Find(".tm-alert").TextContent.Should().Contain("Could not render page.");
@@ -107,7 +107,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithToolbar_DisplaysAccessibleZoomControls()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.ShowToolbar, true));
 
@@ -120,7 +120,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithPaginationControls_DisplaysPageLabelAndButtons()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage(pageIndex: 1))
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.ShowPaginationControls, true)
@@ -137,7 +137,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     {
         double? scale = null;
         DocumentPageZoomMode? zoomMode = null;
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.Scale, 1.0)
@@ -155,7 +155,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     {
         double? scale = null;
         DocumentPageZoomMode? zoomMode = null;
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.ShowToolbar, true)
                       .Add(p => p.ScaleChanged, value => scale = value)
@@ -170,7 +170,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithChildContent_RendersOverlayAbovePage()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .AddChildContent("<button class=\"overlay-child\">Sign</button>"));
 
@@ -183,7 +183,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     {
         var page = CreatePage(label: "Page A");
 
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, page)
                       .Add(p => p.OverlayTemplate, context => builder =>
                       {
@@ -199,7 +199,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithReadOnlyOverlay_DisablesPointerEventsForOverlay()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage())
                       .Add(p => p.IsOverlayInteractive, false)
                       .AddChildContent("<button>Sign</button>"));
@@ -212,7 +212,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     [Fact]
     public void Render_WithPage_SetsPageIdAndDataPageIndex()
     {
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, CreatePage(pageIndex: 2))
                       .Add(p => p.Id, "contract-page-3"));
 
@@ -226,7 +226,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
         TmDocumentPageViewerPointerEventArgs? captured = null;
         var page = CreatePage(pageIndex: 4);
 
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, page)
                       .Add(p => p.OnPageClick, EventCallback.Factory.Create<TmDocumentPageViewerPointerEventArgs>(this, args => captured = args)));
 
@@ -242,7 +242,7 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
         TmDocumentPageViewerPointerEventArgs? captured = null;
         var page = CreatePage(pageIndex: 1);
 
-        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+        var cut = Render<TmDocumentPageViewer>(parameters =>
             parameters.Add(p => p.Page, page)
                       .Add(p => p.OnPageContextMenu, EventCallback.Factory.Create<TmDocumentPageViewerPointerEventArgs>(this, args => captured = args)));
 

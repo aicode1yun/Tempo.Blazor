@@ -16,7 +16,7 @@ public class TmSpreadsheetEmbeddedModeTests : LocalizationTestBase
     [Fact]
     public void EmbeddedMode_HidesToolbar()
     {
-        var cut = RenderComponent<TmSpreadsheet>(p => p
+        var cut = Render<TmSpreadsheet>(p => p
             .Add(x => x.Mode, SpreadsheetMode.Embedded));
 
         cut.FindAll(".tm-spreadsheet-toolbar").Should().BeEmpty();
@@ -27,7 +27,7 @@ public class TmSpreadsheetEmbeddedModeTests : LocalizationTestBase
     [Fact]
     public void EmbeddedMode_HidesFormulaBar()
     {
-        var cut = RenderComponent<TmSpreadsheet>(p => p
+        var cut = Render<TmSpreadsheet>(p => p
             .Add(x => x.Mode, SpreadsheetMode.Embedded));
 
         cut.FindAll(".tm-spreadsheet-formula-bar").Should().BeEmpty();
@@ -38,7 +38,7 @@ public class TmSpreadsheetEmbeddedModeTests : LocalizationTestBase
     [Fact]
     public void FullMode_ShowsToolbar()
     {
-        var cut = RenderComponent<TmSpreadsheet>(p => p
+        var cut = Render<TmSpreadsheet>(p => p
             .Add(x => x.Mode, SpreadsheetMode.Full));
 
         cut.Find(".tm-spreadsheet-toolbar").Should().NotBeNull();
@@ -49,7 +49,7 @@ public class TmSpreadsheetEmbeddedModeTests : LocalizationTestBase
     [Fact]
     public void FullMode_ShowsFormulaBar()
     {
-        var cut = RenderComponent<TmSpreadsheet>(p => p
+        var cut = Render<TmSpreadsheet>(p => p
             .Add(x => x.Mode, SpreadsheetMode.Full));
 
         cut.Find(".tm-spreadsheet-formula-bar").Should().NotBeNull();
@@ -60,7 +60,7 @@ public class TmSpreadsheetEmbeddedModeTests : LocalizationTestBase
     [Fact]
     public void EmbeddedMode_CanvasGrid_HasReadonlyAttribute()
     {
-        var cut = RenderComponent<TmSpreadsheet>(p => p
+        var cut = Render<TmSpreadsheet>(p => p
             .Add(x => x.Mode, SpreadsheetMode.Embedded));
 
         var grid = cut.Find(".tm-spreadsheet-canvas-grid");
@@ -74,7 +74,7 @@ public class TmSpreadsheetEmbeddedModeTests : LocalizationTestBase
     {
         var sheet = new SpreadsheetSheet { Name = "Sheet1" };
 
-        var cut = RenderComponent<TmSpreadsheetCanvasGrid>(p => p
+        var cut = Render<TmSpreadsheetCanvasGrid>(p => p
             .Add(x => x.Sheet, sheet)
             .Add(x => x.IsReadonly, true));
 
@@ -89,7 +89,7 @@ public class TmSpreadsheetEmbeddedModeTests : LocalizationTestBase
     {
         var sheet = new SpreadsheetSheet { Name = "Sheet1" };
 
-        var cut = RenderComponent<TmSpreadsheetCanvasGrid>(p => p
+        var cut = Render<TmSpreadsheetCanvasGrid>(p => p
             .Add(x => x.Sheet, sheet)
             .Add(x => x.IsReadonly, false));
 

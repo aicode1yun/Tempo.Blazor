@@ -31,7 +31,7 @@ public class TmMultiViewListSearchTests : LocalizationTestBase
     [Fact]
     public void MultiViewList_SearchText_SetExternally_FiltersClientItems()
     {
-        var cut = RenderComponent<TmMultiViewList<MvlSearchItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlSearchItem>>(p => p
             .Add(c => c.Items, SampleItems())
             .Add(c => c.SearchText, "Item 2"));
 
@@ -42,7 +42,7 @@ public class TmMultiViewListSearchTests : LocalizationTestBase
     [Fact]
     public void MultiViewList_SearchText_SetExternally_WithShowSearchFalse_FiltersItems()
     {
-        var cut = RenderComponent<TmMultiViewList<MvlSearchItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlSearchItem>>(p => p
             .Add(c => c.Items, SampleItems())
             .Add(c => c.SearchText, "Item 1")
             .Add(c => c.ShowSearch, false));
@@ -56,7 +56,7 @@ public class TmMultiViewListSearchTests : LocalizationTestBase
     public void MultiViewList_SearchTextChanged_Fires_WhenInternalInputChanges()
     {
         string? captured = null;
-        var cut = RenderComponent<TmMultiViewList<MvlSearchItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlSearchItem>>(p => p
             .Add(c => c.Items, SampleItems())
             .Add(c => c.SearchTextChanged, (string value) => captured = value));
 
@@ -79,7 +79,7 @@ public class TmMultiViewListSearchTests : LocalizationTestBase
                 PageSize = call.Arg<DataTableQuery>().PageSize
             }));
 
-        var cut = RenderComponent<TmMultiViewList<MvlSearchItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlSearchItem>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.ViewContext, "search-test")
             .Add(c => c.SearchText, "server-term"));
@@ -94,14 +94,14 @@ public class TmMultiViewListSearchTests : LocalizationTestBase
     [Fact]
     public void MultiViewList_UncontrolledSearch_PersistsAfterParentRerender()
     {
-        var cut = RenderComponent<TmMultiViewList<MvlSearchItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlSearchItem>>(p => p
             .Add(c => c.Items, SampleItems()));
 
         var input = cut.Find(".tm-input-search");
         input.Input("Item 2");
 
         // Simulate an unrelated parent rerender (no SearchText parameter change)
-        cut.SetParametersAndRender();
+        cut.Render();
 
         cut.FindAll(".tm-mvl-row").Count.Should().Be(1);
         cut.Find(".tm-mvl-row").TextContent.Should().Contain("Item 2");
@@ -120,16 +120,16 @@ public class TmMultiViewListSearchTests : LocalizationTestBase
                 PageSize = call.Arg<DataTableQuery>().PageSize
             }));
 
-        var cut = RenderComponent<TmMultiViewList<MvlSearchItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlSearchItem>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.ViewContext, "search-test"));
 
         await cut.InvokeAsync(() => cut.Render());
 
-        cut.SetParametersAndRender(p => p.Add(c => c.SearchText, "alpha"));
+        cut.Render(p => p.Add(c => c.SearchText, "alpha"));
         await cut.InvokeAsync(() => cut.Render());
 
-        cut.SetParametersAndRender(p => p.Add(c => c.SearchText, "beta"));
+        cut.Render(p => p.Add(c => c.SearchText, "beta"));
         await cut.InvokeAsync(() => cut.Render());
 
         await provider.Received(3).GetDataAsync(
@@ -160,14 +160,14 @@ public class TmMultiViewListSearchTests : LocalizationTestBase
 
         IRenderedComponent<TmMultiViewList<MvlSearchItem>>? cut = null;
         var searchText = string.Empty;
-        cut = RenderComponent<TmMultiViewList<MvlSearchItem>>(p => p
+        cut = Render<TmMultiViewList<MvlSearchItem>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.ViewContext, "search-test")
             .Add(c => c.SearchText, searchText)
             .Add(c => c.SearchTextChanged, (string value) =>
             {
                 searchText = value;
-                cut!.SetParametersAndRender(pp => pp.Add(c => c.SearchText, value));
+                cut!.Render(pp => pp.Add(c => c.SearchText, value));
             }));
 
         await cut.InvokeAsync(() => cut.Render());

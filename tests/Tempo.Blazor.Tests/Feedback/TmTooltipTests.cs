@@ -11,7 +11,7 @@ public class TmTooltipTests : LocalizationTestBase
     [Fact]
     public void Tooltip_RendersChildContent()
     {
-        var cut = RenderComponent<TmTooltip>(p => p
+        var cut = Render<TmTooltip>(p => p
             .Add(x => x.Text, "Help text")
             .AddChildContent("<button>Hover me</button>"));
 
@@ -21,7 +21,7 @@ public class TmTooltipTests : LocalizationTestBase
     [Fact]
     public void Tooltip_HasTooltipText()
     {
-        var cut = RenderComponent<TmTooltip>(p => p
+        var cut = Render<TmTooltip>(p => p
             .Add(x => x.Text, "This is help")
             .AddChildContent("<span>Info</span>"));
 
@@ -32,7 +32,7 @@ public class TmTooltipTests : LocalizationTestBase
     [Fact]
     public void Tooltip_DefaultPosition_IsTop()
     {
-        var cut = RenderComponent<TmTooltip>(p => p
+        var cut = Render<TmTooltip>(p => p
             .Add(x => x.Text, "Tip")
             .AddChildContent("<span>X</span>"));
 
@@ -46,7 +46,7 @@ public class TmTooltipTests : LocalizationTestBase
     [InlineData(TooltipPosition.Right, "tm-tooltip--right")]
     public void Tooltip_Position_AppliesCss(TooltipPosition pos, string expected)
     {
-        var cut = RenderComponent<TmTooltip>(p => p
+        var cut = Render<TmTooltip>(p => p
             .Add(x => x.Text, "Tip")
             .Add(x => x.Position, pos)
             .AddChildContent("<span>X</span>"));
@@ -57,7 +57,7 @@ public class TmTooltipTests : LocalizationTestBase
     [Fact]
     public void Tooltip_HasRoleTooltip()
     {
-        var cut = RenderComponent<TmTooltip>(p => p
+        var cut = Render<TmTooltip>(p => p
             .Add(x => x.Text, "Tip")
             .AddChildContent("<span>X</span>"));
 
@@ -67,7 +67,7 @@ public class TmTooltipTests : LocalizationTestBase
     [Fact]
     public void Tooltip_HasAriaDescribedBy()
     {
-        var cut = RenderComponent<TmTooltip>(p => p
+        var cut = Render<TmTooltip>(p => p
             .Add(x => x.Text, "Tip")
             .AddChildContent("<span>X</span>"));
 
@@ -83,7 +83,7 @@ public class TmTooltipTests : LocalizationTestBase
     [Fact]
     public void Tooltip_ContentHiddenByDefault()
     {
-        var cut = RenderComponent<TmTooltip>(p => p
+        var cut = Render<TmTooltip>(p => p
             .Add(x => x.Text, "Tip")
             .AddChildContent("<span>X</span>"));
 
@@ -95,7 +95,7 @@ public class TmTooltipTests : LocalizationTestBase
     [Fact]
     public void Tooltip_CustomMaxWidth_IsApplied()
     {
-        var cut = RenderComponent<TmTooltip>(p => p
+        var cut = Render<TmTooltip>(p => p
             .Add(x => x.Text, "Tip")
             .Add(x => x.MaxWidth, "300px")
             .AddChildContent("<span>X</span>"));
@@ -108,7 +108,7 @@ public class TmTooltipTests : LocalizationTestBase
     [Fact]
     public void Tooltip_CustomClass_IsApplied()
     {
-        var cut = RenderComponent<TmTooltip>(p => p
+        var cut = Render<TmTooltip>(p => p
             .Add(x => x.Text, "Tip")
             .Add(x => x.Class, "my-tooltip")
             .AddChildContent("<span>X</span>"));

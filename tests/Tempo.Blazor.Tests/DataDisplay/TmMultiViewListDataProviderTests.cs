@@ -37,7 +37,7 @@ public class TmMultiViewListDataProviderTests : LocalizationTestBase
     {
         var provider = CreateMockProvider();
 
-        var cut = RenderComponent<TmMultiViewList<MvlServerItem>>(p =>
+        var cut = Render<TmMultiViewList<MvlServerItem>>(p =>
         {
             p.Add(c => c.DataProvider, provider);
             p.Add(c => c.TitleField, x => x.Name);
@@ -55,7 +55,7 @@ public class TmMultiViewListDataProviderTests : LocalizationTestBase
     {
         var provider = CreateMockProvider(MakeItems(3));
 
-        var cut = RenderComponent<TmMultiViewList<MvlServerItem>>(p =>
+        var cut = Render<TmMultiViewList<MvlServerItem>>(p =>
         {
             p.Add(c => c.DataProvider, provider);
             p.Add(c => c.TitleField, x => x.Name);
@@ -71,7 +71,7 @@ public class TmMultiViewListDataProviderTests : LocalizationTestBase
     {
         var provider = CreateMockProvider(MakeItems(3));
 
-        var cut = RenderComponent<TmMultiViewList<MvlServerItem>>(p =>
+        var cut = Render<TmMultiViewList<MvlServerItem>>(p =>
         {
             p.Add(c => c.DataProvider, provider);
             p.Add(c => c.TitleField, x => x.Name);
@@ -88,7 +88,7 @@ public class TmMultiViewListDataProviderTests : LocalizationTestBase
     {
         var provider = CreateMockProvider(MakeItems(3));
 
-        var cut = RenderComponent<TmMultiViewList<MvlServerItem>>(p =>
+        var cut = Render<TmMultiViewList<MvlServerItem>>(p =>
         {
             p.Add(c => c.DataProvider, provider);
             p.Add(c => c.TitleField, x => x.Name);
@@ -113,7 +113,7 @@ public class TmMultiViewListDataProviderTests : LocalizationTestBase
                     PageSize = 25
                 }));
 
-        var cut = RenderComponent<TmMultiViewList<MvlServerItem>>(p =>
+        var cut = Render<TmMultiViewList<MvlServerItem>>(p =>
         {
             p.Add(c => c.DataProvider, provider);
             p.Add(c => c.TitleField, x => x.Name);
@@ -128,7 +128,7 @@ public class TmMultiViewListDataProviderTests : LocalizationTestBase
     [Fact]
     public void MultiViewList_ClientSide_NoPagination_WhenSinglePage()
     {
-        var cut = RenderComponent<TmMultiViewList<MvlServerItem>>(p =>
+        var cut = Render<TmMultiViewList<MvlServerItem>>(p =>
         {
             p.Add(c => c.Items, MakeItems(3));
             p.Add(c => c.TitleField, x => x.Name);

@@ -56,7 +56,7 @@ public class DiagramWorkflowPhase11Tests : LocalizationTestBase
     [Fact]
     public void Toolbox_SearchInput_RendersEmptyInitialValue()
     {
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
 
         var search = cut.Find(".tm-diagram-toolbox__search input");
 

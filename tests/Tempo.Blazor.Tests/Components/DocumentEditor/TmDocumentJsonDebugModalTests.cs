@@ -13,7 +13,7 @@ public class TmDocumentJsonDebugModalTests : LocalizationTestBase
     [Fact]
     public void Modal_WhenClosed_RendersNothing()
     {
-        var cut = RenderComponent<TmDocumentJsonDebugModal>(parameters => parameters
+        var cut = Render<TmDocumentJsonDebugModal>(parameters => parameters
             .Add(p => p.IsOpen, false)
             .Add(p => p.Json, "{}"));
 
@@ -23,7 +23,7 @@ public class TmDocumentJsonDebugModalTests : LocalizationTestBase
     [Fact]
     public void Modal_WhenOpen_RendersWithTestId()
     {
-        var cut = RenderComponent<TmDocumentJsonDebugModal>(parameters => parameters
+        var cut = Render<TmDocumentJsonDebugModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.Json, "{}"));
 
@@ -34,7 +34,7 @@ public class TmDocumentJsonDebugModalTests : LocalizationTestBase
     public void Modal_ShowsJsonContent()
     {
         var json = """{"blocks":[]}""";
-        var cut = RenderComponent<TmDocumentJsonDebugModal>(parameters => parameters
+        var cut = Render<TmDocumentJsonDebugModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.Json, json));
 
@@ -45,7 +45,7 @@ public class TmDocumentJsonDebugModalTests : LocalizationTestBase
     public void Modal_CloseButton_InvokesOnClose()
     {
         var closed = false;
-        var cut = RenderComponent<TmDocumentJsonDebugModal>(parameters => parameters
+        var cut = Render<TmDocumentJsonDebugModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.Json, "{}")
             .Add(p => p.OnClose, EventCallback.Factory.Create(this, () => closed = true)));
@@ -58,7 +58,7 @@ public class TmDocumentJsonDebugModalTests : LocalizationTestBase
     [Fact]
     public void Modal_NullJson_RendersEmpty()
     {
-        var cut = RenderComponent<TmDocumentJsonDebugModal>(parameters => parameters
+        var cut = Render<TmDocumentJsonDebugModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.Json, null));
 
@@ -68,7 +68,7 @@ public class TmDocumentJsonDebugModalTests : LocalizationTestBase
     [Fact]
     public void Modal_RecoveryDetail_ShowsRuntimeRecoveryDebugSection()
     {
-        var cut = RenderComponent<TmDocumentJsonDebugModal>(parameters => parameters
+        var cut = Render<TmDocumentJsonDebugModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.Json, "{}")
             .Add(p => p.RecoveryDetailJson, """{"source":"command","attempt":1}"""));
@@ -81,7 +81,7 @@ public class TmDocumentJsonDebugModalTests : LocalizationTestBase
     [Fact]
     public void Modal_RuntimeDebug_ShowsRuntimeDebugSection()
     {
-        var cut = RenderComponent<TmDocumentJsonDebugModal>(parameters => parameters
+        var cut = Render<TmDocumentJsonDebugModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.Json, "{}")
             .Add(p => p.RuntimeDebugJson, """{"HasRuntimeDocument":true}"""));
@@ -95,7 +95,7 @@ public class TmDocumentJsonDebugModalTests : LocalizationTestBase
     public void Modal_CopyButton_InvokesOnCopyJson()
     {
         var copied = false;
-        var cut = RenderComponent<TmDocumentJsonDebugModal>(parameters => parameters
+        var cut = Render<TmDocumentJsonDebugModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.Json, "{}")
             .Add(p => p.OnCopyJson, EventCallback.Factory.Create(this, () => copied = true)));

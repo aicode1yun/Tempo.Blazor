@@ -18,7 +18,7 @@ public class TmGanttAddTaskTests : LocalizationTestBase
     [Fact]
     public void TmGantt_Renders_AddTaskButton()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var addBtn = cut.Find("button[data-testid='gantt-add-task']");
@@ -29,7 +29,7 @@ public class TmGanttAddTaskTests : LocalizationTestBase
     public void TmGantt_AddTaskButton_Invokes_OnTaskInserted()
     {
         GanttTaskInsertedArgs? inserted = null;
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks())
             .Add(c => c.OnTaskInserted, args => inserted = args));
 
@@ -46,7 +46,7 @@ public class TmGanttAddTaskTests : LocalizationTestBase
     {
         GanttTaskInsertedArgs? inserted = null;
         var tasks = GetSampleTasks();
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, tasks)
             .Add(c => c.OnTaskInserted, args => inserted = args));
 
@@ -68,7 +68,7 @@ public class TmGanttAddTaskTests : LocalizationTestBase
     {
         string? removedId = null;
         var tasks = GetSampleTasks();
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, tasks)
             .Add(c => c.OnTaskRemoved, id => removedId = id));
 

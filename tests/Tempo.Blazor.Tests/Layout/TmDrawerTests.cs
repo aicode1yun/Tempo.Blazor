@@ -14,7 +14,7 @@ public class TmDrawerTests : LocalizationTestBase
     [Fact]
     public void Drawer_WhenClosed_RendersNothing()
     {
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, false)
             .AddChildContent("Content"));
 
@@ -24,7 +24,7 @@ public class TmDrawerTests : LocalizationTestBase
     [Fact]
     public void Drawer_WhenOpen_RendersDrawer()
     {
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .AddChildContent("Drawer content"));
 
@@ -37,7 +37,7 @@ public class TmDrawerTests : LocalizationTestBase
     [Fact]
     public void Drawer_HasRoleDialog()
     {
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .AddChildContent("Content"));
 
@@ -53,7 +53,7 @@ public class TmDrawerTests : LocalizationTestBase
     [InlineData(DrawerPosition.Left, "tm-drawer--left")]
     public void Drawer_Position_AppliesCssClass(DrawerPosition pos, string expectedClass)
     {
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.Position, pos)
             .AddChildContent("Content"));
@@ -66,7 +66,7 @@ public class TmDrawerTests : LocalizationTestBase
     [Fact]
     public void Drawer_Title_RendersInHeader()
     {
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.Title, "Edit Record")
             .AddChildContent("Content"));
@@ -79,7 +79,7 @@ public class TmDrawerTests : LocalizationTestBase
     [Fact]
     public void Drawer_CustomWidth_AppliesStyle()
     {
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.Width, "600px")
             .AddChildContent("Content"));
@@ -93,7 +93,7 @@ public class TmDrawerTests : LocalizationTestBase
     [Fact]
     public void Drawer_CloseButton_IsShownByDefault()
     {
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .AddChildContent("Content"));
 
@@ -103,7 +103,7 @@ public class TmDrawerTests : LocalizationTestBase
     [Fact]
     public void Drawer_CloseButton_CanBeHidden()
     {
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.ShowCloseButton, false)
             .AddChildContent("Content"));
@@ -115,7 +115,7 @@ public class TmDrawerTests : LocalizationTestBase
     public void Drawer_CloseButtonClick_FiresIsOpenChanged()
     {
         bool isOpen = true;
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.IsOpenChanged, EventCallback.Factory.Create<bool>(this, v => isOpen = v))
             .AddChildContent("Content"));
@@ -130,7 +130,7 @@ public class TmDrawerTests : LocalizationTestBase
     [Fact]
     public void Drawer_Overlay_IsShownByDefault()
     {
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .AddChildContent("Content"));
 
@@ -140,7 +140,7 @@ public class TmDrawerTests : LocalizationTestBase
     [Fact]
     public void Drawer_Overlay_CanBeHidden()
     {
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.ShowOverlay, false)
             .AddChildContent("Content"));
@@ -152,7 +152,7 @@ public class TmDrawerTests : LocalizationTestBase
     public void Drawer_OverlayClick_ClosesDrawer()
     {
         bool isOpen = true;
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.IsOpenChanged, EventCallback.Factory.Create<bool>(this, v => isOpen = v))
             .AddChildContent("Content"));
@@ -166,7 +166,7 @@ public class TmDrawerTests : LocalizationTestBase
     public void Drawer_OverlayClick_DoesNotClose_WhenDisabled()
     {
         bool isOpen = true;
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.CloseOnOverlayClick, false)
             .Add(x => x.IsOpenChanged, EventCallback.Factory.Create<bool>(this, v => isOpen = v))
@@ -183,7 +183,7 @@ public class TmDrawerTests : LocalizationTestBase
     public async Task Drawer_EscapeKey_ClosesDrawer()
     {
         bool isOpen = true;
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.IsOpenChanged, EventCallback.Factory.Create<bool>(this, v => isOpen = v))
             .AddChildContent("Content"));
@@ -199,7 +199,7 @@ public class TmDrawerTests : LocalizationTestBase
     public async Task Drawer_EscapeKey_DoesNotClose_WhenCloseOnEscapeFalse()
     {
         bool isOpen = true;
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.CloseOnEscape, false)
             .Add(x => x.IsOpenChanged, EventCallback.Factory.Create<bool>(this, v => isOpen = v))
@@ -215,7 +215,7 @@ public class TmDrawerTests : LocalizationTestBase
     [Fact]
     public void Drawer_HeaderContent_RendersInHeader()
     {
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.HeaderContent, (RenderFragment)(b => b.AddMarkupContent(0, "<span>Custom Header</span>")))
             .AddChildContent("Body content"));
@@ -226,7 +226,7 @@ public class TmDrawerTests : LocalizationTestBase
     [Fact]
     public void Drawer_FooterContent_Renders()
     {
-        var cut = RenderComponent<TmDrawer>(p => p
+        var cut = Render<TmDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.FooterContent, (RenderFragment)(b => b.AddMarkupContent(0, "<button>Save</button>")))
             .AddChildContent("Body"));

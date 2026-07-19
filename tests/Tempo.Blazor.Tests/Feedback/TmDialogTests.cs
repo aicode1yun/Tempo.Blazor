@@ -23,7 +23,7 @@ public class TmDialogTests : LocalizationTestBase
     public void Dialog_WhenShowTrue_RendersDialog()
     {
         // Act
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, DialogType.Alert)
             .Add(d => d.Title, "Test")
@@ -38,7 +38,7 @@ public class TmDialogTests : LocalizationTestBase
     public void Dialog_WhenShowFalse_IsHidden()
     {
         // Act
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, false)
             .Add(d => d.Type, DialogType.Alert)
             .Add(d => d.Title, "Test")
@@ -56,7 +56,7 @@ public class TmDialogTests : LocalizationTestBase
         const string message = "This is an alert message";
 
         // Act
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, DialogType.Alert)
             .Add(d => d.Title, title)
@@ -71,7 +71,7 @@ public class TmDialogTests : LocalizationTestBase
     public void Dialog_ShowsIcon()
     {
         // Act
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, DialogType.Alert)
             .Add(d => d.Title, "Alert")
@@ -92,7 +92,7 @@ public class TmDialogTests : LocalizationTestBase
     public void Dialog_AppliesTypeClass(DialogType type, string expectedClass)
     {
         // Act
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, type)
             .Add(d => d.Title, "Title")
@@ -114,7 +114,7 @@ public class TmDialogTests : LocalizationTestBase
     public void Dialog_AppliesVariantClass(DialogVariant variant, string expectedClass)
     {
         // Act
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, DialogType.Alert)
             .Add(d => d.Variant, variant)
@@ -133,7 +133,7 @@ public class TmDialogTests : LocalizationTestBase
     public void Dialog_Dangerous_ShowsDangerStyling()
     {
         // Act
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, DialogType.Confirm)
             .Add(d => d.IsDangerous, true)
@@ -152,7 +152,7 @@ public class TmDialogTests : LocalizationTestBase
     public void PromptDialog_ShowsInputField()
     {
         // Act
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, DialogType.Prompt)
             .Add(d => d.Title, "Prompt")
@@ -169,7 +169,7 @@ public class TmDialogTests : LocalizationTestBase
         const string defaultValue = "Default Text";
 
         // Act
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, DialogType.Prompt)
             .Add(d => d.Title, "Prompt")

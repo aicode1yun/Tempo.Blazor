@@ -149,14 +149,14 @@ public sealed class TmNotionCodeBlockMarkdownPreviewTests : LocalizationTestBase
     public void PreviewToggle_ResetsWhenLanguageLeavesMarkdown()
     {
         var content = new CodeBlockContent { Code = TableMarkdown, Language = "Markdown" };
-        var cut = RenderComponent<TmNotionCodeBlock>(parameters => parameters
+        var cut = Render<TmNotionCodeBlock>(parameters => parameters
             .Add(p => p.Content, content)
             .Add(p => p.ReadOnly, true));
 
         cut.Find("[data-testid='notion-code-preview-toggle']").Click();
         cut.FindAll("[data-testid='notion-code-preview']").Should().ContainSingle();
 
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.Content, new CodeBlockContent { Code = TableMarkdown, Language = "JavaScript" }));
 
         cut.FindAll("[data-testid='notion-code-preview']").Should().BeEmpty();
@@ -171,7 +171,7 @@ public sealed class TmNotionCodeBlockMarkdownPreviewTests : LocalizationTestBase
     {
         var content = new CodeBlockContent { Code = code, Language = language };
 
-        return RenderComponent<TmNotionCodeBlock>(parameters => parameters
+        return Render<TmNotionCodeBlock>(parameters => parameters
             .Add(p => p.Content, content)
             .Add(p => p.ReadOnly, readOnly)
             .Add(p => p.AllowMarkdownPreview, allowMarkdownPreview));

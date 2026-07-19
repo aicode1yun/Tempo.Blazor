@@ -7,7 +7,7 @@ using Tempo.ReportServer.Web.Services;
 
 namespace Tempo.ReportServer.Web.Tests.Fixtures;
 
-public abstract class ReportServerWebTestBase : TestContext
+public abstract class ReportServerWebTestBase : BunitContext
 {
     protected ReportServerWebTestBase()
     {

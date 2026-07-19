@@ -22,7 +22,7 @@ public class TmTagPickerLocalizationTests : LocalizationTestBase
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmTagPicker>(p => p
+        var cut = Render<TmTagPicker>(p => p
             .Add(c => c.AllTags, AllTags)
             .Add(c => c.SelectedTags, new List<ITag>())
             .Add(c => c.AllowCreate, true));
@@ -36,7 +36,7 @@ public class TmTagPickerLocalizationTests : LocalizationTestBase
     [Fact]
     public void TmTagPicker_SearchPlaceholder_English_ShowsEnglishText()
     {
-        var cut = RenderComponent<TmTagPicker>(p => p
+        var cut = Render<TmTagPicker>(p => p
             .Add(c => c.AllTags, AllTags)
             .Add(c => c.SelectedTags, new List<ITag>())
             .Add(c => c.AllowCreate, true));
@@ -52,7 +52,7 @@ public class TmTagPickerLocalizationTests : LocalizationTestBase
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmTagPicker>(p => p
+        var cut = Render<TmTagPicker>(p => p
             .Add(c => c.AllTags, AllTags)
             .Add(c => c.SelectedTags, new List<ITag>())
             .Add(c => c.AllowCreate, true));
@@ -68,7 +68,7 @@ public class TmTagPickerLocalizationTests : LocalizationTestBase
     [Fact]
     public void TmTagPicker_CreateOption_English_ShowsEnglishText()
     {
-        var cut = RenderComponent<TmTagPicker>(p => p
+        var cut = Render<TmTagPicker>(p => p
             .Add(c => c.AllTags, AllTags)
             .Add(c => c.SelectedTags, new List<ITag>())
             .Add(c => c.AllowCreate, true));

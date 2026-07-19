@@ -40,7 +40,7 @@ public class TmMultiViewListGroupingTests : LocalizationTestBase
         ListViewMode viewMode = ListViewMode.Table,
         bool groupsCollapsedByDefault = true)
     {
-        return RenderComponent<TmMultiViewList<MvlGroupItem>>(p =>
+        return Render<TmMultiViewList<MvlGroupItem>>(p =>
         {
             p.Add(c => c.Items, Items);
             p.Add(c => c.ViewMode, viewMode);
@@ -64,7 +64,7 @@ public class TmMultiViewListGroupingTests : LocalizationTestBase
     [Fact]
     public void MultiViewList_NoGroupableFields_NoGroupPicker()
     {
-        var cut = RenderComponent<TmMultiViewList<MvlGroupItem>>(p =>
+        var cut = Render<TmMultiViewList<MvlGroupItem>>(p =>
         {
             p.Add(c => c.Items, Items);
             p.Add(c => c.TitleField, x => x.Name);
@@ -173,7 +173,7 @@ public class TmMultiViewListGroupingTests : LocalizationTestBase
     public void MultiViewList_OnGroupingChanged_FiresCallback()
     {
         IReadOnlyList<string>? groupCols = null;
-        var cut = RenderComponent<TmMultiViewList<MvlGroupItem>>(p =>
+        var cut = Render<TmMultiViewList<MvlGroupItem>>(p =>
         {
             p.Add(c => c.Items, Items);
             p.Add(c => c.TitleField, x => x.Name);

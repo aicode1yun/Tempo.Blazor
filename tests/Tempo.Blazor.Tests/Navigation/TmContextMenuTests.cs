@@ -15,7 +15,7 @@ public class TmContextMenuTests : LocalizationTestBase
     [Fact]
     public void ContextMenu_RendersTrigger()
     {
-        var cut = RenderComponent<TmContextMenu>(p => p
+        var cut = Render<TmContextMenu>(p => p
             .Add(x => x.Trigger, (RenderFragment)(b => b.AddMarkupContent(0, "<button>Actions</button>")))
             .AddChildContent<TmContextMenuItem>(mi => mi
                 .Add(x => x.Label, "Edit")));
@@ -26,7 +26,7 @@ public class TmContextMenuTests : LocalizationTestBase
     [Fact]
     public void ContextMenu_ClickTrigger_OpensMenu()
     {
-        var cut = RenderComponent<TmContextMenu>(p => p
+        var cut = Render<TmContextMenu>(p => p
             .Add(x => x.Trigger, (RenderFragment)(b => b.AddMarkupContent(0, "<button>Open</button>")))
             .AddChildContent<TmContextMenuItem>(mi => mi
                 .Add(x => x.Label, "Edit")));
@@ -41,7 +41,7 @@ public class TmContextMenuTests : LocalizationTestBase
     [Fact]
     public void ContextMenu_Trigger_IsKeyboardFocusable()
     {
-        var cut = RenderComponent<TmContextMenu>(p => p
+        var cut = Render<TmContextMenu>(p => p
             .Add(x => x.Trigger, (RenderFragment)(b => b.AddMarkupContent(0, "<span>Open</span>")))
             .AddChildContent<TmContextMenuItem>(mi => mi
                 .Add(x => x.Label, "Edit")));
@@ -58,7 +58,7 @@ public class TmContextMenuTests : LocalizationTestBase
     [InlineData(" ")]
     public void ContextMenu_KeyboardActivation_OpensMenu(string key)
     {
-        var cut = RenderComponent<TmContextMenu>(p => p
+        var cut = Render<TmContextMenu>(p => p
             .Add(x => x.Trigger, (RenderFragment)(b => b.AddMarkupContent(0, "<span>Open</span>")))
             .AddChildContent<TmContextMenuItem>(mi => mi
                 .Add(x => x.Label, "Edit")));
@@ -94,7 +94,7 @@ public class TmContextMenuTests : LocalizationTestBase
     [Fact]
     public void ContextMenuItem_Disabled_HasDisabledAttribute()
     {
-        var cut = RenderComponent<TmContextMenu>(p => p
+        var cut = Render<TmContextMenu>(p => p
             .Add(x => x.Trigger, (RenderFragment)(b => b.AddMarkupContent(0, "<button>Menu</button>")))
             .AddChildContent<TmContextMenuItem>(mi => mi
                 .Add(x => x.Label, "Locked")
@@ -109,7 +109,7 @@ public class TmContextMenuTests : LocalizationTestBase
     [Fact]
     public void ContextMenuItem_Divider_RendersAsSeparator()
     {
-        var cut = RenderComponent<TmContextMenu>(p => p
+        var cut = Render<TmContextMenu>(p => p
             .Add(x => x.Trigger, (RenderFragment)(b => b.AddMarkupContent(0, "<button>Menu</button>")))
             .AddChildContent<TmContextMenuItem>(mi => mi
                 .Add(x => x.IsDivider, true)));
@@ -122,7 +122,7 @@ public class TmContextMenuTests : LocalizationTestBase
     [Fact]
     public void ContextMenuItem_Dangerous_HasDangerClass()
     {
-        var cut = RenderComponent<TmContextMenu>(p => p
+        var cut = Render<TmContextMenu>(p => p
             .Add(x => x.Trigger, (RenderFragment)(b => b.AddMarkupContent(0, "<button>Menu</button>")))
             .AddChildContent<TmContextMenuItem>(mi => mi
                 .Add(x => x.Label, "Delete")
@@ -139,7 +139,7 @@ public class TmContextMenuTests : LocalizationTestBase
     public void ContextMenuItem_Click_FiresOnClick()
     {
         bool clicked = false;
-        var cut = RenderComponent<TmContextMenu>(p => p
+        var cut = Render<TmContextMenu>(p => p
             .Add(x => x.Trigger, (RenderFragment)(b => b.AddMarkupContent(0, "<button>Menu</button>")))
             .AddChildContent<TmContextMenuItem>(mi => mi
                 .Add(x => x.Label, "Action")
@@ -154,7 +154,7 @@ public class TmContextMenuTests : LocalizationTestBase
     [Fact]
     public void ContextMenuItem_Click_ClosesMenu()
     {
-        var cut = RenderComponent<TmContextMenu>(p => p
+        var cut = Render<TmContextMenu>(p => p
             .Add(x => x.Trigger, (RenderFragment)(b => b.AddMarkupContent(0, "<button>Menu</button>")))
             .AddChildContent<TmContextMenuItem>(mi => mi
                 .Add(x => x.Label, "Action")));
@@ -170,7 +170,7 @@ public class TmContextMenuTests : LocalizationTestBase
     [Fact]
     public void ContextMenu_Escape_ClosesMenu()
     {
-        var cut = RenderComponent<TmContextMenu>(p => p
+        var cut = Render<TmContextMenu>(p => p
             .Add(x => x.Trigger, (RenderFragment)(b => b.AddMarkupContent(0, "<button>Menu</button>")))
             .AddChildContent<TmContextMenuItem>(mi => mi
                 .Add(x => x.Label, "Action")));
@@ -187,7 +187,7 @@ public class TmContextMenuTests : LocalizationTestBase
 
     private IRenderedComponent<TmContextMenu> RenderOpenMenu()
     {
-        var cut = RenderComponent<TmContextMenu>(p => p
+        var cut = Render<TmContextMenu>(p => p
             .Add(x => x.Trigger, (RenderFragment)(b => b.AddMarkupContent(0, "<button>Actions</button>")))
             .AddChildContent<TmContextMenuItem>(mi => mi
                 .Add(x => x.Label, "Edit")

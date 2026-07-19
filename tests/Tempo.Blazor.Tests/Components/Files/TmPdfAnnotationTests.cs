@@ -31,7 +31,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     [Fact]
     public void Layer_RendersMarkerAndHighlightForTextRangeThread()
     {
-        var cut = RenderComponent<TmPdfAnnotationLayer>(p => p
+        var cut = Render<TmPdfAnnotationLayer>(p => p
             .Add(x => x.Threads, new List<DocumentCommentThread> { TextRangeThread("t1") })
             .Add(x => x.PageNumber, 1));
 
@@ -42,7 +42,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     [Fact]
     public void Layer_HidesThreadsFromOtherPages()
     {
-        var cut = RenderComponent<TmPdfAnnotationLayer>(p => p
+        var cut = Render<TmPdfAnnotationLayer>(p => p
             .Add(x => x.Threads, new List<DocumentCommentThread> { TextRangeThread("t1", page: 2) })
             .Add(x => x.PageNumber, 1));
 
@@ -54,13 +54,13 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     {
         var resolved = TextRangeThread("t1", status: DocumentCommentThreadStatus.Resolved);
 
-        var hidden = RenderComponent<TmPdfAnnotationLayer>(p => p
+        var hidden = Render<TmPdfAnnotationLayer>(p => p
             .Add(x => x.Threads, new List<DocumentCommentThread> { resolved })
             .Add(x => x.PageNumber, 1)
             .Add(x => x.ShowResolved, false));
         hidden.FindAll("[data-testid='pdf-annotation-marker']").Should().BeEmpty();
 
-        var shown = RenderComponent<TmPdfAnnotationLayer>(p => p
+        var shown = Render<TmPdfAnnotationLayer>(p => p
             .Add(x => x.Threads, new List<DocumentCommentThread> { resolved })
             .Add(x => x.PageNumber, 1)
             .Add(x => x.ShowResolved, true));
@@ -71,7 +71,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     public void Layer_ClickMarker_RaisesOnThreadSelected()
     {
         string? selected = null;
-        var cut = RenderComponent<TmPdfAnnotationLayer>(p => p
+        var cut = Render<TmPdfAnnotationLayer>(p => p
             .Add(x => x.Threads, new List<DocumentCommentThread> { TextRangeThread("t1") })
             .Add(x => x.PageNumber, 1)
             .Add(x => x.OnThreadSelected, EventCallback.Factory.Create<string>(this, id => selected = id)));
@@ -85,7 +85,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     public void Layer_RendersDraftHighlightForPendingAnchor()
     {
         var draft = DocumentCommentAnchor.TextRange(1, [DocumentCommentRect.Create(0.2, 0.3, 0.2, 0.02)], "draft");
-        var cut = RenderComponent<TmPdfAnnotationLayer>(p => p
+        var cut = Render<TmPdfAnnotationLayer>(p => p
             .Add(x => x.Threads, new List<DocumentCommentThread>())
             .Add(x => x.PageNumber, 1)
             .Add(x => x.DraftAnchor, draft));
@@ -98,7 +98,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     [Fact]
     public void Panel_EmptyThreads_ShowsEmptyState()
     {
-        var cut = RenderComponent<TmPdfAnnotationThreadPanel>(p => p
+        var cut = Render<TmPdfAnnotationThreadPanel>(p => p
             .Add(x => x.Threads, new List<DocumentCommentThread>()));
 
         cut.Find("[data-testid='pdf-annotation-empty']").Should().NotBeNull();
@@ -108,7 +108,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     public void Panel_SelectingThread_ShowsCommentDetail()
     {
         var thread = TextRangeThread("t1", body: "the body");
-        var cut = RenderComponent<TmPdfAnnotationThreadPanel>(p => p
+        var cut = Render<TmPdfAnnotationThreadPanel>(p => p
             .Add(x => x.Threads, new List<DocumentCommentThread> { thread })
             .Add(x => x.SelectedThreadId, "t1"));
 
@@ -121,7 +121,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     {
         string? createdBody = null;
         var selection = new PdfTextSelection("chosen text", 1, [DocumentCommentRect.Create(0.1, 0.2, 0.3, 0.02)]);
-        var cut = RenderComponent<TmPdfAnnotationThreadPanel>(p => p
+        var cut = Render<TmPdfAnnotationThreadPanel>(p => p
             .Add(x => x.Threads, new List<DocumentCommentThread>())
             .Add(x => x.PendingSelection, selection)
             .Add(x => x.OnCreateThreadRequested, EventCallback.Factory.Create<string>(this, b => createdBody = b)));
@@ -138,7 +138,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     {
         DocumentCommentReplyRequest? reply = null;
         var thread = TextRangeThread("t1");
-        var cut = RenderComponent<TmPdfAnnotationThreadPanel>(p => p
+        var cut = Render<TmPdfAnnotationThreadPanel>(p => p
             .Add(x => x.Threads, new List<DocumentCommentThread> { thread })
             .Add(x => x.SelectedThreadId, "t1")
             .Add(x => x.OnReplyRequested, EventCallback.Factory.Create<DocumentCommentReplyRequest>(this, r => reply = r)));
@@ -156,7 +156,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     {
         string? resolvedId = null;
         var thread = TextRangeThread("t1");
-        var cut = RenderComponent<TmPdfAnnotationThreadPanel>(p => p
+        var cut = Render<TmPdfAnnotationThreadPanel>(p => p
             .Add(x => x.Threads, new List<DocumentCommentThread> { thread })
             .Add(x => x.SelectedThreadId, "t1")
             .Add(x => x.OnResolveRequested, EventCallback.Factory.Create<string>(this, id => resolvedId = id)));
@@ -171,7 +171,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     [Fact]
     public void Viewer_WithEnableAnnotations_RendersOverlayAndPanel()
     {
-        var cut = RenderComponent<TmPdfViewer>(p => p
+        var cut = Render<TmPdfViewer>(p => p
             .Add(x => x.Url, "https://example.com/test.pdf")
             .Add(x => x.EnableAnnotations, true));
 
@@ -186,7 +186,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     public async Task Viewer_OnTextSelectionChanged_RaisesOnTextSelectedAndShowsComposer()
     {
         PdfTextSelection? captured = null;
-        var cut = RenderComponent<TmPdfViewer>(p => p
+        var cut = Render<TmPdfViewer>(p => p
             .Add(x => x.Url, "https://example.com/test.pdf")
             .Add(x => x.EnableAnnotations, true)
             .Add(x => x.OnTextSelected, EventCallback.Factory.Create<PdfTextSelection>(this, s => captured = s)));
@@ -204,7 +204,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     public async Task Viewer_CreateThreadFromSelection_PersistsToProvider()
     {
         var provider = new InMemoryPdfAnnotationProvider();
-        var cut = RenderComponent<TmPdfViewer>(p => p
+        var cut = Render<TmPdfViewer>(p => p
             .Add(x => x.Url, "https://example.com/test.pdf")
             .Add(x => x.EnableAnnotations, true)
             .Add(x => x.AnnotationProvider, provider)
@@ -231,7 +231,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
             ["doc-1"] = [TextRangeThread("seed", body: "seeded comment")]
         });
 
-        var cut = RenderComponent<TmPdfViewer>(p => p
+        var cut = Render<TmPdfViewer>(p => p
             .Add(x => x.Url, "https://example.com/test.pdf")
             .Add(x => x.EnableAnnotations, true)
             .Add(x => x.AnnotationProvider, provider)
@@ -261,7 +261,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
             ["doc-1"] = [thread]
         });
 
-        var cut = RenderComponent<TmPdfViewer>(p => p
+        var cut = Render<TmPdfViewer>(p => p
             .Add(x => x.Url, "https://example.com/test.pdf")
             .Add(x => x.EnableAnnotations, true)
             .Add(x => x.AnnotationProvider, provider)
@@ -285,7 +285,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     [Fact]
     public void Viewer_AnnotationsToggle_HidesPanel()
     {
-        var cut = RenderComponent<TmPdfViewer>(p => p
+        var cut = Render<TmPdfViewer>(p => p
             .Add(x => x.Url, "https://example.com/test.pdf")
             .Add(x => x.ShowToolbar, true)
             .Add(x => x.EnableAnnotations, true));
@@ -304,7 +304,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     [Fact]
     public void Viewer_OnSearchResults_ShowsCountAndNavButtons()
     {
-        var cut = RenderComponent<TmPdfViewer>(p => p
+        var cut = Render<TmPdfViewer>(p => p
             .Add(x => x.Url, "https://example.com/test.pdf")
             .Add(x => x.ShowToolbar, true)
             .Add(x => x.ShowSearch, true));
@@ -323,7 +323,7 @@ public class TmPdfAnnotationTests : LocalizationTestBase
     public async Task Viewer_OnSearchActiveChanged_UpdatesActiveAndPage()
     {
         int capturedPage = 0;
-        var cut = RenderComponent<TmPdfViewer>(p => p
+        var cut = Render<TmPdfViewer>(p => p
             .Add(x => x.Url, "https://example.com/test.pdf")
             .Add(x => x.ShowToolbar, true)
             .Add(x => x.ShowSearch, true)

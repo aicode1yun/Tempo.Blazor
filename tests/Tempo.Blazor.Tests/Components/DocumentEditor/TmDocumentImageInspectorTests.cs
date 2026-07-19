@@ -11,7 +11,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     [Fact]
     public void Inspector_RendersAltWarning_ForActiveDrawingObject_WhenAltTextIsEmpty()
     {
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, ActiveDrawingImage()));
 
         cut.Find("[data-testid='document-image-inspector']").Should().NotBeNull();
@@ -23,7 +23,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     public void Inspector_AltInput_RaisesAltTextChanged_ForActiveDrawingObject()
     {
         string? received = null;
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.AltText = "Old"))
             .Add(p => p.AltTextChanged, value => received = value));
 
@@ -36,7 +36,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     public void Inspector_DecorativeCheckbox_RaisesDecorativeChangedAndSuppressesAltWarning_ForActiveDrawingObject()
     {
         bool? received = null;
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.IsDecorative = true))
             .Add(p => p.DecorativeChanged, value => received = value));
 
@@ -55,7 +55,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     public void Inspector_WrapButton_RaisesWrapModeChanged_ForActiveDrawingObject()
     {
         DocumentWrapMode? received = null;
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, ActiveDrawingImage())
             .Add(p => p.WrapModeChanged, value => received = value));
 
@@ -67,7 +67,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     [Fact]
     public void Inspector_WrapButtons_AreIconSegmentsWithAccessibleLabels_ForActiveDrawingObject()
     {
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, ActiveDrawingImage()));
 
         var square = cut.Find("[data-testid='document-image-inspector-wrap-square']");
@@ -79,7 +79,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     [Fact]
     public void Inspector_CaptionCheckboxReflectsCaption_ForActiveDrawingObject()
     {
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.Caption = "Evidence caption")));
 
         cut.Find("[data-testid='document-image-inspector-caption-toggle']")
@@ -92,7 +92,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     public void Inspector_CaptionInput_RaisesCaptionChanged_ForActiveDrawingObject()
     {
         string? received = null;
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.Caption = "Old caption"))
             .Add(p => p.CaptionChanged, value => received = value));
 
@@ -105,7 +105,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     public async Task Inspector_CaptionInput_DebouncesInputChanges_ForActiveDrawingObject()
     {
         string? received = null;
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.Caption = "Old caption"))
             .Add(p => p.CaptionChanged, value => received = value));
 
@@ -119,7 +119,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     public void Inspector_UncheckingCaption_RaisesEmptyCaption_ForActiveDrawingObject()
     {
         string? received = null;
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.Caption = "Existing caption"))
             .Add(p => p.CaptionChanged, value => received = value));
 
@@ -136,7 +136,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
         DocumentImageHorizontalPosition horizontalPosition,
         string activeTestId)
     {
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, ActiveDrawingImage(drawing =>
             {
                 drawing.Layout = new DocumentObjectLayout
@@ -155,7 +155,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     public void Inspector_SizeInput_RaisesSizeChanged_ForActiveDrawingObject()
     {
         DocumentImageSize? received = null;
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.Size = new DocumentImageSize { Width = 120, Height = 80 }))
             .Add(p => p.SizeChanged, value => received = value));
 
@@ -170,7 +170,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     public async Task Inspector_SizeInput_DebouncesInputChanges_ForActiveDrawingObject()
     {
         DocumentImageSize? received = null;
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, ActiveDrawingImage(drawing => drawing.Size = new DocumentImageSize { Width = 120, Height = 80 }))
             .Add(p => p.SizeChanged, value => received = value));
 
@@ -186,7 +186,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     public async Task Inspector_UrlInput_DebouncesInputChanges_ForActiveDrawingUrlImages()
     {
         string? received = null;
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, ActiveDrawingImage(drawing =>
             {
                 drawing.Source = DocumentImageSource.Url;
@@ -205,7 +205,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     [Fact]
     public void Inspector_HidesLinkInput_ForActiveDrawingAssetImages()
     {
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, ActiveDrawingImage(drawing =>
             {
                 drawing.Source = DocumentImageSource.Asset;
@@ -218,7 +218,7 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     [Fact]
     public void Inspector_HidesUrlInput_ForActiveDrawingEmbeddedDataImages()
     {
-        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+        var cut = Render<TmDocumentImageInspector>(parameters => parameters
             .Add(p => p.Image, ActiveDrawingImage(drawing =>
             {
                 drawing.Source = DocumentImageSource.Url;

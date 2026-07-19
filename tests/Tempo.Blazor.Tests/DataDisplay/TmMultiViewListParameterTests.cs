@@ -30,7 +30,7 @@ public class TmMultiViewListParameterTests : LocalizationTestBase
     public void MultiViewList_ShowSearch_False_HidesSearchInput()
     {
         // Arrange & Act
-        var cut = RenderComponent<TmMultiViewList<MvlItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlItem>>(p => p
             .Add(c => c.Items, SampleItems())
             .Add(c => c.ShowSearch, false));
 
@@ -42,7 +42,7 @@ public class TmMultiViewListParameterTests : LocalizationTestBase
     public void MultiViewList_ShowViewSwitcher_False_HidesViewButtons()
     {
         // Arrange & Act
-        var cut = RenderComponent<TmMultiViewList<MvlItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlItem>>(p => p
             .Add(c => c.Items, SampleItems())
             .Add(c => c.ShowViewSwitcher, false));
 
@@ -58,7 +58,7 @@ public class TmMultiViewListParameterTests : LocalizationTestBase
     {
         // Arrange
         ListViewMode? changedMode = null;
-        var cut = RenderComponent<TmMultiViewList<MvlItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlItem>>(p => p
             .Add(c => c.Items, SampleItems())
             .Add(c => c.ViewModeChanged, (ListViewMode mode) => changedMode = mode));
 
@@ -73,7 +73,7 @@ public class TmMultiViewListParameterTests : LocalizationTestBase
     public void MultiViewList_Class_AppendsCustomCssClass()
     {
         // Arrange & Act
-        var cut = RenderComponent<TmMultiViewList<MvlItem>>(p => p
+        var cut = Render<TmMultiViewList<MvlItem>>(p => p
             .Add(c => c.Items, SampleItems())
             .Add(c => c.Class, "my-custom"));
 

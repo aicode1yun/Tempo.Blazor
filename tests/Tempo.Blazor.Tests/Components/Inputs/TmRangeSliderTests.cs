@@ -11,14 +11,14 @@ public class TmRangeSliderTests : LocalizationTestBase
     [Fact]
     public void TmRangeSlider_Renders_Two_Inputs()
     {
-        var cut = RenderComponent<TmRangeSlider>();
+        var cut = Render<TmRangeSlider>();
         cut.FindAll("input[type='range']").Count.Should().Be(2);
     }
 
     [Fact]
     public void TmRangeSlider_StartValue_EndValue_Renders_Correctly()
     {
-        var cut = RenderComponent<TmRangeSlider>(p => p
+        var cut = Render<TmRangeSlider>(p => p
             .Add(x => x.StartValue, 20)
             .Add(x => x.EndValue, 80));
 
@@ -31,7 +31,7 @@ public class TmRangeSliderTests : LocalizationTestBase
     public void TmRangeSlider_StartValueChanged_Fires_Event()
     {
         int? captured = null;
-        var cut = RenderComponent<TmRangeSlider>(p => p
+        var cut = Render<TmRangeSlider>(p => p
             .Add(x => x.StartValueChanged, EventCallback.Factory.Create<int?>(this, v => captured = v)));
 
         var inputs = cut.FindAll("input");
@@ -44,7 +44,7 @@ public class TmRangeSliderTests : LocalizationTestBase
     public void TmRangeSlider_EndValueChanged_Fires_Event()
     {
         int? captured = null;
-        var cut = RenderComponent<TmRangeSlider>(p => p
+        var cut = Render<TmRangeSlider>(p => p
             .Add(x => x.EndValueChanged, EventCallback.Factory.Create<int?>(this, v => captured = v)));
 
         var inputs = cut.FindAll("input");
@@ -57,7 +57,7 @@ public class TmRangeSliderTests : LocalizationTestBase
     public void TmRangeSlider_StartValue_Constrained_By_EndValue()
     {
         int? startCaptured = null;
-        var cut = RenderComponent<TmRangeSlider>(p => p
+        var cut = Render<TmRangeSlider>(p => p
             .Add(x => x.StartValue, 50)
             .Add(x => x.EndValue, 80)
             .Add(x => x.StartValueChanged, EventCallback.Factory.Create<int?>(this, v => startCaptured = v)));
@@ -73,7 +73,7 @@ public class TmRangeSliderTests : LocalizationTestBase
     public void TmRangeSlider_EndValue_Constrained_By_StartValue()
     {
         int? endCaptured = null;
-        var cut = RenderComponent<TmRangeSlider>(p => p
+        var cut = Render<TmRangeSlider>(p => p
             .Add(x => x.StartValue, 50)
             .Add(x => x.EndValue, 80)
             .Add(x => x.EndValueChanged, EventCallback.Factory.Create<int?>(this, v => endCaptured = v)));
@@ -88,7 +88,7 @@ public class TmRangeSliderTests : LocalizationTestBase
     [Fact]
     public void TmRangeSlider_Disabled_Has_Disabled_Attribute()
     {
-        var cut = RenderComponent<TmRangeSlider>(p => p.Add(x => x.Disabled, true));
+        var cut = Render<TmRangeSlider>(p => p.Add(x => x.Disabled, true));
         cut.Find("input").HasAttribute("disabled").Should().BeTrue();
     }
 }

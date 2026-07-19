@@ -11,7 +11,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.EmailTemplates.Tests.Components;
 
-public class E7E8FollowupTests : TestContext
+public class E7E8FollowupTests : BunitContext
 {
     public E7E8FollowupTests()
     {
@@ -34,7 +34,7 @@ public class E7E8FollowupTests : TestContext
     }
 
     private IRenderedComponent<TmEmailPropertyPanel> Panel(EmailTemplateDocument doc, Guid? selected)
-        => RenderComponent<TmEmailPropertyPanel>(p => p
+        => Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.SelectedId, selected).Add(c => c.OnChanged, () => { }));
 
     // ── E7.3f table grid ────────────────────────────────────────────────────────────────────
@@ -106,7 +106,7 @@ public class E7E8FollowupTests : TestContext
     public void ExportDialog_JsonMode_ShowsContentJson()
     {
         var doc = DocWith(new EmailTextBlock { Content = "x" });
-        var cut = RenderComponent<TmEmailExportDialog>(p => p.Add(c => c.Show, true).Add(c => c.Document, doc));
+        var cut = Render<TmEmailExportDialog>(p => p.Add(c => c.Show, true).Add(c => c.Document, doc));
 
         cut.Find("[data-tm-export-mode=\"json\"]").Click();
 
@@ -121,7 +121,7 @@ public class E7E8FollowupTests : TestContext
         var doc = new EmailTemplateDocument { Subject = "Hi " };
         var vars = new[] { new TemplateVariableInfo("first_name", VariableKind.Scalar) };
 
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p
+        var cut = Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.Variables, vars).Add(c => c.OnChanged, () => { }));
 
         cut.Find("[data-tm-variables=\"subject\"] [data-tm-variable=\"first_name\"]").Click();
@@ -137,7 +137,7 @@ public class E7E8FollowupTests : TestContext
         var text = new EmailTextBlock { Content = "{{ if broken" };
         var doc = DocWith(text);
 
-        var cut = RenderComponent<TmEmailValidationPanel>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailValidationPanel>(p => p.Add(c => c.Document, doc));
 
         cut.FindAll("[data-tm-validation-severity=\"Error\"]").Should().NotBeEmpty();
     }
@@ -147,7 +147,7 @@ public class E7E8FollowupTests : TestContext
     [Fact]
     public void Editor_HelpButton_ShowsShortcutsOverlay()
     {
-        var cut = RenderComponent<TmEmailTemplateEditor>(p => p.Add(c => c.Document, new EmailTemplateDocument()));
+        var cut = Render<TmEmailTemplateEditor>(p => p.Add(c => c.Document, new EmailTemplateDocument()));
 
         cut.FindAll(".tm-keyboard-shortcuts-overlay").Should().BeEmpty();
         cut.Find("[data-tm-help-btn]").Click();
@@ -166,7 +166,7 @@ public class E7E8FollowupTests : TestContext
         doc.Sections.Add(section);
 
         var time = new Microsoft.Extensions.Time.Testing.FakeTimeProvider();
-        var cut = RenderComponent<TmEmailTemplatePreview>(p => p
+        var cut = Render<TmEmailTemplatePreview>(p => p
             .Add(c => c.Document, doc).Add(c => c.TimeProvider, time));
         cut.Find("[data-tm-preview-data]").Input("{\"name\":\"Ada\"}");
 
@@ -181,7 +181,7 @@ public class E7E8FollowupTests : TestContext
     public void DocumentPanel_AddClassDefinition_StoresIt()
     {
         var doc = new EmailTemplateDocument();
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p
+        var cut = Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.OnChanged, () => { }));
 
         cut.Find("[data-tm-head=\"classes\"] [data-tm-classes-editor] input").Change("cta");
@@ -196,7 +196,7 @@ public class E7E8FollowupTests : TestContext
     public void DocumentPanel_AddHtmlSelector_StoresIt()
     {
         var doc = new EmailTemplateDocument();
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p
+        var cut = Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.OnChanged, () => { }));
 
         cut.Find("[data-tm-head=\"html-attributes\"] [data-tm-html-add]").Click();

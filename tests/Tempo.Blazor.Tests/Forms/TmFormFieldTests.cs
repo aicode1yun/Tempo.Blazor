@@ -11,7 +11,7 @@ public class TmFormFieldTests : LocalizationTestBase
     [Fact]
     public void FormField_RendersLabel()
     {
-        var cut = RenderComponent<TmFormField>(p => p.Add(c => c.Label, "Email"));
+        var cut = Render<TmFormField>(p => p.Add(c => c.Label, "Email"));
 
         cut.Find("label.tm-form-field-label").TextContent.Should().Contain("Email");
     }
@@ -19,7 +19,7 @@ public class TmFormFieldTests : LocalizationTestBase
     [Fact]
     public void FormField_Required_RendersAsterisk()
     {
-        var cut = RenderComponent<TmFormField>(p => p
+        var cut = Render<TmFormField>(p => p
             .Add(c => c.Label,    "Name")
             .Add(c => c.Required, true));
 
@@ -29,7 +29,7 @@ public class TmFormFieldTests : LocalizationTestBase
     [Fact]
     public void FormField_HelpText_Rendered()
     {
-        var cut = RenderComponent<TmFormField>(p => p
+        var cut = Render<TmFormField>(p => p
             .Add(c => c.Label,    "Password")
             .Add(c => c.HelpText, "Must be at least 8 characters."));
 
@@ -39,7 +39,7 @@ public class TmFormFieldTests : LocalizationTestBase
     [Fact]
     public void FormField_ErrorMessage_Rendered()
     {
-        var cut = RenderComponent<TmFormField>(p => p
+        var cut = Render<TmFormField>(p => p
             .Add(c => c.Label,        "Email")
             .Add(c => c.ErrorMessage, "Invalid email address."));
 
@@ -49,7 +49,7 @@ public class TmFormFieldTests : LocalizationTestBase
     [Fact]
     public void FormField_ErrorMessage_HasErrorClass()
     {
-        var cut = RenderComponent<TmFormField>(p => p
+        var cut = Render<TmFormField>(p => p
             .Add(c => c.Label,        "Email")
             .Add(c => c.ErrorMessage, "Required"));
 
@@ -62,7 +62,7 @@ public class TmFormFieldTests : LocalizationTestBase
         var model = new TestModel();
         var editContext = new EditContext(model);
 
-        var cut = RenderComponent<TmFormField>(p => p
+        var cut = Render<TmFormField>(p => p
             .Add(c => c.Label, "Name")
             .AddCascadingValue(editContext)
             .Add(c => c.ValidationFor, () => model.Name));
@@ -81,7 +81,7 @@ public class TmFormFieldTests : LocalizationTestBase
         var model = new TestModel();
         var editContext = new EditContext(model);
 
-        var cut = RenderComponent<TmFormField>(p => p
+        var cut = Render<TmFormField>(p => p
             .Add(c => c.Label, "Name")
             .AddCascadingValue(editContext)
             .Add(c => c.ValidationFor, () => model.Name));
@@ -103,7 +103,7 @@ public class TmFormFieldTests : LocalizationTestBase
         var model = new TestModel();
         var editContext = new EditContext(model);
 
-        var cut = RenderComponent<TmFormField>(p => p
+        var cut = Render<TmFormField>(p => p
             .Add(c => c.Label,        "Name")
             .Add(c => c.ErrorMessage, "Explicit error")
             .AddCascadingValue(editContext)
@@ -122,7 +122,7 @@ public class TmFormFieldTests : LocalizationTestBase
         var model = new TestModel();
         var editContext = new EditContext(model);
 
-        var cut = RenderComponent<TmFormField>(p => p
+        var cut = Render<TmFormField>(p => p
             .Add(c => c.Label,    "Name")
             .Add(c => c.HelpText, "Some help")
             .AddCascadingValue(editContext)

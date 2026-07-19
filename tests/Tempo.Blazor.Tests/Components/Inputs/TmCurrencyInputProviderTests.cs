@@ -32,7 +32,7 @@ public class TmCurrencyInputProviderTests : LocalizationTestBase
     public void Provider_ConvertsAmountUsingFetchedRate()
     {
         decimal? converted = null;
-        var cut = RenderComponent<TmCurrencyInput>(p => p
+        var cut = Render<TmCurrencyInput>(p => p
             .Add(x => x.Currency, "USD")
             .Add(x => x.TargetCurrency, "CZK")
             .Add(x => x.ExchangeRateProvider, Rates(("USD", "CZK", 23.10m)))
@@ -48,7 +48,7 @@ public class TmCurrencyInputProviderTests : LocalizationTestBase
     public void Provider_RateUnavailable_LeavesConvertedUnchanged()
     {
         var convertedFired = false;
-        var cut = RenderComponent<TmCurrencyInput>(p => p
+        var cut = Render<TmCurrencyInput>(p => p
             .Add(x => x.Currency, "USD")
             .Add(x => x.TargetCurrency, "CZK")
             .Add(x => x.ExchangeRateProvider, Rates()) // empty table => rate unavailable (null)
@@ -63,7 +63,7 @@ public class TmCurrencyInputProviderTests : LocalizationTestBase
     [Fact]
     public void Provider_ShowsConvertedColumn_EvenWithoutCallback()
     {
-        var cut = RenderComponent<TmCurrencyInput>(p => p
+        var cut = Render<TmCurrencyInput>(p => p
             .Add(x => x.Currency, "USD")
             .Add(x => x.TargetCurrency, "CZK")
             .Add(x => x.ExchangeRateProvider, Rates(("USD", "CZK", 23.10m))));
@@ -75,7 +75,7 @@ public class TmCurrencyInputProviderTests : LocalizationTestBase
     public void Provider_TakesPrecedenceOverCallback()
     {
         decimal? converted = null;
-        var cut = RenderComponent<TmCurrencyInput>(p => p
+        var cut = Render<TmCurrencyInput>(p => p
             .Add(x => x.Currency, "USD")
             .Add(x => x.TargetCurrency, "CZK")
             .Add(x => x.ExchangeRateProvider, Rates(("USD", "CZK", 23.10m)))
@@ -92,7 +92,7 @@ public class TmCurrencyInputProviderTests : LocalizationTestBase
     public void NoProvider_UsesCallbackExactlyAsBefore()
     {
         decimal? converted = null;
-        var cut = RenderComponent<TmCurrencyInput>(p => p
+        var cut = Render<TmCurrencyInput>(p => p
             .Add(x => x.Currency, "USD")
             .Add(x => x.ConvertAsync, (amount, _) => Task.FromResult<decimal?>(amount * 2m))
             .Add(x => x.ConvertedAmountChanged,
@@ -106,7 +106,7 @@ public class TmCurrencyInputProviderTests : LocalizationTestBase
     [Fact]
     public void NoProviderNoCallback_HidesConvertedColumn()
     {
-        var cut = RenderComponent<TmCurrencyInput>(p => p
+        var cut = Render<TmCurrencyInput>(p => p
             .Add(x => x.Currency, "USD"));
 
         cut.FindAll(".tm-currency-input__converted").Should().BeEmpty();

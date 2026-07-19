@@ -29,7 +29,7 @@ public class TmDiagramEditorConnectTests : LocalizationTestBase
             H = 60
         });
 
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(e => e.Document, doc)
             .Add(e => e.ReadOnly, false));
 
@@ -60,7 +60,7 @@ public class TmDiagramEditorConnectTests : LocalizationTestBase
             H = 60
         });
 
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(e => e.Document, doc)
             .Add(e => e.ReadOnly, false));
 
@@ -97,7 +97,7 @@ public class TmDiagramEditorConnectTests : LocalizationTestBase
         var targetEdge = new DiagramEdge { SourceNodeId = n1.Id, TargetNodeId = n2.Id };
         doc.Edges.Add(targetEdge);
 
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(e => e.Document, doc)
             .Add(e => e.ReadOnly, false));
 

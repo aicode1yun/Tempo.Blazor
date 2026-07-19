@@ -10,7 +10,7 @@ public class TmDiagramTemplateGalleryTests : DiagramTestBase
 {
     public TmDiagramTemplateGalleryTests()
     {
-        Services.AddSingleton<NavigationManager>(new FakeNavigationManager());
+        Services.AddSingleton<NavigationManager>(new BunitNavigationManager());
     }
 
     [Fact]
@@ -20,7 +20,7 @@ public class TmDiagramTemplateGalleryTests : DiagramTestBase
         registry.RegisterTemplate(new DiagramTemplate { Id = "t1", Name = "Blank", Category = "General" });
         registry.RegisterTemplate(new DiagramTemplate { Id = "t2", Name = "Flowchart", Category = "Flowchart" });
 
-        var cut = RenderComponent<TmDiagramTemplateGallery>(parameters => parameters
+        var cut = Render<TmDiagramTemplateGallery>(parameters => parameters
             .Add(p => p.Show, true));
 
         var sections = cut.FindAll(".tm-diagram-template-gallery__section-title");
@@ -36,7 +36,7 @@ public class TmDiagramTemplateGalleryTests : DiagramTestBase
         registry.RegisterTemplate(new DiagramTemplate { Id = "t1", Name = "Blank", Category = "General" });
         registry.RegisterTemplate(new DiagramTemplate { Id = "t2", Name = "Flowchart", Category = "Flowchart" });
 
-        var cut = RenderComponent<TmDiagramTemplateGallery>(parameters => parameters
+        var cut = Render<TmDiagramTemplateGallery>(parameters => parameters
             .Add(p => p.Show, true));
 
         var searchInput = cut.Find("input.tm-diagram-template-gallery__search");
@@ -54,7 +54,7 @@ public class TmDiagramTemplateGalleryTests : DiagramTestBase
         registry.RegisterTemplate(new DiagramTemplate { Id = "t1", Name = "Blank", Category = "General" });
         registry.RegisterTemplate(new DiagramTemplate { Id = "t2", Name = "Flowchart", Category = "Flowchart" });
 
-        var cut = RenderComponent<TmDiagramTemplateGallery>(parameters => parameters
+        var cut = Render<TmDiagramTemplateGallery>(parameters => parameters
             .Add(p => p.Show, true));
 
         var filters = cut.FindAll(".tm-diagram-template-gallery__filter");
@@ -71,7 +71,7 @@ public class TmDiagramTemplateGalleryTests : DiagramTestBase
         var registry = Services.GetRequiredService<DiagramTemplateRegistry>();
         registry.RegisterTemplate(new DiagramTemplate { Id = "t1", Name = "Blank", Category = "General" });
 
-        var cut = RenderComponent<TmDiagramTemplateGallery>(parameters => parameters
+        var cut = Render<TmDiagramTemplateGallery>(parameters => parameters
             .Add(p => p.Show, true));
 
         var button = cut.FindAll("button").First(b => b.TextContent.Contains("Create"));
@@ -90,7 +90,7 @@ public class TmDiagramTemplateGalleryTests : DiagramTestBase
         registry.RegisterTemplate(new DiagramTemplate { Id = "t1", Name = "Blank", Category = "General" });
 
         DiagramTemplate? selected = null;
-        var cut = RenderComponent<TmDiagramTemplateGallery>(parameters => parameters
+        var cut = Render<TmDiagramTemplateGallery>(parameters => parameters
             .Add(p => p.Show, true)
             .Add(p => p.OnSelect, t => selected = t));
 
@@ -102,9 +102,9 @@ public class TmDiagramTemplateGalleryTests : DiagramTestBase
         selected!.Id.Should().Be("t1");
     }
 
-    private sealed class FakeNavigationManager : NavigationManager
+    private sealed class BunitNavigationManager : NavigationManager
     {
-        public FakeNavigationManager()
+        public BunitNavigationManager()
         {
             Initialize("https://localhost/", "https://localhost/");
         }

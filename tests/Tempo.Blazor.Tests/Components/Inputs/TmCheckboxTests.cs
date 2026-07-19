@@ -12,63 +12,63 @@ public class TmCheckboxTests : LocalizationTestBase
     [Fact]
     public void TmCheckbox_Renders_Checkbox_Input()
     {
-        var cut = RenderComponent<TmCheckbox>();
+        var cut = Render<TmCheckbox>();
         cut.Find("input[type='checkbox']").Should().NotBeNull();
     }
 
     [Fact]
     public void TmCheckbox_Has_Wrapper_CssClass()
     {
-        var cut = RenderComponent<TmCheckbox>();
+        var cut = Render<TmCheckbox>();
         cut.Find(".tm-checkbox-wrapper").Should().NotBeNull();
     }
 
     [Fact]
     public void TmCheckbox_Label_Renders_Label_Text()
     {
-        var cut = RenderComponent<TmCheckbox>(p => p.Add(c => c.Label, "Accept terms"));
+        var cut = Render<TmCheckbox>(p => p.Add(c => c.Label, "Accept terms"));
         cut.Find(".tm-checkbox-text").TextContent.Should().Contain("Accept terms");
     }
 
     [Fact]
     public void TmCheckbox_No_Label_Text_When_Null()
     {
-        var cut = RenderComponent<TmCheckbox>();
+        var cut = Render<TmCheckbox>();
         cut.FindAll(".tm-checkbox-text").Should().BeEmpty();
     }
 
     [Fact]
     public void TmCheckbox_Checked_When_Value_True()
     {
-        var cut = RenderComponent<TmCheckbox>(p => p.Add(c => c.Value, true));
+        var cut = Render<TmCheckbox>(p => p.Add(c => c.Value, true));
         cut.Find("input[type='checkbox']").HasAttribute("checked").Should().BeTrue();
     }
 
     [Fact]
     public void TmCheckbox_Unchecked_When_Value_False()
     {
-        var cut = RenderComponent<TmCheckbox>(p => p.Add(c => c.Value, false));
+        var cut = Render<TmCheckbox>(p => p.Add(c => c.Value, false));
         cut.Find("input[type='checkbox']").HasAttribute("checked").Should().BeFalse();
     }
 
     [Fact]
     public void TmCheckbox_Disabled_Sets_Disabled_Attribute()
     {
-        var cut = RenderComponent<TmCheckbox>(p => p.Add(c => c.Disabled, true));
+        var cut = Render<TmCheckbox>(p => p.Add(c => c.Disabled, true));
         cut.Find("input[type='checkbox']").HasAttribute("disabled").Should().BeTrue();
     }
 
     [Fact]
     public void TmCheckbox_Disabled_Adds_Disabled_CssClass_To_Wrapper()
     {
-        var cut = RenderComponent<TmCheckbox>(p => p.Add(c => c.Disabled, true));
+        var cut = Render<TmCheckbox>(p => p.Add(c => c.Disabled, true));
         cut.Find(".tm-checkbox-wrapper").ClassList.Should().Contain("tm-checkbox-disabled");
     }
 
     [Fact]
     public void TmCheckbox_HelpText_Shown()
     {
-        var cut = RenderComponent<TmCheckbox>(p => p.Add(c => c.HelpText, "Optional field"));
+        var cut = Render<TmCheckbox>(p => p.Add(c => c.HelpText, "Optional field"));
         cut.Find("[data-testid='checkbox-help']").TextContent.Should().Contain("Optional field");
     }
 
@@ -76,7 +76,7 @@ public class TmCheckboxTests : LocalizationTestBase
     public void TmCheckbox_ValueChanged_Fires_On_Change()
     {
         bool? captured = null;
-        var cut = RenderComponent<TmCheckbox>(p => p
+        var cut = Render<TmCheckbox>(p => p
             .Add(c => c.Value, false)
             .Add(c => c.ValueChanged, EventCallback.Factory.Create<bool>(this, v => captured = v)));
 
@@ -90,14 +90,14 @@ public class TmCheckboxTests : LocalizationTestBase
     [Fact]
     public void TmCheckbox_Required_SetsAriaRequiredOnInput()
     {
-        var cut = RenderComponent<TmCheckbox>(p => p.Add(c => c.Required, true));
+        var cut = Render<TmCheckbox>(p => p.Add(c => c.Required, true));
         cut.Find("input[type='checkbox']").GetAttribute("aria-required").Should().Be("true");
     }
 
     [Fact]
     public void TmCheckbox_Required_AddsRequiredMarkerClassToLabelText()
     {
-        var cut = RenderComponent<TmCheckbox>(p => p
+        var cut = Render<TmCheckbox>(p => p
             .Add(c => c.Label, "Accept terms")
             .Add(c => c.Required, true));
         cut.Find(".tm-checkbox-text").ClassList.Should().Contain("tm-input-label-required");
@@ -106,7 +106,7 @@ public class TmCheckboxTests : LocalizationTestBase
     [Fact]
     public void TmCheckbox_NotRequired_HasNoAriaRequiredAndNoMarker()
     {
-        var cut = RenderComponent<TmCheckbox>(p => p.Add(c => c.Label, "Accept terms"));
+        var cut = Render<TmCheckbox>(p => p.Add(c => c.Label, "Accept terms"));
         cut.Find("input[type='checkbox']").HasAttribute("aria-required").Should().BeFalse();
         cut.Find(".tm-checkbox-text").ClassList.Should().NotContain("tm-input-label-required");
     }

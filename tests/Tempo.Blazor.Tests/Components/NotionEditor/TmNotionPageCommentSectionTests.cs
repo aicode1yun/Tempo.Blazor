@@ -84,7 +84,7 @@ public sealed class TmNotionPageCommentSectionTests : LocalizationTestBase
             BlockProvider = default!,
             CommentProvider = provider
         };
-        var cut = RenderComponent<PageCommentHost>(parameters => parameters
+        var cut = Render<PageCommentHost>(parameters => parameters
             .Add(component => component.Context, context)
             .Add(component => component.PageId, PageId.ToString("D")));
 

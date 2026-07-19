@@ -61,7 +61,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
             Color = "#ef4444"
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         var bar = cut.Find(".tm-gantt__bar");
         var style = bar.GetAttribute("style") ?? "";
@@ -72,7 +72,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Bar_Without_Color_Uses_Default_CssVariable()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         var bar = cut.Find(".tm-gantt__bar");
         var style = bar.GetAttribute("style") ?? "";
@@ -83,7 +83,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     public void Group_Task_Bar_Has_Group_CSS_Class()
     {
         // Task1 is a parent (has children Task2 and Task3)
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         var bars = cut.FindAll(".tm-gantt__bar");
         // First bar = Task1 (group)
@@ -93,7 +93,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Leaf_Task_Bar_Does_Not_Have_Group_CSS_Class()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         var bars = cut.FindAll(".tm-gantt__bar");
         // Second bar = Task2 (leaf)
@@ -114,7 +114,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
             Status = TmWorkItemStatus.Done
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         var bar = cut.Find(".tm-gantt__bar");
         bar.ClassList.Should().Contain("tm-gantt__bar--completed");
@@ -130,7 +130,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
             Status = TmWorkItemStatus.Closed
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         var bar = cut.Find(".tm-gantt__bar");
         bar.ClassList.Should().Contain("tm-gantt__bar--completed");
@@ -146,7 +146,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
             Status = TmWorkItemStatus.Open
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         cut.Find(".tm-gantt__bar").ClassList.Should().NotContain("tm-gantt__bar--completed");
     }
@@ -158,7 +158,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Bar_Renders_Tooltip_Element()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         var tooltip = cut.Find("[data-testid='bar-tooltip']");
         tooltip.Should().NotBeNull();
@@ -169,7 +169,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     {
         TmWorkItem? selected = null;
         var tasks = SampleTasks();
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, tasks)
             .Add(c => c.OnTaskSelected, t => selected = t));
 
@@ -223,7 +223,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Tree_Row_Has_Status_Badge_Element()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         var badges = cut.FindAll("[data-testid='status-badge']");
         badges.Count.Should().Be(SampleTasks().Count);
@@ -232,7 +232,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Tree_Row_Has_Priority_Icon_Element()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         var icons = cut.FindAll("[data-testid='priority-icon']");
         icons.Count.Should().Be(SampleTasks().Count);
@@ -248,7 +248,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
             Priority = TmWorkItemPriority.High
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         cut.Find(".tm-gantt__bar").ClassList.Should().Contain("tm-gantt__bar--priority-high");
     }
@@ -265,7 +265,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
                 Priority = priority
             };
 
-            var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
+            var cut = Render<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
             var expectedClass = $"tm-gantt__bar--priority-{priority.ToString().ToLowerInvariant()}";
             cut.Find(".tm-gantt__bar").ClassList.Should().Contain(expectedClass,
                 $"priority {priority} should add class {expectedClass}");
@@ -293,7 +293,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
             DueDate = new DateTime(2024, 6, 10)
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         cut.Find("[data-testid='deadline-marker']").Should().NotBeNull();
     }
@@ -308,7 +308,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
             DueDate = new DateTime(2024, 6, 15)
         };
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, Tasks(task)));
 
         cut.FindAll("[data-testid='deadline-marker']").Should().BeEmpty();
     }
@@ -316,7 +316,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Bar_Does_Not_Show_Deadline_Marker_When_Deadline_Null()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         cut.FindAll("[data-testid='deadline-marker']").Should().BeEmpty();
     }
@@ -362,7 +362,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
             End = DateTime.Today.AddDays(5)
         });
 
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, tasks));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, tasks));
 
         cut.Find("[data-testid='today-marker']").Should().NotBeNull();
     }
@@ -379,7 +379,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
 
         var settings = new GanttViewSettings { ShowTodayMarker = false };
 
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, tasks)
             .Add(c => c.ViewSettings, settings));
 
@@ -455,7 +455,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     public void TmGantt_Accepts_WorkingSchedule_Parameter()
     {
         var schedule = new WorkingSchedule();
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, SampleTasks())
             .Add(c => c.WorkingSchedule, schedule));
 
@@ -474,7 +474,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
         });
 
         var settings = new GanttViewSettings { ShowDaysOff = true };
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, tasks)
             .Add(c => c.ViewSettings, settings));
 
@@ -493,7 +493,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
         });
 
         var settings = new GanttViewSettings { ShowDaysOff = false };
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, tasks)
             .Add(c => c.ViewSettings, settings));
 
@@ -551,21 +551,21 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Toolbar_Has_ExpandAll_Button()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
         cut.Find("[data-testid='gantt-expand-all']").Should().NotBeNull();
     }
 
     [Fact]
     public void Toolbar_Has_CollapseAll_Button()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
         cut.Find("[data-testid='gantt-collapse-all']").Should().NotBeNull();
     }
 
     [Fact]
     public void CollapseAll_Button_Collapses_Tree()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         cut.Find("[data-testid='gantt-collapse-all']").Click();
 
@@ -575,7 +575,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void ExpandAll_Button_Expands_Tree()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
 
         // Collapse first, then expand
         cut.Find("[data-testid='gantt-collapse-all']").Click();
@@ -606,7 +606,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     public void TmGantt_Accepts_ViewSettings_Parameter()
     {
         var settings = new GanttViewSettings();
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, SampleTasks())
             .Add(c => c.ViewSettings, settings));
 
@@ -623,7 +623,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
         );
 
         var settings = new GanttViewSettings { ShowClosedTasks = false };
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, tasks)
             .Add(c => c.ViewSettings, settings));
 
@@ -640,7 +640,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
         );
 
         var settings = new GanttViewSettings { ShowClosedTasks = true };
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, tasks)
             .Add(c => c.ViewSettings, settings));
 
@@ -657,7 +657,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
         });
 
         var settings = new GanttViewSettings { TaskNameLocation = GanttTaskNameLocation.Hidden };
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, tasks)
             .Add(c => c.ViewSettings, settings));
 
@@ -674,7 +674,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
         });
 
         var settings = new GanttViewSettings { TaskNameLocation = GanttTaskNameLocation.InsideBar };
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, tasks)
             .Add(c => c.ViewSettings, settings));
 
@@ -692,8 +692,8 @@ public class TmGanttPhase1Tests : LocalizationTestBase
         var compact = new GanttViewSettings { ViewDensity = GanttViewDensity.Compact };
         var comfortable = new GanttViewSettings { ViewDensity = GanttViewDensity.Comfortable };
 
-        var cutCompact = RenderComponent<TmGantt>(p => p.Add(c => c.Items, tasks).Add(c => c.ViewSettings, compact));
-        var cutComfortable = RenderComponent<TmGantt>(p => p.Add(c => c.Items, tasks).Add(c => c.ViewSettings, comfortable));
+        var cutCompact = Render<TmGantt>(p => p.Add(c => c.Items, tasks).Add(c => c.ViewSettings, compact));
+        var cutComfortable = Render<TmGantt>(p => p.Add(c => c.Items, tasks).Add(c => c.ViewSettings, comfortable));
 
         var compactStyle = cutCompact.Find(".tm-gantt__timeline-content").GetAttribute("style") ?? "";
         var comfortableStyle = cutComfortable.Find(".tm-gantt__timeline-content").GetAttribute("style") ?? "";
@@ -709,7 +709,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
         GanttViewSettings? received = null;
         var settings = new GanttViewSettings();
 
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, SampleTasks())
             .Add(c => c.ViewSettings, settings)
             .Add(c => c.OnViewSettingsChanged, vs => received = vs));
@@ -740,7 +740,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     public void Theme_Dark_Applies_CSS_Class_To_Root()
     {
         var settings = new GanttViewSettings { Theme = GanttTheme.Dark };
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, SampleTasks())
             .Add(c => c.ViewSettings, settings));
 
@@ -751,7 +751,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     public void Theme_Light_Applies_CSS_Class_To_Root()
     {
         var settings = new GanttViewSettings { Theme = GanttTheme.Light };
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, SampleTasks())
             .Add(c => c.ViewSettings, settings));
 
@@ -762,7 +762,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     public void Theme_Auto_Does_Not_Apply_Explicit_Theme_Class()
     {
         var settings = new GanttViewSettings { Theme = GanttTheme.Auto };
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, SampleTasks())
             .Add(c => c.ViewSettings, settings));
 
@@ -774,7 +774,7 @@ public class TmGanttPhase1Tests : LocalizationTestBase
     [Fact]
     public void Toolbar_Has_ViewSettings_Button()
     {
-        var cut = RenderComponent<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
+        var cut = Render<TmGantt>(p => p.Add(c => c.Items, SampleTasks()));
         cut.Find("[data-testid='gantt-view-settings-btn']").Should().NotBeNull();
     }
 }

@@ -13,7 +13,7 @@ public class TmColorGradientTests : LocalizationTestBase
     [Fact]
     public void TmColorGradient_Renders_Area_And_Sliders()
     {
-        var cut = RenderComponent<TmColorGradient>(p => p
+        var cut = Render<TmColorGradient>(p => p
             .Add(c => c.Value, "#FF0000"));
 
         cut.Find(".tm-color-gradient-area").Should().NotBeNull();
@@ -24,7 +24,7 @@ public class TmColorGradientTests : LocalizationTestBase
     [Fact]
     public void TmColorGradient_HideAlpha_Hides_Alpha_Slider()
     {
-        var cut = RenderComponent<TmColorGradient>(p => p
+        var cut = Render<TmColorGradient>(p => p
             .Add(c => c.Value, "#FF0000")
             .Add(c => c.ShowAlpha, false));
 
@@ -34,7 +34,7 @@ public class TmColorGradientTests : LocalizationTestBase
     [Fact]
     public void TmColorGradient_Value_Red_Renders_Correct_Preview()
     {
-        var cut = RenderComponent<TmColorGradient>(p => p
+        var cut = Render<TmColorGradient>(p => p
             .Add(c => c.Value, "#FF0000"));
 
         var preview = cut.Find(".tm-color-gradient-preview");
@@ -45,7 +45,7 @@ public class TmColorGradientTests : LocalizationTestBase
     public void TmColorGradient_ValueChanged_Fires_On_Input_Change()
     {
         string? changed = null;
-        var cut = RenderComponent<TmColorGradient>(p => p
+        var cut = Render<TmColorGradient>(p => p
             .Add(c => c.Value, "#000000")
             .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => changed = v)));
 
@@ -63,7 +63,7 @@ public class TmColorGradientTests : LocalizationTestBase
     public void TmColorGradient_Format_Applies_To_Value(ColorFormat format, string expected)
     {
         string? changed = null;
-        var cut = RenderComponent<TmColorGradient>(p => p
+        var cut = Render<TmColorGradient>(p => p
             .Add(c => c.Value, "#FF0000")
             .Add(c => c.Format, format)
             .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => changed = v)));
@@ -79,7 +79,7 @@ public class TmColorGradientTests : LocalizationTestBase
     [Fact]
     public void TmColorGradient_Rgba_Input_Syncs()
     {
-        var cut = RenderComponent<TmColorGradient>(p => p
+        var cut = Render<TmColorGradient>(p => p
             .Add(c => c.Value, "rgba(10, 20, 30, 0.5)")
             .Add(c => c.Format, ColorFormat.Rgba));
 
@@ -91,7 +91,7 @@ public class TmColorGradientTests : LocalizationTestBase
     public void TmColorGradient_Thumb_Position_Reflects_Value()
     {
         // Pure red (saturation=1, value=1) → thumb at top-right
-        var cut = RenderComponent<TmColorGradient>(p => p
+        var cut = Render<TmColorGradient>(p => p
             .Add(c => c.Value, "#FF0000"));
 
         var thumb = cut.Find(".tm-color-gradient-thumb");

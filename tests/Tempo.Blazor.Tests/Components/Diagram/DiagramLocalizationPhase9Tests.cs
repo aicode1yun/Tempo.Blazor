@@ -63,7 +63,7 @@ public class DiagramLocalizationPhase9Tests : LocalizationTestBase
         var registry = Services.GetRequiredService<DiagramStencilRegistry>();
         registry.RegisterProvider(new ExtendedDiagramStencilProvider());
 
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
         var text = cut.Markup;
 
         text.Should().Contain("Localized Flowchart");
@@ -135,7 +135,7 @@ public class DiagramLocalizationPhase9Tests : LocalizationTestBase
         var doc = new DiagramDocument();
         doc.Nodes.Add(node);
 
-        var cut = RenderComponent<TmDiagramPropertiesPanel>(parameters => parameters
+        var cut = Render<TmDiagramPropertiesPanel>(parameters => parameters
             .Add(component => component.Document, doc)
             .Add(component => component.SelectedIds, [node.Id])
             .Add(component => component.ReadOnly, false));

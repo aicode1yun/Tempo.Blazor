@@ -11,9 +11,9 @@ public class TmSpreadsheetApiTests : LocalizationTestBase
     [Fact]
     public async Task SetCellValue_SetsValueAndFiresOnChange()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         SpreadsheetChangeEventArgs? received = null;
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.OnChange, EventCallback.Factory.Create<SpreadsheetChangeEventArgs>(this, e => received = e)));
 
         await cut.InvokeAsync(() => cut.Instance.SetCellValue("A1", "Hello"));
@@ -27,14 +27,14 @@ public class TmSpreadsheetApiTests : LocalizationTestBase
     [Fact]
     public void GetCellValue_ReturnsNullForEmptyCell()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         cut.Instance.GetCellValue("Z99").Should().BeNull();
     }
 
     [Fact]
     public void GetActiveSheet_ReturnsCurrentSheet()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         var sheet = cut.Instance.GetActiveSheet();
         sheet.Should().NotBeNull();
         sheet!.Name.Should().Be("Sheet1");
@@ -43,7 +43,7 @@ public class TmSpreadsheetApiTests : LocalizationTestBase
     [Fact]
     public async Task ExportToExcelAsync_ReturnsNonEmptyBytes()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         await cut.InvokeAsync(() => cut.Instance.SetCellValue("A1", "Test"));
 
         var data = await cut.Instance.ExportToExcelAsync();
@@ -53,7 +53,7 @@ public class TmSpreadsheetApiTests : LocalizationTestBase
     [Fact]
     public async Task ImportFromExcelAsync_LoadsWorkbook()
     {
-        var cut = RenderComponent<TmSpreadsheet>();
+        var cut = Render<TmSpreadsheet>();
         await cut.InvokeAsync(() => cut.Instance.SetCellValue("A1", "Before"));
         var exported = await cut.Instance.ExportToExcelAsync();
 

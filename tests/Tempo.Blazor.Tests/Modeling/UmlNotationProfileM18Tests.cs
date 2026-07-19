@@ -191,7 +191,7 @@ public sealed class UmlNotationProfileM18Tests : LocalizationTestBase
             }
         };
 
-        var cut = RenderComponent<TmDiagramStencilShape>(parameters => parameters.Add(p => p.Node, node));
+        var cut = Render<TmDiagramStencilShape>(parameters => parameters.Add(p => p.Node, node));
 
         cut.Markup.Should().Contain("Marker");
         cut.FindAll(".tm-diagram-node__list-item").Should().BeEmpty();

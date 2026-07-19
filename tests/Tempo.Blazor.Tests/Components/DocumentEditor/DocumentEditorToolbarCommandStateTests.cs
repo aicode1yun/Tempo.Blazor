@@ -18,7 +18,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("save", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         cut.Find("[data-testid='document-save']").Should().NotBeNull();
@@ -29,7 +29,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("save", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         var button = cut.Find("[data-testid='document-save']");
@@ -42,7 +42,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("save", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         var button = cut.Find("[data-testid='document-save']");
@@ -57,7 +57,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("undo", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         cut.Find("[data-testid='document-undo']").Should().NotBeNull();
@@ -68,7 +68,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("undo", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         var button = cut.Find("[data-testid='document-undo']");
@@ -81,7 +81,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("undo", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         var button = cut.Find("[data-testid='document-undo']");
@@ -94,7 +94,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("redo", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         var button = cut.Find("[data-testid='document-redo']");
@@ -107,7 +107,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("undo", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.CanUndo, true));
 
@@ -119,7 +119,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("redo", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.CanRedo, true));
 
@@ -133,7 +133,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("bold", enabled: false, value: "inactive"));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         var button = cut.Find("[data-testid='document-bold']");
@@ -146,7 +146,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("bold", enabled: true, value: "active"));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.BoldState, WysiwygFormattingValue.Inactive));
 
@@ -162,7 +162,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("bold", enabled: true, value: "inactive"));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.BoldState, WysiwygFormattingValue.Active));
 
@@ -176,7 +176,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("bold", enabled: true, value: "inactive"));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.BoldState, WysiwygFormattingValue.Mixed));
 
@@ -190,7 +190,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("italic", enabled: true, value: "inactive"));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.ItalicState, WysiwygFormattingValue.Active));
 
@@ -202,7 +202,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("underline", enabled: true, value: "inactive"));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.UnderlineState, WysiwygFormattingValue.Active));
 
@@ -216,7 +216,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("insertTable", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
 
@@ -228,7 +228,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("insertTable", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
 
@@ -240,7 +240,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("insertTable", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
 
@@ -252,7 +252,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("insertImage", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.CanBrowseImageAssets, true));
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
@@ -265,7 +265,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("insertImage", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.CanBrowseImageAssets, true));
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
@@ -281,7 +281,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("insertImage", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.CanUploadImages, false));
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
@@ -295,7 +295,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("insertImage", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.CanBrowseImageAssets, false));
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
@@ -310,7 +310,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
         var registry = BuildRegistry(("insertImage", enabled: true, value: null));
         var called = false;
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.OnInsertImageUrl, () => called = true));
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
@@ -327,7 +327,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("trackChanges", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
 
@@ -341,7 +341,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("trackChanges", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
 
@@ -357,7 +357,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("fontFamily", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         var select = cut.Find("[data-testid='document-font-family']");
@@ -370,7 +370,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("fontFamily", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         var select = cut.Find("[data-testid='document-font-family']");
@@ -383,7 +383,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("fontSize", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         var select = cut.Find("[data-testid='document-font-size']");
@@ -398,7 +398,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
             ("fontFamily", enabled: true, value: "stale-font"),
             ("fontSize", enabled: true, value: "13pt"));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.FontFamilies, new[]
             {
@@ -425,7 +425,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
             ("fontFamily", enabled: true, value: null),
             ("fontSize", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.FontFamilyMixed, true)
             .Add(x => x.FontSizeMixed, true));
@@ -448,7 +448,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
             ("textColor", enabled: true, value: "#111827"),
             ("highlightColor", enabled: true, value: "#ffffff"));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.CurrentTextColor, "#2563EB")
             .Add(x => x.CurrentHighlightColor, "#FEF08A")
@@ -470,7 +470,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
             ("textColor", enabled: false, value: null),
             ("highlightColor", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         cut.Find("[data-testid='document-font-color-trigger'] .tm-color-picker-trigger")
@@ -488,7 +488,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("clearFormatting", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         cut.Find("[data-testid='document-clear-formatting']").HasAttribute("disabled").Should().BeFalse();
@@ -499,7 +499,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("clearFormatting", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         cut.Find("[data-testid='document-clear-formatting']").HasAttribute("disabled").Should().BeTrue();
@@ -512,7 +512,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("paragraphAlignment", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         cut.Find("[data-testid='document-align-left']").HasAttribute("disabled").Should().BeTrue();
@@ -523,7 +523,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("paragraphAlignment", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         cut.Find("[data-testid='document-align-center']").HasAttribute("disabled").Should().BeFalse();
@@ -534,7 +534,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("paragraphAlignment", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         cut.Find("[data-testid='document-align-right']").HasAttribute("disabled").Should().BeTrue();
@@ -545,7 +545,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("paragraphAlignment", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         cut.Find("[data-testid='document-align-justify']").HasAttribute("disabled").Should().BeFalse();
@@ -558,7 +558,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("link", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         cut.Find("[data-testid='document-link']").HasAttribute("disabled").Should().BeTrue();
@@ -569,7 +569,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("link", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
 
         cut.Find("[data-testid='document-link']").HasAttribute("disabled").Should().BeFalse();
@@ -582,7 +582,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("insertMenu", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
 
@@ -594,7 +594,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("insertMenu", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
         cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
 
@@ -608,7 +608,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("reviewDisplayMode", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
 
@@ -620,7 +620,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("reviewDisplayMode", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
 
@@ -634,7 +634,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("addComment", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
 
@@ -646,7 +646,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("addComment", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
 
@@ -658,7 +658,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("compareDocuments", enabled: false, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry));
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
 
@@ -670,7 +670,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var registry = BuildRegistry(("compareDocuments", enabled: true, value: null));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.CanCompareDocuments, true));
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
@@ -684,7 +684,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     public void ViewTab_RulerToggle_ExistsAndRespondsToClick()
     {
         var showRuler = true;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.ShowRuler, showRuler)
             .Add(x => x.ShowRulerChanged, v => showRuler = v));
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
@@ -700,7 +700,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     {
         var zoomPercent = 100;
         var pageWidthRequested = false;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.ZoomPercent, zoomPercent)
             .Add(x => x.ZoomPercentChanged, v => zoomPercent = v)
             .Add(x => x.OnZoomPageWidth, () => pageWidthRequested = true));
@@ -718,7 +718,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     [Fact]
     public void HomeTab_SaveButton_FallsBackToParametersWhenNoRegistry()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.ReadOnly, false)
             .Add(x => x.IsSaving, false));
 
@@ -728,7 +728,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     [Fact]
     public void HomeTab_SaveButton_FallsBackDisabledWhenReadOnlyAndNoRegistry()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.ReadOnly, true));
 
         cut.Find("[data-testid='document-save']").HasAttribute("disabled").Should().BeTrue();
@@ -737,7 +737,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     [Fact]
     public void HomeTab_UndoButton_FallsBackToRuntimeCanUndoWhenNoRegistry()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.ReadOnly, false)
             .Add(x => x.CanUndo, true));
 
@@ -747,7 +747,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
     [Fact]
     public void HomeTab_RedoButton_FallsBackToRuntimeCanRedoWhenNoRegistry()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.ReadOnly, false)
             .Add(x => x.CanRedo, true));
 
@@ -761,7 +761,7 @@ public class DocumentEditorToolbarCommandStateTests : LocalizationTestBase
             ("undo", enabled: false, value: "stale-disabled"),
             ("redo", enabled: false, value: "stale-disabled"));
 
-        var cut = RenderComponent<TmDocumentEditorToolbar>(p => p
+        var cut = Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.CanUndo, true)
             .Add(x => x.CanRedo, true)

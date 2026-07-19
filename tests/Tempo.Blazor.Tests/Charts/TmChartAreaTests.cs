@@ -32,7 +32,7 @@ public class TmChartAreaTests : LocalizationTestBase
     [Fact]
     public void Area_RendersClosedAreaPath()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, SimpleAreaData));
 
@@ -46,7 +46,7 @@ public class TmChartAreaTests : LocalizationTestBase
     [Fact]
     public void Area_RendersTopLineAndPoints()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, SimpleAreaData));
 
@@ -59,7 +59,7 @@ public class TmChartAreaTests : LocalizationTestBase
     [Fact]
     public void Area_MultipleSeries_RenderOneAreaEach()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, MultiSeriesData));
 
@@ -77,7 +77,7 @@ public class TmChartAreaTests : LocalizationTestBase
             Datasets = [new ChartDataset { Label = "Empty", Values = [], Color = "#3b82f6" }]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, data));
 
@@ -95,7 +95,7 @@ public class TmChartAreaTests : LocalizationTestBase
             Datasets = [new ChartDataset { Label = "One", Values = [42], Color = "#3b82f6" }]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, data));
 
@@ -116,7 +116,7 @@ public class TmChartAreaTests : LocalizationTestBase
             Datasets = [new ChartDataset { Label = "PnL", Values = [10, -10], Color = "#3b82f6" }]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, data));
 
@@ -136,7 +136,7 @@ public class TmChartAreaTests : LocalizationTestBase
             Datasets = [new ChartDataset { Label = "PnL", Values = [10, -10], Color = "#3b82f6" }]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, data)
             .Add(x => x.ShowGrid, true));
@@ -155,7 +155,7 @@ public class TmChartAreaTests : LocalizationTestBase
             Datasets = [new ChartDataset { Label = "Gaps", Values = [1, 2, double.NaN, 3, 4], Color = "#3b82f6" }]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, data));
 
@@ -175,7 +175,7 @@ public class TmChartAreaTests : LocalizationTestBase
             Datasets = [new ChartDataset { Label = "Flat", Values = [5, 5, 5], Color = "#3b82f6" }]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, data));
 
@@ -188,7 +188,7 @@ public class TmChartAreaTests : LocalizationTestBase
     public void Area_PointClick_RaisesOnSegmentClick()
     {
         ChartSegment? clicked = null;
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, SimpleAreaData)
             .Add(x => x.OnSegmentClick, seg => clicked = seg));
@@ -206,7 +206,7 @@ public class TmChartAreaTests : LocalizationTestBase
     [Fact]
     public void Area_Legend_ShowsDatasetLabels()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, MultiSeriesData)
             .Add(x => x.ShowLegend, true));
@@ -222,7 +222,7 @@ public class TmChartAreaTests : LocalizationTestBase
     [Fact]
     public void Area_InteractiveLegend_HidesSeries()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, MultiSeriesData)
             .Add(x => x.InteractiveLegend, true));
@@ -237,7 +237,7 @@ public class TmChartAreaTests : LocalizationTestBase
     [Fact]
     public void Area_WithGradient_UsesLinearGradientFill()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, SimpleAreaData)
             .Add(x => x.AreaGradient, true));
@@ -251,7 +251,7 @@ public class TmChartAreaTests : LocalizationTestBase
     [Fact]
     public void Area_WithoutGradient_FillsWithSeriesColor()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, SimpleAreaData));
 
@@ -263,7 +263,7 @@ public class TmChartAreaTests : LocalizationTestBase
     [Fact]
     public void Line_DoesNotRenderAreaPath()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, SimpleAreaData));
 
@@ -276,7 +276,7 @@ public class TmChartAreaTests : LocalizationTestBase
     [Fact]
     public void Area_Svg_HasImgRoleAndAriaLabel()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, SimpleAreaData));
 
@@ -290,7 +290,7 @@ public class TmChartAreaTests : LocalizationTestBase
     [Fact]
     public void Area_PointHover_ShowsTooltip()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
             .Add(x => x.Data, SimpleAreaData));
 

@@ -10,7 +10,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.EmailTemplates.Tests.Components;
 
-public class PropertyPanelTests : TestContext
+public class PropertyPanelTests : BunitContext
 {
     public PropertyPanelTests()
     {
@@ -37,7 +37,7 @@ public class PropertyPanelTests : TestContext
     public void NoSelection_ShowsDocumentPanel()
     {
         var (doc, _) = DocWithButton();
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailPropertyPanel>(p => p.Add(c => c.Document, doc));
         cut.Find("[data-tm-prop-target=\"document\"]").Should().NotBeNull();
     }
 
@@ -45,7 +45,7 @@ public class PropertyPanelTests : TestContext
     public void BlockSelected_ShowsBlockPanel()
     {
         var (doc, button) = DocWithButton();
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p
+        var cut = Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.SelectedId, button.Id));
         cut.Find("[data-tm-prop-target=\"block\"]").Should().NotBeNull();
     }
@@ -54,7 +54,7 @@ public class PropertyPanelTests : TestContext
     public void SectionSelected_ShowsSectionPanel()
     {
         var (doc, _) = DocWithButton();
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p
+        var cut = Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.SelectedId, doc.Sections[0].Id));
         cut.Find("[data-tm-prop-target=\"section\"]").Should().NotBeNull();
     }
@@ -63,7 +63,7 @@ public class PropertyPanelTests : TestContext
     public void ColumnSelected_ShowsColumnPanel()
     {
         var (doc, _) = DocWithButton();
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p
+        var cut = Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.SelectedId, doc.Sections[0].Columns[0].Id));
         cut.Find("[data-tm-prop-target=\"column\"]").Should().NotBeNull();
     }
@@ -74,7 +74,7 @@ public class PropertyPanelTests : TestContext
         var (doc, button) = DocWithButton();
         var expected = PropertyReflection.GetFields(button).Select(f => f.Name).ToHashSet(StringComparer.Ordinal);
 
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p
+        var cut = Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.SelectedId, button.Id));
 
         var rendered = cut.FindAll("[data-tm-prop]").Select(e => e.GetAttribute("data-tm-prop")).ToHashSet(StringComparer.Ordinal);
@@ -94,7 +94,7 @@ public class PropertyPanelTests : TestContext
             section.Columns.Add(col);
             doc.Sections.Add(section);
 
-            var act = () => RenderComponent<TmEmailPropertyPanel>(p => p
+            var act = () => Render<TmEmailPropertyPanel>(p => p
                 .Add(c => c.Document, doc).Add(c => c.SelectedId, block.Id));
             act.Should().NotThrow($"the property panel must render {type}");
         }
@@ -105,7 +105,7 @@ public class PropertyPanelTests : TestContext
     {
         var doc = new EmailTemplateDocument { Subject = "old" };
         var changed = false;
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p
+        var cut = Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.OnChanged, () => changed = true));
 
@@ -120,7 +120,7 @@ public class PropertyPanelTests : TestContext
     {
         var (doc, _) = DocWithButton();
         var section = doc.Sections[0];
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p
+        var cut = Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.SelectedId, section.Id)
             .Add(c => c.OnChanged, () => { }));
 

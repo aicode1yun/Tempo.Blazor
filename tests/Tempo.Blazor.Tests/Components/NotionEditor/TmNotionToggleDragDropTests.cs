@@ -76,7 +76,7 @@ public sealed class TmNotionToggleDragDropTests : LocalizationTestBase
             Content = new ToggleBlockContent { Html = "toggle", IsOpen = true }
         };
 
-        var cut = RenderComponent<TmNotionToggleBlock>(parameters => parameters
+        var cut = Render<TmNotionToggleBlock>(parameters => parameters
             .AddCascadingValue(new NotionEditorContext { BlockProvider = _provider })
             .Add(p => p.Block, block)
             .Add(p => p.Content, (IToggleBlockContent)block.Content));

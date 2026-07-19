@@ -13,7 +13,7 @@ public class TmDocumentAutocompleteMenuTests : LocalizationTestBase
     [Fact]
     public void Menu_WhenVisible_RendersItemsAndHighlightedState()
     {
-        var cut = RenderComponent<TmDocumentAutocompleteMenu>(parameters => parameters
+        var cut = Render<TmDocumentAutocompleteMenu>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.Items, Items())
             .Add(p => p.HighlightedIndex, 1));
@@ -29,7 +29,7 @@ public class TmDocumentAutocompleteMenuTests : LocalizationTestBase
     [Fact]
     public void Menu_WhenLoading_RendersLoadingState()
     {
-        var cut = RenderComponent<TmDocumentAutocompleteMenu>(parameters => parameters
+        var cut = Render<TmDocumentAutocompleteMenu>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.IsLoading, true)
             .Add(p => p.LoadingText, "Loading feed"));
@@ -40,7 +40,7 @@ public class TmDocumentAutocompleteMenuTests : LocalizationTestBase
     [Fact]
     public void Menu_WhenEmpty_RendersEmptyState()
     {
-        var cut = RenderComponent<TmDocumentAutocompleteMenu>(parameters => parameters
+        var cut = Render<TmDocumentAutocompleteMenu>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.EmptyText, "Nothing here"));
 
@@ -50,7 +50,7 @@ public class TmDocumentAutocompleteMenuTests : LocalizationTestBase
     [Fact]
     public void Menu_WhenError_RendersErrorState()
     {
-        var cut = RenderComponent<TmDocumentAutocompleteMenu>(parameters => parameters
+        var cut = Render<TmDocumentAutocompleteMenu>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.ErrorMessage, "Provider failed"));
 
@@ -60,7 +60,7 @@ public class TmDocumentAutocompleteMenuTests : LocalizationTestBase
     [Fact]
     public void Menu_WithCustomTemplate_RendersTemplate()
     {
-        var cut = RenderComponent<TmDocumentAutocompleteMenu>(parameters => parameters
+        var cut = Render<TmDocumentAutocompleteMenu>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.Items, Items())
             .Add(p => p.ItemTemplate, item => builder =>
@@ -78,7 +78,7 @@ public class TmDocumentAutocompleteMenuTests : LocalizationTestBase
     {
         var highlighted = 0;
         DocumentAutocompleteItem? selected = null;
-        var cut = RenderComponent<TmDocumentAutocompleteMenu>(parameters => parameters
+        var cut = Render<TmDocumentAutocompleteMenu>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.Items, Items())
             .Add(p => p.HighlightedIndex, highlighted)
@@ -89,7 +89,7 @@ public class TmDocumentAutocompleteMenuTests : LocalizationTestBase
         menu.TriggerEvent("onkeydown", new KeyboardEventArgs { Key = "ArrowDown" });
         highlighted.Should().Be(1);
 
-        cut.SetParametersAndRender(parameters => parameters.Add(p => p.HighlightedIndex, highlighted));
+        cut.Render(parameters => parameters.Add(p => p.HighlightedIndex, highlighted));
         menu = cut.Find("[data-testid='document-autocomplete-menu']");
         menu.TriggerEvent("onkeydown", new KeyboardEventArgs { Key = "Enter" });
 

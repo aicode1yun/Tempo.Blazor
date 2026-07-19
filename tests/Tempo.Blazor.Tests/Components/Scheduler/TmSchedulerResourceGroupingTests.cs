@@ -19,7 +19,7 @@ public class TmSchedulerResourceGroupingTests : LocalizationTestBase
     [Fact]
     public void TimeGrid_Shows_Resource_Headers_When_Resources_Provided()
     {
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, [new DateOnly(2025, 6, 10)])
             .Add(c => c.Resources, TestResources));
 
@@ -32,7 +32,7 @@ public class TmSchedulerResourceGroupingTests : LocalizationTestBase
     [Fact]
     public void TimeGrid_With_Resources_Shows_Columns_Per_Resource()
     {
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, [new DateOnly(2025, 6, 10)])
             .Add(c => c.Resources, TestResources));
 
@@ -44,7 +44,7 @@ public class TmSchedulerResourceGroupingTests : LocalizationTestBase
     [Fact]
     public void TimeGrid_Without_Resources_Shows_Regular_Columns()
     {
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, [new DateOnly(2025, 6, 10)]));
 
         // No resource headers when no resources
@@ -60,7 +60,7 @@ public class TmSchedulerResourceGroupingTests : LocalizationTestBase
             new() { Title = "Room B Event", Start = new DateTime(2025, 6, 10, 14, 0, 0), End = new DateTime(2025, 6, 10, 15, 0, 0), ResourceId = "room-b" },
         };
 
-        var cut = RenderComponent<TmSchedulerTimeGrid>(p => p
+        var cut = Render<TmSchedulerTimeGrid>(p => p
             .Add(c => c.Dates, [new DateOnly(2025, 6, 10)])
             .Add(c => c.Resources, TestResources)
             .Add(c => c.Events, events));
@@ -72,7 +72,7 @@ public class TmSchedulerResourceGroupingTests : LocalizationTestBase
     [Fact]
     public void DayView_Passes_Resources_To_TimeGrid()
     {
-        var cut = RenderComponent<TmSchedulerDayView>(p => p
+        var cut = Render<TmSchedulerDayView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.Resources, TestResources));
 
@@ -82,7 +82,7 @@ public class TmSchedulerResourceGroupingTests : LocalizationTestBase
     [Fact]
     public void WeekView_Passes_Resources_To_TimeGrid()
     {
-        var cut = RenderComponent<TmSchedulerWeekView>(p => p
+        var cut = Render<TmSchedulerWeekView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.Resources, TestResources));
 

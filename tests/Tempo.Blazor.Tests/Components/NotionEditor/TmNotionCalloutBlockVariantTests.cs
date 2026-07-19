@@ -26,7 +26,7 @@ public class TmNotionCalloutBlockVariantTests : LocalizationTestBase
             Variant = variant
         };
 
-        var cut = RenderComponent<TmNotionCalloutBlock>(parameters => parameters
+        var cut = Render<TmNotionCalloutBlock>(parameters => parameters
             .Add(p => p.Content, content)
             .Add(p => p.ReadOnly, true));
 
@@ -46,7 +46,7 @@ public class TmNotionCalloutBlockVariantTests : LocalizationTestBase
             Variant = CalloutVariant.Default
         };
 
-        var cut = RenderComponent<TmNotionCalloutBlock>(parameters => parameters
+        var cut = Render<TmNotionCalloutBlock>(parameters => parameters
             .Add(p => p.Content, content)
             .Add(p => p.ReadOnly, false));
 

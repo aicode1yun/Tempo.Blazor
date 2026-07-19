@@ -54,7 +54,7 @@ public class TmLedgerGridTests : LocalizationTestBase
     private IRenderedComponent<TmLedgerGrid> Render(
         ILedgerDataProvider provider,
         Action<Bunit.ComponentParameterCollectionBuilder<TmLedgerGrid>>? configure = null)
-        => RenderComponent<TmLedgerGrid>(p =>
+        => Render<TmLedgerGrid>(p =>
         {
             p.Add(x => x.Provider, provider);
             configure?.Invoke(p);

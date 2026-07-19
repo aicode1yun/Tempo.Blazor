@@ -27,7 +27,7 @@ public class TmFilterBuilderTests : LocalizationTestBase
     [Fact]
     public void FilterBuilder_AddFilterButton_UsesExplicitLabel()
     {
-        var cut = RenderComponent<TmFilterBuilder>(p => p
+        var cut = Render<TmFilterBuilder>(p => p
             .Add(c => c.FilterDefinitions, new[] { TextFilter }));
 
         var addButton = cut.Find(".tm-filter-builder-add");
@@ -42,7 +42,7 @@ public class TmFilterBuilderTests : LocalizationTestBase
         {
             new ActiveFilter("name", "Name", FilterOperator.Contains, "John", "John"),
         };
-        var cut = RenderComponent<TmFilterBuilder>(p => p
+        var cut = Render<TmFilterBuilder>(p => p
             .Add(c => c.FilterDefinitions, new[] { TextFilter })
             .Add(c => c.ActiveFilters, existing));
 
@@ -53,7 +53,7 @@ public class TmFilterBuilderTests : LocalizationTestBase
     [Fact]
     public void FilterBuilder_AddFilter_ShowsFieldDropdown()
     {
-        var cut = RenderComponent<TmFilterBuilder>(p => p
+        var cut = Render<TmFilterBuilder>(p => p
             .Add(c => c.FilterDefinitions, new[] { TextFilter }));
 
         cut.Find(".tm-filter-builder-add").Click();
@@ -64,7 +64,7 @@ public class TmFilterBuilderTests : LocalizationTestBase
     [Fact]
     public void FilterBuilder_SelectField_ShowsOperatorDropdown()
     {
-        var cut = RenderComponent<TmFilterBuilder>(p => p
+        var cut = Render<TmFilterBuilder>(p => p
             .Add(c => c.FilterDefinitions, new[] { TextFilter }));
 
         cut.Find(".tm-filter-builder-add").Click();
@@ -76,7 +76,7 @@ public class TmFilterBuilderTests : LocalizationTestBase
     [Fact]
     public void FilterBuilder_SelectOperator_ShowsValueInput()
     {
-        var cut = RenderComponent<TmFilterBuilder>(p => p
+        var cut = Render<TmFilterBuilder>(p => p
             .Add(c => c.FilterDefinitions, new[] { TextFilter }));
 
         cut.Find(".tm-filter-builder-add").Click();
@@ -90,7 +90,7 @@ public class TmFilterBuilderTests : LocalizationTestBase
     public void FilterBuilder_Apply_FiresOnFiltersChanged()
     {
         IReadOnlyList<ActiveFilter>? captured = null;
-        var cut = RenderComponent<TmFilterBuilder>(p => p
+        var cut = Render<TmFilterBuilder>(p => p
             .Add(c => c.FilterDefinitions,  new[] { TextFilter })
             .Add(c => c.OnFiltersChanged,   (IReadOnlyList<ActiveFilter> fs) => captured = fs));
 
@@ -111,7 +111,7 @@ public class TmFilterBuilderTests : LocalizationTestBase
         {
             new ActiveFilter("name", "Name", FilterOperator.Contains, "John", "John"),
         };
-        var cut = RenderComponent<TmFilterBuilder>(p => p
+        var cut = Render<TmFilterBuilder>(p => p
             .Add(c => c.FilterDefinitions, new[] { TextFilter })
             .Add(c => c.ActiveFilters,     existing));
 
@@ -129,7 +129,7 @@ public class TmFilterBuilderTests : LocalizationTestBase
             new ActiveFilter("name", "Name", FilterOperator.Contains, "John", "John"),
             new ActiveFilter("status", "Status", FilterOperator.Equals, "active", "Active"),
         };
-        var cut = RenderComponent<TmFilterBuilder>(p => p
+        var cut = Render<TmFilterBuilder>(p => p
             .Add(c => c.FilterDefinitions,  new[] { TextFilter, SelectFilter })
             .Add(c => c.ActiveFilters,      existing)
             .Add(c => c.OnFiltersChanged,   (IReadOnlyList<ActiveFilter> fs) => captured = fs));
@@ -143,7 +143,7 @@ public class TmFilterBuilderTests : LocalizationTestBase
     [Fact]
     public void FilterBuilder_IsEmpty_HiddenWhenNoFilters()
     {
-        var cut = RenderComponent<TmFilterBuilder>(p => p
+        var cut = Render<TmFilterBuilder>(p => p
             .Add(c => c.FilterDefinitions, new[] { TextFilter }));
 
         cut.FindAll(".tm-filter-clear-all").Should().BeEmpty();
@@ -158,7 +158,7 @@ public class TmFilterBuilderTests : LocalizationTestBase
             FieldLabel = "Created",
             FieldType  = FilterFieldType.Date,
         };
-        var cut = RenderComponent<TmFilterBuilder>(p => p
+        var cut = Render<TmFilterBuilder>(p => p
             .Add(c => c.FilterDefinitions, new[] { dateDef }));
 
         cut.Find(".tm-filter-builder-add").Click();
@@ -170,7 +170,7 @@ public class TmFilterBuilderTests : LocalizationTestBase
     [Fact]
     public void FilterBuilder_SelectFilter_UsesDropdown()
     {
-        var cut = RenderComponent<TmFilterBuilder>(p => p
+        var cut = Render<TmFilterBuilder>(p => p
             .Add(c => c.FilterDefinitions, new[] { SelectFilter }));
 
         cut.Find(".tm-filter-builder-add").Click();

@@ -46,7 +46,7 @@ public class ConnectionPointTests : LocalizationTestBase
             H = 60
         });
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -69,7 +69,7 @@ public class ConnectionPointTests : LocalizationTestBase
             H = 60
         });
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -95,7 +95,7 @@ public class ConnectionPointTests : LocalizationTestBase
         doc.Nodes.Add(n1);
         doc.Nodes.Add(n2);
 
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(e => e.Document, doc)
             .Add(e => e.ReadOnly, false));
 
@@ -134,7 +134,7 @@ public class ConnectionPointTests : LocalizationTestBase
         doc.Nodes.Add(n1);
         doc.Nodes.Add(n2);
 
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(e => e.Document, doc)
             .Add(e => e.ReadOnly, false));
 
@@ -166,7 +166,7 @@ public class ConnectionPointTests : LocalizationTestBase
         doc.Nodes.Add(n1);
         doc.Nodes.Add(n2);
 
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(e => e.Document, doc)
             .Add(e => e.ReadOnly, false));
 

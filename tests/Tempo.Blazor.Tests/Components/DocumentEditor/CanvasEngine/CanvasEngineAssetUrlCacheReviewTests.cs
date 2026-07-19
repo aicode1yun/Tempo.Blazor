@@ -76,7 +76,7 @@ public sealed class CanvasEngineAssetUrlCacheReviewTests : LocalizationTestBase
         var resolverB = new RecordingResolver("https://tenant-b.example/signed");
 
         SetupCanvasModule();
-        RenderComponent<TmDocumentCanvasEngineHost>(parameters => parameters
+        Render<TmDocumentCanvasEngineHost>(parameters => parameters
             .Add(p => p.Document, BuildDocumentWithAsset(documentId))
             .Add(p => p.ImageUrlResolver, resolverA));
         resolverA.Invocations.Should().Be(1, "první host musí URL rozřešit svým resolverem");
@@ -84,7 +84,7 @@ public sealed class CanvasEngineAssetUrlCacheReviewTests : LocalizationTestBase
         var mountsBefore = CountMountModelJsonContaining("https://tenant-a.example/signed");
         mountsBefore.Should().BeGreaterThan(0, "model hostu A nese URL tenantu A");
 
-        RenderComponent<TmDocumentCanvasEngineHost>(parameters => parameters
+        Render<TmDocumentCanvasEngineHost>(parameters => parameters
             .Add(p => p.Document, BuildDocumentWithAsset(documentId))
             .Add(p => p.ImageUrlResolver, resolverB));
 

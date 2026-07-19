@@ -43,7 +43,7 @@ public class TmActivityLogTests : LocalizationTestBase
     [Fact]
     public void ActivityLog_RendersTimelineTab()
     {
-        var cut = RenderComponent<TmActivityLog>(p => p
+        var cut = Render<TmActivityLog>(p => p
             .Add(c => c.TimelineEntries, SampleEntries()));
 
         cut.FindAll(".tm-activity-tab").Should().Contain(t => t.TextContent.Contains("Timeline"));
@@ -52,7 +52,7 @@ public class TmActivityLogTests : LocalizationTestBase
     [Fact]
     public void ActivityLog_RendersCommentsTab()
     {
-        var cut = RenderComponent<TmActivityLog>(p => p
+        var cut = Render<TmActivityLog>(p => p
             .Add(c => c.Comments, SampleComments()));
 
         cut.FindAll(".tm-activity-tab").Should().Contain(t => t.TextContent.Contains("Comments") || t.TextContent.Contains("Komentáře"));
@@ -61,7 +61,7 @@ public class TmActivityLogTests : LocalizationTestBase
     [Fact]
     public void ActivityLog_RendersAttachmentsTab()
     {
-        var cut = RenderComponent<TmActivityLog>();
+        var cut = Render<TmActivityLog>();
 
         cut.FindAll(".tm-activity-tab").Should().Contain(t =>
             t.TextContent.Contains("Attachments") || t.TextContent.Contains("Přílohy"));
@@ -70,7 +70,7 @@ public class TmActivityLogTests : LocalizationTestBase
     [Fact]
     public void ActivityLog_DefaultTab_IsTimeline()
     {
-        var cut = RenderComponent<TmActivityLog>(p => p
+        var cut = Render<TmActivityLog>(p => p
             .Add(c => c.TimelineEntries, SampleEntries()));
 
         // Timeline content visible by default
@@ -80,7 +80,7 @@ public class TmActivityLogTests : LocalizationTestBase
     [Fact]
     public async Task ActivityLog_RefreshAsync_RefreshesAllTabs()
     {
-        var cut = RenderComponent<TmActivityLog>(p => p
+        var cut = Render<TmActivityLog>(p => p
             .Add(c => c.TimelineEntries, SampleEntries())
             .Add(c => c.Comments, SampleComments()));
 
@@ -93,7 +93,7 @@ public class TmActivityLogTests : LocalizationTestBase
     [Fact]
     public void ActivityLog_HideTab_HidesCorrectTab()
     {
-        var cut = RenderComponent<TmActivityLog>(p => p
+        var cut = Render<TmActivityLog>(p => p
             .Add(c => c.ShowComments, false));
 
         var tabs = cut.FindAll(".tm-activity-tab");

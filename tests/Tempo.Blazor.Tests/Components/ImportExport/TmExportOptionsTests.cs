@@ -26,7 +26,7 @@ public class TmExportOptionsTests : LocalizationTestBase
     [Fact]
     public void TmExportOptions_Renders_Container()
     {
-        var cut = RenderComponent<TmExportOptions>(p => p
+        var cut = Render<TmExportOptions>(p => p
             .Add(c => c.Formats, TestFormats())
             .Add(c => c.EntityTypes, TestEntities()));
 
@@ -36,7 +36,7 @@ public class TmExportOptionsTests : LocalizationTestBase
     [Fact]
     public void TmExportOptions_Renders_Title()
     {
-        var cut = RenderComponent<TmExportOptions>(p => p
+        var cut = Render<TmExportOptions>(p => p
             .Add(c => c.Formats, TestFormats())
             .Add(c => c.EntityTypes, TestEntities())
             .Add(c => c.Title, "Export Data"));
@@ -47,7 +47,7 @@ public class TmExportOptionsTests : LocalizationTestBase
     [Fact]
     public void TmExportOptions_Renders_Default_Title_From_Loc()
     {
-        var cut = RenderComponent<TmExportOptions>(p => p
+        var cut = Render<TmExportOptions>(p => p
             .Add(c => c.Formats, TestFormats())
             .Add(c => c.EntityTypes, TestEntities()));
 
@@ -57,7 +57,7 @@ public class TmExportOptionsTests : LocalizationTestBase
     [Fact]
     public void TmExportOptions_Renders_Entity_Checkboxes()
     {
-        var cut = RenderComponent<TmExportOptions>(p => p
+        var cut = Render<TmExportOptions>(p => p
             .Add(c => c.Formats, TestFormats())
             .Add(c => c.EntityTypes, TestEntities()));
 
@@ -67,7 +67,7 @@ public class TmExportOptionsTests : LocalizationTestBase
     [Fact]
     public void TmExportOptions_Renders_Format_Select()
     {
-        var cut = RenderComponent<TmExportOptions>(p => p
+        var cut = Render<TmExportOptions>(p => p
             .Add(c => c.Formats, TestFormats())
             .Add(c => c.EntityTypes, TestEntities()));
 
@@ -79,7 +79,7 @@ public class TmExportOptionsTests : LocalizationTestBase
     public void TmExportOptions_Export_Button_Fires_With_Selected_Data()
     {
         TmExportRequest? result = null;
-        var cut = RenderComponent<TmExportOptions>(p => p
+        var cut = Render<TmExportOptions>(p => p
             .Add(c => c.Formats, TestFormats())
             .Add(c => c.EntityTypes, TestEntities())
             .Add(c => c.OnExport, EventCallback.Factory.Create<TmExportRequest>(this, r => result = r)));
@@ -98,7 +98,7 @@ public class TmExportOptionsTests : LocalizationTestBase
     [Fact]
     public void TmExportOptions_Export_Disabled_When_No_Entities_Selected()
     {
-        var cut = RenderComponent<TmExportOptions>(p => p
+        var cut = Render<TmExportOptions>(p => p
             .Add(c => c.Formats, TestFormats())
             .Add(c => c.EntityTypes, TestEntities()));
 
@@ -109,7 +109,7 @@ public class TmExportOptionsTests : LocalizationTestBase
     [Fact]
     public void TmExportOptions_Applies_Custom_Class()
     {
-        var cut = RenderComponent<TmExportOptions>(p => p
+        var cut = Render<TmExportOptions>(p => p
             .Add(c => c.Formats, TestFormats())
             .Add(c => c.EntityTypes, TestEntities())
             .Add(c => c.Class, "my-export"));
@@ -121,7 +121,7 @@ public class TmExportOptionsTests : LocalizationTestBase
     public void TmExportOptions_Multiple_Entities_Can_Be_Selected()
     {
         TmExportRequest? result = null;
-        var cut = RenderComponent<TmExportOptions>(p => p
+        var cut = Render<TmExportOptions>(p => p
             .Add(c => c.Formats, TestFormats())
             .Add(c => c.EntityTypes, TestEntities())
             .Add(c => c.OnExport, EventCallback.Factory.Create<TmExportRequest>(this, r => result = r)));

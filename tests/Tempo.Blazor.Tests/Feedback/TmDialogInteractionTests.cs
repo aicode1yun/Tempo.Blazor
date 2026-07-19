@@ -18,7 +18,7 @@ public class TmDialogInteractionTests : LocalizationTestBase
     public void Dialog_Escape_Cancels_ByDefault()
     {
         bool? result = null;
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, DialogType.Confirm)
             .Add(d => d.OnResult, EventCallback.Factory.Create<bool?>(this, v => result = v)));
@@ -32,7 +32,7 @@ public class TmDialogInteractionTests : LocalizationTestBase
     public void Dialog_Escape_Ignored_WhenCloseOnEscapeFalse()
     {
         bool invoked = false;
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, DialogType.Confirm)
             .Add(d => d.CloseOnEscape, false)
@@ -47,7 +47,7 @@ public class TmDialogInteractionTests : LocalizationTestBase
     public void Dialog_OverlayClick_DoesNotClose_ByDefault()
     {
         bool invoked = false;
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, DialogType.Confirm)
             .Add(d => d.OnResult, EventCallback.Factory.Create<bool?>(this, _ => invoked = true)));
@@ -61,7 +61,7 @@ public class TmDialogInteractionTests : LocalizationTestBase
     public void Dialog_OverlayClick_Cancels_WhenCloseOnOverlayClickTrue()
     {
         bool? result = null;
-        var cut = RenderComponent<TmDialog>(p => p
+        var cut = Render<TmDialog>(p => p
             .Add(d => d.Show, true)
             .Add(d => d.Type, DialogType.Confirm)
             .Add(d => d.CloseOnOverlayClick, true)

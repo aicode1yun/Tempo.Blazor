@@ -16,7 +16,7 @@ public class TmDocumentCommentRailParticipantTests : LocalizationTestBase
     [Fact]
     public void Rail_RendersParticipantLegendWithClientBadge()
     {
-        var cut = RenderComponent<TmDocumentCommentRail>(parameters =>
+        var cut = Render<TmDocumentCommentRail>(parameters =>
             parameters.Add(p => p.Comments, BuildComments())
                       .Add(p => p.CanComment, true));
 
@@ -38,7 +38,7 @@ public class TmDocumentCommentRailParticipantTests : LocalizationTestBase
     [Fact]
     public void Threads_AreColoredByTheirAuthorsPaletteIndex()
     {
-        var cut = RenderComponent<TmDocumentCommentRail>(parameters =>
+        var cut = Render<TmDocumentCommentRail>(parameters =>
             parameters.Add(p => p.Comments, BuildComments())
                       .Add(p => p.CanComment, true));
 
@@ -51,7 +51,7 @@ public class TmDocumentCommentRailParticipantTests : LocalizationTestBase
     [Fact]
     public void ExternalEntry_ShowsClientBadgeInsteadOfPlainExternalLabel()
     {
-        var cut = RenderComponent<TmDocumentCommentRail>(parameters =>
+        var cut = Render<TmDocumentCommentRail>(parameters =>
             parameters.Add(p => p.Comments, BuildComments())
                       .Add(p => p.CanComment, true));
 
@@ -64,7 +64,7 @@ public class TmDocumentCommentRailParticipantTests : LocalizationTestBase
     [Fact]
     public void Rail_WithoutComments_RendersNoLegend()
     {
-        var cut = RenderComponent<TmDocumentCommentRail>(parameters =>
+        var cut = Render<TmDocumentCommentRail>(parameters =>
             parameters.Add(p => p.Comments, new List<DocumentComment>())
                       .Add(p => p.CanComment, true));
 

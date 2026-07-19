@@ -11,14 +11,14 @@ public class TmSliderTests : LocalizationTestBase
     [Fact]
     public void TmSlider_Renders_Input_Range()
     {
-        var cut = RenderComponent<TmSlider>();
+        var cut = Render<TmSlider>();
         cut.Find("input[type='range']").Should().NotBeNull();
     }
 
     [Fact]
     public void TmSlider_Value_50_Renders_Correctly()
     {
-        var cut = RenderComponent<TmSlider>(p => p.Add(x => x.Value, 50));
+        var cut = Render<TmSlider>(p => p.Add(x => x.Value, 50));
         var input = cut.Find("input");
         input.GetAttribute("value").Should().Be("50");
     }
@@ -27,7 +27,7 @@ public class TmSliderTests : LocalizationTestBase
     public void TmSlider_Change_Fires_ValueChanged()
     {
         int? captured = null;
-        var cut = RenderComponent<TmSlider>(p => p
+        var cut = Render<TmSlider>(p => p
             .Add(x => x.ValueChanged, EventCallback.Factory.Create<int?>(this, v => captured = v)));
 
         var input = cut.Find("input");
@@ -39,21 +39,21 @@ public class TmSliderTests : LocalizationTestBase
     [Fact]
     public void TmSlider_Disabled_Has_Disabled_Attribute()
     {
-        var cut = RenderComponent<TmSlider>(p => p.Add(x => x.Disabled, true));
+        var cut = Render<TmSlider>(p => p.Add(x => x.Disabled, true));
         cut.Find("input").HasAttribute("disabled").Should().BeTrue();
     }
 
     [Fact]
     public void TmSlider_Vertical_Has_Vertical_Class()
     {
-        var cut = RenderComponent<TmSlider>(p => p.Add(x => x.Orientation, SliderOrientation.Vertical));
+        var cut = Render<TmSlider>(p => p.Add(x => x.Orientation, SliderOrientation.Vertical));
         cut.Find(".tm-slider--vertical").Should().NotBeNull();
     }
 
     [Fact]
     public void TmSlider_Step_Rounds_Value()
     {
-        var cut = RenderComponent<TmSlider>(p => p
+        var cut = Render<TmSlider>(p => p
             .Add(x => x.Min, 0)
             .Add(x => x.Max, 100)
             .Add(x => x.Step, 10));
@@ -65,7 +65,7 @@ public class TmSliderTests : LocalizationTestBase
     [Fact]
     public void TmSlider_ShowTicks_Renders_Ticks()
     {
-        var cut = RenderComponent<TmSlider>(p => p
+        var cut = Render<TmSlider>(p => p
             .Add(x => x.Min, 0)
             .Add(x => x.Max, 10)
             .Add(x => x.ShowTicks, true));

@@ -170,7 +170,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public void SidePanel_RendersUnifiedTabsAndSwitchesContent()
     {
         var activeTab = DocumentSidePanelTab.Comments;
-        var cut = RenderComponent<TmDocumentSidePanel>(parameters => parameters
+        var cut = Render<TmDocumentSidePanel>(parameters => parameters
             .Add(p => p.ActiveTab, activeTab)
             .Add(p => p.ActiveTabChanged, tab => activeTab = tab)
             .Add(p => p.CommentsCount, 2)
@@ -206,7 +206,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.Find("[data-testid='document-side-panel-tab-revisions']").Click();
 
         activeTab.Should().Be(DocumentSidePanelTab.Revisions);
-        cut.SetParametersAndRender(parameters => parameters.Add(p => p.ActiveTab, activeTab));
+        cut.Render(parameters => parameters.Add(p => p.ActiveTab, activeTab));
         cut.Find("[data-testid='document-side-panel-body']")
             .GetAttribute("data-active-tab")
             .Should()
@@ -218,7 +218,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.Find("[data-testid='document-side-panel-tab-pages']").Click();
 
         activeTab.Should().Be(DocumentSidePanelTab.Pages);
-        cut.SetParametersAndRender(parameters => parameters.Add(p => p.ActiveTab, activeTab));
+        cut.Render(parameters => parameters.Add(p => p.ActiveTab, activeTab));
         cut.Find("[data-testid='side-panel-pages-content']").Should().NotBeNull();
         cut.FindAll("[data-testid='side-panel-revisions-content']").Should().BeEmpty();
     }
@@ -227,7 +227,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public void SidePanel_ClosedStateShowsEdgeToggle()
     {
         var opened = false;
-        var cut = RenderComponent<TmDocumentSidePanel>(parameters => parameters
+        var cut = Render<TmDocumentSidePanel>(parameters => parameters
             .Add(p => p.IsOpen, false)
             .Add(p => p.OnOpen, () => opened = true));
 
@@ -310,7 +310,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void RibbonTabs_SwitchVisibleCommandGroups()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.CanExportPdf, true)
             .Add(p => p.CanImportDocx, true)
             .Add(p => p.CanExportDocx, true)
@@ -386,7 +386,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void TrackChangesButton_RendersAsToggleWithStateAndAriaPressed()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.CanTrackChanges, true)
             .Add(p => p.TrackChangesEnabled, false));
 
@@ -403,7 +403,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             .Should()
             .Be("off");
 
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.CanTrackChanges, true)
             .Add(p => p.TrackChangesEnabled, true));
 
@@ -422,7 +422,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public void TrackChangesButton_ClickInvokesToggleCallback()
     {
         var toggleCount = 0;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.CanTrackChanges, true)
             .Add(p => p.OnToggleTrackChanges, () => toggleCount++));
 
@@ -436,7 +436,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public void Toolbar_ViewTab_TogglesNonPrintingCharacters()
     {
         var toggled = false;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.OnToggleNonPrintingCharacters, () => toggled = true));
 
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
@@ -448,7 +448,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void Toolbar_HomeTabExposesBaselineCommandsForRegistryMigration()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.CanUndo, true)
             .Add(p => p.CanRedo, true));
 
@@ -481,7 +481,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void Toolbar_ReferencesTabKeepsExportCommandsVisibleButDisabledWhenUnavailable()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         cut.Find("[data-testid='document-ribbon-tab-references']").Click();
 
@@ -495,7 +495,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     {
         var differentFirstPage = false;
         var differentOddEven = true;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.DifferentFirstPage, differentFirstPage)
             .Add(p => p.DifferentOddAndEvenPages, differentOddEven)
             .Add(p => p.DifferentFirstPageChanged, value => differentFirstPage = value)
@@ -519,7 +519,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var showRuler = true;
         var zoomPercent = 100;
         var pageWidthRequested = false;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ShowRuler, showRuler)
             .Add(p => p.ZoomPercent, zoomPercent)
             .Add(p => p.ShowRulerChanged, value => showRuler = value)
@@ -543,7 +543,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void StatusBar_ShowsSaveMetricsRegionAndZoom()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(parameters => parameters
+        var cut = Render<TmDocumentEditorStatusBar>(parameters => parameters
             .Add(p => p.IsDirty, true)
             .Add(p => p.SaveMessage, "Saved")
             .Add(p => p.LastSavedAt, new DateTimeOffset(2026, 5, 15, 8, 30, 0, TimeSpan.Zero))
@@ -606,7 +606,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public void Toolbar_HeaderFooterModeShowsContextualTabAndCloseCommand()
     {
         var closeCalled = false;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ActiveRegion, "Header")
             .Add(p => p.OnCloseHeaderFooter, () => closeCalled = true));
 
@@ -624,7 +624,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public async Task RibbonTabs_SupportKeyboardNavigationAndSelectedState()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         var home = cut.Find("[data-testid='document-ribbon-tab-home']");
 
         await home.KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
@@ -687,7 +687,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task Toolbar_LinkDialog_LoadsExistingLinkTitleAndValidatesSafeUrl()
     {
         WysiwygLinkPayload? applied = null;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.LinkInfoProvider, () => Task.FromResult<WysiwygLinkInfo?>(new WysiwygLinkInfo
             {
                 Href = "https://example.test/old",
@@ -721,7 +721,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public async Task Toolbar_LinkDialog_EscapeClosesDialog()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         await cut.Find("[data-testid='document-link']").ClickAsync(new MouseEventArgs());
         cut.Find("[data-testid='document-link-dialog']").Should().NotBeNull();
@@ -735,7 +735,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void Toolbar_ReadOnlyDisablesEditingCommandsButKeepsReviewAndViewNavigation()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ReadOnly, true)
             .Add(p => p.CanUndo, true)
             .Add(p => p.CanRedo, true)
@@ -765,7 +765,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void Toolbar_ReadOnlyDisablesDataAffectingCommandsButLeavesViewCommandsAvailable()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ReadOnly, true)
             .Add(p => p.CanUndo, true)
             .Add(p => p.CanRedo, true)
@@ -811,7 +811,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void Toolbar_FormattingButtonsExposeActiveAndMixedStates()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.BoldState, WysiwygFormattingValue.Active)
             .Add(p => p.ItalicState, WysiwygFormattingValue.Mixed)
             .Add(p => p.UnderlineState, WysiwygFormattingValue.Inactive)
@@ -846,7 +846,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void Toolbar_FontColorAndLineSpacingReflectJsSelectionState()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.FontFamilies, new[]
             {
                 new DocumentFontFamily { DisplayName = "Inter", CssFamily = "Inter, sans-serif" }
@@ -1255,7 +1255,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void Toolbar_ParagraphControlsRenderAndExposeMixedAlignmentState()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ParagraphAlignment, DocumentTextAlignment.Left)
             .Add(p => p.ParagraphAlignmentMixed, true));
 
@@ -1274,7 +1274,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void Toolbar_RendersFontControlsFromProviderData()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.FontFamilies, new[]
             {
                 new DocumentFontFamily { Key = "georgia", DisplayName = "Georgia", CssFamily = "Georgia, serif" }
@@ -3494,7 +3494,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void ReviewTab_ProtectDocumentButton_IsPresent()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.IsDocumentProtected, false));
 
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
@@ -3505,7 +3505,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void ReviewTab_ProtectDocumentButton_HasActiveCssClassWhenProtected()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.IsDocumentProtected, true));
 
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
@@ -3517,7 +3517,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void ReviewTab_ProtectDocumentButton_HasAriaPressedTrue_WhenProtected()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.IsDocumentProtected, true));
 
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
@@ -3529,7 +3529,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void ReviewTab_MarkEditableRegionButton_IsPresent()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.IsDocumentProtected, true));
 
         cut.Find("[data-testid='document-ribbon-tab-review']").Click();
@@ -3541,7 +3541,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public void ReviewTab_MarkEditableRegionButton_InvokesCallback()
     {
         var called = false;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.IsDocumentProtected, true)
             .Add(p => p.OnMarkEditableRegion, EventCallback.Factory.Create(this, () => called = true)));
 
@@ -3583,7 +3583,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void ViewTab_FullscreenButton_IsPresent()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
 
@@ -3593,7 +3593,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void ViewTab_FullscreenButton_HasAriaPressedTrue_WhenFullscreen()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.IsFullscreen, true));
 
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
@@ -3606,7 +3606,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public void ViewTab_FullscreenButton_InvokesCallback()
     {
         var called = false;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.OnFullscreenToggle, EventCallback.Factory.Create(this, () => called = true)));
 
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
@@ -3620,7 +3620,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void ViewTab_ViewDocumentJsonButton_NotPresentByDefault()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
 
@@ -3630,7 +3630,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void ViewTab_ViewDocumentJsonButton_PresentWhenShowDebugToolsEnabled()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ShowDebugTools, true));
 
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
@@ -3642,7 +3642,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public void ViewTab_ViewDocumentJsonButton_InvokesCallback()
     {
         var called = false;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ShowDebugTools, true)
             .Add(p => p.OnViewDocumentJson, EventCallback.Factory.Create(this, () => called = true)));
 
@@ -3657,7 +3657,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void ViewTab_ViewClipboardHtmlButton_NotPresentByDefault()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
 
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
 
@@ -3667,7 +3667,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public void ViewTab_ViewClipboardHtmlButton_PresentWhenShowDebugToolsEnabled()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ShowDebugTools, true));
 
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
@@ -3679,7 +3679,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public void ViewTab_ViewClipboardHtmlButton_InvokesCallback()
     {
         var called = false;
-        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+        var cut = Render<TmDocumentEditorToolbar>(parameters => parameters
             .Add(p => p.ShowDebugTools, true)
             .Add(p => p.OnViewClipboardHtml, EventCallback.Factory.Create(this, () => called = true)));
 

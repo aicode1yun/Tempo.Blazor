@@ -12,7 +12,7 @@ public class TmSparklineTests : LocalizationTestBase
     [Fact]
     public void Render_SvgElement_Exists()
     {
-        var cut = RenderComponent<TmSparkline>(p => p
+        var cut = Render<TmSparkline>(p => p
             .Add(x => x.Data, SampleData));
 
         cut.Find("svg").Should().NotBeNull();
@@ -22,7 +22,7 @@ public class TmSparklineTests : LocalizationTestBase
     [Fact]
     public void LineType_RendersPolyline()
     {
-        var cut = RenderComponent<TmSparkline>(p => p
+        var cut = Render<TmSparkline>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Type, SparklineType.Line));
 
@@ -32,7 +32,7 @@ public class TmSparklineTests : LocalizationTestBase
     [Fact]
     public void BarType_RendersRects()
     {
-        var cut = RenderComponent<TmSparkline>(p => p
+        var cut = Render<TmSparkline>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Type, SparklineType.Bar));
 
@@ -42,7 +42,7 @@ public class TmSparklineTests : LocalizationTestBase
     [Fact]
     public void AreaType_RendersPath()
     {
-        var cut = RenderComponent<TmSparkline>(p => p
+        var cut = Render<TmSparkline>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Type, SparklineType.Area));
 
@@ -52,7 +52,7 @@ public class TmSparklineTests : LocalizationTestBase
     [Fact]
     public void PieType_RendersPaths()
     {
-        var cut = RenderComponent<TmSparkline>(p => p
+        var cut = Render<TmSparkline>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Type, SparklineType.Pie));
 
@@ -62,7 +62,7 @@ public class TmSparklineTests : LocalizationTestBase
     [Fact]
     public void Height_AppliedAsStyle()
     {
-        var cut = RenderComponent<TmSparkline>(p => p
+        var cut = Render<TmSparkline>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Height, "60px"));
 
@@ -74,7 +74,7 @@ public class TmSparklineTests : LocalizationTestBase
     [Fact]
     public void CustomClass_Applied()
     {
-        var cut = RenderComponent<TmSparkline>(p => p
+        var cut = Render<TmSparkline>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Class, "my-spark"));
 
@@ -84,7 +84,7 @@ public class TmSparklineTests : LocalizationTestBase
     [Fact]
     public void EmptyData_ShowsPlaceholder()
     {
-        var cut = RenderComponent<TmSparkline>(p => p
+        var cut = Render<TmSparkline>(p => p
             .Add(x => x.Data, Array.Empty<double>()));
 
         cut.Find(".tm-sparkline__empty").Should().NotBeNull();
@@ -93,7 +93,7 @@ public class TmSparklineTests : LocalizationTestBase
     [Fact]
     public void Tooltip_HasTitleWithValue()
     {
-        var cut = RenderComponent<TmSparkline>(p => p
+        var cut = Render<TmSparkline>(p => p
             .Add(x => x.Data, SampleData)
             .Add(x => x.Type, SparklineType.Bar));
 

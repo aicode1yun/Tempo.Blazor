@@ -11,7 +11,7 @@ public class TmSpreadsheetSortDialogTests : LocalizationTestBase
     [Fact]
     public void Renders_LevelRow_AndOptions_Localized()
     {
-        var cut = RenderComponent<TmSpreadsheetSortDialog>(p => p
+        var cut = Render<TmSpreadsheetSortDialog>(p => p
             .Add(c => c.Range, new SpreadsheetRange(0, 0, 9, 2)));
 
         var markup = cut.Markup;
@@ -26,7 +26,7 @@ public class TmSpreadsheetSortDialogTests : LocalizationTestBase
     [Fact]
     public void AddLevel_AddsRow()
     {
-        var cut = RenderComponent<TmSpreadsheetSortDialog>(p => p
+        var cut = Render<TmSpreadsheetSortDialog>(p => p
             .Add(c => c.Range, new SpreadsheetRange(0, 0, 9, 2)));
 
         cut.Find(".tm-spreadsheet-sort__tool").Click();
@@ -38,7 +38,7 @@ public class TmSpreadsheetSortDialogTests : LocalizationTestBase
     public void Apply_BuildsSpec_WithRangeAndHeader()
     {
         SpreadsheetSortSpec? applied = null;
-        var cut = RenderComponent<TmSpreadsheetSortDialog>(p => p
+        var cut = Render<TmSpreadsheetSortDialog>(p => p
             .Add(c => c.Range, new SpreadsheetRange(0, 0, 9, 2))
             .Add(c => c.OnApply, EventCallback.Factory.Create<SpreadsheetSortSpec>(this, s => applied = s)));
 

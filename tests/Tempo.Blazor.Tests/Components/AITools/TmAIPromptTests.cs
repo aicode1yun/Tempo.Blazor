@@ -21,7 +21,7 @@ public class TmAIPromptTests : LocalizationTestBase
             new AIPromptCommand("translate", "Translate", icon: "globe"),
         };
 
-        var cut = RenderComponent<TmAIPrompt>(parameters =>
+        var cut = Render<TmAIPrompt>(parameters =>
             parameters.Add(p => p.Commands, commands));
 
         cut.Find(".tm-ai-prompt__input").Should().NotBeNull();
@@ -33,7 +33,7 @@ public class TmAIPromptTests : LocalizationTestBase
     [Fact]
     public void Render_WithoutCommands_HidesCommandRow()
     {
-        var cut = RenderComponent<TmAIPrompt>();
+        var cut = Render<TmAIPrompt>();
 
         cut.FindAll(".tm-ai-prompt__commands").Should().BeEmpty();
         cut.Find(".tm-ai-prompt__input").Should().NotBeNull();
@@ -45,7 +45,7 @@ public class TmAIPromptTests : LocalizationTestBase
     public void SubmitPrompt_FiresOnPromptSubmit()
     {
         string? capturedPrompt = null;
-        var cut = RenderComponent<TmAIPrompt>(parameters =>
+        var cut = Render<TmAIPrompt>(parameters =>
             parameters.Add(p => p.OnPromptSubmit, EventCallback.Factory.Create<string>(this, p => capturedPrompt = p)));
 
         var input = cut.Find(".tm-ai-prompt__input");
@@ -64,7 +64,7 @@ public class TmAIPromptTests : LocalizationTestBase
     public void PressEnter_SubmitsPrompt()
     {
         string? capturedPrompt = null;
-        var cut = RenderComponent<TmAIPrompt>(parameters =>
+        var cut = Render<TmAIPrompt>(parameters =>
             parameters.Add(p => p.OnPromptSubmit, EventCallback.Factory.Create<string>(this, p => capturedPrompt = p)));
 
         var input = cut.Find(".tm-ai-prompt__input");
@@ -81,7 +81,7 @@ public class TmAIPromptTests : LocalizationTestBase
     [Fact]
     public void EmptyPrompt_SubmitButtonDisabled()
     {
-        var cut = RenderComponent<TmAIPrompt>();
+        var cut = Render<TmAIPrompt>();
 
         var submitBtn = cut.Find(".tm-ai-prompt__submit");
         submitBtn.HasAttribute("disabled").Should().BeTrue();
@@ -94,7 +94,7 @@ public class TmAIPromptTests : LocalizationTestBase
     {
         var output = new AIPromptOutput("1", "This is the AI response.", AIPromptOutputFormat.Text);
 
-        var cut = RenderComponent<TmAIPrompt>(parameters =>
+        var cut = Render<TmAIPrompt>(parameters =>
             parameters.Add(p => p.Output, output));
 
         cut.Find(".tm-ai-prompt__output").Should().NotBeNull();
@@ -108,7 +108,7 @@ public class TmAIPromptTests : LocalizationTestBase
     {
         var output = new AIPromptOutput("1", "console.log('hi');", AIPromptOutputFormat.Code);
 
-        var cut = RenderComponent<TmAIPrompt>(parameters =>
+        var cut = Render<TmAIPrompt>(parameters =>
             parameters.Add(p => p.Output, output));
 
         cut.Find("pre.tm-ai-prompt__output-code").Should().NotBeNull();
@@ -122,7 +122,7 @@ public class TmAIPromptTests : LocalizationTestBase
     {
         var output = new AIPromptOutput("1", "", AIPromptOutputFormat.Text, isLoading: true);
 
-        var cut = RenderComponent<TmAIPrompt>(parameters =>
+        var cut = Render<TmAIPrompt>(parameters =>
             parameters.Add(p => p.Output, output));
 
         cut.Find(".tm-ai-prompt__output-loading").Should().NotBeNull();
@@ -135,7 +135,7 @@ public class TmAIPromptTests : LocalizationTestBase
     {
         var output = new AIPromptOutput("1", "Content", title: "Summary");
 
-        var cut = RenderComponent<TmAIPrompt>(parameters =>
+        var cut = Render<TmAIPrompt>(parameters =>
             parameters.Add(p => p.Output, output));
 
         cut.Find(".tm-ai-prompt__output-title").TextContent.Should().Be("Summary");
@@ -152,7 +152,7 @@ public class TmAIPromptTests : LocalizationTestBase
         };
 
         AIPromptCommand? capturedCommand = null;
-        var cut = RenderComponent<TmAIPrompt>(parameters =>
+        var cut = Render<TmAIPrompt>(parameters =>
             parameters.Add(p => p.Commands, commands)
                       .Add(p => p.OnCommandClick, EventCallback.Factory.Create<AIPromptCommand>(this, c => capturedCommand = c)));
 
@@ -171,7 +171,7 @@ public class TmAIPromptTests : LocalizationTestBase
         var output = new AIPromptOutput("1", "Great answer!");
         (AIPromptOutput Output, bool? Rating)? captured = null;
 
-        var cut = RenderComponent<TmAIPrompt>(parameters =>
+        var cut = Render<TmAIPrompt>(parameters =>
             parameters.Add(p => p.Output, output)
                       .Add(p => p.OnOutputRate, EventCallback.Factory.Create<(AIPromptOutput, bool?)>(this, r => captured = r)));
 
@@ -191,7 +191,7 @@ public class TmAIPromptTests : LocalizationTestBase
     {
         var output = new AIPromptOutput("1", "Content");
 
-        var cut = RenderComponent<TmAIPrompt>(parameters =>
+        var cut = Render<TmAIPrompt>(parameters =>
             parameters.Add(p => p.Output, output));
 
         var copyBtn = cut.FindAll(".tm-ai-prompt__action-btn")
@@ -211,7 +211,7 @@ public class TmAIPromptTests : LocalizationTestBase
         };
 
         bool fired = false;
-        var cut = RenderComponent<TmAIPrompt>(parameters =>
+        var cut = Render<TmAIPrompt>(parameters =>
             parameters.Add(p => p.Commands, commands)
                       .Add(p => p.OnCommandClick, EventCallback.Factory.Create<AIPromptCommand>(this, _ => fired = true)));
 

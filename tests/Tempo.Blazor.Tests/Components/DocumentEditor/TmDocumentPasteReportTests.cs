@@ -12,7 +12,7 @@ public sealed class TmDocumentPasteReportTests : LocalizationTestBase
     [Fact]
     public void PasteReport_RendersWarnings()
     {
-        var cut = RenderComponent<TmDocumentPasteReport>(p => p
+        var cut = Render<TmDocumentPasteReport>(p => p
             .Add(x => x.Warnings, [new DocumentClipboardWarning { Code = "stripped-element", Message = "Script removed" }]));
 
         cut.Find("[data-testid='document-paste-report']").TextContent.Should().Contain("Paste adjusted 1 item");
@@ -21,7 +21,7 @@ public sealed class TmDocumentPasteReportTests : LocalizationTestBase
     [Fact]
     public void PasteReport_TogglesDetails()
     {
-        var cut = RenderComponent<TmDocumentPasteReport>(p => p
+        var cut = Render<TmDocumentPasteReport>(p => p
             .Add(x => x.Warnings, [new DocumentClipboardWarning { Code = "unsafe-link-removed", Message = "Link removed" }]));
 
         cut.FindAll("[data-testid='document-paste-report-details']").Should().BeEmpty();
@@ -34,7 +34,7 @@ public sealed class TmDocumentPasteReportTests : LocalizationTestBase
     public void PasteReport_CloseInvokesCallback()
     {
         var closed = false;
-        var cut = RenderComponent<TmDocumentPasteReport>(p => p
+        var cut = Render<TmDocumentPasteReport>(p => p
             .Add(x => x.Warnings, [new DocumentClipboardWarning { Code = "w", Message = "m" }])
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => closed = true)));
 

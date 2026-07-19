@@ -126,7 +126,7 @@ public class TmNotionTodoActionItemTests : LocalizationTestBase
     {
         var context = new NotionEditorContext { MentionProvider = mentionProvider };
 
-        return RenderComponent<CascadingValue<NotionEditorContext>>(p => p
+        return Render<CascadingValue<NotionEditorContext>>(p => p
             .Add(x => x.Value, context)
             .AddChildContent<TmNotionTodoBlock>(todo => todo
                 .Add(x => x.Content, content)

@@ -24,7 +24,7 @@ public class TmDiagramEditorInsertTableTests : LocalizationTestBase
         var doc = new DiagramDocument();
         doc.EnsurePages();
 
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(e => e.Document, doc)
             .Add(e => e.ReadOnly, false));
 
@@ -40,7 +40,7 @@ public class TmDiagramEditorInsertTableTests : LocalizationTestBase
         var doc = new DiagramDocument();
         doc.EnsurePages();
 
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(e => e.Document, doc)
             .Add(e => e.ReadOnly, false));
 
@@ -57,7 +57,7 @@ public class TmDiagramEditorInsertTableTests : LocalizationTestBase
         var doc = new DiagramDocument();
         doc.EnsurePages();
 
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(e => e.Document, doc)
             .Add(e => e.ReadOnly, false));
 
@@ -96,7 +96,7 @@ public class TmDiagramEditorInsertTableTests : LocalizationTestBase
         page.Width = 800;
         page.Height = 600;
 
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(e => e.Document, doc)
             .Add(e => e.ReadOnly, false)
             .Add(e => e.GridSize, 8));

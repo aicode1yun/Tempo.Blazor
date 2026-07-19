@@ -39,7 +39,7 @@ public class SpecializedRoutingTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -72,7 +72,7 @@ public class SpecializedRoutingTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 

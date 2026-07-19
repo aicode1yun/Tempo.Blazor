@@ -11,7 +11,7 @@ public sealed class TmDocumentCollaborationCursorOverlayTests : LocalizationTest
     [Fact]
     public void CursorOverlay_RendersRemoteCursors()
     {
-        var cut = RenderComponent<TmDocumentCollaborationCursorOverlay>(parameters =>
+        var cut = Render<TmDocumentCollaborationCursorOverlay>(parameters =>
             parameters.Add(p => p.Cursors, new[]
             {
                 new DocumentCollaborationCursor

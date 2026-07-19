@@ -20,7 +20,7 @@ public class TmFilterableDropdownTests : LocalizationTestBase
     [Fact]
     public void TmFilterableDropdown_Renders_Trigger()
     {
-        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+        var cut = Render<TmFilterableDropdown<SelectOption<string>, string>>(p => p
             .Add(c => c.Placeholder, "Choose fruit")
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, o => o.Label));
@@ -31,7 +31,7 @@ public class TmFilterableDropdownTests : LocalizationTestBase
     [Fact]
     public void TmFilterableDropdown_Shows_Placeholder_When_No_Value()
     {
-        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+        var cut = Render<TmFilterableDropdown<SelectOption<string>, string>>(p => p
             .Add(c => c.Placeholder, "Choose fruit")
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, o => o.Label));
@@ -42,7 +42,7 @@ public class TmFilterableDropdownTests : LocalizationTestBase
     [Fact]
     public void TmFilterableDropdown_Menu_Hidden_By_Default()
     {
-        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+        var cut = Render<TmFilterableDropdown<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, o => o.Label));
 
@@ -52,7 +52,7 @@ public class TmFilterableDropdownTests : LocalizationTestBase
     [Fact]
     public void TmFilterableDropdown_Click_Opens_Menu_With_Filter_Input()
     {
-        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+        var cut = Render<TmFilterableDropdown<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, o => o.Label));
 
@@ -65,7 +65,7 @@ public class TmFilterableDropdownTests : LocalizationTestBase
     [Fact]
     public void TmFilterableDropdown_Open_Shows_All_Items()
     {
-        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+        var cut = Render<TmFilterableDropdown<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, o => o.Label));
 
@@ -78,7 +78,7 @@ public class TmFilterableDropdownTests : LocalizationTestBase
     public void TmFilterableDropdown_ValueChanged_Fires_On_Item_Click()
     {
         SelectOption<string>? captured = null;
-        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+        var cut = Render<TmFilterableDropdown<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, o => o.Label)
             .Add(c => c.ValueChanged, EventCallback.Factory.Create<SelectOption<string>?>(this, v => captured = v)));
@@ -93,7 +93,7 @@ public class TmFilterableDropdownTests : LocalizationTestBase
     [Fact]
     public void TmFilterableDropdown_Selecting_Item_Closes_Menu()
     {
-        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+        var cut = Render<TmFilterableDropdown<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.DisplayField, o => o.Label));
 
@@ -106,7 +106,7 @@ public class TmFilterableDropdownTests : LocalizationTestBase
     [Fact]
     public void TmFilterableDropdown_ShowClearButton_Shows_Clear_When_Value_Set()
     {
-        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+        var cut = Render<TmFilterableDropdown<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.Value, FruitOptions[0])
             .Add(c => c.DisplayField, o => o.Label)
@@ -119,7 +119,7 @@ public class TmFilterableDropdownTests : LocalizationTestBase
     public void TmFilterableDropdown_Clear_Fires_Null_ValueChanged()
     {
         SelectOption<string>? captured = FruitOptions[0];
-        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+        var cut = Render<TmFilterableDropdown<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.Value, FruitOptions[0])
             .Add(c => c.DisplayField, o => o.Label)
@@ -141,7 +141,7 @@ public class TmFilterableDropdownTests : LocalizationTestBase
     ];
 
     private IRenderedComponent<TmFilterableDropdown<SelectOption<string>, string>> RenderCityDropdown(bool? accentInsensitive = null)
-        => RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p =>
+        => Render<TmFilterableDropdown<SelectOption<string>, string>>(p =>
         {
             p.Add(c => c.Items, CityOptions)
              .Add(c => c.DisplayField, o => o.Label);
@@ -218,7 +218,7 @@ public class TmFilterableDropdownTests : LocalizationTestBase
     {
         // A disabled dropdown is read-only chrome: offering a ✕ that erases the value contradicts the disabled
         // state (and was a real data hazard — the value could be cleared from a read-only form).
-        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+        var cut = Render<TmFilterableDropdown<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, FruitOptions)
             .Add(c => c.Value, FruitOptions[0])
             .Add(c => c.DisplayField, o => o.Label)

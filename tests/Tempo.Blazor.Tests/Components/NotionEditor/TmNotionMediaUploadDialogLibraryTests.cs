@@ -52,7 +52,7 @@ public class TmNotionMediaUploadDialogLibraryTests : LocalizationTestBase
     public void LibraryTab_WithoutProvider_IsNotVisible()
     {
         var ctx = BuildContext();
-        var cut = RenderComponent<TmNotionMediaUploadDialog>(p => p
+        var cut = Render<TmNotionMediaUploadDialog>(p => p
             .Add(x => x.IsOpen,    true)
             .Add(x => x.MediaType, "image")
             .AddCascadingValue(ctx));
@@ -66,7 +66,7 @@ public class TmNotionMediaUploadDialogLibraryTests : LocalizationTestBase
     public void LibraryTab_WithProvider_IsVisible()
     {
         var ctx = BuildContext(library: ProviderWith());
-        var cut = RenderComponent<TmNotionMediaUploadDialog>(p => p
+        var cut = Render<TmNotionMediaUploadDialog>(p => p
             .Add(x => x.IsOpen,    true)
             .Add(x => x.MediaType, "image")
             .AddCascadingValue(ctx));
@@ -80,7 +80,7 @@ public class TmNotionMediaUploadDialogLibraryTests : LocalizationTestBase
     public void LibraryTab_NoFileProvider_IsFirstActiveTab()
     {
         var ctx = BuildContext(library: ProviderWith());
-        var cut = RenderComponent<TmNotionMediaUploadDialog>(p => p
+        var cut = Render<TmNotionMediaUploadDialog>(p => p
             .Add(x => x.IsOpen,    true)
             .Add(x => x.MediaType, "image")
             .AddCascadingValue(ctx));
@@ -99,7 +99,7 @@ public class TmNotionMediaUploadDialogLibraryTests : LocalizationTestBase
 
         (string? FileId, string? Url) confirmed = default;
 
-        var cut = RenderComponent<TmNotionMediaUploadDialog>(p => p
+        var cut = Render<TmNotionMediaUploadDialog>(p => p
             .Add(x => x.IsOpen,    true)
             .Add(x => x.MediaType, "image")
             .Add(x => x.OnConfirmed,
@@ -131,7 +131,7 @@ public class TmNotionMediaUploadDialogLibraryTests : LocalizationTestBase
 
         (string? FileId, string? Url) confirmed = default;
 
-        var cut = RenderComponent<TmNotionMediaUploadDialog>(p => p
+        var cut = Render<TmNotionMediaUploadDialog>(p => p
             .Add(x => x.IsOpen,    true)
             .Add(x => x.MediaType, "image")
             .Add(x => x.OnConfirmed,

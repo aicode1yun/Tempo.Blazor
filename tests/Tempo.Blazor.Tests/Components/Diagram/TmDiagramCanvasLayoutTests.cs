@@ -50,7 +50,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
     [Fact]
     public void Canvas_HasFourPaneStructure_AfterF2()
     {
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, BuildSampleDocument())
             .Add(c => c.ShowPageView, false));
 
@@ -65,7 +65,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
     [Fact]
     public void Canvas_InteractionDiv_NoLongerExists_AfterF2()
     {
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, BuildSampleDocument())
             .Add(c => c.ShowPageView, false));
 
@@ -76,7 +76,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
     [Fact]
     public void Canvas_NodesArePerNodeSvgGroups_InScenePane()
     {
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, BuildSampleDocument())
             .Add(c => c.ShowPageView, false));
 
@@ -109,7 +109,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
         //   - ZIndex 1 node
         //   - ZIndex 2 edge (originally rendered before the node pre-F3.B)
         // After F3.B the node (ZIndex 1) precedes the edge (ZIndex 2).
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, BuildSampleDocument())
             .Add(c => c.ShowPageView, false));
 
@@ -136,7 +136,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
         doc.Nodes.Add(b);
         doc.Edges.Add(new DiagramEdge { SourceNodeId = a.Id, TargetNodeId = b.Id, ZIndex = 10 });
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
@@ -161,7 +161,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
         var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 50, W = 80, H = 50, ZIndex = 1 };
         doc.Nodes.Add(n1);
         doc.Nodes.Add(n2);
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
@@ -176,7 +176,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
     [Fact]
     public void Canvas_SvgHasNoInlineScaleTransform_AfterF2()
     {
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, BuildSampleDocument())
             .Add(c => c.ShowPageView, false));
 
@@ -195,7 +195,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
         // diagram-editor.js::_nodeRect now reads from that attribute (not from
         // the old CSS transform on the inner <div>). This test pins that contract.
         var doc = BuildSampleDocument();
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
@@ -214,7 +214,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
     [Fact]
     public void Canvas_ViewBoxMatchesDocumentSize_WhenPageViewDisabled_AtUnitScale()
     {
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, new DiagramDocument { Width = 1234, Height = 567 })
             .Add(c => c.ShowPageView, false));
 
@@ -228,7 +228,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
         // (W × H), not to the whole document.
         var doc = new DiagramDocument { Width = 1234, Height = 567 };
         doc.Nodes.Add(new DiagramNode { StencilId = "general.rectangle", X = 10, Y = 20, W = 150, H = 80 });
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
@@ -250,7 +250,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
         var doc = new DiagramDocument { Width = 800, Height = 600 };
         var node = new DiagramNode { StencilId = "general.rectangle", X = 10, Y = 20, W = 150, H = 80 };
         doc.Nodes.Add(node);
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
@@ -275,7 +275,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
         var doc = new DiagramDocument { Width = 800, Height = 600 };
         var node = new DiagramNode { StencilId = "general.ellipse", X = 0, Y = 0, W = 100, H = 60 };
         doc.Nodes.Add(node);
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
@@ -293,7 +293,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
         var doc = new DiagramDocument { Width = 800, Height = 600 };
         var node = new DiagramNode { StencilId = "general.rhombus", X = 0, Y = 0, W = 120, H = 80 };
         doc.Nodes.Add(node);
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
@@ -315,7 +315,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
         // general.actor uses BackgroundShape="actor" which is NOT in the Kind map.
         var node = new DiagramNode { StencilId = "general.actor", X = 0, Y = 0, W = 60, H = 120 };
         doc.Nodes.Add(node);
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
@@ -387,7 +387,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
     [Fact]
     public void GroupedNodes_RenderGroupBounds_AsSvgRect_InsideBgPane()
     {
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, BuildGroupedDocument())
             .Add(c => c.ShowPageView, false));
 
@@ -412,7 +412,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
         // F6 decision — group bounds are a model concern (bg-pane), not a
         // selection/decorator concern. Any leak into overlay/decorator would
         // suggest the pre-F6 imperative JS path has resurfaced.
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, BuildGroupedDocument())
             .Add(c => c.ShowPageView, false));
 
@@ -429,7 +429,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
         // and Blazor re-renders, the bounds rect follows. This is the same path
         // the UI uses when a drag commit updates Document.Nodes[i].X/Y.
         var doc = BuildGroupedDocument();
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
@@ -440,7 +440,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
         // Move the second group member further down-right; bounds must grow.
         doc.Nodes[1].X = 500;
         doc.Nodes[1].Y = 400;
-        cut.SetParametersAndRender(p => p.Add(c => c.Document, doc));
+        cut.Render(p => p.Add(c => c.Document, doc));
 
         var after = cut.Find(".tm-diagram-bg-pane rect.tm-diagram-group-bounds");
         // New extent: (100,100)–(620,460) with ±8 pad → (92,92, 536, 376).
@@ -456,7 +456,7 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
         // No nodes have GroupId in the baseline sample, so the Razor @if that
         // selects grouped nodes emits nothing — bg-pane must contain zero
         // .tm-diagram-group-bounds rects.
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, BuildSampleDocument())
             .Add(c => c.ShowPageView, false));
 

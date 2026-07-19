@@ -18,7 +18,7 @@ public class TmIconTests : LocalizationTestBase
     [Fact]
     public void TmIcon_Renders_SvgElement()
     {
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, IconNames.Check));
 
         cut.Find("svg").Should().NotBeNull();
@@ -27,7 +27,7 @@ public class TmIconTests : LocalizationTestBase
     [Fact]
     public void TmIcon_Has_AriaHidden_True()
     {
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, IconNames.Check));
 
         cut.Find("svg").GetAttribute("aria-hidden").Should().Be("true");
@@ -36,7 +36,7 @@ public class TmIconTests : LocalizationTestBase
     [Fact]
     public void TmIcon_Has_Focusable_False()
     {
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, IconNames.Check));
 
         cut.Find("svg").GetAttribute("focusable").Should().Be("false");
@@ -52,7 +52,7 @@ public class TmIconTests : LocalizationTestBase
     [InlineData(IconSize.Xl, "tm-icon", "tm-icon-xl")]
     public void TmIcon_Applies_Size_CssClass(IconSize size, string baseClass, string sizeClass)
     {
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, IconNames.Check)
             .Add(c => c.Size, size));
 
@@ -64,7 +64,7 @@ public class TmIconTests : LocalizationTestBase
     [Fact]
     public void TmIcon_Default_Size_Is_Md()
     {
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, IconNames.Check));
 
         cut.Find("svg").ClassList.Should().Contain("tm-icon-md");
@@ -81,7 +81,7 @@ public class TmIconTests : LocalizationTestBase
     [InlineData(IconColor.Muted,   "tm-icon-muted")]
     public void TmIcon_Applies_Color_CssClass(IconColor color, string expectedClass)
     {
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, IconNames.Check)
             .Add(c => c.Color, color));
 
@@ -93,7 +93,7 @@ public class TmIconTests : LocalizationTestBase
     [Fact]
     public void TmIcon_Check_Renders_Path_Content()
     {
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, IconNames.Check));
 
         // Should render some path/polyline/circle SVG content
@@ -104,7 +104,7 @@ public class TmIconTests : LocalizationTestBase
     [Fact]
     public void TmIcon_Smartphone_Renders_BuiltInIcon()
     {
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, IconNames.Smartphone));
 
         cut.Find("svg").Should().NotBeNull();
@@ -115,7 +115,7 @@ public class TmIconTests : LocalizationTestBase
     [Fact]
     public void TmIcon_Trash2_Renders_BuiltInIcon()
     {
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, IconNames.Trash2));
 
         cut.Find("svg").Should().NotBeNull();
@@ -132,7 +132,7 @@ public class TmIconTests : LocalizationTestBase
     [InlineData(IconNames.SearchX)]
     public void TmIcon_SigningWorkflowIcons_RenderBuiltInIcons(string iconName)
     {
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, iconName));
 
         cut.Find("svg").Should().NotBeNull();
@@ -152,7 +152,7 @@ public class TmIconTests : LocalizationTestBase
     [InlineData(IconNames.GitCompare)]
     public void TmIcon_DocumentEditorRibbonIcons_RenderBuiltInIcons(string iconName)
     {
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, iconName));
 
         cut.Find("svg").Should().NotBeNull();
@@ -173,7 +173,7 @@ public class TmIconTests : LocalizationTestBase
 
         foreach (var icon in iconNames)
         {
-            var cut = RenderComponent<TmIcon>(p => p.Add(c => c.Name, icon.Value));
+            var cut = Render<TmIcon>(p => p.Add(c => c.Name, icon.Value));
 
             cut.FindAll(".tm-icon-unknown")
                 .Should()
@@ -231,7 +231,7 @@ public class TmIconTests : LocalizationTestBase
     [InlineData("view-list")]
     public void TmIcon_ComponentLiteralAliases_RenderBuiltInIcons(string iconName)
     {
-        var cut = RenderComponent<TmIcon>(p => p.Add(c => c.Name, iconName));
+        var cut = Render<TmIcon>(p => p.Add(c => c.Name, iconName));
 
         cut.Find("svg").Should().NotBeNull();
         cut.FindAll(".tm-icon-unknown").Should().BeEmpty();
@@ -242,7 +242,7 @@ public class TmIconTests : LocalizationTestBase
     public void TmIcon_UnknownName_Renders_Empty_Svg_Without_Throwing()
     {
         // Should not throw for unknown icon names — renders empty SVG gracefully
-        var act = () => RenderComponent<TmIcon>(p => p
+        var act = () => Render<TmIcon>(p => p
             .Add(c => c.Name, "non-existent-icon-xyz"));
 
         act.Should().NotThrow();
@@ -253,7 +253,7 @@ public class TmIconTests : LocalizationTestBase
     [Fact]
     public void TmIcon_Passes_AdditionalAttributes_To_Svg()
     {
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, IconNames.Check)
             .AddUnmatched("data-testid", "my-icon"));
 
@@ -265,7 +265,7 @@ public class TmIconTests : LocalizationTestBase
     [Fact]
     public void TmIcon_Default_StrokeWidth_Is_2()
     {
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, IconNames.Check));
 
         cut.Find("svg").GetAttribute("stroke-width").Should().Be("2");
@@ -274,7 +274,7 @@ public class TmIconTests : LocalizationTestBase
     [Fact]
     public void TmIcon_Custom_StrokeWidth_Is_Applied()
     {
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, IconNames.Check)
             .Add(c => c.StrokeWidth, 1.5));
 

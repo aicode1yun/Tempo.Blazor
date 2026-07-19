@@ -81,7 +81,7 @@ public sealed class TmNotionPageInfoPanelTests : LocalizationTestBase
         NotionEditorContext context,
         INotionPage page,
         IReadOnlyList<IPageBlock> blocks)
-        => RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        => Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(p => p.Value, context)
             .AddChildContent<TmNotionPageInfoPanel>(child => child
                 .Add(p => p.Page, page)

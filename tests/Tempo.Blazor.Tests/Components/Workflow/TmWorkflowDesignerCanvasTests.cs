@@ -33,7 +33,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_Renders_SvgElement()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.Find(".tm-wf-canvas").Should().NotBeNull();
@@ -43,7 +43,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_EmptyDefinition_RendersSvg()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, new WorkflowCanvasDefinition()));
 
         cut.Find("svg").Should().NotBeNull();
@@ -52,7 +52,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_ShowGrid_RendersGridPattern()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.ShowGrid, true));
 
@@ -62,7 +62,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_HideGrid_NoPattern()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.ShowGrid, false));
 
@@ -74,7 +74,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_RendersStateNodes()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.FindAll(".tm-wf-state").Count.Should().Be(3);
@@ -83,7 +83,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_StateLabels_Shown()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.Markup.Should().Contain("Draft");
@@ -94,7 +94,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_StateType_CssClasses()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.FindAll(".tm-wf-state--initial").Count.Should().Be(1);
@@ -110,7 +110,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
             States = [new CanvasState { Id = "s1", Name = "Colored", X = 50, Y = 50, Color = "#ef4444" }]
         };
 
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, def));
 
         var stateEl = cut.Find(".tm-wf-state");
@@ -123,7 +123,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_RendersTransitionPaths()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.FindAll(".tm-wf-transition").Count.Should().Be(2);
@@ -132,7 +132,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_TransitionLabels_Shown()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.Markup.Should().Contain("Submit");
@@ -142,7 +142,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_ArrowMarker_Defined()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.Find("marker").Should().NotBeNull();
@@ -154,7 +154,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     public void Canvas_ClickState_FiresOnStateSelected()
     {
         CanvasState? selected = null;
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.OnStateSelected, s => selected = s));
 
@@ -167,7 +167,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_SelectedStateId_Highlights()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.SelectedStateId, "s2"));
 
@@ -178,7 +178,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     public void Canvas_ClickTransition_FiresOnTransitionSelected()
     {
         CanvasTransition? selected = null;
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.OnTransitionSelected, t => selected = t));
 
@@ -191,7 +191,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_SelectedTransitionId_Highlights()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.SelectedTransitionId, "t1"));
 
@@ -203,7 +203,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_ReadOnly_HasClass()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.ReadOnly, true));
 
@@ -215,7 +215,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_CustomClass()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.Class, "my-workflow"));
 
@@ -227,7 +227,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_StateNodes_HaveDataStateId()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         var states = cut.FindAll("[data-state-id]");
@@ -239,7 +239,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_Transitions_HaveDataTransitionId()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         var transitions = cut.FindAll("[data-transition-id]");
@@ -252,7 +252,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_States_HaveConnectionPorts()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         // Each non-readonly state should have a port element
@@ -262,7 +262,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_ReadOnly_NoPorts()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.ReadOnly, true));
 
@@ -280,7 +280,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
         };
         WorkflowCanvasDefinition? changed = null;
 
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, def)
             .Add(x => x.DefinitionChanged, d => changed = d));
 
@@ -301,7 +301,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
         };
         WorkflowCanvasDefinition? changed = null;
 
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, def)
             .Add(x => x.GridSize, 20)
             .Add(x => x.DefinitionChanged, d => changed = d));
@@ -323,7 +323,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
         };
         WorkflowCanvasDefinition? changed = null;
 
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, def)
             .Add(x => x.DefinitionChanged, d => changed = d));
 
@@ -343,7 +343,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
         };
         WorkflowCanvasDefinition? changed = null;
 
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, def)
             .Add(x => x.DefinitionChanged, d => changed = d));
 
@@ -361,7 +361,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     {
         WorkflowCanvasDefinition? changed = null;
 
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.DefinitionChanged, d => changed = d));
 
@@ -379,7 +379,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     {
         WorkflowCanvasDefinition? changed = null;
 
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.DefinitionChanged, d => changed = d));
 
@@ -406,7 +406,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
         };
         WorkflowCanvasDefinition? changed = null;
 
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, def)
             .Add(x => x.DefinitionChanged, d => changed = d));
 
@@ -423,7 +423,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     {
         WorkflowCanvasDefinition? changed = null;
 
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.DefinitionChanged, d => changed = d));
 
@@ -442,7 +442,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
         };
         WorkflowCanvasDefinition? changed = null;
 
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, def)
             .Add(x => x.DefinitionChanged, d => changed = d));
 
@@ -456,7 +456,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_ZoomLevel_Default()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.Instance.ZoomLevel.Should().Be(1.0);
@@ -466,7 +466,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     public void Canvas_OnZoomChanged_FiresEvent()
     {
         double? reportedZoom = null;
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.OnZoomLevelChanged, z => reportedZoom = z));
 
@@ -480,7 +480,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public async Task Canvas_SetZoom_UpdatesLevel()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         await cut.Instance.SetZoom(2.0);
@@ -493,7 +493,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_ContextMenu_HiddenByDefault()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.FindAll(".tm-wf-context-menu").Count.Should().Be(0);
@@ -502,7 +502,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_ContextMenu_ShownOnRightClick()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         // Simulate JS calling OnContextMenu on empty canvas
@@ -515,7 +515,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_ContextMenu_EmptyCanvas_ShowsAddOptions()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.Instance.OnContextMenu(100, 100, 150, 200, null);
@@ -528,7 +528,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_ContextMenu_OnState_ShowsEditDelete()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.Instance.OnContextMenu(50, 100, 80, 120, "s1");
@@ -543,7 +543,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     public void Canvas_ContextMenu_AddState_CreatesAtPosition()
     {
         WorkflowCanvasDefinition? changed = null;
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.DefinitionChanged, d => changed = d));
 
@@ -562,7 +562,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     public void Canvas_ContextMenu_DeleteState_RemovesState()
     {
         WorkflowCanvasDefinition? changed = null;
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.DefinitionChanged, d => changed = d));
 
@@ -580,7 +580,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_ContextMenu_ReadOnly_NotShown()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.ReadOnly, true));
 
@@ -593,7 +593,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_ContextMenu_ClickCanvas_ClosesMenu()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.Instance.OnContextMenu(100, 100, 150, 200, null);
@@ -609,7 +609,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_ContextMenu_OnTransition_ShowsEditDelete()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         // Right-click on transition t1
@@ -625,7 +625,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     public void Canvas_ContextMenu_DeleteTransition_RemovesTransition()
     {
         WorkflowCanvasDefinition? changed = null;
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.DefinitionChanged, d => changed = d));
 
@@ -645,7 +645,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     public void Canvas_ContextMenu_SelectTransition_FiresEvent()
     {
         CanvasTransition? selected = null;
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.OnTransitionSelected, t => selected = t));
 
@@ -665,7 +665,7 @@ public class TmWorkflowDesignerCanvasTests : LocalizationTestBase
     [Fact]
     public void Canvas_HasDesignerWrapper()
     {
-        var cut = RenderComponent<TmWorkflowDesignerCanvas>(p => p
+        var cut = Render<TmWorkflowDesignerCanvas>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.Find(".tm-wf-designer").Should().NotBeNull();

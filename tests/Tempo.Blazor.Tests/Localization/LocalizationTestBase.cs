@@ -16,7 +16,7 @@ namespace Tempo.Blazor.Tests.Localization;
 /// Tests can override specific keys by calling Services.AddSingleton&lt;ITmLocalizer&gt;(...)
 /// AFTER base registration (last registration wins in .NET DI).
 /// </summary>
-public abstract class LocalizationTestBase : TestContext
+public abstract class LocalizationTestBase : BunitContext
 {
     private const string DocumentCanvasInteropModulePath = "./_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs";
 
@@ -49,7 +49,7 @@ public abstract class LocalizationTestBase : TestContext
         Action<ComponentParameterCollectionBuilder<TmDocumentEditor>> configure)
     {
         SetupDocumentCanvasModule();
-        return RenderComponent<TmDocumentEditor>(parameters =>
+        return Render<TmDocumentEditor>(parameters =>
         {
             configure(parameters);
         });

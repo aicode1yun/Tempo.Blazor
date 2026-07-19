@@ -27,7 +27,7 @@ public class TmDiagramEditorTemplateTests : LocalizationTestBase
     [Fact]
     public void Templates_Button_Opens_Gallery()
     {
-        var cut = RenderComponent<TmDiagramEditor>(p => p.Add(e => e.ReadOnly, false));
+        var cut = Render<TmDiagramEditor>(p => p.Add(e => e.ReadOnly, false));
 
         var templatesButton = cut.FindAll("button").First(b => b.TextContent.Contains("Templates"));
         templatesButton.Click();
@@ -50,7 +50,7 @@ public class TmDiagramEditorTemplateTests : LocalizationTestBase
             H = 50
         });
 
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(e => e.Document, originalDoc)
             .Add(e => e.ReadOnly, false));
 
@@ -84,7 +84,7 @@ public class TmDiagramEditorTemplateTests : LocalizationTestBase
     [Fact]
     public async Task Selected_Template_Edge_References_Are_Remapped()
     {
-        var cut = RenderComponent<TmDiagramEditor>(p => p.Add(e => e.ReadOnly, false));
+        var cut = Render<TmDiagramEditor>(p => p.Add(e => e.ReadOnly, false));
 
         // Open gallery and select template
         var templatesButton = cut.FindAll("button").First(b => b.TextContent.Contains("Templates"));

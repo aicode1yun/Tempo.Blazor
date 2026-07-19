@@ -12,7 +12,7 @@ public sealed class ReportsPageTests : ReportServerWebTestBase
     {
         SignIn();
         var navigation = Services.GetRequiredService<NavigationManager>();
-        var cut = RenderComponent<ReportsPage>();
+        var cut = Render<ReportsPage>();
 
         cut.Find("[data-testid='f12-explorer-page']").TextContent.Should().Contain("Report explorer");
         cut.Find("[data-testid='tm-report-explorer-grid']").TextContent.Should().Contain("Sales Register");

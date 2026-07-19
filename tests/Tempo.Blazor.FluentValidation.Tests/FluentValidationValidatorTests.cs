@@ -1,3 +1,4 @@
+using Bunit.Rendering;
 using FluentValidation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -49,9 +50,9 @@ public class OrderValidator : AbstractValidator<OrderModel>
 
 #endregion
 
-public class FluentValidationValidatorTests : TestContext
+public class FluentValidationValidatorTests : BunitContext
 {
-    private IRenderedFragment RenderEditFormWithValidator<TModel>(TModel model) where TModel : class
+    private IRenderedComponent<ContainerFragment> RenderEditFormWithValidator<TModel>(TModel model) where TModel : class
     {
         return Render(builder =>
         {

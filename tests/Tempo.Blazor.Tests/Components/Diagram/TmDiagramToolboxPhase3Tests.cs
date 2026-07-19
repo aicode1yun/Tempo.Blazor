@@ -72,7 +72,7 @@ public class TmDiagramToolboxPhase3Tests : LocalizationTestBase
     [Fact]
     public void Renders_Localized_Library_Name()
     {
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
 
         cut.Find(".tm-diagram-toolbox__library-header")
             .TextContent
@@ -83,7 +83,7 @@ public class TmDiagramToolboxPhase3Tests : LocalizationTestBase
     [Fact]
     public void Renders_Palettes_In_Configured_Order()
     {
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
 
         cut.FindAll(".tm-diagram-toolbox__category-header")
             .Select(header => header.TextContent.Trim())
@@ -94,7 +94,7 @@ public class TmDiagramToolboxPhase3Tests : LocalizationTestBase
     [Fact]
     public void Palette_Can_Be_Collapsed_And_Expanded()
     {
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
         var alphaHeader = cut.FindAll(".tm-diagram-toolbox__category-header")[0];
 
         alphaHeader.Click();
@@ -109,7 +109,7 @@ public class TmDiagramToolboxPhase3Tests : LocalizationTestBase
     [Fact]
     public void Search_Uses_Tags_And_Keywords()
     {
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
 
         cut.Find(".tm-diagram-toolbox__search input").Input("workflow");
 
@@ -124,7 +124,7 @@ public class TmDiagramToolboxPhase3Tests : LocalizationTestBase
     [Fact]
     public void Empty_Search_Result_Uses_Localized_Text()
     {
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
 
         cut.Find(".tm-diagram-toolbox__search input").Input("missing");
 
@@ -137,7 +137,7 @@ public class TmDiagramToolboxPhase3Tests : LocalizationTestBase
     [Fact]
     public void Stencil_Items_Are_Keyboard_Focusable_With_Localized_Tooltip()
     {
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
 
         var item = cut.Find("[data-stencil-id='test.diagram.alpha.first']");
 

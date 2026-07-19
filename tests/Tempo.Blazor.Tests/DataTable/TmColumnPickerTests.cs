@@ -19,7 +19,7 @@ public class TmColumnPickerTests : LocalizationTestBase
 
     private IRenderedComponent<TmColumnPicker> OpenPicker(Action<ComponentParameterCollectionBuilder<TmColumnPicker>>? extra = null)
     {
-        var cut = RenderComponent<TmColumnPicker>(p =>
+        var cut = Render<TmColumnPicker>(p =>
         {
             p.Add(c => c.Columns, AllVisible);
             extra?.Invoke(p);

@@ -47,7 +47,7 @@ public class TmRichEditorFullTokenTests : LocalizationTestBase
     [Fact]
     public void RichEditorFull_SupportsTokens_Default_False()
     {
-        var cut = RenderComponent<TmRichEditorFull>();
+        var cut = Render<TmRichEditorFull>();
 
         cut.FindAll(".tm-rte-btn-token").Should().BeEmpty();
     }
@@ -55,7 +55,7 @@ public class TmRichEditorFullTokenTests : LocalizationTestBase
     [Fact]
     public void RichEditorFull_SupportsTokens_ShowsButton()
     {
-        var cut = RenderComponent<TmRichEditorFull>(p => p
+        var cut = Render<TmRichEditorFull>(p => p
             .Add(c => c.SupportsTokens, true)
             .Add(c => c.TokenProvider, new TestTokenProvider()));
 
@@ -65,7 +65,7 @@ public class TmRichEditorFullTokenTests : LocalizationTestBase
     [Fact]
     public void RichEditorFull_TokenDropdown_NotVisibleByDefault()
     {
-        var cut = RenderComponent<TmRichEditorFull>(p => p
+        var cut = Render<TmRichEditorFull>(p => p
             .Add(c => c.SupportsTokens, true)
             .Add(c => c.TokenProvider, new TestTokenProvider()));
 
@@ -75,7 +75,7 @@ public class TmRichEditorFullTokenTests : LocalizationTestBase
     [Fact]
     public async Task RichEditorFull_TriggerTokenSearch_ShowsDropdown()
     {
-        var cut = RenderComponent<TmRichEditorFull>(p => p
+        var cut = Render<TmRichEditorFull>(p => p
             .Add(c => c.SupportsTokens, true)
             .Add(c => c.TokenProvider, new TestTokenProvider()));
 
@@ -88,7 +88,7 @@ public class TmRichEditorFullTokenTests : LocalizationTestBase
     [Fact]
     public async Task RichEditorFull_TriggerTokenSearch_FiltersResults()
     {
-        var cut = RenderComponent<TmRichEditorFull>(p => p
+        var cut = Render<TmRichEditorFull>(p => p
             .Add(c => c.SupportsTokens, true)
             .Add(c => c.TokenProvider, new TestTokenProvider()));
 
@@ -100,7 +100,7 @@ public class TmRichEditorFullTokenTests : LocalizationTestBase
     [Fact]
     public async Task RichEditorFull_TokenSearch_ShowsCreateOption()
     {
-        var cut = RenderComponent<TmRichEditorFull>(p => p
+        var cut = Render<TmRichEditorFull>(p => p
             .Add(c => c.SupportsTokens, true)
             .Add(c => c.TokenProvider, new TestTokenProvider()));
 
@@ -112,7 +112,7 @@ public class TmRichEditorFullTokenTests : LocalizationTestBase
     [Fact]
     public async Task RichEditorFull_TokenSearch_NoProvider_NoDropdown()
     {
-        var cut = RenderComponent<TmRichEditorFull>(p => p
+        var cut = Render<TmRichEditorFull>(p => p
             .Add(c => c.SupportsTokens, true));
 
         await cut.InvokeAsync(() => cut.Instance.TriggerTokenSearchForTest("test"));
@@ -123,7 +123,7 @@ public class TmRichEditorFullTokenTests : LocalizationTestBase
     [Fact]
     public void RichEditorFull_NoTokenSupport_NoTokenButton()
     {
-        var cut = RenderComponent<TmRichEditorFull>(p => p
+        var cut = Render<TmRichEditorFull>(p => p
             .Add(c => c.SupportsTokens, false));
 
         cut.FindAll(".tm-rte-btn-token").Should().BeEmpty();

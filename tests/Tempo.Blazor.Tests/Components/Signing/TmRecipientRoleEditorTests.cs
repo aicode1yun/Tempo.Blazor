@@ -12,7 +12,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
     [Fact]
     public void Render_RendersRoleList()
     {
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, CreateRoles()));
 
         cut.FindAll(".tm-recipient-role-editor__row").Should().HaveCount(2);
@@ -23,7 +23,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
     [Fact]
     public void Render_EmptyRolesShowsDefaultRole()
     {
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, Array.Empty<SigningSubmitterRole>()));
 
         cut.FindAll(".tm-recipient-role-editor__row").Should().HaveCount(1);
@@ -33,7 +33,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
     [Fact]
     public void Render_RoleHasNameAndColor()
     {
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, CreateRoles()));
 
         var row = cut.Find("[data-role-uuid='role-a']");
@@ -45,7 +45,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
     public void AddRole_CreatesNewRole()
     {
         IReadOnlyList<SigningSubmitterRole>? captured = null;
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, CreateRoles())
                       .Add(p => p.RolesChanged, EventCallback.Factory.Create<IReadOnlyList<SigningSubmitterRole>>(this, roles => captured = roles)));
 
@@ -61,7 +61,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
     public void RemoveRole_RemovesRole()
     {
         IReadOnlyList<SigningSubmitterRole>? captured = null;
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, CreateRoles())
                       .Add(p => p.RolesChanged, EventCallback.Factory.Create<IReadOnlyList<SigningSubmitterRole>>(this, roles => captured = roles)));
 
@@ -75,7 +75,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
     public void RenameRole_InvokesRolesChanged()
     {
         IReadOnlyList<SigningSubmitterRole>? captured = null;
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, CreateRoles())
                       .Add(p => p.RolesChanged, EventCallback.Factory.Create<IReadOnlyList<SigningSubmitterRole>>(this, roles => captured = roles)));
 
@@ -88,7 +88,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
     [Fact]
     public void TemplateRoles_DoesNotRenderRecipientInputs()
     {
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, CreateRoles())
                       .Add(p => p.Mode, TmRecipientRoleEditorMode.TemplateRoles));
 
@@ -101,7 +101,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
     [Fact]
     public void SubmissionRecipients_RendersRecipientInputs()
     {
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, CreateRoles())
                       .Add(p => p.Mode, TmRecipientRoleEditorMode.SubmissionRecipients));
 
@@ -114,7 +114,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
     [Fact]
     public void SubmissionRecipients_EmailInputHasEmailType()
     {
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, CreateRoles())
                       .Add(p => p.Mode, TmRecipientRoleEditorMode.SubmissionRecipients));
 
@@ -124,7 +124,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
     [Fact]
     public void SubmissionRecipients_PhoneInputHasTelType()
     {
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, CreateRoles())
                       .Add(p => p.Mode, TmRecipientRoleEditorMode.SubmissionRecipients));
 
@@ -138,7 +138,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
         roles[0].Email = null;
         roles[0].IsOptional = false;
 
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, roles)
                       .Add(p => p.Mode, TmRecipientRoleEditorMode.SubmissionRecipients));
 
@@ -150,7 +150,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
     public void MoveDown_ReordersRolesAndUpdatesOrderNumbers()
     {
         IReadOnlyList<SigningSubmitterRole>? captured = null;
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, CreateRoles())
                       .Add(p => p.RolesChanged, EventCallback.Factory.Create<IReadOnlyList<SigningSubmitterRole>>(this, roles => captured = roles)));
 
@@ -167,7 +167,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
     public void DragDrop_ReordersRoles()
     {
         IReadOnlyList<SigningSubmitterRole>? captured = null;
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, CreateRoles())
                       .Add(p => p.RolesChanged, EventCallback.Factory.Create<IReadOnlyList<SigningSubmitterRole>>(this, roles => captured = roles)));
 
@@ -185,7 +185,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
     public void InviteByRole_UpdatesRole()
     {
         IReadOnlyList<SigningSubmitterRole>? captured = null;
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, CreateRoles())
                       .Add(p => p.RolesChanged, EventCallback.Factory.Create<IReadOnlyList<SigningSubmitterRole>>(this, roles => captured = roles)));
 
@@ -199,7 +199,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
     public void OptionalInviteByRole_UpdatesRole()
     {
         IReadOnlyList<SigningSubmitterRole>? captured = null;
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, CreateRoles())
                       .Add(p => p.RolesChanged, EventCallback.Factory.Create<IReadOnlyList<SigningSubmitterRole>>(this, roles => captured = roles)));
 
@@ -213,7 +213,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
     public void InviteViaField_UpdatesRole()
     {
         IReadOnlyList<SigningSubmitterRole>? captured = null;
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, CreateRoles())
                       .Add(p => p.Fields, CreateFields())
                       .Add(p => p.RolesChanged, EventCallback.Factory.Create<IReadOnlyList<SigningSubmitterRole>>(this, roles => captured = roles)));
@@ -230,7 +230,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
         var roles = CreateRoles();
         roles[0].InviteByRoleUuid = "role-a";
 
-        var cut = RenderComponent<TmRecipientRoleEditor>(parameters =>
+        var cut = Render<TmRecipientRoleEditor>(parameters =>
             parameters.Add(p => p.Roles, roles));
 
         var row = cut.Find("[data-role-uuid='role-a']");

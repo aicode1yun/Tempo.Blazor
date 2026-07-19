@@ -20,7 +20,7 @@ public class TmDataTableSelectionTests : LocalizationTestBase
     [Fact]
     public void DataTable_Selectable_ShowsCheckboxColumn()
     {
-        var cut = RenderComponent<TmDataTable<SelPerson>>(p => p
+        var cut = Render<TmDataTable<SelPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.Selectable, true));
 
@@ -31,7 +31,7 @@ public class TmDataTableSelectionTests : LocalizationTestBase
     public void DataTable_CheckRow_AddsToSelection()
     {
         IReadOnlyList<SelPerson>? selected = null;
-        var cut = RenderComponent<TmDataTable<SelPerson>>(p => p
+        var cut = Render<TmDataTable<SelPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.Selectable, true)
             .Add(c => c.OnSelectionChanged,
@@ -49,7 +49,7 @@ public class TmDataTableSelectionTests : LocalizationTestBase
     public void DataTable_CheckAllHeader_SelectsAllVisibleRows()
     {
         IReadOnlyList<SelPerson>? selected = null;
-        var cut = RenderComponent<TmDataTable<SelPerson>>(p => p
+        var cut = Render<TmDataTable<SelPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.Selectable, true)
             .Add(c => c.OnSelectionChanged,
@@ -66,7 +66,7 @@ public class TmDataTableSelectionTests : LocalizationTestBase
     public void DataTable_OnSelectionChanged_FiresWithSelectedItems()
     {
         IReadOnlyList<SelPerson>? lastSelection = null;
-        var cut = RenderComponent<TmDataTable<SelPerson>>(p => p
+        var cut = Render<TmDataTable<SelPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.Selectable, true)
             .Add(c => c.OnSelectionChanged,
@@ -83,7 +83,7 @@ public class TmDataTableSelectionTests : LocalizationTestBase
     public void DataTable_DeselectAll_ClearsSelection()
     {
         IReadOnlyList<SelPerson>? lastSelection = null;
-        var cut = RenderComponent<TmDataTable<SelPerson>>(p => p
+        var cut = Render<TmDataTable<SelPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.Selectable, true)
             .Add(c => c.OnSelectionChanged,
@@ -102,7 +102,7 @@ public class TmDataTableSelectionTests : LocalizationTestBase
     [Fact]
     public void DataTable_SelectionBar_ShowsCount()
     {
-        var cut = RenderComponent<TmDataTable<SelPerson>>(p => p
+        var cut = Render<TmDataTable<SelPerson>>(p => p
             .Add(c => c.Items, People)
             .Add(c => c.Selectable, true));
 

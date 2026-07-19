@@ -15,7 +15,7 @@ public sealed class TmDocumentDiffViewerTests : LocalizationTestBase
         var oldDocument = CreateDocument("Smlouva je platná");
         var newDocument = CreateDocument("Smlouva je dnes platná");
 
-        var cut = RenderComponent<TmDocumentDiffViewer>(parameters =>
+        var cut = Render<TmDocumentDiffViewer>(parameters =>
             parameters.Add(p => p.OldDocument, oldDocument)
                       .Add(p => p.NewDocument, newDocument)
                       .Add(p => p.OldTitle, "Baseline")
@@ -33,7 +33,7 @@ public sealed class TmDocumentDiffViewerTests : LocalizationTestBase
         var baseline = CreateVersion("v1", "Baseline", "Smlouva je platná", DateTimeOffset.UtcNow.AddMinutes(-5));
         var current = CreateVersion("v2", "Current", "Smlouva je dnes platná", DateTimeOffset.UtcNow);
 
-        var cut = RenderComponent<TmDocumentVersionPanel>(parameters =>
+        var cut = Render<TmDocumentVersionPanel>(parameters =>
             parameters.Add(p => p.Versions, new[] { baseline, current })
                       .Add(p => p.OnSelectVersion, EventCallback.Factory.Create<DocumentVersion>(this, _ => { })));
 

@@ -31,7 +31,7 @@ public class PropertyPanelTests : LocalizationTestBase
         };
         doc.Nodes.Add(node);
 
-        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+        var cut = Render<TmDiagramPropertiesPanel>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.SelectedIds, [node.Id])
             .Add(c => c.ReadOnly, false));
@@ -61,7 +61,7 @@ public class PropertyPanelTests : LocalizationTestBase
         doc.Nodes.Add(n1);
         doc.Nodes.Add(n2);
 
-        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+        var cut = Render<TmDiagramPropertiesPanel>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.SelectedIds, [n1.Id, n2.Id])
             .Add(c => c.ReadOnly, false));
@@ -89,7 +89,7 @@ public class PropertyPanelTests : LocalizationTestBase
         doc.Nodes.Add(n1);
         doc.Nodes.Add(n2);
 
-        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+        var cut = Render<TmDiagramPropertiesPanel>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.SelectedIds, [n1.Id, n2.Id])
             .Add(c => c.ReadOnly, false));
@@ -110,7 +110,7 @@ public class PropertyPanelTests : LocalizationTestBase
         doc.Nodes.Add(n1);
         doc.Nodes.Add(n2);
 
-        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+        var cut = Render<TmDiagramPropertiesPanel>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.SelectedIds, [n1.Id, n2.Id])
             .Add(c => c.ReadOnly, false));
@@ -125,7 +125,7 @@ public class PropertyPanelTests : LocalizationTestBase
     {
         var doc = new DiagramDocument { Width = 794, Height = 1123 };
 
-        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+        var cut = Render<TmDiagramPropertiesPanel>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.SelectedIds, Array.Empty<string>())
             .Add(c => c.ReadOnly, false));
@@ -140,7 +140,7 @@ public class PropertyPanelTests : LocalizationTestBase
     {
         var doc = new DiagramDocument { Width = 1000, Height = 1200 };
 
-        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+        var cut = Render<TmDiagramPropertiesPanel>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.SelectedIds, Array.Empty<string>())
             .Add(c => c.ReadOnly, false));
@@ -157,7 +157,7 @@ public class PropertyPanelTests : LocalizationTestBase
     {
         var doc = new DiagramDocument { Width = 794, Height = 1123 };
 
-        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+        var cut = Render<TmDiagramPropertiesPanel>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.SelectedIds, Array.Empty<string>())
             .Add(c => c.ReadOnly, false));
@@ -185,7 +185,7 @@ public class PropertyPanelTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+        var cut = Render<TmDiagramPropertiesPanel>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.SelectedIds, [edge.Id])
             .Add(c => c.ReadOnly, false));
@@ -215,7 +215,7 @@ public class PropertyPanelTests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+        var cut = Render<TmDiagramPropertiesPanel>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.SelectedIds, [edge.Id])
             .Add(c => c.ReadOnly, false));

@@ -12,7 +12,7 @@ public class WireframeContextMenuTests : LocalizationTestBase
     [Fact]
     public void CanvasMenu_Renders_WhenOpen()
     {
-        var cut = RenderComponent<TmWireframeContextMenu>(parameters => parameters
+        var cut = Render<TmWireframeContextMenu>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.X, 100)
             .Add(p => p.Y, 200)
@@ -25,7 +25,7 @@ public class WireframeContextMenuTests : LocalizationTestBase
     [Fact]
     public void CanvasMenu_NotRendered_WhenClosed()
     {
-        var cut = RenderComponent<TmWireframeContextMenu>(parameters => parameters
+        var cut = Render<TmWireframeContextMenu>(parameters => parameters
             .Add(p => p.IsOpen, false)
             .Add(p => p.MenuType, WireframeContextMenuType.Canvas));
 
@@ -35,7 +35,7 @@ public class WireframeContextMenuTests : LocalizationTestBase
     [Fact]
     public void CanvasMenu_HasExpectedItems()
     {
-        var cut = RenderComponent<TmWireframeContextMenu>(parameters => parameters
+        var cut = Render<TmWireframeContextMenu>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.MenuType, WireframeContextMenuType.Canvas)
             .Add(p => p.CanUndo, true)
@@ -49,7 +49,7 @@ public class WireframeContextMenuTests : LocalizationTestBase
     [Fact]
     public void ElementMenu_HasExpectedItems()
     {
-        var cut = RenderComponent<TmWireframeContextMenu>(parameters => parameters
+        var cut = Render<TmWireframeContextMenu>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.MenuType, WireframeContextMenuType.Element)
             .Add(p => p.SelectedCount, 1)
@@ -66,7 +66,7 @@ public class WireframeContextMenuTests : LocalizationTestBase
     [Fact]
     public void MultiSelectMenu_HasExpectedItems()
     {
-        var cut = RenderComponent<TmWireframeContextMenu>(parameters => parameters
+        var cut = Render<TmWireframeContextMenu>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.MenuType, WireframeContextMenuType.MultiSelect)
             .Add(p => p.SelectedCount, 3)
@@ -82,7 +82,7 @@ public class WireframeContextMenuTests : LocalizationTestBase
     [Fact]
     public void Undo_Disabled_WhenCanUndoIsFalse()
     {
-        var cut = RenderComponent<TmWireframeContextMenu>(parameters => parameters
+        var cut = Render<TmWireframeContextMenu>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.MenuType, WireframeContextMenuType.Canvas)
             .Add(p => p.CanUndo, false));
@@ -95,7 +95,7 @@ public class WireframeContextMenuTests : LocalizationTestBase
     public void Undo_InvokesCallback_WhenClicked()
     {
         var invoked = false;
-        var cut = RenderComponent<TmWireframeContextMenu>(parameters => parameters
+        var cut = Render<TmWireframeContextMenu>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.MenuType, WireframeContextMenuType.Canvas)
             .Add(p => p.CanUndo, true)
@@ -109,7 +109,7 @@ public class WireframeContextMenuTests : LocalizationTestBase
     public void Close_InvokedBeforeAction()
     {
         var order = new List<string>();
-        var cut = RenderComponent<TmWireframeContextMenu>(parameters => parameters
+        var cut = Render<TmWireframeContextMenu>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.MenuType, WireframeContextMenuType.Canvas)
             .Add(p => p.CanUndo, true)
@@ -124,7 +124,7 @@ public class WireframeContextMenuTests : LocalizationTestBase
     public void Align_InvokesCallbackWithCorrectValue()
     {
         WireframeAlignment? received = null;
-        var cut = RenderComponent<TmWireframeContextMenu>(parameters => parameters
+        var cut = Render<TmWireframeContextMenu>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.MenuType, WireframeContextMenuType.Element)
             .Add(p => p.SelectedCount, 1)
@@ -144,7 +144,7 @@ public class WireframeContextMenuTests : LocalizationTestBase
     public void Delete_InvokesCallback()
     {
         var invoked = false;
-        var cut = RenderComponent<TmWireframeContextMenu>(parameters => parameters
+        var cut = Render<TmWireframeContextMenu>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.MenuType, WireframeContextMenuType.Element)
             .Add(p => p.SelectedCount, 1)
@@ -162,7 +162,7 @@ public class WireframeContextMenuTests : LocalizationTestBase
     public void LockUnlock_Toggles_BasedOnIsSelectionLocked()
     {
         // Unlocked selection shows Lock
-        var cut1 = RenderComponent<TmWireframeContextMenu>(parameters => parameters
+        var cut1 = Render<TmWireframeContextMenu>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.MenuType, WireframeContextMenuType.Element)
             .Add(p => p.SelectedCount, 1)
@@ -172,7 +172,7 @@ public class WireframeContextMenuTests : LocalizationTestBase
         cut1.Markup.Should().NotContain("Unlock");
 
         // Locked selection shows Unlock
-        var cut2 = RenderComponent<TmWireframeContextMenu>(parameters => parameters
+        var cut2 = Render<TmWireframeContextMenu>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.MenuType, WireframeContextMenuType.Element)
             .Add(p => p.SelectedCount, 1)
@@ -185,7 +185,7 @@ public class WireframeContextMenuTests : LocalizationTestBase
     [Fact]
     public void Group_ButtonShown_WhenCanGroup()
     {
-        var cut = RenderComponent<TmWireframeContextMenu>(parameters => parameters
+        var cut = Render<TmWireframeContextMenu>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.MenuType, WireframeContextMenuType.MultiSelect)
             .Add(p => p.SelectedCount, 2)
@@ -197,7 +197,7 @@ public class WireframeContextMenuTests : LocalizationTestBase
     [Fact]
     public void Group_ButtonHidden_WhenCannotGroup()
     {
-        var cut = RenderComponent<TmWireframeContextMenu>(parameters => parameters
+        var cut = Render<TmWireframeContextMenu>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.MenuType, WireframeContextMenuType.Element)
             .Add(p => p.SelectedCount, 1));
@@ -208,7 +208,7 @@ public class WireframeContextMenuTests : LocalizationTestBase
     [Fact]
     public void PasteStyle_Disabled_WhenNoClipboardStyle()
     {
-        var cut = RenderComponent<TmWireframeContextMenu>(parameters => parameters
+        var cut = Render<TmWireframeContextMenu>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.MenuType, WireframeContextMenuType.Canvas)
             .Add(p => p.HasClipboardStyle, false));

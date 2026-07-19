@@ -22,7 +22,7 @@ public sealed class TmNotionPageSearchTests : LocalizationTestBase
             SearchProvider = provider
         };
 
-        var host = RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        var host = Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(component => component.Value, context)
             .AddChildContent<TmNotionPageSearch>());
         var search = host.FindComponent<TmNotionPageSearch>();

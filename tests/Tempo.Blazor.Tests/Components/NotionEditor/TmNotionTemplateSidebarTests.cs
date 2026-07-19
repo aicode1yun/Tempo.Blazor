@@ -71,7 +71,7 @@ public sealed class TmNotionTemplateSidebarTests : LocalizationTestBase
     }
 
     private IRenderedComponent<CascadingValue<NotionEditorContext>> RenderSidebar(NotionEditorContext context)
-        => RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        => Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(component => component.Value, context)
             .AddChildContent<TmNotionSidebar>());
 

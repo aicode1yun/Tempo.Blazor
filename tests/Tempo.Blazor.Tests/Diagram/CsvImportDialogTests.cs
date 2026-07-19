@@ -11,7 +11,7 @@ public class CsvImportDialogTests : DiagramTestBase
     [Fact]
     public void CsvImportDialog_RendersTitle()
     {
-        var cut = RenderComponent<TmDiagramCsvImportDialog>(parameters => parameters
+        var cut = Render<TmDiagramCsvImportDialog>(parameters => parameters
             .Add(p => p.Show, true)
             .Add(p => p.OnClose, () => { })
             .Add(p => p.OnImport, (CsvImportResult r) => { }));
@@ -23,7 +23,7 @@ public class CsvImportDialogTests : DiagramTestBase
     [Fact]
     public void CsvImportDialog_ShowsPreviewRowsAfterInput()
     {
-        var cut = RenderComponent<TmDiagramCsvImportDialog>(parameters => parameters
+        var cut = Render<TmDiagramCsvImportDialog>(parameters => parameters
             .Add(p => p.Show, true)
             .Add(p => p.OnClose, () => { })
             .Add(p => p.OnImport, (CsvImportResult r) => { }));
@@ -43,7 +43,7 @@ public class CsvImportDialogTests : DiagramTestBase
     [Fact]
     public void CsvImportDialog_RendersErrorForInvalidCsvOnImport()
     {
-        var cut = RenderComponent<TmDiagramCsvImportDialog>(parameters => parameters
+        var cut = Render<TmDiagramCsvImportDialog>(parameters => parameters
             .Add(p => p.Show, true)
             .Add(p => p.OnClose, () => { })
             .Add(p => p.OnImport, (CsvImportResult r) => { }));
@@ -65,7 +65,7 @@ public class CsvImportDialogTests : DiagramTestBase
     [Fact]
     public void CsvImportDialog_RendersColumnMappingsForOrgChart()
     {
-        var cut = RenderComponent<TmDiagramCsvImportDialog>(parameters => parameters
+        var cut = Render<TmDiagramCsvImportDialog>(parameters => parameters
             .Add(p => p.Show, true)
             .Add(p => p.OnClose, () => { })
             .Add(p => p.OnImport, (CsvImportResult r) => { }));
@@ -85,7 +85,7 @@ public class CsvImportDialogTests : DiagramTestBase
     public void CsvImportDialog_InvokesOnImport_WhenValid()
     {
         CsvImportResult? captured = null;
-        var cut = RenderComponent<TmDiagramCsvImportDialog>(parameters => parameters
+        var cut = Render<TmDiagramCsvImportDialog>(parameters => parameters
             .Add(p => p.Show, true)
             .Add(p => p.OnClose, () => { })
             .Add(p => p.OnImport, (CsvImportResult r) => captured = r));

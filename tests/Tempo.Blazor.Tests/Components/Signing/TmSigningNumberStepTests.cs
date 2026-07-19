@@ -12,7 +12,7 @@ public class TmSigningNumberStepTests : LocalizationTestBase
     [Fact]
     public void Render_NumberField_RendersNumberInput()
     {
-        var cut = RenderComponent<TmSigningNumberStep>(parameters => parameters
+        var cut = Render<TmSigningNumberStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Amount", Type = SigningFieldType.Number }));
 
         cut.Find("input.tm-signing-number-step__input[type='number']").Should().NotBeNull();
@@ -21,7 +21,7 @@ public class TmSigningNumberStepTests : LocalizationTestBase
     [Fact]
     public void Render_ValidationAttributes_RendersMinMaxStep()
     {
-        var cut = RenderComponent<TmSigningNumberStep>(parameters => parameters
+        var cut = Render<TmSigningNumberStep>(parameters => parameters
             .Add(p => p.Field, new SigningField
             {
                 Name = "Amount",
@@ -39,7 +39,7 @@ public class TmSigningNumberStepTests : LocalizationTestBase
     public void Change_Number_CastsValueToDecimal()
     {
         decimal? captured = null;
-        var cut = RenderComponent<TmSigningNumberStep>(parameters => parameters
+        var cut = Render<TmSigningNumberStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Amount", Type = SigningFieldType.Number })
             .Add(p => p.ValueChanged, EventCallback.Factory.Create<decimal?>(this, value => captured = value)));
 
@@ -51,7 +51,7 @@ public class TmSigningNumberStepTests : LocalizationTestBase
     [Fact]
     public void Change_RequiredEmpty_ShowsValidation()
     {
-        var cut = RenderComponent<TmSigningNumberStep>(parameters => parameters
+        var cut = Render<TmSigningNumberStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Amount", Type = SigningFieldType.Number, Required = true }));
 
         cut.Find("input").Change(string.Empty);

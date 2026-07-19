@@ -108,7 +108,7 @@ public class DiagramEdgeStencilPhase4Tests : LocalizationTestBase
     [Fact]
     public void Toolbox_Renders_Edge_Stencil_With_Distinct_Class()
     {
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
 
         var edgeItem = cut.Find("[data-stencil-id='edge.dependency']");
 
@@ -163,7 +163,7 @@ public class DiagramEdgeStencilPhase4Tests : LocalizationTestBase
         };
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+        var cut = Render<TmDiagramPropertiesPanel>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.SelectedIds, [edge.Id])
             .Add(c => c.ReadOnly, false));
@@ -191,7 +191,7 @@ public class DiagramEdgeStencilPhase4Tests : LocalizationTestBase
         doc.Edges.Add(edge);
         var stack = new DiagramCommandStack();
 
-        var cut = RenderComponent<CascadingValue<DiagramCommandStack>>(p => p
+        var cut = Render<CascadingValue<DiagramCommandStack>>(p => p
             .Add(c => c.Value, stack)
             .AddChildContent<TmDiagramPropertiesPanel>(child => child
                 .Add(c => c.Document, doc)
@@ -217,7 +217,7 @@ public class DiagramEdgeStencilPhase4Tests : LocalizationTestBase
         doc.Nodes.Add(source);
         doc.Nodes.Add(target);
 
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 

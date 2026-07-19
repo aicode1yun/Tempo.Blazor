@@ -12,22 +12,22 @@ namespace Tempo.Blazor.Tests.Navigation;
 /// TDD tests for TmNavigationGuard.
 /// </summary>
 /// <remarks>
-/// bUnit 1.38.5's <see cref="FakeNavigationManager"/> updates <c>Uri</c> synchronously for every
+/// bUnit 1.38.5's <see cref="BunitNavigationManager"/> updates <c>Uri</c> synchronously for every
 /// <c>NavigateTo</c> call regardless of whether a registered LocationChanging handler later calls
 /// <c>PreventNavigation()</c> (the property write happens before the handler pipeline even runs).
 /// The reliable signal for "was this navigation actually blocked" is
-/// <see cref="FakeNavigationManager.History"/>, whose <c>State</c> is computed from the real
+/// <see cref="BunitNavigationManager.History"/>, whose <c>State</c> is computed from the real
 /// <c>NotifyLocationChangingAsync</c> pipeline — so these tests assert on history state rather than Uri.
 /// </remarks>
 public class TmNavigationGuardTests : LocalizationTestBase
 {
-    private FakeNavigationManager Nav => Services.GetRequiredService<NavigationManager>() as FakeNavigationManager
-        ?? throw new InvalidOperationException("FakeNavigationManager not registered.");
+    private BunitNavigationManager Nav => Services.GetRequiredService<NavigationManager>() as BunitNavigationManager
+        ?? throw new InvalidOperationException("BunitNavigationManager not registered.");
 
     [Fact]
     public void Clean_InternalNavigation_IsNotBlocked()
     {
-        var cut = RenderComponent<TmNavigationGuard>(p => p.Add(x => x.IsDirty, false));
+        var cut = Render<TmNavigationGuard>(p => p.Add(x => x.IsDirty, false));
 
         Nav.NavigateTo("/next-page");
         cut.WaitForState(() => Nav.History.Count > 0);
@@ -39,7 +39,7 @@ public class TmNavigationGuardTests : LocalizationTestBase
     [Fact]
     public void Dirty_InternalNavigation_PreventsNavigationAndShowsConfirmDialog()
     {
-        var cut = RenderComponent<TmNavigationGuard>(p => p.Add(x => x.IsDirty, true));
+        var cut = Render<TmNavigationGuard>(p => p.Add(x => x.IsDirty, true));
 
         Nav.NavigateTo("/next-page");
         cut.WaitForState(() => Nav.History.Count > 0);
@@ -52,7 +52,7 @@ public class TmNavigationGuardTests : LocalizationTestBase
     public async Task Dirty_ConfirmLeave_ReissuesNavigationAndInvokesCallback()
     {
         var confirmed = false;
-        var cut = RenderComponent<TmNavigationGuard>(p => p
+        var cut = Render<TmNavigationGuard>(p => p
             .Add(x => x.IsDirty, true)
             .Add(x => x.OnConfirmLeave, () => confirmed = true));
 
@@ -73,7 +73,7 @@ public class TmNavigationGuardTests : LocalizationTestBase
     public async Task Dirty_CancelLeave_StaysAndInvokesCallback()
     {
         var cancelled = false;
-        var cut = RenderComponent<TmNavigationGuard>(p => p
+        var cut = Render<TmNavigationGuard>(p => p
             .Add(x => x.IsDirty, true)
             .Add(x => x.OnCancel, () => cancelled = true));
 
@@ -92,7 +92,7 @@ public class TmNavigationGuardTests : LocalizationTestBase
     [Fact]
     public void Disabled_DirtyInternalNavigation_IsNotBlocked()
     {
-        var cut = RenderComponent<TmNavigationGuard>(p => p
+        var cut = Render<TmNavigationGuard>(p => p
             .Add(x => x.IsDirty, true)
             .Add(x => x.Enabled, false));
 
@@ -106,7 +106,7 @@ public class TmNavigationGuardTests : LocalizationTestBase
     [Fact]
     public void IsDirtyCallback_TakesPrecedenceForGating()
     {
-        var cut = RenderComponent<TmNavigationGuard>(p => p
+        var cut = Render<TmNavigationGuard>(p => p
             .Add(x => x.IsDirtyCallback, () => true));
 
         Nav.NavigateTo("/next-page");
@@ -119,7 +119,7 @@ public class TmNavigationGuardTests : LocalizationTestBase
     [Fact]
     public void Suppress_BypassesGuardForNextNavigationOnly()
     {
-        var cut = RenderComponent<TmNavigationGuard>(p => p.Add(x => x.IsDirty, true));
+        var cut = Render<TmNavigationGuard>(p => p.Add(x => x.IsDirty, true));
 
         cut.Instance.Suppress();
         Nav.NavigateTo("/first-target");
@@ -137,7 +137,7 @@ public class TmNavigationGuardTests : LocalizationTestBase
     [Fact]
     public void CustomConfirmText_RendersInDialog()
     {
-        var cut = RenderComponent<TmNavigationGuard>(p => p
+        var cut = Render<TmNavigationGuard>(p => p
             .Add(x => x.IsDirty, true)
             .Add(x => x.ConfirmTitle, "Custom title")
             .Add(x => x.ConfirmMessage, "Custom message")

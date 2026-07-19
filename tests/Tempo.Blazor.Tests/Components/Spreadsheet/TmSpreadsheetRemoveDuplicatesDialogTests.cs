@@ -10,7 +10,7 @@ public class TmSpreadsheetRemoveDuplicatesDialogTests : LocalizationTestBase
     [Fact]
     public void Renders_Columns_AndOptions_Localized()
     {
-        var cut = RenderComponent<TmSpreadsheetRemoveDuplicatesDialog>(p => p
+        var cut = Render<TmSpreadsheetRemoveDuplicatesDialog>(p => p
             .Add(c => c.Range, new SpreadsheetRange(0, 0, 9, 2)));
 
         var markup = cut.Markup;
@@ -25,7 +25,7 @@ public class TmSpreadsheetRemoveDuplicatesDialogTests : LocalizationTestBase
     public void UsesHeaderLabels_WhenProvided()
     {
         var headers = new Dictionary<int, string> { [0] = "Name", [1] = "City" };
-        var cut = RenderComponent<TmSpreadsheetRemoveDuplicatesDialog>(p => p
+        var cut = Render<TmSpreadsheetRemoveDuplicatesDialog>(p => p
             .Add(c => c.Range, new SpreadsheetRange(0, 0, 9, 1))
             .Add(c => c.HeaderLabels, headers));
 
@@ -36,7 +36,7 @@ public class TmSpreadsheetRemoveDuplicatesDialogTests : LocalizationTestBase
     [Fact]
     public void DeselectAll_DisablesOk()
     {
-        var cut = RenderComponent<TmSpreadsheetRemoveDuplicatesDialog>(p => p
+        var cut = Render<TmSpreadsheetRemoveDuplicatesDialog>(p => p
             .Add(c => c.Range, new SpreadsheetRange(0, 0, 9, 1)));
 
         cut.FindAll(".tm-spreadsheet-dedup__link")[1].Click(); // Deselect all
@@ -48,7 +48,7 @@ public class TmSpreadsheetRemoveDuplicatesDialogTests : LocalizationTestBase
     public void Apply_ReturnsSelectedColumns()
     {
         SpreadsheetRemoveDuplicatesOptions? applied = null;
-        var cut = RenderComponent<TmSpreadsheetRemoveDuplicatesDialog>(p => p
+        var cut = Render<TmSpreadsheetRemoveDuplicatesDialog>(p => p
             .Add(c => c.Range, new SpreadsheetRange(0, 0, 9, 2))
             .Add(c => c.OnApply, EventCallback.Factory.Create<SpreadsheetRemoveDuplicatesOptions>(this, o => applied = o)));
 

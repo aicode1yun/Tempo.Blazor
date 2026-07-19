@@ -140,7 +140,7 @@ public sealed class TmNotionChildrenDisplayBlockTests : LocalizationTestBase
             NavigateTo = _ => Task.CompletedTask
         };
 
-        return RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        return Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(component => component.Value, context)
             .AddChildContent<TmNotionChildrenDisplayBlock>(child => child
                 .Add(component => component.Block, MakeBlock(content))

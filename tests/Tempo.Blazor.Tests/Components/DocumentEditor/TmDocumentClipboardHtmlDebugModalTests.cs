@@ -10,7 +10,7 @@ public sealed class TmDocumentClipboardHtmlDebugModalTests : LocalizationTestBas
     [Fact]
     public void Modal_WhenClosed_RendersNothing()
     {
-        var cut = RenderComponent<TmDocumentClipboardHtmlDebugModal>(parameters => parameters
+        var cut = Render<TmDocumentClipboardHtmlDebugModal>(parameters => parameters
             .Add(p => p.IsOpen, false)
             .Add(p => p.RawHtml, "<p>raw</p>"));
 
@@ -20,7 +20,7 @@ public sealed class TmDocumentClipboardHtmlDebugModalTests : LocalizationTestBas
     [Fact]
     public void Modal_ShowsRawNormalizedAndWarnings()
     {
-        var cut = RenderComponent<TmDocumentClipboardHtmlDebugModal>(parameters => parameters
+        var cut = Render<TmDocumentClipboardHtmlDebugModal>(parameters => parameters
             .Add(p => p.IsOpen, true)
             .Add(p => p.RawHtml, "<p>phase18 raw</p>")
             .Add(p => p.NormalizedJson, """[{"text":"phase18 normalized"}]""")

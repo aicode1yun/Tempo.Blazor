@@ -94,7 +94,7 @@ public sealed class TmNotionTableAlignmentTests : LocalizationTestBase
             Content = new TableRowBlockContent { Cells = cells }
         };
 
-        return RenderComponent<TmNotionTableRowBlock>(parameters => parameters
+        return Render<TmNotionTableRowBlock>(parameters => parameters
             .Add(p => p.Row, (IPageBlock)row)
             .Add(p => p.RowIndex, 0)
             .Add(p => p.ColumnCount, cells.Length)

@@ -34,7 +34,7 @@ public class TmDataTableServerSideTests : LocalizationTestBase
     public async Task DataTable_WithDataProvider_CallsGetDataOnMount()
     {
         var provider = BuildProvider();
-        var cut = RenderComponent<TmDataTable<ServerPerson>>(p => p
+        var cut = Render<TmDataTable<ServerPerson>>(p => p
             .Add(c => c.DataProvider, provider));
 
         await cut.InvokeAsync(() => { });
@@ -48,7 +48,7 @@ public class TmDataTableServerSideTests : LocalizationTestBase
     public async Task DataTable_WithDataProvider_RendersProvidedItems()
     {
         var provider = BuildProvider();
-        var cut = RenderComponent<TmDataTable<ServerPerson>>(p => p
+        var cut = Render<TmDataTable<ServerPerson>>(p => p
             .Add(c => c.DataProvider, provider));
 
         await cut.InvokeAsync(() => { });
@@ -60,7 +60,7 @@ public class TmDataTableServerSideTests : LocalizationTestBase
     public async Task DataTable_SortChange_CallsProviderWithSortColumn()
     {
         var provider = BuildProvider();
-        var cut = RenderComponent<TmDataTable<ServerPerson>>(p =>
+        var cut = Render<TmDataTable<ServerPerson>>(p =>
         {
             p.Add(c => c.DataProvider, provider);
             p.AddChildContent(b =>
@@ -89,7 +89,7 @@ public class TmDataTableServerSideTests : LocalizationTestBase
     {
         // Provider that takes "time" (but in test will be immediate)
         var provider = BuildProvider();
-        var cut = RenderComponent<TmDataTable<ServerPerson>>(p => p
+        var cut = Render<TmDataTable<ServerPerson>>(p => p
             .Add(c => c.DataProvider, provider));
 
         // After loading completes, spinner should be gone
@@ -119,7 +119,7 @@ public class TmDataTableServerSideTests : LocalizationTestBase
         provider.GetDataAsync(Arg.Is<DataTableQuery>(q => q.Page == 2), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(secondPage));
 
-        var cut = RenderComponent<TmDataTable<ServerPerson>>(p => p
+        var cut = Render<TmDataTable<ServerPerson>>(p => p
             .Add(c => c.DataProvider, provider)
             .Add(c => c.DefaultPageSize, 10));
 

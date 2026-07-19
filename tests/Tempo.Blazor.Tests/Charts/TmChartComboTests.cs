@@ -28,7 +28,7 @@ public class TmChartComboTests : LocalizationTestBase
     [Fact]
     public void ComboChart_Renders_Bars_Only_For_Bar_Datasets()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, ComboData));
 
@@ -39,7 +39,7 @@ public class TmChartComboTests : LocalizationTestBase
     [Fact]
     public void ComboChart_Renders_Line_Overlay_With_Points()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, ComboData));
 
@@ -63,7 +63,7 @@ public class TmChartComboTests : LocalizationTestBase
             ]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, data));
 
@@ -77,7 +77,7 @@ public class TmChartComboTests : LocalizationTestBase
     [Fact]
     public void ComboChart_Legend_Contains_All_Datasets()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, ComboData));
 
@@ -89,7 +89,7 @@ public class TmChartComboTests : LocalizationTestBase
     public void ComboChart_Overlay_Point_Click_Reports_Original_Dataset_Index()
     {
         ChartSegment? clicked = null;
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, ComboData)
             .Add(x => x.OnSegmentClick, EventCallback.Factory.Create<ChartSegment>(this, s => clicked = s)));
@@ -115,7 +115,7 @@ public class TmChartComboTests : LocalizationTestBase
             ]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, data));
 
@@ -137,7 +137,7 @@ public class TmChartComboTests : LocalizationTestBase
             ]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, data));
 
@@ -157,7 +157,7 @@ public class TmChartComboTests : LocalizationTestBase
             Datasets = [new ChartDataset { Label = "V", Values = Enumerable.Range(0, 48).Select(i => (double)i).ToArray(), Color = "#3b82f6" }]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, data));
 
@@ -167,7 +167,7 @@ public class TmChartComboTests : LocalizationTestBase
     [Fact]
     public void BarChart_With_Few_Labels_Renders_All_Labels()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, ComboData));
 
@@ -189,7 +189,7 @@ public class TmChartComboTests : LocalizationTestBase
             ]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, data));
 
@@ -212,7 +212,7 @@ public class TmChartComboTests : LocalizationTestBase
             Datasets = [new ChartDataset { Label = "V", Values = [10, -10], Color = "#3b82f6" }]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, data));
 
@@ -233,7 +233,7 @@ public class TmChartComboTests : LocalizationTestBase
     [Fact]
     public void BarChart_AllPositive_Has_No_Zero_Axis_Emphasis()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, ComboData));
 
@@ -256,7 +256,7 @@ public class TmChartComboTests : LocalizationTestBase
             ]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, data));
 
@@ -270,7 +270,7 @@ public class TmChartComboTests : LocalizationTestBase
     [Fact]
     public void Sparse_Line_Series_Keeps_All_Point_Markers()
     {
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Bar)
             .Add(x => x.Data, ComboData));
 
@@ -290,7 +290,7 @@ public class TmChartComboTests : LocalizationTestBase
             ]
         };
 
-        var cut = RenderComponent<TmChart>(p => p
+        var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Line)
             .Add(x => x.Data, data));
 

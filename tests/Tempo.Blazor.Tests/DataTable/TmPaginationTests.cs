@@ -11,7 +11,7 @@ public class TmPaginationTests : LocalizationTestBase
     [Fact]
     public void Pagination_ShowsCorrectPageNumbers_SmallCount()
     {
-        var cut = RenderComponent<TmPagination>(p => p
+        var cut = Render<TmPagination>(p => p
             .Add(c => c.CurrentPage, 1)
             .Add(c => c.TotalPages, 5)
             .Add(c => c.TotalCount, 50)
@@ -24,7 +24,7 @@ public class TmPaginationTests : LocalizationTestBase
     [Fact]
     public void Pagination_PrevDisabledOnFirstPage()
     {
-        var cut = RenderComponent<TmPagination>(p => p
+        var cut = Render<TmPagination>(p => p
             .Add(c => c.CurrentPage, 1)
             .Add(c => c.TotalPages, 5)
             .Add(c => c.TotalCount, 50)
@@ -36,7 +36,7 @@ public class TmPaginationTests : LocalizationTestBase
     [Fact]
     public void Pagination_NextDisabledOnLastPage()
     {
-        var cut = RenderComponent<TmPagination>(p => p
+        var cut = Render<TmPagination>(p => p
             .Add(c => c.CurrentPage, 5)
             .Add(c => c.TotalPages, 5)
             .Add(c => c.TotalCount, 50)
@@ -48,7 +48,7 @@ public class TmPaginationTests : LocalizationTestBase
     [Fact]
     public void Pagination_EllipsisForLargePageCount()
     {
-        var cut = RenderComponent<TmPagination>(p => p
+        var cut = Render<TmPagination>(p => p
             .Add(c => c.CurrentPage, 5)
             .Add(c => c.TotalPages, 20)
             .Add(c => c.TotalCount, 200)
@@ -61,7 +61,7 @@ public class TmPaginationTests : LocalizationTestBase
     [Fact]
     public void Pagination_PageSizeDropdown_ShowsOptions()
     {
-        var cut = RenderComponent<TmPagination>(p => p
+        var cut = Render<TmPagination>(p => p
             .Add(c => c.CurrentPage, 1)
             .Add(c => c.TotalPages, 5)
             .Add(c => c.TotalCount, 50)
@@ -75,7 +75,7 @@ public class TmPaginationTests : LocalizationTestBase
     [Fact]
     public void Pagination_CurrentPageButton_HasActiveClass()
     {
-        var cut = RenderComponent<TmPagination>(p => p
+        var cut = Render<TmPagination>(p => p
             .Add(c => c.CurrentPage, 3)
             .Add(c => c.TotalPages, 5)
             .Add(c => c.TotalCount, 50)
@@ -90,7 +90,7 @@ public class TmPaginationTests : LocalizationTestBase
     public void Pagination_ClickPageButton_FiresOnPageChange()
     {
         int? navigatedPage = null;
-        var cut = RenderComponent<TmPagination>(p => p
+        var cut = Render<TmPagination>(p => p
             .Add(c => c.CurrentPage, 1)
             .Add(c => c.TotalPages, 5)
             .Add(c => c.TotalCount, 50)
@@ -107,7 +107,7 @@ public class TmPaginationTests : LocalizationTestBase
     [Fact]
     public void Pagination_ShowsInfoText()
     {
-        var cut = RenderComponent<TmPagination>(p => p
+        var cut = Render<TmPagination>(p => p
             .Add(c => c.CurrentPage, 2)
             .Add(c => c.TotalPages, 5)
             .Add(c => c.TotalCount, 50)

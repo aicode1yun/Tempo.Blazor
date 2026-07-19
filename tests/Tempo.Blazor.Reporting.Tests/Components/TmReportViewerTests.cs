@@ -13,7 +13,7 @@ public sealed class TmReportViewerTests : ReportingComponentTestBase
     {
         var source = new RecordingReportSource(metadata: Metadata());
 
-        var cut = RenderComponent<TmReportViewer>(parameters => parameters
+        var cut = Render<TmReportViewer>(parameters => parameters
             .Add(component => component.ReportSource, source));
 
         cut.WaitForAssertion(() =>
@@ -28,7 +28,7 @@ public sealed class TmReportViewerTests : ReportingComponentTestBase
     [Fact]
     public void Viewer_ShowsEmptyStateWithoutSource()
     {
-        var cut = RenderComponent<TmReportViewer>(parameters => parameters
+        var cut = Render<TmReportViewer>(parameters => parameters
             .Add(component => component.ReportSource, null));
 
         cut.Find("[data-testid='tm-report-empty-state']").TextContent.Should().Contain("No report source is configured.");
@@ -39,7 +39,7 @@ public sealed class TmReportViewerTests : ReportingComponentTestBase
     {
         var source = new RecordingReportSource(renderException: new InvalidOperationException("Broken report"));
 
-        var cut = RenderComponent<TmReportViewer>(parameters => parameters
+        var cut = Render<TmReportViewer>(parameters => parameters
             .Add(component => component.ReportSource, source));
 
         cut.WaitForAssertion(() =>
@@ -50,7 +50,7 @@ public sealed class TmReportViewerTests : ReportingComponentTestBase
     public void Viewer_PagesAndZoomsThroughToolbar()
     {
         var source = new RecordingReportSource();
-        var cut = RenderComponent<TmReportViewer>(parameters => parameters
+        var cut = Render<TmReportViewer>(parameters => parameters
             .Add(component => component.ReportSource, source));
         cut.WaitForAssertion(() => cut.Find("[data-testid='tm-report-page-count']").TextContent.Should().Contain("1 of 2"));
 
@@ -66,7 +66,7 @@ public sealed class TmReportViewerTests : ReportingComponentTestBase
     {
         ReportViewerExportResult? exported = null;
         var source = new RecordingReportSource();
-        var cut = RenderComponent<TmReportViewer>(parameters => parameters
+        var cut = Render<TmReportViewer>(parameters => parameters
             .Add(component => component.ReportSource, source)
             .Add(component => component.PdfExported, value => exported = value));
         cut.WaitForAssertion(() => source.RenderRequests.Should().HaveCount(1));
@@ -86,7 +86,7 @@ public sealed class TmReportViewerTests : ReportingComponentTestBase
         ReportViewerExportResult? csv = null;
         ReportViewerExportResult? xlsx = null;
         var source = new RecordingReportSource();
-        var cut = RenderComponent<TmReportViewer>(parameters => parameters
+        var cut = Render<TmReportViewer>(parameters => parameters
             .Add(component => component.ReportSource, source)
             .Add(component => component.CsvExported, value => csv = value)
             .Add(component => component.XlsxExported, value => xlsx = value));
@@ -115,7 +115,7 @@ public sealed class TmReportViewerTests : ReportingComponentTestBase
                 ["Region"] = ReportParameterValue.Scalar("EU"),
             });
 
-        var cut = RenderComponent<TmReportViewer>(parameters => parameters
+        var cut = Render<TmReportViewer>(parameters => parameters
             .Add(component => component.ReportSource, source));
 
         cut.WaitForAssertion(() =>
@@ -126,7 +126,7 @@ public sealed class TmReportViewerTests : ReportingComponentTestBase
     public async Task Viewer_ToggleInteractionRefreshesWithStatelessToken()
     {
         var source = new RecordingReportSource();
-        var cut = RenderComponent<TmReportViewer>(parameters => parameters
+        var cut = Render<TmReportViewer>(parameters => parameters
             .Add(component => component.ReportSource, source));
         cut.WaitForAssertion(() => source.RenderRequests.Should().HaveCount(1));
 

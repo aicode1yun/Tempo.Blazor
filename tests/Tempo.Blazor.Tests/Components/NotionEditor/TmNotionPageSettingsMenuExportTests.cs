@@ -112,7 +112,7 @@ public class TmNotionPageSettingsMenuExportTests : LocalizationTestBase
             ImportExportProvider = importExportProvider
         };
 
-        return RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        return Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(p => p.Value, context)
             .AddChildContent<TmNotionPageSettingsMenu>(child => child
                 .Add(p => p.Page, new NotionPage

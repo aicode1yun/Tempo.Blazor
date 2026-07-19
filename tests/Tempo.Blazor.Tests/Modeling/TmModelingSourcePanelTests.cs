@@ -12,7 +12,7 @@ public sealed class TmModelingSourcePanelTests : LocalizationTestBase
     public void Clicking_load_model_raises_on_load_requested()
     {
         var requested = false;
-        using var cut = RenderComponent<TmModelingSourcePanel>(parameters => parameters
+        using var cut = Render<TmModelingSourcePanel>(parameters => parameters
             .Add(p => p.Metadata, CreateMetadata(isFresh: true))
             .Add(p => p.OnLoadRequested, EventCallback.Factory.Create(this, () => requested = true)));
 
@@ -24,7 +24,7 @@ public sealed class TmModelingSourcePanelTests : LocalizationTestBase
     [Fact]
     public void Stale_metadata_shows_warning_with_icon()
     {
-        using var cut = RenderComponent<TmModelingSourcePanel>(parameters => parameters
+        using var cut = Render<TmModelingSourcePanel>(parameters => parameters
             .Add(p => p.Metadata, CreateMetadata(isFresh: false)));
 
         var warning = cut.Find("[data-testid='modeling-source-freshness-warning']");
@@ -36,7 +36,7 @@ public sealed class TmModelingSourcePanelTests : LocalizationTestBase
     [Fact]
     public void Fresh_metadata_does_not_show_stale_warning()
     {
-        using var cut = RenderComponent<TmModelingSourcePanel>(parameters => parameters
+        using var cut = Render<TmModelingSourcePanel>(parameters => parameters
             .Add(p => p.Metadata, CreateMetadata(isFresh: true)));
 
         cut.FindAll("[data-testid='modeling-source-freshness-warning']").Should().BeEmpty();
@@ -45,7 +45,7 @@ public sealed class TmModelingSourcePanelTests : LocalizationTestBase
     [Fact]
     public void Null_metadata_renders_empty_state_without_exception()
     {
-        using var cut = RenderComponent<TmModelingSourcePanel>(parameters => parameters
+        using var cut = Render<TmModelingSourcePanel>(parameters => parameters
             .Add(p => p.Metadata, (ModelingMetadataDto?)null));
 
         cut.Find("[data-testid='modeling-source-panel']").Should().NotBeNull();
@@ -59,7 +59,7 @@ public sealed class TmModelingSourcePanelTests : LocalizationTestBase
         var metadata = CreateMetadata(isFresh: true);
         metadata.SourceSystem = sourceSystem;
 
-        using var cut = RenderComponent<TmModelingSourcePanel>(parameters => parameters
+        using var cut = Render<TmModelingSourcePanel>(parameters => parameters
             .Add(p => p.Metadata, metadata));
 
         var sourceSystemElement = cut.Find("[data-testid='modeling-source-system']");

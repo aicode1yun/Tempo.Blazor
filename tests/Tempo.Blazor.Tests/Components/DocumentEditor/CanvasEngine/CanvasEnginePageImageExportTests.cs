@@ -21,7 +21,7 @@ public sealed class CanvasEnginePageImageExportTests : LocalizationTestBase
         SetupCanvasModule();
         var document = DocumentEditorDocument.Empty("canvas-host-export");
 
-        var cut = RenderComponent<TmDocumentCanvasEngineHost>(parameters => parameters
+        var cut = Render<TmDocumentCanvasEngineHost>(parameters => parameters
             .Add(p => p.Document, document)
             .Add(p => p.AriaLabel, "Document editor")
             .Add(p => p.InputAriaLabel, "Document editor"));
@@ -43,7 +43,7 @@ public sealed class CanvasEnginePageImageExportTests : LocalizationTestBase
         var module = SetupCanvasModule();
         var document = DocumentEditorDocument.Empty("canvas-host-export-options");
 
-        var cut = RenderComponent<TmDocumentCanvasEngineHost>(parameters => parameters
+        var cut = Render<TmDocumentCanvasEngineHost>(parameters => parameters
             .Add(p => p.Document, document)
             .Add(p => p.AriaLabel, "Document editor")
             .Add(p => p.InputAriaLabel, "Document editor"));
@@ -69,7 +69,7 @@ public sealed class CanvasEnginePageImageExportTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedEmptyDocument("canvas-editor-export");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = Render<TmDocumentEditor>(parameters => parameters
             .Add(p => p.DocumentId, "canvas-editor-export")
             .Add(p => p.Provider, provider));
         cut.WaitForAssertion(() =>
@@ -88,7 +88,7 @@ public sealed class CanvasEnginePageImageExportTests : LocalizationTestBase
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedEmptyDocument("canvas-editor-export-canvas-only");
 
-        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+        var cut = Render<TmDocumentEditor>(parameters => parameters
             .Add(p => p.DocumentId, "canvas-editor-export-canvas-only")
             .Add(p => p.Provider, provider));
 

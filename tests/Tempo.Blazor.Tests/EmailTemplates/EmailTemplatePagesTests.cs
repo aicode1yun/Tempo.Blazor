@@ -15,7 +15,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.Tests.EmailTemplates;
 
-public class EmailTemplatePagesTests : TestContext
+public class EmailTemplatePagesTests : BunitContext
 {
     private readonly IEmailTemplateApiClient _api = Substitute.For<IEmailTemplateApiClient>();
 
@@ -53,7 +53,7 @@ public class EmailTemplatePagesTests : TestContext
             new() { Id = Guid.NewGuid(), Name = "Newsletter", Subject = "News" },
         });
 
-        var cut = RenderComponent<EmailTemplatesPage>();
+        var cut = Render<EmailTemplatesPage>();
 
         cut.FindAll("[data-tm-template-card]").Should().HaveCount(2);
     }
@@ -66,7 +66,7 @@ public class EmailTemplatePagesTests : TestContext
         _api.CreateAsync(Arg.Any<CreateEmailTemplateRequest>(), Arg.Any<CancellationToken>())
             .Returns(new EmailTemplateDetailDto { Id = newId, Name = "Untitled template" });
 
-        var cut = RenderComponent<EmailTemplatesPage>();
+        var cut = Render<EmailTemplatesPage>();
         await cut.Find("[data-tm-new-template]").ClickAsync(new());
 
         await _api.Received(1).CreateAsync(Arg.Any<CreateEmailTemplateRequest>(), Arg.Any<CancellationToken>());
@@ -83,7 +83,7 @@ public class EmailTemplatePagesTests : TestContext
         });
         _api.DeleteAsync(id, Arg.Any<CancellationToken>()).Returns(true);
 
-        var cut = RenderComponent<EmailTemplatesPage>();
+        var cut = Render<EmailTemplatesPage>();
         cut.Find("[data-tm-delete]").Click();
         await cut.Find("[data-tm-confirm-delete]").ClickAsync(new());
 
@@ -101,7 +101,7 @@ public class EmailTemplatePagesTests : TestContext
             Id = id, Name = "Welcome", ContentJson = ContentJsonWith("Hi"),
         });
 
-        var cut = RenderComponent<EmailTemplateEditorPage>(p => p.Add(c => c.Id, id));
+        var cut = Render<EmailTemplateEditorPage>(p => p.Add(c => c.Id, id));
 
         cut.FindAll("[data-tm-email-editor-page]").Should().ContainSingle();
         cut.FindAll("[data-tm-email-editor]").Should().ContainSingle();
@@ -113,7 +113,7 @@ public class EmailTemplatePagesTests : TestContext
         var id = Guid.NewGuid();
         _api.GetAsync(id, Arg.Any<CancellationToken>()).Returns((EmailTemplateDetailDto?)null);
 
-        var cut = RenderComponent<EmailTemplateEditorPage>(p => p.Add(c => c.Id, id));
+        var cut = Render<EmailTemplateEditorPage>(p => p.Add(c => c.Id, id));
 
         cut.FindAll("[data-tm-email-editor]").Should().BeEmpty();
         cut.Markup.Should().Contain("not found");
@@ -130,7 +130,7 @@ public class EmailTemplatePagesTests : TestContext
             Id = id, Name = "Welcome", ContentJson = ContentJsonWith("Hi {{ first_name }}"),
         });
 
-        var cut = RenderComponent<EmailTemplateSendPage>(p => p.Add(c => c.Id, id));
+        var cut = Render<EmailTemplateSendPage>(p => p.Add(c => c.Id, id));
 
         cut.FindAll("[data-tm-var=\"first_name\"]").Should().ContainSingle();
     }
@@ -146,7 +146,7 @@ public class EmailTemplatePagesTests : TestContext
         _api.SendAsync(id, Arg.Any<SendEmailRequest>(), Arg.Any<CancellationToken>())
             .Returns(new SendEmailResult(true, 202, Array.Empty<string>()));
 
-        var cut = RenderComponent<EmailTemplateSendPage>(p => p.Add(c => c.Id, id));
+        var cut = Render<EmailTemplateSendPage>(p => p.Add(c => c.Id, id));
         cut.Find("[data-tm-to]").Change("a@example.com");
         await cut.Find("[data-tm-send-submit]").ClickAsync(new());
 

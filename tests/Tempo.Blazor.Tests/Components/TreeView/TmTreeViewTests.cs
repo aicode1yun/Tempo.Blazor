@@ -28,7 +28,7 @@ public class TmTreeViewTests : LocalizationTestBase
     [Fact]
     public void TmTreeView_Renders_TreeView()
     {
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, MakeNodes()));
 
         cut.Find(".tm-tree-view").Should().NotBeNull();
@@ -37,7 +37,7 @@ public class TmTreeViewTests : LocalizationTestBase
     [Fact]
     public void TmTreeView_Renders_Node_Per_Item()
     {
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, MakeNodes()));
 
         cut.FindAll(".tm-tree-node").Count.Should().BeGreaterThanOrEqualTo(3);
@@ -47,7 +47,7 @@ public class TmTreeViewTests : LocalizationTestBase
     public void TmTreeView_Leaf_Has_No_Expand_Button()
     {
         var leaf = new TestTreeNode("leaf1", "Leaf", null, true, false, []);
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, new List<ITreeNode<string>> { leaf }));
 
         cut.FindAll(".tm-tree-expand").Should().BeEmpty();
@@ -57,7 +57,7 @@ public class TmTreeViewTests : LocalizationTestBase
     public void TmTreeView_NonLeaf_Has_Expand_Button()
     {
         var parent = new TestTreeNode("p1", "Parent", null, false, false, []);
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, new List<ITreeNode<string>> { parent }));
 
         cut.FindAll(".tm-tree-expand").Should().NotBeEmpty();
@@ -69,7 +69,7 @@ public class TmTreeViewTests : LocalizationTestBase
         var child  = new TestTreeNode("c1", "Child",  null, true,  false, []);
         var parent = new TestTreeNode("p1", "Parent", null, false, false,
             new List<ITreeNode<string>> { child }.AsReadOnly());
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, new List<ITreeNode<string>> { parent }));
 
         cut.Find(".tm-tree-expand").Click();
@@ -81,7 +81,7 @@ public class TmTreeViewTests : LocalizationTestBase
     public void TmTreeView_Node_Loading_Shows_Spinner()
     {
         var loading = new TestTreeNode("n1", "Loading Node", null, false, true, []);
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, new List<ITreeNode<string>> { loading }));
 
         cut.FindAll(".tm-spinner").Should().NotBeEmpty();
@@ -92,7 +92,7 @@ public class TmTreeViewTests : LocalizationTestBase
     {
         ITreeNode<string>? clicked = null;
         var node = new TestTreeNode("n1", "Click Me", null, true, false, []);
-        var cut = RenderComponent<TmTreeView<string>>(p => p
+        var cut = Render<TmTreeView<string>>(p => p
             .Add(c => c.Nodes, new List<ITreeNode<string>> { node })
             .Add(c => c.OnNodeSelect, EventCallback.Factory.Create<ITreeNode<string>>(
                 this, n => clicked = n)));

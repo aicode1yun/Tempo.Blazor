@@ -35,7 +35,7 @@ public class TmDocumentOpenDialogTests : LocalizationTestBase
     [Fact]
     public void Closed_RendersNothing()
     {
-        var cut = RenderComponent<TmDocumentOpenDialog>(p => p
+        var cut = Render<TmDocumentOpenDialog>(p => p
             .Add(c => c.Provider, Seeded())
             .Add(c => c.Kind, TempoDocumentKind.Wireframe)
             .Add(c => c.Open, false));
@@ -46,7 +46,7 @@ public class TmDocumentOpenDialogTests : LocalizationTestBase
     [Fact]
     public void Open_RendersModalWithLocalisedTitle()
     {
-        var cut = RenderComponent<TmDocumentOpenDialog>(p => p
+        var cut = Render<TmDocumentOpenDialog>(p => p
             .Add(c => c.Provider, Seeded())
             .Add(c => c.Kind, TempoDocumentKind.Wireframe)
             .Add(c => c.Open, true));
@@ -58,7 +58,7 @@ public class TmDocumentOpenDialogTests : LocalizationTestBase
     private IRenderedComponent<TmDocumentOpenDialog> RenderOpen(
         InMemoryDocumentLibraryProvider provider,
         Action<ComponentParameterCollectionBuilder<TmDocumentOpenDialog>>? extra = null)
-        => RenderComponent<TmDocumentOpenDialog>(p =>
+        => Render<TmDocumentOpenDialog>(p =>
         {
             p.Add(c => c.Provider, provider);
             p.Add(c => c.Kind, TempoDocumentKind.Wireframe);
@@ -86,7 +86,7 @@ public class TmDocumentOpenDialogTests : LocalizationTestBase
         var gate = new TaskCompletionSource();
         var provider = new GatedLibraryProvider(Seeded(), gate.Task);
 
-        var cut = RenderComponent<TmDocumentOpenDialog>(p => p
+        var cut = Render<TmDocumentOpenDialog>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.Kind, TempoDocumentKind.Wireframe)
             .Add(c => c.Open, true));
@@ -196,7 +196,7 @@ public class TmDocumentOpenDialogTests : LocalizationTestBase
     public void Paging_LoadMore_AppendsNextPage()
     {
         var provider = Seeded();
-        var cut = RenderComponent<TmDocumentOpenDialog>(p => p
+        var cut = Render<TmDocumentOpenDialog>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.Kind, TempoDocumentKind.Wireframe)
             .Add(c => c.Open, true)
@@ -384,7 +384,7 @@ public class TmDocumentOpenDialogTests : LocalizationTestBase
     public void Error_ShowsMessageAndRetry()
     {
         var provider = new ThrowingLibraryProvider();
-        var cut = RenderComponent<TmDocumentOpenDialog>(p => p
+        var cut = Render<TmDocumentOpenDialog>(p => p
             .Add(c => c.Provider, provider)
             .Add(c => c.Kind, TempoDocumentKind.Wireframe)
             .Add(c => c.Open, true));

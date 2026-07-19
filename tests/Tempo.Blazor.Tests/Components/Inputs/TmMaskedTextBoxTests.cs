@@ -12,14 +12,14 @@ public class TmMaskedTextBoxTests : LocalizationTestBase
     [Fact]
     public void TmMaskedTextBox_Renders_Input_Element()
     {
-        var cut = RenderComponent<TmMaskedTextBox>();
+        var cut = Render<TmMaskedTextBox>();
         cut.Find("input").Should().NotBeNull();
     }
 
     [Fact]
     public void TmMaskedTextBox_WithMask_Renders_Prompt_Chars()
     {
-        var cut = RenderComponent<TmMaskedTextBox>(p => p
+        var cut = Render<TmMaskedTextBox>(p => p
             .Add(x => x.Mask, "(000) 000-0000")
             .Add(x => x.PromptChar, '_'));
 
@@ -31,7 +31,7 @@ public class TmMaskedTextBoxTests : LocalizationTestBase
     public void TmMaskedTextBox_Entering_Digits_Updates_Value()
     {
         string? capturedValue = null;
-        var cut = RenderComponent<TmMaskedTextBox>(p => p
+        var cut = Render<TmMaskedTextBox>(p => p
             .Add(x => x.Mask, "(000) 000-0000")
             .Add(x => x.PromptChar, '_')
             .Add(x => x.ValueChanged, EventCallback.Factory.Create<string>(this, v => capturedValue = v)));
@@ -45,7 +45,7 @@ public class TmMaskedTextBoxTests : LocalizationTestBase
     [Fact]
     public void TmMaskedTextBox_UnmaskedValue_Excludes_Literals()
     {
-        var cut = RenderComponent<TmMaskedTextBox>(p => p
+        var cut = Render<TmMaskedTextBox>(p => p
             .Add(x => x.Mask, "(000) 000-0000")
             .Add(x => x.PromptChar, '_')
             .Add(x => x.Value, "(555) 123-4567"));
@@ -57,7 +57,7 @@ public class TmMaskedTextBoxTests : LocalizationTestBase
     public void TmMaskedTextBox_IncludeLiterals_True_Value_Includes_Literals()
     {
         string? capturedValue = null;
-        var cut = RenderComponent<TmMaskedTextBox>(p => p
+        var cut = Render<TmMaskedTextBox>(p => p
             .Add(x => x.Mask, "(000) 000-0000")
             .Add(x => x.PromptChar, '_')
             .Add(x => x.IncludeLiterals, true)
@@ -72,7 +72,7 @@ public class TmMaskedTextBoxTests : LocalizationTestBase
     [Fact]
     public void TmMaskedTextBox_Disabled_Renders_Disabled_Input()
     {
-        var cut = RenderComponent<TmMaskedTextBox>(p => p
+        var cut = Render<TmMaskedTextBox>(p => p
             .Add(x => x.Disabled, true));
 
         var input = cut.Find("input");
@@ -82,7 +82,7 @@ public class TmMaskedTextBoxTests : LocalizationTestBase
     [Fact]
     public void TmMaskedTextBox_ReadOnly_Renders_ReadOnly_Input()
     {
-        var cut = RenderComponent<TmMaskedTextBox>(p => p
+        var cut = Render<TmMaskedTextBox>(p => p
             .Add(x => x.ReadOnly, true));
 
         var input = cut.Find("input");
@@ -92,7 +92,7 @@ public class TmMaskedTextBoxTests : LocalizationTestBase
     [Fact]
     public void TmMaskedTextBox_Placeholder_Is_Displayed()
     {
-        var cut = RenderComponent<TmMaskedTextBox>(p => p
+        var cut = Render<TmMaskedTextBox>(p => p
             .Add(x => x.Placeholder, "Enter phone number"));
 
         var input = cut.Find("input");
@@ -103,7 +103,7 @@ public class TmMaskedTextBoxTests : LocalizationTestBase
     public void TmMaskedTextBox_Invalid_Char_Is_Ignored()
     {
         string? capturedValue = null;
-        var cut = RenderComponent<TmMaskedTextBox>(p => p
+        var cut = Render<TmMaskedTextBox>(p => p
             .Add(x => x.Mask, "(000) 000-0000")
             .Add(x => x.PromptChar, '_')
             .Add(x => x.Value, "(5__) ___-____")
@@ -121,7 +121,7 @@ public class TmMaskedTextBoxTests : LocalizationTestBase
     public void TmMaskedTextBox_Backspace_Removes_Last_Valid_Char()
     {
         string? capturedValue = null;
-        var cut = RenderComponent<TmMaskedTextBox>(p => p
+        var cut = Render<TmMaskedTextBox>(p => p
             .Add(x => x.Mask, "(000) 000-0000")
             .Add(x => x.PromptChar, '_')
             .Add(x => x.Value, "(55_) ___-____")
@@ -136,7 +136,7 @@ public class TmMaskedTextBoxTests : LocalizationTestBase
     [Fact]
     public void TmMaskedTextBox_Custom_Prompt_Char_Is_Used()
     {
-        var cut = RenderComponent<TmMaskedTextBox>(p => p
+        var cut = Render<TmMaskedTextBox>(p => p
             .Add(x => x.Mask, "0000")
             .Add(x => x.PromptChar, '*'));
 
@@ -148,7 +148,7 @@ public class TmMaskedTextBoxTests : LocalizationTestBase
     public void TmMaskedTextBox_MaskedValue_With_Letter_Mask_Only_Accepts_Letters()
     {
         string? capturedValue = null;
-        var cut = RenderComponent<TmMaskedTextBox>(p => p
+        var cut = Render<TmMaskedTextBox>(p => p
             .Add(x => x.Mask, "LLL")
             .Add(x => x.PromptChar, '_')
             .Add(x => x.ValueChanged, EventCallback.Factory.Create<string>(this, v => capturedValue = v)));
@@ -165,7 +165,7 @@ public class TmMaskedTextBoxTests : LocalizationTestBase
     [Fact]
     public void TmMaskedTextBox_Empty_Mask_Renders_Empty_Value()
     {
-        var cut = RenderComponent<TmMaskedTextBox>(p => p
+        var cut = Render<TmMaskedTextBox>(p => p
             .Add(x => x.Mask, string.Empty)
             .Add(x => x.Value, "test"));
 
@@ -176,7 +176,7 @@ public class TmMaskedTextBoxTests : LocalizationTestBase
     [Fact]
     public void TmMaskedTextBox_IncludeLiterals_False_UnmaskedValue_Equals_Value_Without_Literals()
     {
-        var cut = RenderComponent<TmMaskedTextBox>(p => p
+        var cut = Render<TmMaskedTextBox>(p => p
             .Add(x => x.Mask, "(000) 000-0000")
             .Add(x => x.PromptChar, '_')
             .Add(x => x.IncludeLiterals, false)

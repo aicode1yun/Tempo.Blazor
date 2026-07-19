@@ -19,7 +19,7 @@ public class TmDeadlineCalculatorTests : LocalizationTestBase
     private IRenderedComponent<TmDeadlineCalculator> Render(
         Action<Bunit.ComponentParameterCollectionBuilder<TmDeadlineCalculator>>? configure = null,
         DeadlineRule? rule = null)
-        => RenderComponent<TmDeadlineCalculator>(p =>
+        => Render<TmDeadlineCalculator>(p =>
         {
             p.Add(x => x.BaseDate, Base);
             p.Add(x => x.Rule, rule ?? DeadlineRule.Single(15));

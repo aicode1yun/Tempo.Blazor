@@ -19,7 +19,7 @@ public class TmExpressionEditorTests : LocalizationTestBase
     [Fact]
     public void ExpressionEditor_Renders_Textarea()
     {
-        var cut = RenderComponent<TmExpressionEditor>(p => p
+        var cut = Render<TmExpressionEditor>(p => p
             .Add(x => x.Variables, TestVars));
 
         cut.Find(".tm-expression-editor").Should().NotBeNull();
@@ -29,7 +29,7 @@ public class TmExpressionEditorTests : LocalizationTestBase
     [Fact]
     public void ExpressionEditor_Value_BoundToTextarea()
     {
-        var cut = RenderComponent<TmExpressionEditor>(p => p
+        var cut = Render<TmExpressionEditor>(p => p
             .Add(x => x.Value, "Hello {{sender.name}}")
             .Add(x => x.Variables, TestVars));
 
@@ -39,7 +39,7 @@ public class TmExpressionEditorTests : LocalizationTestBase
     [Fact]
     public void ExpressionEditor_Placeholder_Applied()
     {
-        var cut = RenderComponent<TmExpressionEditor>(p => p
+        var cut = Render<TmExpressionEditor>(p => p
             .Add(x => x.Variables, TestVars)
             .Add(x => x.Placeholder, "Type expression..."));
 
@@ -49,7 +49,7 @@ public class TmExpressionEditorTests : LocalizationTestBase
     [Fact]
     public void ExpressionEditor_Label_Rendered()
     {
-        var cut = RenderComponent<TmExpressionEditor>(p => p
+        var cut = Render<TmExpressionEditor>(p => p
             .Add(x => x.Variables, TestVars)
             .Add(x => x.Label, "Subject Template"));
 
@@ -59,7 +59,7 @@ public class TmExpressionEditorTests : LocalizationTestBase
     [Fact]
     public void ExpressionEditor_Disabled_State()
     {
-        var cut = RenderComponent<TmExpressionEditor>(p => p
+        var cut = Render<TmExpressionEditor>(p => p
             .Add(x => x.Variables, TestVars)
             .Add(x => x.Disabled, true));
 
@@ -69,7 +69,7 @@ public class TmExpressionEditorTests : LocalizationTestBase
     [Fact]
     public void ExpressionEditor_Error_ShowsMessage()
     {
-        var cut = RenderComponent<TmExpressionEditor>(p => p
+        var cut = Render<TmExpressionEditor>(p => p
             .Add(x => x.Variables, TestVars)
             .Add(x => x.Error, "Invalid expression"));
 
@@ -80,7 +80,7 @@ public class TmExpressionEditorTests : LocalizationTestBase
     [Fact]
     public void ExpressionEditor_VariablePanel_ShowsVariables()
     {
-        var cut = RenderComponent<TmExpressionEditor>(p => p
+        var cut = Render<TmExpressionEditor>(p => p
             .Add(x => x.Variables, TestVars));
 
         cut.FindAll(".tm-expression-editor__var").Count.Should().Be(4);
@@ -92,7 +92,7 @@ public class TmExpressionEditorTests : LocalizationTestBase
     public void ExpressionEditor_ClickVariable_InsertsIntoValue()
     {
         string? newValue = null;
-        var cut = RenderComponent<TmExpressionEditor>(p => p
+        var cut = Render<TmExpressionEditor>(p => p
             .Add(x => x.Value, "Hello ")
             .Add(x => x.Variables, TestVars)
             .Add(x => x.ValueChanged, v => newValue = v));
@@ -107,7 +107,7 @@ public class TmExpressionEditorTests : LocalizationTestBase
     [Fact]
     public void ExpressionEditor_VariableDescription_Shown()
     {
-        var cut = RenderComponent<TmExpressionEditor>(p => p
+        var cut = Render<TmExpressionEditor>(p => p
             .Add(x => x.Variables, TestVars));
 
         // Each variable should show its description somewhere
@@ -117,7 +117,7 @@ public class TmExpressionEditorTests : LocalizationTestBase
     [Fact]
     public void ExpressionEditor_CustomClass()
     {
-        var cut = RenderComponent<TmExpressionEditor>(p => p
+        var cut = Render<TmExpressionEditor>(p => p
             .Add(x => x.Variables, TestVars)
             .Add(x => x.Class, "my-editor"));
 

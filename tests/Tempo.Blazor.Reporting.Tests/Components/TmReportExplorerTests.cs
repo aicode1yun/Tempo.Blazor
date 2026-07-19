@@ -9,7 +9,7 @@ public sealed class TmReportExplorerTests : ReportingComponentTestBase
     [Fact]
     public void Explorer_RendersFolderTreeGridAndSearchesReports()
     {
-        var cut = RenderComponent<TmReportExplorer>(parameters => parameters
+        var cut = Render<TmReportExplorer>(parameters => parameters
             .Add(component => component.RootFolder, FolderTree())
             .Add(component => component.CurrentFolderPath, "/finance")
             .Add(component => component.Reports, Reports()));
@@ -27,7 +27,7 @@ public sealed class TmReportExplorerTests : ReportingComponentTestBase
     public void Explorer_SwitchesToListViewAndRaisesOpenReport()
     {
         ReportExplorerReportItem? opened = null;
-        var cut = RenderComponent<TmReportExplorer>(parameters => parameters
+        var cut = Render<TmReportExplorer>(parameters => parameters
             .Add(component => component.RootFolder, FolderTree())
             .Add(component => component.CurrentFolderPath, "/finance")
             .Add(component => component.Reports, Reports())
@@ -47,7 +47,7 @@ public sealed class TmReportExplorerTests : ReportingComponentTestBase
     {
         ReportExplorerCreateFolderRequest? created = null;
         ReportExplorerMoveReportRequest? moved = null;
-        var cut = RenderComponent<TmReportExplorer>(parameters => parameters
+        var cut = Render<TmReportExplorer>(parameters => parameters
             .Add(component => component.RootFolder, FolderTree())
             .Add(component => component.CurrentFolderPath, "/finance")
             .Add(component => component.Reports, Reports())

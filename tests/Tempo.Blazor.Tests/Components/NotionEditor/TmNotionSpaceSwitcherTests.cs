@@ -35,7 +35,7 @@ public sealed class TmNotionSpaceSwitcherTests : LocalizationTestBase
     [Fact]
     public void WithoutProvider_ShowsSingleImplicitSpace()
     {
-        var cut = RenderComponent<TmNotionSpaceSwitcher>(parameters => parameters
+        var cut = Render<TmNotionSpaceSwitcher>(parameters => parameters
             .Add(p => p.SpaceProvider, null));
 
         cut.Markup.Should().Contain("Pages");
@@ -47,7 +47,7 @@ public sealed class TmNotionSpaceSwitcherTests : LocalizationTestBase
     {
         var provider = new FakeSpaceProvider();
         string? selected = null;
-        var cut = RenderComponent<TmNotionSpaceSwitcher>(parameters => parameters
+        var cut = Render<TmNotionSpaceSwitcher>(parameters => parameters
             .Add(p => p.SpaceProvider, provider)
             .Add(p => p.SelectedSpaceId, "team")
             .Add(p => p.SelectedSpaceIdChanged, EventCallback.Factory.Create<string?>(this, value => selected = value)));
@@ -63,7 +63,7 @@ public sealed class TmNotionSpaceSwitcherTests : LocalizationTestBase
     public async Task OverviewCanMoveCurrentPageToAnotherSpace()
     {
         var provider = new FakeSpaceProvider();
-        var cut = RenderComponent<TmNotionSpaceSwitcher>(parameters => parameters
+        var cut = Render<TmNotionSpaceSwitcher>(parameters => parameters
             .Add(p => p.SpaceProvider, provider)
             .Add(p => p.SelectedSpaceId, "team")
             .Add(p => p.CurrentPageId, FakeSpaceProvider.PageId.ToString("D")));

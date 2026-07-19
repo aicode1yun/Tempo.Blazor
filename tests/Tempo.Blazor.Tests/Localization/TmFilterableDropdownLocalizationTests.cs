@@ -22,7 +22,7 @@ public class TmFilterableDropdownLocalizationTests : LocalizationTestBase
         UseCzechLocalization();
 
         // No explicit Placeholder provided
-        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+        var cut = Render<TmFilterableDropdown<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, Options)
             .Add(c => c.DisplayField, o => o.Label));
 
@@ -35,7 +35,7 @@ public class TmFilterableDropdownLocalizationTests : LocalizationTestBase
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+        var cut = Render<TmFilterableDropdown<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, Options)
             .Add(c => c.Placeholder, "Vlastní text")
             .Add(c => c.DisplayField, o => o.Label));
@@ -49,7 +49,7 @@ public class TmFilterableDropdownLocalizationTests : LocalizationTestBase
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+        var cut = Render<TmFilterableDropdown<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, Options)
             .Add(c => c.DisplayField, o => o.Label));
 
@@ -64,7 +64,7 @@ public class TmFilterableDropdownLocalizationTests : LocalizationTestBase
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+        var cut = Render<TmFilterableDropdown<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, Options)
             .Add(c => c.DisplayField, o => o.Label));
 
@@ -79,7 +79,7 @@ public class TmFilterableDropdownLocalizationTests : LocalizationTestBase
     [Fact]
     public void TmFilterableDropdown_DefaultPlaceholder_English_ShowsEnglishText()
     {
-        var cut = RenderComponent<TmFilterableDropdown<SelectOption<string>, string>>(p => p
+        var cut = Render<TmFilterableDropdown<SelectOption<string>, string>>(p => p
             .Add(c => c.Items, Options)
             .Add(c => c.DisplayField, o => o.Label));
 

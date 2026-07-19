@@ -26,7 +26,7 @@ public class TmMapTests : LocalizationTestBase
     {
         SetupMapModule();
 
-        var cut = RenderComponent<TmMap>();
+        var cut = Render<TmMap>();
 
         var root = cut.Find(".tm-map");
         root.Should().NotBeNull();
@@ -41,7 +41,7 @@ public class TmMapTests : LocalizationTestBase
     {
         SetupMapModule();
 
-        var cut = RenderComponent<TmMap>();
+        var cut = Render<TmMap>();
 
         cut.Find("[data-testid='map']").Should().NotBeNull();
         var container = cut.Find(".tm-map__container");
@@ -55,7 +55,7 @@ public class TmMapTests : LocalizationTestBase
     {
         var module = SetupMapModule();
 
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.CenterLatitude, 50.08)
             .Add(p => p.CenterLongitude, 14.43)
             .Add(p => p.Zoom, 12.0));
@@ -73,7 +73,7 @@ public class TmMapTests : LocalizationTestBase
     {
         var module = SetupMapModule();
 
-        var cut = RenderComponent<TmMap>();
+        var cut = Render<TmMap>();
 
         var initInvocation = module.Invocations.Single(i => i.Identifier == "init");
         initInvocation.Arguments.Should().Contain(a => a is DotNetObjectReference<TmMap>);
@@ -91,7 +91,7 @@ public class TmMapTests : LocalizationTestBase
             new("m2", 49.2, 16.6, "Brno"),
         };
 
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.Markers, markers));
 
         module.Invocations.Should().Contain(i => i.Identifier == "setData");
@@ -104,7 +104,7 @@ public class TmMapTests : LocalizationTestBase
     {
         var module = SetupMapModule();
 
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.Markers, new List<MapMarker>()));
 
         module.Invocations.Should().NotContain(i => i.Identifier == "setData");
@@ -124,7 +124,7 @@ public class TmMapTests : LocalizationTestBase
             new(null, 48.8, 14.3, "NoId2"),
         };
 
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.Markers, markers));
 
         var batch = module.Invocations.Single(i => i.Identifier == "setData");
@@ -140,7 +140,7 @@ public class TmMapTests : LocalizationTestBase
     public async Task DisposeAsync_InvokesJsDispose()
     {
         var module = SetupMapModule();
-        var cut = RenderComponent<TmMap>();
+        var cut = Render<TmMap>();
 
         await cut.Instance.DisposeAsync();
 
@@ -163,7 +163,7 @@ public class TmMapTests : LocalizationTestBase
         var module = SetupMapModule();
         module.SetupVoid("dispose", _ => true)
               .SetException(new JSDisconnectedException("circuit down"));
-        var cut = RenderComponent<TmMap>();
+        var cut = Render<TmMap>();
 
         var act = async () => await cut.Instance.DisposeAsync();
 
@@ -176,7 +176,7 @@ public class TmMapTests : LocalizationTestBase
     public async Task DisposeAsync_CalledTwice_DoesNotThrow()
     {
         SetupMapModule();
-        var cut = RenderComponent<TmMap>();
+        var cut = Render<TmMap>();
 
         await cut.Instance.DisposeAsync();
         var act = async () => await cut.Instance.DisposeAsync();
@@ -191,7 +191,7 @@ public class TmMapTests : LocalizationTestBase
     {
         SetupMapModule();
         MapMarker? received = null;
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.OnMarkerClick, EventCallback.Factory.Create<MapMarker>(
                 this, m => received = m)));
 
@@ -210,7 +210,7 @@ public class TmMapTests : LocalizationTestBase
     {
         SetupMapModule();
         MapViewport? received = null;
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.OnZoomChanged, EventCallback.Factory.Create<MapViewport>(
                 this, v => received = v)));
 
@@ -229,7 +229,7 @@ public class TmMapTests : LocalizationTestBase
     {
         SetupMapModule();
         MapViewport? received = null;
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.OnMapClick, EventCallback.Factory.Create<MapViewport>(
                 this, v => received = v)));
 
@@ -247,7 +247,7 @@ public class TmMapTests : LocalizationTestBase
     public async Task SetViewAsync_InvokesJsSetView()
     {
         var module = SetupMapModule();
-        var cut = RenderComponent<TmMap>();
+        var cut = Render<TmMap>();
 
         await cut.Instance.SetViewAsync(new MapViewport(49.5, 15.0, 9.0));
 
@@ -265,7 +265,7 @@ public class TmMapTests : LocalizationTestBase
         var module = SetupMapModule();
         module.Setup<MapViewport>("getViewport", _ => true)
               .SetResult(new MapViewport(49.8, 15.4, 7.5));
-        var cut = RenderComponent<TmMap>();
+        var cut = Render<TmMap>();
 
         var viewport = await cut.Instance.GetViewportAsync();
 
@@ -281,7 +281,7 @@ public class TmMapTests : LocalizationTestBase
     public async Task ClearMarkersAsync_InvokesJsClearMarkers()
     {
         var module = SetupMapModule();
-        var cut = RenderComponent<TmMap>();
+        var cut = Render<TmMap>();
 
         await cut.Instance.ClearMarkersAsync();
 
@@ -294,7 +294,7 @@ public class TmMapTests : LocalizationTestBase
     public async Task InvalidateSizeAsync_InvokesJsInvalidateSize()
     {
         var module = SetupMapModule();
-        var cut = RenderComponent<TmMap>();
+        var cut = Render<TmMap>();
 
         await cut.Instance.InvalidateSizeAsync();
 
@@ -307,7 +307,7 @@ public class TmMapTests : LocalizationTestBase
     public async Task MethodsAfterDispose_DoNotThrow()
     {
         var module = SetupMapModule();
-        var cut = RenderComponent<TmMap>();
+        var cut = Render<TmMap>();
         await cut.Instance.DisposeAsync();
         var invocationCountAfterDispose = module.Invocations
             .Count(i => i.Identifier != "dispose" && i.Identifier != "init");
@@ -327,10 +327,10 @@ public class TmMapTests : LocalizationTestBase
     public void ChangedMarkers_AtomicallyReplaceViaSetData()
     {
         var module = SetupMapModule();
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.Markers, new List<MapMarker> { new("a", 50.0, 14.0, null) }));
 
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.Markers, new List<MapMarker> { new("b", 49.0, 16.0, null) }));
 
         // Atomic swap: single setData per data change, no separate clear + add.
@@ -345,7 +345,7 @@ public class TmMapTests : LocalizationTestBase
     {
         SetupMapModule();
 
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.Height, "555px"));
 
         cut.Find(".tm-map").GetAttribute("style").Should().Contain("555px");
@@ -358,7 +358,7 @@ public class TmMapTests : LocalizationTestBase
     {
         SetupMapModule();
 
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.Class, "my-custom-map"));
 
         cut.Find(".tm-map").ClassList.Should().Contain("my-custom-map");

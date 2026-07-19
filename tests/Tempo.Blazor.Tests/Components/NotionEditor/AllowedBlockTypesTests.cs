@@ -114,7 +114,7 @@ public class AllowedBlockTypesTests : LocalizationTestBase
         // Even though Spreadsheet is not allowed, the block should still render
         // the embed wrap (just no "Create" button in the slash menu).
         // We can verify it renders without throwing.
-        var cut = RenderComponent<TmNotionSpreadsheetBlock>(p => p
+        var cut = Render<TmNotionSpreadsheetBlock>(p => p
             .AddCascadingValue(ctx)
             .Add(x => x.Content, (ISpreadsheetBlockContent)content)
             .Add(x => x.ReadOnly, false));

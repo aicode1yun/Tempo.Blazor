@@ -4,7 +4,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.Reporting.Tests.Fixtures;
 
-public abstract class ReportingComponentTestBase : TestContext
+public abstract class ReportingComponentTestBase : BunitContext
 {
     protected ReportingComponentTestBase()
     {

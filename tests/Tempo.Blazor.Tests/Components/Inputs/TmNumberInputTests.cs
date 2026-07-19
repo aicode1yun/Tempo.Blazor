@@ -12,7 +12,7 @@ public class TmNumberInputTests : LocalizationTestBase
     [Fact]
     public void NumberInput_Renders()
     {
-        var cut = RenderComponent<TmNumberInput>(p => p
+        var cut = Render<TmNumberInput>(p => p
             .Add(x => x.Value, 5));
 
         cut.Find("input[type='number']").Should().NotBeNull();
@@ -21,7 +21,7 @@ public class TmNumberInputTests : LocalizationTestBase
     [Fact]
     public void NumberInput_DisplaysValue()
     {
-        var cut = RenderComponent<TmNumberInput>(p => p
+        var cut = Render<TmNumberInput>(p => p
             .Add(x => x.Value, 42));
 
         var input = cut.Find("input[type='number']");
@@ -32,7 +32,7 @@ public class TmNumberInputTests : LocalizationTestBase
     public void NumberInput_IncrementButton_IncreasesValue()
     {
         int? value = 5;
-        var cut = RenderComponent<TmNumberInput>(p => p
+        var cut = Render<TmNumberInput>(p => p
             .Add(x => x.Value, value)
             .Add(x => x.ValueChanged, EventCallback.Factory.Create<int?>(this, v => value = v)));
 
@@ -44,7 +44,7 @@ public class TmNumberInputTests : LocalizationTestBase
     public void NumberInput_DecrementButton_DecreasesValue()
     {
         int? value = 5;
-        var cut = RenderComponent<TmNumberInput>(p => p
+        var cut = Render<TmNumberInput>(p => p
             .Add(x => x.Value, value)
             .Add(x => x.ValueChanged, EventCallback.Factory.Create<int?>(this, v => value = v)));
 
@@ -56,7 +56,7 @@ public class TmNumberInputTests : LocalizationTestBase
     public void NumberInput_Step_AppliesCustomStep()
     {
         int? value = 10;
-        var cut = RenderComponent<TmNumberInput>(p => p
+        var cut = Render<TmNumberInput>(p => p
             .Add(x => x.Value, value)
             .Add(x => x.Step, 5)
             .Add(x => x.ValueChanged, EventCallback.Factory.Create<int?>(this, v => value = v)));
@@ -69,7 +69,7 @@ public class TmNumberInputTests : LocalizationTestBase
     public void NumberInput_Max_ClampsValue()
     {
         int? value = 10;
-        var cut = RenderComponent<TmNumberInput>(p => p
+        var cut = Render<TmNumberInput>(p => p
             .Add(x => x.Value, value)
             .Add(x => x.Max, 10)
             .Add(x => x.ValueChanged, EventCallback.Factory.Create<int?>(this, v => value = v)));
@@ -82,7 +82,7 @@ public class TmNumberInputTests : LocalizationTestBase
     public void NumberInput_Min_ClampsValue()
     {
         int? value = 0;
-        var cut = RenderComponent<TmNumberInput>(p => p
+        var cut = Render<TmNumberInput>(p => p
             .Add(x => x.Value, value)
             .Add(x => x.Min, 0)
             .Add(x => x.ValueChanged, EventCallback.Factory.Create<int?>(this, v => value = v)));
@@ -94,7 +94,7 @@ public class TmNumberInputTests : LocalizationTestBase
     [Fact]
     public void NumberInput_Label_Renders()
     {
-        var cut = RenderComponent<TmNumberInput>(p => p
+        var cut = Render<TmNumberInput>(p => p
             .Add(x => x.Value, 1)
             .Add(x => x.Label, "Quantity"));
 
@@ -104,7 +104,7 @@ public class TmNumberInputTests : LocalizationTestBase
     [Fact]
     public void NumberInput_Error_Renders()
     {
-        var cut = RenderComponent<TmNumberInput>(p => p
+        var cut = Render<TmNumberInput>(p => p
             .Add(x => x.Value, 1)
             .Add(x => x.Error, "Invalid value"));
 
@@ -114,7 +114,7 @@ public class TmNumberInputTests : LocalizationTestBase
     [Fact]
     public void NumberInput_Disabled_DisablesInput()
     {
-        var cut = RenderComponent<TmNumberInput>(p => p
+        var cut = Render<TmNumberInput>(p => p
             .Add(x => x.Value, 1)
             .Add(x => x.Disabled, true));
 
@@ -124,7 +124,7 @@ public class TmNumberInputTests : LocalizationTestBase
     [Fact]
     public void NumberInput_HideButtons_RemovesButtons()
     {
-        var cut = RenderComponent<TmNumberInput>(p => p
+        var cut = Render<TmNumberInput>(p => p
             .Add(x => x.Value, 1)
             .Add(x => x.ShowButtons, false));
 
@@ -135,7 +135,7 @@ public class TmNumberInputTests : LocalizationTestBase
     [Fact]
     public void NumberInput_Prefix_Renders()
     {
-        var cut = RenderComponent<TmNumberInput>(p => p
+        var cut = Render<TmNumberInput>(p => p
             .Add(x => x.Value, 100)
             .Add(x => x.Prefix, "$"));
 
@@ -145,7 +145,7 @@ public class TmNumberInputTests : LocalizationTestBase
     [Fact]
     public void NumberInput_Suffix_Renders()
     {
-        var cut = RenderComponent<TmNumberInput>(p => p
+        var cut = Render<TmNumberInput>(p => p
             .Add(x => x.Value, 30)
             .Add(x => x.Suffix, "days"));
 
@@ -155,7 +155,7 @@ public class TmNumberInputTests : LocalizationTestBase
     [Fact]
     public void NumberInput_HelpText_Renders()
     {
-        var cut = RenderComponent<TmNumberInput>(p => p
+        var cut = Render<TmNumberInput>(p => p
             .Add(x => x.Value, 1)
             .Add(x => x.HelpText, "Enter a number between 1 and 100"));
 

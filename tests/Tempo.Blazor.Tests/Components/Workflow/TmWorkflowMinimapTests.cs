@@ -25,7 +25,7 @@ public class TmWorkflowMinimapTests : LocalizationTestBase
     [Fact]
     public void Minimap_RendersContainer()
     {
-        var cut = RenderComponent<TmWorkflowMinimap>(p => p
+        var cut = Render<TmWorkflowMinimap>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.Find(".tm-wf-minimap").Should().NotBeNull();
@@ -34,7 +34,7 @@ public class TmWorkflowMinimapTests : LocalizationTestBase
     [Fact]
     public void Minimap_RendersSvg()
     {
-        var cut = RenderComponent<TmWorkflowMinimap>(p => p
+        var cut = Render<TmWorkflowMinimap>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.Find("svg").Should().NotBeNull();
@@ -43,7 +43,7 @@ public class TmWorkflowMinimapTests : LocalizationTestBase
     [Fact]
     public void Minimap_RendersStateRects()
     {
-        var cut = RenderComponent<TmWorkflowMinimap>(p => p
+        var cut = Render<TmWorkflowMinimap>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.FindAll(".tm-wf-minimap__state").Count.Should().Be(3);
@@ -52,7 +52,7 @@ public class TmWorkflowMinimapTests : LocalizationTestBase
     [Fact]
     public void Minimap_RendersViewportRect()
     {
-        var cut = RenderComponent<TmWorkflowMinimap>(p => p
+        var cut = Render<TmWorkflowMinimap>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.ViewBoxX, 0)
             .Add(x => x.ViewBoxY, 0)
@@ -65,7 +65,7 @@ public class TmWorkflowMinimapTests : LocalizationTestBase
     [Fact]
     public void Minimap_EmptyDefinition_RendersSvg()
     {
-        var cut = RenderComponent<TmWorkflowMinimap>(p => p
+        var cut = Render<TmWorkflowMinimap>(p => p
             .Add(x => x.Definition, new WorkflowCanvasDefinition()));
 
         cut.Find("svg").Should().NotBeNull();
@@ -75,7 +75,7 @@ public class TmWorkflowMinimapTests : LocalizationTestBase
     [Fact]
     public void Minimap_RendersTransitionLines()
     {
-        var cut = RenderComponent<TmWorkflowMinimap>(p => p
+        var cut = Render<TmWorkflowMinimap>(p => p
             .Add(x => x.Definition, SimpleWorkflow));
 
         cut.FindAll(".tm-wf-minimap__transition").Count.Should().Be(1);
@@ -85,7 +85,7 @@ public class TmWorkflowMinimapTests : LocalizationTestBase
     public void Minimap_ClickFires_OnNavigate()
     {
         bool navigated = false;
-        var cut = RenderComponent<TmWorkflowMinimap>(p => p
+        var cut = Render<TmWorkflowMinimap>(p => p
             .Add(x => x.Definition, SimpleWorkflow)
             .Add(x => x.OnNavigate, () => navigated = true));
 

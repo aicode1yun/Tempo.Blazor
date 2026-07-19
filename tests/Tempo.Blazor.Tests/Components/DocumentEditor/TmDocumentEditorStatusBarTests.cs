@@ -12,7 +12,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_NoPending_DoesNotShowPendingSpan()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.PendingCount, 0));
 
         cut.FindAll("[data-testid='document-pending-status']").Should().BeEmpty();
@@ -21,7 +21,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_PendingCountOne_ShowsPendingSpan()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.PendingCount, 1)
              .Add(x => x.PendingMessage, "Saving..."));
 
@@ -31,7 +31,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_PendingMessage_ShowsMessageText()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.PendingCount, 1)
              .Add(x => x.PendingMessage, "Saving..."));
 
@@ -42,7 +42,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_AutosaveWaiting_ShowsPendingText()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.PendingCount, 1)
              .Add(x => x.PendingMessage, "Autosave pending..."));
 
@@ -53,7 +53,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_AutosaveSaving_ShowsSavingText()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.PendingCount, 1)
              .Add(x => x.PendingMessage, "Saving..."));
 
@@ -65,7 +65,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     public void StatusBar_SaveErrorWithRetry_ShowsRetryButton()
     {
         var called = false;
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.SaveMessage, "Save failed.")
              .Add(x => x.CanRetrySave, true)
              .Add(x => x.OnRetrySave, () => called = true));
@@ -78,7 +78,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_SaveErrorWithoutRetry_HidesRetryButton()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.SaveMessage, "Save failed.")
              .Add(x => x.CanRetrySave, false));
 
@@ -88,7 +88,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_PendingCountWithoutMessage_ShowsGenericPendingText()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.PendingCount, 2)
              .Add(x => x.PendingMessage, (string?)null));
 
@@ -99,7 +99,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_PendingActive_HidesDirtyStatus()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.PendingCount, 1)
              .Add(x => x.PendingMessage, "Saving...")
              .Add(x => x.IsDirty, true));
@@ -111,7 +111,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_NoPending_ShowsDirtyWhenSet()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.PendingCount, 0)
              .Add(x => x.IsDirty, true));
 
@@ -123,7 +123,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_SaveMessage_ShowsSaveMessageSpan()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.SaveMessage, "Saved!"));
 
         cut.Find("[data-testid='document-save-message']").TextContent.Trim()
@@ -133,7 +133,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_NoSaveMessage_DoesNotShowSaveMessageSpan()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.SaveMessage, (string?)null));
 
         cut.FindAll("[data-testid='document-save-message']").Should().BeEmpty();
@@ -144,7 +144,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_RendersWordAndPageCount()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.WordCount, 42)
              .Add(x => x.PageCount, 3));
 
@@ -157,7 +157,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_ZoomLabel_IsDisplayed()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.ZoomLabel, "75%"));
 
         cut.Find("[data-testid='document-status-zoom']").TextContent
@@ -169,7 +169,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_RuntimeMessage_ShowsMessageSpan()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.RuntimeMessage, "Editor recovered."));
 
         cut.Find("[data-testid='document-runtime-message']").TextContent.Trim()
@@ -179,7 +179,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_NoRuntimeMessage_DoesNotShowMessageSpan()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.RuntimeMessage, (string?)null));
 
         cut.FindAll("[data-testid='document-runtime-message']").Should().BeEmpty();
@@ -188,7 +188,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_RuntimeMessage_RecoveredHasRecoveredClass()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.RuntimeMessage, "Recovered!")
              .Add(x => x.RuntimeFailed, false));
 
@@ -199,7 +199,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_RuntimeMessage_FailedHasFailedClass()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.RuntimeMessage, "Recovery failed!")
              .Add(x => x.RuntimeFailed, true));
 
@@ -210,7 +210,7 @@ public class TmDocumentEditorStatusBarTests : LocalizationTestBase
     [Fact]
     public void StatusBar_RuntimeMessage_HasAlertRole()
     {
-        var cut = RenderComponent<TmDocumentEditorStatusBar>(p =>
+        var cut = Render<TmDocumentEditorStatusBar>(p =>
             p.Add(x => x.RuntimeMessage, "Alert!"));
 
         cut.Find("[data-testid='document-runtime-message']")

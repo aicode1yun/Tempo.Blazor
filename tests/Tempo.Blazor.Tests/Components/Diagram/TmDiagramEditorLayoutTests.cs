@@ -26,7 +26,7 @@ public class TmDiagramEditorLayoutTests : LocalizationTestBase
         doc.Nodes.Add(new DiagramNode { StencilId = "general.rectangle", X = 300, Y = 100, W = 120, H = 60 });
         doc.Edges.Add(new DiagramEdge { SourceNodeId = doc.Nodes[0].Id, TargetNodeId = doc.Nodes[1].Id });
 
-        var cut = RenderComponent<TmDiagramEditor>(p => p
+        var cut = Render<TmDiagramEditor>(p => p
             .Add(e => e.Document, doc)
             .Add(e => e.ReadOnly, false));
 
@@ -57,7 +57,7 @@ public class TmDiagramEditorLayoutTests : LocalizationTestBase
         doc.Nodes.Add(new DiagramNode { StencilId = "general.rectangle", X = 100, Y = 100, W = 120, H = 60 });
         doc.Nodes.Add(new DiagramNode { StencilId = "general.rectangle", X = 300, Y = 100, W = 120, H = 60 });
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -75,7 +75,7 @@ public class TmDiagramEditorLayoutTests : LocalizationTestBase
         doc.Nodes.Add(new DiagramNode { StencilId = "general.rectangle", X = 100, Y = 100, W = 120, H = 60 });
         doc.Nodes.Add(new DiagramNode { StencilId = "general.rectangle", X = 300, Y = 100, W = 120, H = 60 });
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -93,7 +93,7 @@ public class TmDiagramEditorLayoutTests : LocalizationTestBase
         doc.Nodes.Add(new DiagramNode { StencilId = "general.rectangle", X = 100, Y = 100, W = 120, H = 60 });
         doc.Nodes.Add(new DiagramNode { StencilId = "general.rectangle", X = 300, Y = 100, W = 120, H = 60 });
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -111,7 +111,7 @@ public class TmDiagramEditorLayoutTests : LocalizationTestBase
         doc.Nodes.Add(new DiagramNode { StencilId = "general.rectangle", X = 100, Y = 100, W = 120, H = 60 });
         doc.Nodes.Add(new DiagramNode { StencilId = "general.rectangle", X = 300, Y = 100, W = 120, H = 60 });
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -129,7 +129,7 @@ public class TmDiagramEditorLayoutTests : LocalizationTestBase
         doc.Nodes.Add(new DiagramNode { StencilId = "general.rectangle", X = 100, Y = 100, W = 120, H = 60 });
         doc.Nodes.Add(new DiagramNode { StencilId = "general.rectangle", X = 300, Y = 100, W = 120, H = 60 });
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 

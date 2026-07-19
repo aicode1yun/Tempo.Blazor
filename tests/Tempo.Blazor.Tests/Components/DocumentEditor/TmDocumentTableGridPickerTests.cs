@@ -13,7 +13,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void Render_ExposesGridRole()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
 
         cut.Find("[data-testid='document-table-grid-picker']")
            .GetAttribute("role").Should().Be("grid");
@@ -22,7 +22,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void Render_ExposesAriaLabel()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
 
         cut.Find("[data-testid='document-table-grid-picker']")
            .GetAttribute("aria-label").Should().NotBeNullOrEmpty();
@@ -31,7 +31,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void Render_Renders10x10Cells()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
 
         cut.FindAll("[role='gridcell']").Should().HaveCount(100);
     }
@@ -39,7 +39,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void Render_CellsHaveTestIds()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
 
         cut.Find("[data-testid='document-table-grid-cell-0-0']").Should().NotBeNull();
         cut.Find("[data-testid='document-table-grid-cell-9-9']").Should().NotBeNull();
@@ -48,7 +48,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void Render_ShowsDimensionsDisplay()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
 
         var dims = cut.Find(".tm-document-table-grid-picker__dims");
         dims.Should().NotBeNull();
@@ -58,7 +58,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void Render_InitialDimsShowTwoByTwo()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
 
         cut.Find(".tm-document-table-grid-picker__dims").TextContent
            .Should().Contain("2 x 2");
@@ -69,7 +69,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void HoverCell_HighlightsCorrectRegion()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
 
         cut.Find("[data-testid='document-table-grid-cell-2-3']")
            .TriggerEvent("onmouseover", new MouseEventArgs());
@@ -84,7 +84,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void HoverCell_UpdatesDimensionsLabel()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
 
         cut.Find("[data-testid='document-table-grid-cell-2-4']")
            .TriggerEvent("onmouseover", new MouseEventArgs());
@@ -96,7 +96,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void MouseLeave_ResetsHighlightToTwoByTwo()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
 
         cut.Find("[data-testid='document-table-grid-cell-4-4']")
            .TriggerEvent("onmouseover", new MouseEventArgs());
@@ -114,7 +114,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     public void ClickCell_InvokesOnInsertWithCorrectDimensions()
     {
         (int Rows, int Columns) result = default;
-        var cut = RenderComponent<TmDocumentTableGridPicker>(parameters => parameters
+        var cut = Render<TmDocumentTableGridPicker>(parameters => parameters
             .Add(p => p.OnInsert, (Action<(int Rows, int Columns)>)(dims => result = dims)));
 
         cut.Find("[data-testid='document-table-grid-cell-2-3']").Click();
@@ -127,7 +127,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     public void ClickCell_FirstCellInserts1x1()
     {
         (int Rows, int Columns) result = default;
-        var cut = RenderComponent<TmDocumentTableGridPicker>(parameters => parameters
+        var cut = Render<TmDocumentTableGridPicker>(parameters => parameters
             .Add(p => p.OnInsert, (Action<(int Rows, int Columns)>)(dims => result = dims)));
 
         cut.Find("[data-testid='document-table-grid-cell-0-0']").Click();
@@ -141,7 +141,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void ArrowRight_MovesKbFocus()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
 
         cut.Find("[data-testid='document-table-grid-picker']")
            .TriggerEvent("onkeydown", new KeyboardEventArgs { Key = "ArrowRight" });
@@ -153,7 +153,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void Focus_ResetsKeyboardFocusAfterPointerHover()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
 
         cut.Find("[data-testid='document-table-grid-cell-4-5']")
            .TriggerEvent("onmouseover", new MouseEventArgs());
@@ -171,7 +171,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void ArrowDown_MovesKbFocusDown()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
 
         cut.Find("[data-testid='document-table-grid-picker']")
            .TriggerEvent("onkeydown", new KeyboardEventArgs { Key = "ArrowDown" });
@@ -183,7 +183,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void ArrowLeft_DoesNotGoBelow0()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
 
         cut.Find("[data-testid='document-table-grid-picker']")
            .TriggerEvent("onkeydown", new KeyboardEventArgs { Key = "ArrowLeft" });
@@ -197,7 +197,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void ArrowUp_DoesNotGoBelow0()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
 
         cut.Find("[data-testid='document-table-grid-picker']")
            .TriggerEvent("onkeydown", new KeyboardEventArgs { Key = "ArrowUp" });
@@ -212,7 +212,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     public void EnterKey_InvokesOnInsertWithKbPosition()
     {
         (int Rows, int Columns) result = default;
-        var cut = RenderComponent<TmDocumentTableGridPicker>(parameters => parameters
+        var cut = Render<TmDocumentTableGridPicker>(parameters => parameters
             .Add(p => p.OnInsert, (Action<(int Rows, int Columns)>)(dims => result = dims)));
 
         var grid = cut.Find("[data-testid='document-table-grid-picker']");
@@ -228,7 +228,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     public void SpaceKey_InvokesOnInsert()
     {
         (int Rows, int Columns) result = default;
-        var cut = RenderComponent<TmDocumentTableGridPicker>(parameters => parameters
+        var cut = Render<TmDocumentTableGridPicker>(parameters => parameters
             .Add(p => p.OnInsert, (Action<(int Rows, int Columns)>)(dims => result = dims)));
 
         cut.Find("[data-testid='document-table-grid-picker']")
@@ -241,7 +241,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     public void EscapeKey_InvokesOnClose()
     {
         var closed = false;
-        var cut = RenderComponent<TmDocumentTableGridPicker>(parameters => parameters
+        var cut = Render<TmDocumentTableGridPicker>(parameters => parameters
             .Add(p => p.OnClose, (Action)(() => closed = true)));
 
         cut.Find("[data-testid='document-table-grid-picker']")
@@ -255,7 +255,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void ArrowRight_DoesNotExceedMaxColumns()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
         var grid = cut.Find("[data-testid='document-table-grid-picker']");
 
         for (int i = 0; i < 20; i++)
@@ -268,7 +268,7 @@ public class TmDocumentTableGridPickerTests : LocalizationTestBase
     [Fact]
     public void ArrowDown_DoesNotExceedMaxRows()
     {
-        var cut = RenderComponent<TmDocumentTableGridPicker>();
+        var cut = Render<TmDocumentTableGridPicker>();
         var grid = cut.Find("[data-testid='document-table-grid-picker']");
 
         for (int i = 0; i < 20; i++)

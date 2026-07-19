@@ -64,7 +64,7 @@ public class TmNotionImageBlockPasteTests : LocalizationTestBase
         var provider = ProviderThatUploads();
         var ctx = BuildContext(fileProvider: provider);
 
-        var cut = RenderComponent<TmNotionImageBlock>(p => p
+        var cut = Render<TmNotionImageBlock>(p => p
             .Add(x => x.Content,  EmptyImageContent())
             .Add(x => x.ReadOnly, false)
             .AddCascadingValue(ctx));
@@ -91,7 +91,7 @@ public class TmNotionImageBlockPasteTests : LocalizationTestBase
 
         (string? FileId, string? Url) confirmed = default;
 
-        var cut = RenderComponent<TmNotionImageBlock>(p => p
+        var cut = Render<TmNotionImageBlock>(p => p
             .Add(x => x.Content,  EmptyImageContent())
             .Add(x => x.ReadOnly, false)
             .Add(x => x.OnMediaSet,
@@ -114,7 +114,7 @@ public class TmNotionImageBlockPasteTests : LocalizationTestBase
         var provider = ProviderThatUploads();
         var ctx = BuildContext(fileProvider: provider);
 
-        var cut = RenderComponent<TmNotionImageBlock>(p => p
+        var cut = Render<TmNotionImageBlock>(p => p
             .Add(x => x.Content,  EmptyImageContent())
             .Add(x => x.ReadOnly, true)
             .AddCascadingValue(ctx));

@@ -10,7 +10,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.EmailTemplates.Tests.Components;
 
-public class ListEditorTests : TestContext
+public class ListEditorTests : BunitContext
 {
     public ListEditorTests()
     {
@@ -39,7 +39,7 @@ public class ListEditorTests : TestContext
         social.Elements.Add(new EmailSocialElement { Name = "facebook", Href = "#" });
         var doc = DocWith(social);
 
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p
+        var cut = Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.SelectedId, social.Id));
 
         cut.FindAll("[data-tm-list-item]").Should().ContainSingle();
@@ -51,7 +51,7 @@ public class ListEditorTests : TestContext
         var navbar = new EmailNavbarBlock();
         var doc = DocWith(navbar);
 
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p
+        var cut = Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.SelectedId, navbar.Id)
             .Add(c => c.OnChanged, () => { }));
 
@@ -68,7 +68,7 @@ public class ListEditorTests : TestContext
         carousel.Images.Add(new EmailCarouselImage { Src = "b" });
         var doc = DocWith(carousel);
 
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p
+        var cut = Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.SelectedId, carousel.Id)
             .Add(c => c.OnChanged, () => { }));
 
@@ -84,7 +84,7 @@ public class ListEditorTests : TestContext
         accordion.Items.Add(new EmailAccordionItem { Title = "old" });
         var doc = DocWith(accordion);
 
-        var cut = RenderComponent<TmEmailPropertyPanel>(p => p
+        var cut = Render<TmEmailPropertyPanel>(p => p
             .Add(c => c.Document, doc).Add(c => c.SelectedId, accordion.Id)
             .Add(c => c.OnChanged, () => { }));
 

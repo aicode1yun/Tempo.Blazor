@@ -12,7 +12,7 @@ public class TmFlatColorPickerTests : LocalizationTestBase
     [Fact]
     public void TmFlatColorPicker_Renders_Gradient_And_Palette()
     {
-        var cut = RenderComponent<TmFlatColorPicker>(p => p
+        var cut = Render<TmFlatColorPicker>(p => p
             .Add(c => c.Value, "#FF0000"));
 
         cut.Find(".tm-color-gradient").Should().NotBeNull();
@@ -22,7 +22,7 @@ public class TmFlatColorPickerTests : LocalizationTestBase
     [Fact]
     public void TmFlatColorPicker_HidePalette_Hides_Palette()
     {
-        var cut = RenderComponent<TmFlatColorPicker>(p => p
+        var cut = Render<TmFlatColorPicker>(p => p
             .Add(c => c.Value, "#FF0000")
             .Add(c => c.ShowPalette, false));
 
@@ -32,7 +32,7 @@ public class TmFlatColorPickerTests : LocalizationTestBase
     [Fact]
     public void TmFlatColorPicker_HidePreview_Hides_Preview()
     {
-        var cut = RenderComponent<TmFlatColorPicker>(p => p
+        var cut = Render<TmFlatColorPicker>(p => p
             .Add(c => c.Value, "#FF0000")
             .Add(c => c.ShowPreview, false));
 
@@ -43,7 +43,7 @@ public class TmFlatColorPickerTests : LocalizationTestBase
     public void TmFlatColorPicker_ValueChanged_Fires_When_Gradient_Changes()
     {
         string? changed = null;
-        var cut = RenderComponent<TmFlatColorPicker>(p => p
+        var cut = Render<TmFlatColorPicker>(p => p
             .Add(c => c.Value, "#000000")
             .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => changed = v)));
 
@@ -58,7 +58,7 @@ public class TmFlatColorPickerTests : LocalizationTestBase
     public void TmFlatColorPicker_Palette_Click_Fires_ValueChanged()
     {
         string? changed = null;
-        var cut = RenderComponent<TmFlatColorPicker>(p => p
+        var cut = Render<TmFlatColorPicker>(p => p
             .Add(c => c.Value, "#000000")
             .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => changed = v)));
 
@@ -71,7 +71,7 @@ public class TmFlatColorPickerTests : LocalizationTestBase
     [Fact]
     public void TmFlatColorPicker_Format_Rgba_Shows_Rgba()
     {
-        var cut = RenderComponent<TmFlatColorPicker>(p => p
+        var cut = Render<TmFlatColorPicker>(p => p
             .Add(c => c.Value, "rgba(10, 20, 30, 0.5)")
             .Add(c => c.Format, ColorFormat.Rgba));
 

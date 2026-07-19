@@ -44,7 +44,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     [Fact]
     public void TmMultiColumnComboBox_Renders_Trigger()
     {
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -56,7 +56,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     [Fact]
     public void TmMultiColumnComboBox_Placeholder_Shown_When_No_Value()
     {
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -68,7 +68,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     [Fact]
     public void TmMultiColumnComboBox_Click_Opens_Dropdown()
     {
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -82,7 +82,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     [Fact]
     public void TmMultiColumnComboBox_Dropdown_Shows_Grid_With_Columns()
     {
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -100,7 +100,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     [Fact]
     public void TmMultiColumnComboBox_Dropdown_Shows_Data_Rows()
     {
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -117,7 +117,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     {
         int? selectedValue = null;
 
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -134,7 +134,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     [Fact]
     public void TmMultiColumnComboBox_Selected_Row_Has_Selected_Class()
     {
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -150,7 +150,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     [Fact]
     public void TmMultiColumnComboBox_Filter_Reduces_Rows()
     {
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -171,7 +171,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     {
         int? selectedValue = 999;
 
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -187,7 +187,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     [Fact]
     public void TmMultiColumnComboBox_Disabled_Hides_Interactions()
     {
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -200,7 +200,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     [Fact]
     public void TmMultiColumnComboBox_Custom_Class_Applied()
     {
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -222,7 +222,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     [Fact]
     public void TmMultiColumnComboBox_Filter_Without_Diacritics_Matches_Accented_Rows()
     {
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetCzechCities())
             .Add(c => c.ValueField, x => x.Id)
             .Add(c => c.TextField, x => x.Name)
@@ -239,7 +239,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     [Fact]
     public void TmMultiColumnComboBox_Filter_Matches_Accent_Insensitively_Across_All_Columns()
     {
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetCzechCities())
             .Add(c => c.ValueField, x => x.Id)
             .Add(c => c.TextField, x => x.Name)
@@ -256,7 +256,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     [Fact]
     public void TmMultiColumnComboBox_AccentInsensitiveFilter_Disabled_Requires_Exact_Accents()
     {
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetCzechCities())
             .Add(c => c.ValueField, x => x.Id)
             .Add(c => c.TextField, x => x.Name)
@@ -273,7 +273,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     [Fact]
     public void TmMultiColumnComboBox_NoResults_Shown_When_Filter_Matches_Nothing()
     {
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -294,7 +294,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     {
         IReadOnlyList<int> selected = new List<int>();
 
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -309,7 +309,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
         selected.Should().BeEquivalentTo(new[] { 1 });
 
         // Simulate two-way binding (@bind-SelectedValues) before the second toggle.
-        cut.SetParametersAndRender(p => p.Add(c => c.SelectedValues, selected));
+        cut.Render(p => p.Add(c => c.SelectedValues, selected));
         cut.FindAll(".tm-multi-column-combo-box__tr")[1].Click();
 
         selected.Should().BeEquivalentTo(new[] { 1, 2 });
@@ -320,7 +320,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     {
         IReadOnlyList<int> selected = new List<int> { 1 };
 
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -338,7 +338,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     [Fact]
     public void TmMultiColumnComboBox_MultiSelect_Shows_Chips_For_Selected()
     {
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -354,7 +354,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     {
         int? value = null;
 
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)
@@ -373,7 +373,7 @@ public class TmMultiColumnComboBoxTests : LocalizationTestBase
     [Fact]
     public void TmMultiColumnComboBox_Recent_RendersItems_OnOpen()
     {
-        var cut = RenderComponent<TmMultiColumnComboBox<Product, int>>(p => p
+        var cut = Render<TmMultiColumnComboBox<Product, int>>(p => p
             .Add(c => c.Data, GetProducts())
             .Add(c => c.ValueField, p => p.Id)
             .Add(c => c.TextField, p => p.Name)

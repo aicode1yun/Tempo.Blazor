@@ -9,7 +9,7 @@ public sealed class ReportServerShellTests : ReportServerWebTestBase
     public void Shell_RendersNavigationUserAndTenantSwitcher()
     {
         var session = SignIn();
-        var cut = RenderComponent<ReportServerShell>(parameters => parameters
+        var cut = Render<ReportServerShell>(parameters => parameters
             .Add(component => component.Title, "Reports")
             .Add(component => component.ActiveSection, "reports")
             .AddChildContent("<div data-testid='shell-body'>Body</div>"));

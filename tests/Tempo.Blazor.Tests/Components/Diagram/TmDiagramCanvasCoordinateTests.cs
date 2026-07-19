@@ -33,7 +33,7 @@ public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
         var doc = new DiagramDocument { Width = 800, Height = 600 };
         doc.ActivePage!.Scale = 1.0;
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
@@ -56,7 +56,7 @@ public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
         var doc = new DiagramDocument { Width = 800, Height = 600 };
         doc.ActivePage!.Scale = 0.75;
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
@@ -86,7 +86,7 @@ public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
         };
         doc.Nodes.Add(node);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
@@ -115,7 +115,7 @@ public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
         };
         doc.Nodes.Add(node);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
@@ -138,7 +138,7 @@ public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
         var doc = new DiagramDocument { Width = 800, Height = 600 };
         doc.ActivePage!.Scale = scale;
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 

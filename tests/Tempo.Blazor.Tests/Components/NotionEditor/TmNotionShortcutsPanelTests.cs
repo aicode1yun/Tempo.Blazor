@@ -56,7 +56,7 @@ public sealed class TmNotionShortcutsPanelTests : LocalizationTestBase
             }
         };
 
-        var cut = RenderComponent<TmNotionShortcutsPanel>(parameters => parameters
+        var cut = Render<TmNotionShortcutsPanel>(parameters => parameters
             .Add(p => p.Visible, true)
             .Add(p => p.Groups, groups));
 
@@ -72,7 +72,7 @@ public sealed class TmNotionShortcutsPanelTests : LocalizationTestBase
     [Fact]
     public void Panel_DoesNotRenderWhenHidden()
     {
-        var cut = RenderComponent<TmNotionShortcutsPanel>(parameters => parameters
+        var cut = Render<TmNotionShortcutsPanel>(parameters => parameters
             .Add(p => p.Visible, false));
 
         cut.Markup.Trim().Should().BeEmpty();
@@ -82,7 +82,7 @@ public sealed class TmNotionShortcutsPanelTests : LocalizationTestBase
     public async Task Panel_EscapeClosesThroughVisibleChanged()
     {
         var visible = true;
-        var cut = RenderComponent<TmNotionShortcutsPanel>(parameters => parameters
+        var cut = Render<TmNotionShortcutsPanel>(parameters => parameters
             .Add(p => p.Visible, visible)
             .Add(p => p.VisibleChanged, EventCallback.Factory.Create<bool>(this, value => visible = value)));
 

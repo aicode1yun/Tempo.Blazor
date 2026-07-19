@@ -12,49 +12,49 @@ public class TmTextInputTests : LocalizationTestBase
     [Fact]
     public void TmTextInput_Renders_Input_Element()
     {
-        var cut = RenderComponent<TmTextInput>();
+        var cut = Render<TmTextInput>();
         cut.Find("input").Should().NotBeNull();
     }
 
     [Fact]
     public void TmTextInput_Has_Base_CssClass()
     {
-        var cut = RenderComponent<TmTextInput>();
+        var cut = Render<TmTextInput>();
         cut.Find("input").ClassList.Should().Contain("tm-input");
     }
 
     [Fact]
     public void TmTextInput_Default_Type_Is_Text()
     {
-        var cut = RenderComponent<TmTextInput>();
+        var cut = Render<TmTextInput>();
         cut.Find("input").GetAttribute("type").Should().Be("text");
     }
 
     [Fact]
     public void TmTextInput_Custom_Type_Applied()
     {
-        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.Type, "email"));
+        var cut = Render<TmTextInput>(p => p.Add(c => c.Type, "email"));
         cut.Find("input").GetAttribute("type").Should().Be("email");
     }
 
     [Fact]
     public void TmTextInput_Label_Renders_Label_Element()
     {
-        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.Label, "Email"));
+        var cut = Render<TmTextInput>(p => p.Add(c => c.Label, "Email"));
         cut.Find("label").TextContent.Trim().Should().Be("Email");
     }
 
     [Fact]
     public void TmTextInput_No_Label_When_Null()
     {
-        var cut = RenderComponent<TmTextInput>();
+        var cut = Render<TmTextInput>();
         cut.FindAll("label").Should().BeEmpty();
     }
 
     [Fact]
     public void TmTextInput_Label_For_Matches_Input_Id()
     {
-        var cut = RenderComponent<TmTextInput>(p => p
+        var cut = Render<TmTextInput>(p => p
             .Add(c => c.Id, "my-input")
             .Add(c => c.Label, "Name"));
 
@@ -65,49 +65,49 @@ public class TmTextInputTests : LocalizationTestBase
     [Fact]
     public void TmTextInput_Placeholder_Applied()
     {
-        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.Placeholder, "Enter value"));
+        var cut = Render<TmTextInput>(p => p.Add(c => c.Placeholder, "Enter value"));
         cut.Find("input").GetAttribute("placeholder").Should().Be("Enter value");
     }
 
     [Fact]
     public void TmTextInput_Disabled_Sets_Disabled_Attribute()
     {
-        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.Disabled, true));
+        var cut = Render<TmTextInput>(p => p.Add(c => c.Disabled, true));
         cut.Find("input").HasAttribute("disabled").Should().BeTrue();
     }
 
     [Fact]
     public void TmTextInput_ReadOnly_Sets_Readonly_Attribute()
     {
-        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.ReadOnly, true));
+        var cut = Render<TmTextInput>(p => p.Add(c => c.ReadOnly, true));
         cut.Find("input").HasAttribute("readonly").Should().BeTrue();
     }
 
     [Fact]
     public void TmTextInput_Error_Adds_Error_CssClass()
     {
-        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.Error, "Required"));
+        var cut = Render<TmTextInput>(p => p.Add(c => c.Error, "Required"));
         cut.Find("input").ClassList.Should().Contain("tm-input-error");
     }
 
     [Fact]
     public void TmTextInput_Error_Shows_Error_Message()
     {
-        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.Error, "Required field"));
+        var cut = Render<TmTextInput>(p => p.Add(c => c.Error, "Required field"));
         cut.Find("[data-testid='error-message']").TextContent.Should().Contain("Required field");
     }
 
     [Fact]
     public void TmTextInput_HelpText_Shows_When_No_Error()
     {
-        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.HelpText, "Max 100 chars"));
+        var cut = Render<TmTextInput>(p => p.Add(c => c.HelpText, "Max 100 chars"));
         cut.Find("[data-testid='help-text']").TextContent.Should().Contain("Max 100 chars");
     }
 
     [Fact]
     public void TmTextInput_HelpText_Hidden_When_Error_Present()
     {
-        var cut = RenderComponent<TmTextInput>(p => p
+        var cut = Render<TmTextInput>(p => p
             .Add(c => c.Error, "Required")
             .Add(c => c.HelpText, "Max 100 chars"));
 
@@ -117,14 +117,14 @@ public class TmTextInputTests : LocalizationTestBase
     [Fact]
     public void TmTextInput_LeftIcon_Renders_TmIcon()
     {
-        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.LeftIcon, "search"));
+        var cut = Render<TmTextInput>(p => p.Add(c => c.LeftIcon, "search"));
         cut.FindAll(".tm-icon").Should().NotBeEmpty();
     }
 
     [Fact]
     public void TmTextInput_No_Icon_By_Default()
     {
-        var cut = RenderComponent<TmTextInput>();
+        var cut = Render<TmTextInput>();
         cut.FindAll(".tm-icon").Should().BeEmpty();
     }
 
@@ -132,7 +132,7 @@ public class TmTextInputTests : LocalizationTestBase
     public void TmTextInput_ValueChanged_Fires_On_Change()
     {
         string? captured = null;
-        var cut = RenderComponent<TmTextInput>(p => p
+        var cut = Render<TmTextInput>(p => p
             .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => captured = v)));
 
         cut.Find("input").Change("hello");
@@ -145,21 +145,21 @@ public class TmTextInputTests : LocalizationTestBase
     [Fact]
     public void TmTextInput_Required_SetsAriaRequired()
     {
-        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.Required, true));
+        var cut = Render<TmTextInput>(p => p.Add(c => c.Required, true));
         cut.Find("input").GetAttribute("aria-required").Should().Be("true");
     }
 
     [Fact]
     public void TmTextInput_NoValidationState_HasNoAriaInvalid()
     {
-        var cut = RenderComponent<TmTextInput>();
+        var cut = Render<TmTextInput>();
         cut.Find("input").HasAttribute("aria-invalid").Should().BeFalse();
     }
 
     [Fact]
     public void TmTextInput_Error_SetsAriaInvalidAndDescribedByErrorId()
     {
-        var cut = RenderComponent<TmTextInput>(p => p
+        var cut = Render<TmTextInput>(p => p
             .Add(c => c.Id, "email")
             .Add(c => c.Error, "Required"));
 
@@ -175,7 +175,7 @@ public class TmTextInputTests : LocalizationTestBase
     [Fact]
     public void TmTextInput_HelpTextOnly_DescribedByHelpId()
     {
-        var cut = RenderComponent<TmTextInput>(p => p
+        var cut = Render<TmTextInput>(p => p
             .Add(c => c.Id, "phone")
             .Add(c => c.HelpText, "Digits only"));
 
@@ -186,7 +186,7 @@ public class TmTextInputTests : LocalizationTestBase
     [Fact]
     public void TmTextInput_IsValidFalse_SetsAriaInvalid()
     {
-        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.IsValid, false));
+        var cut = Render<TmTextInput>(p => p.Add(c => c.IsValid, false));
         cut.Find("input").GetAttribute("aria-invalid").Should().Be("true");
     }
 
@@ -195,14 +195,14 @@ public class TmTextInputTests : LocalizationTestBase
     [Fact]
     public void TmTextInput_Required_SetsAriaRequiredOnInput()
     {
-        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.Required, true));
+        var cut = Render<TmTextInput>(p => p.Add(c => c.Required, true));
         cut.Find("input").GetAttribute("aria-required").Should().Be("true");
     }
 
     [Fact]
     public void TmTextInput_Required_AddsRequiredMarkerClassToLabel()
     {
-        var cut = RenderComponent<TmTextInput>(p => p
+        var cut = Render<TmTextInput>(p => p
             .Add(c => c.Label, "Name")
             .Add(c => c.Required, true));
         cut.Find("label").ClassList.Should().Contain("tm-input-label-required");
@@ -211,7 +211,7 @@ public class TmTextInputTests : LocalizationTestBase
     [Fact]
     public void TmTextInput_NotRequired_HasNoAriaRequiredAndNoMarker()
     {
-        var cut = RenderComponent<TmTextInput>(p => p.Add(c => c.Label, "Name"));
+        var cut = Render<TmTextInput>(p => p.Add(c => c.Label, "Name"));
         cut.Find("input").HasAttribute("aria-required").Should().BeFalse();
         cut.Find("label").ClassList.Should().NotContain("tm-input-label-required");
     }

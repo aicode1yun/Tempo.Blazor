@@ -125,7 +125,7 @@ public class TmDashboardTests : LocalizationTestBase
         SetupServices(provider, registry);
 
         // Act
-        var cut = RenderComponent<TmDashboard>();
+        var cut = Render<TmDashboard>();
 
         // Assert - Should show default name
         cut.Find(".tm-dashboard-title").TextContent.Should().Be("New Dashboard");
@@ -140,7 +140,7 @@ public class TmDashboardTests : LocalizationTestBase
         SetupServices(provider, registry);
 
         // Act - Render and enter edit mode
-        var cut = RenderComponent<TmDashboard>();
+        var cut = Render<TmDashboard>();
         cut.Find("button[title='Edit']").Click();
 
         // Assert - Should show edit mode badge and save/cancel buttons
@@ -161,7 +161,7 @@ public class TmDashboardTests : LocalizationTestBase
         SetupServices(provider, registry);
 
         // Act
-        var cut = RenderComponent<TmDashboard>();
+        var cut = Render<TmDashboard>();
 
         // Assert - Dashboard renders successfully with empty provider
         cut.FindAll(".tm-dashboard").Should().NotBeEmpty();
@@ -181,7 +181,7 @@ public class TmDashboardTests : LocalizationTestBase
         SetupServices(provider, registry);
 
         // Act
-        var cut = RenderComponent<TmDashboard>();
+        var cut = Render<TmDashboard>();
 
         // Assert - Toolbar should exist
         cut.FindAll(".tm-dashboard-toolbar").Count.Should().BeGreaterThan(0);
@@ -196,7 +196,7 @@ public class TmDashboardTests : LocalizationTestBase
         SetupServices(provider, registry);
 
         // Act - Enter edit mode
-        var cut = RenderComponent<TmDashboard>();
+        var cut = Render<TmDashboard>();
         cut.Find("button[title='Edit']").Click();
 
         // Assert - Should show cancel button in edit mode

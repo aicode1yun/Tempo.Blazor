@@ -1,3 +1,4 @@
+using Bunit.Rendering;
 using FluentValidation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -41,9 +42,9 @@ public class PersonFormValidator : AbstractValidator<PersonFormModel>
 
 #endregion
 
-public class PersonFormValidationTests : TestContext
+public class PersonFormValidationTests : BunitContext
 {
-    private IRenderedFragment RenderPersonForm(PersonFormModel model)
+    private IRenderedComponent<ContainerFragment> RenderPersonForm(PersonFormModel model)
     {
         Services.AddSingleton<IValidator<PersonFormModel>>(new PersonFormValidator());
 

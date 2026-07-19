@@ -25,7 +25,7 @@ public class TmKeyboardShortcutsHelpTests : LocalizationTestBase
     [Fact]
     public void TmKeyboardShortcutsHelp_Hidden_When_Not_Visible()
     {
-        var cut = RenderComponent<TmKeyboardShortcutsHelp>(p => p
+        var cut = Render<TmKeyboardShortcutsHelp>(p => p
             .Add(c => c.Categories, TestCategories())
             .Add(c => c.IsVisible, false));
 
@@ -35,7 +35,7 @@ public class TmKeyboardShortcutsHelpTests : LocalizationTestBase
     [Fact]
     public void TmKeyboardShortcutsHelp_Shows_When_Visible()
     {
-        var cut = RenderComponent<TmKeyboardShortcutsHelp>(p => p
+        var cut = Render<TmKeyboardShortcutsHelp>(p => p
             .Add(c => c.Categories, TestCategories())
             .Add(c => c.IsVisible, true));
 
@@ -46,7 +46,7 @@ public class TmKeyboardShortcutsHelpTests : LocalizationTestBase
     [Fact]
     public void TmKeyboardShortcutsHelp_Renders_Categories()
     {
-        var cut = RenderComponent<TmKeyboardShortcutsHelp>(p => p
+        var cut = Render<TmKeyboardShortcutsHelp>(p => p
             .Add(c => c.Categories, TestCategories())
             .Add(c => c.IsVisible, true));
 
@@ -58,7 +58,7 @@ public class TmKeyboardShortcutsHelpTests : LocalizationTestBase
     [Fact]
     public void TmKeyboardShortcutsHelp_Renders_Shortcuts()
     {
-        var cut = RenderComponent<TmKeyboardShortcutsHelp>(p => p
+        var cut = Render<TmKeyboardShortcutsHelp>(p => p
             .Add(c => c.Categories, TestCategories())
             .Add(c => c.IsVisible, true));
 
@@ -68,7 +68,7 @@ public class TmKeyboardShortcutsHelpTests : LocalizationTestBase
     [Fact]
     public void TmKeyboardShortcutsHelp_Shows_Keys_In_Kbd()
     {
-        var cut = RenderComponent<TmKeyboardShortcutsHelp>(p => p
+        var cut = Render<TmKeyboardShortcutsHelp>(p => p
             .Add(c => c.Categories, TestCategories())
             .Add(c => c.IsVisible, true));
 
@@ -79,7 +79,7 @@ public class TmKeyboardShortcutsHelpTests : LocalizationTestBase
     [Fact]
     public void TmKeyboardShortcutsHelp_Shows_Description()
     {
-        var cut = RenderComponent<TmKeyboardShortcutsHelp>(p => p
+        var cut = Render<TmKeyboardShortcutsHelp>(p => p
             .Add(c => c.Categories, TestCategories())
             .Add(c => c.IsVisible, true));
 
@@ -90,7 +90,7 @@ public class TmKeyboardShortcutsHelpTests : LocalizationTestBase
     public void TmKeyboardShortcutsHelp_Overlay_Click_Calls_OnClose()
     {
         bool closed = false;
-        var cut = RenderComponent<TmKeyboardShortcutsHelp>(p => p
+        var cut = Render<TmKeyboardShortcutsHelp>(p => p
             .Add(c => c.Categories, TestCategories())
             .Add(c => c.IsVisible, true)
             .Add(c => c.OnClose, EventCallback.Factory.Create(this, () => closed = true)));
@@ -104,7 +104,7 @@ public class TmKeyboardShortcutsHelpTests : LocalizationTestBase
     public void TmKeyboardShortcutsHelp_Escape_Calls_OnClose()
     {
         bool closed = false;
-        var cut = RenderComponent<TmKeyboardShortcutsHelp>(p => p
+        var cut = Render<TmKeyboardShortcutsHelp>(p => p
             .Add(c => c.Categories, TestCategories())
             .Add(c => c.IsVisible, true)
             .Add(c => c.OnClose, EventCallback.Factory.Create(this, () => closed = true)));
@@ -117,7 +117,7 @@ public class TmKeyboardShortcutsHelpTests : LocalizationTestBase
     [Fact]
     public void TmKeyboardShortcutsHelp_Custom_Title()
     {
-        var cut = RenderComponent<TmKeyboardShortcutsHelp>(p => p
+        var cut = Render<TmKeyboardShortcutsHelp>(p => p
             .Add(c => c.Categories, TestCategories())
             .Add(c => c.IsVisible, true)
             .Add(c => c.Title, "Shortcuts"));
@@ -128,7 +128,7 @@ public class TmKeyboardShortcutsHelpTests : LocalizationTestBase
     [Fact]
     public void TmKeyboardShortcutsHelp_Has_Dialog_Role()
     {
-        var cut = RenderComponent<TmKeyboardShortcutsHelp>(p => p
+        var cut = Render<TmKeyboardShortcutsHelp>(p => p
             .Add(c => c.Categories, TestCategories())
             .Add(c => c.IsVisible, true));
 

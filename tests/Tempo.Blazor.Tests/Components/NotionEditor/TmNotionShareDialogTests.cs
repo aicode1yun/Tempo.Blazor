@@ -1,3 +1,4 @@
+using Bunit.Rendering;
 using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -152,7 +153,7 @@ public sealed class TmNotionShareDialogTests : LocalizationTestBase
         });
     }
 
-    private IRenderedFragment RenderDialog(FakePublicShareProvider provider)
+    private IRenderedComponent<ContainerFragment> RenderDialog(FakePublicShareProvider provider)
         => Render(builder =>
         {
             builder.OpenComponent<TmNotionShareDialog>(0);

@@ -15,14 +15,14 @@ public class TmPivotTableXmlaTests : LocalizationTestBase
     [Fact]
     public void DataProviderType_DefaultsToClient()
     {
-        var cut = RenderComponent<TmPivotTable<object>>();
+        var cut = Render<TmPivotTable<object>>();
         cut.Instance.DataProviderType.Should().Be(PivotDataProviderType.Client);
     }
 
     [Fact]
     public void DataProviderType_CanBeSetToXmla()
     {
-        var cut = RenderComponent<TmPivotTable<object>>(parameters => parameters
+        var cut = Render<TmPivotTable<object>>(parameters => parameters
             .Add(p => p.DataProviderType, PivotDataProviderType.Xmla));
         cut.Instance.DataProviderType.Should().Be(PivotDataProviderType.Xmla);
     }
@@ -48,7 +48,7 @@ public class TmPivotTableXmlaTests : LocalizationTestBase
                 LeafColumnCount = 0
             }));
 
-        var cut = RenderComponent<TmPivotTable<object>>(parameters => parameters
+        var cut = Render<TmPivotTable<object>>(parameters => parameters
             .Add(p => p.DataProviderType, PivotDataProviderType.Xmla)
             .Add(p => p.XmlaDataProvider, xmla));
 
@@ -78,7 +78,7 @@ public class TmPivotTableXmlaTests : LocalizationTestBase
                 LeafColumnCount = 0
             }));
 
-        var cut = RenderComponent<TmPivotTable<object>>(parameters => parameters
+        var cut = Render<TmPivotTable<object>>(parameters => parameters
             .Add(p => p.DataProviderType, PivotDataProviderType.Xmla)
             .Add(p => p.XmlaDataProvider, xmla)
             .Add(p => p.RowFieldKeys, ["Dim1"])
@@ -106,7 +106,7 @@ public class TmPivotTableXmlaTests : LocalizationTestBase
                 LeafColumnCount = 0
             }));
 
-        var cut = RenderComponent<TmPivotTable<object>>(parameters => parameters
+        var cut = Render<TmPivotTable<object>>(parameters => parameters
             .Add(p => p.DataProviderType, PivotDataProviderType.Xmla)
             .Add(p => p.XmlaDataProvider, xmla)
             .Add(p => p.RowFieldKeys, ["Dim1"])

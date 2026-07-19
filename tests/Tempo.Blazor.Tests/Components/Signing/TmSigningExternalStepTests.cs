@@ -12,7 +12,7 @@ public class TmSigningExternalStepTests : LocalizationTestBase
     [Fact]
     public void Verification_Loading_RendersLoadingState()
     {
-        var cut = RenderComponent<TmSigningExternalStep>(parameters => parameters
+        var cut = Render<TmSigningExternalStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "ID check", Type = SigningFieldType.Verification })
             .Add(p => p.IsLoading, true));
 
@@ -22,7 +22,7 @@ public class TmSigningExternalStepTests : LocalizationTestBase
     [Fact]
     public void Verification_Error_ShowsValidation()
     {
-        var cut = RenderComponent<TmSigningExternalStep>(parameters => parameters
+        var cut = Render<TmSigningExternalStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "ID check", Type = SigningFieldType.Verification })
             .Add(p => p.Error, "Provider failed"));
 
@@ -32,7 +32,7 @@ public class TmSigningExternalStepTests : LocalizationTestBase
     [Fact]
     public void Verification_ExternalUrl_RendersLink()
     {
-        var cut = RenderComponent<TmSigningExternalStep>(parameters => parameters
+        var cut = Render<TmSigningExternalStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "ID check", Type = SigningFieldType.Verification })
             .Add(p => p.ExternalUrl, "https://example.test/verify"));
 
@@ -42,7 +42,7 @@ public class TmSigningExternalStepTests : LocalizationTestBase
     [Fact]
     public void Kba_WithoutQuestions_RendersStartButton()
     {
-        var cut = RenderComponent<TmSigningExternalStep>(parameters => parameters
+        var cut = Render<TmSigningExternalStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "KBA", Type = SigningFieldType.Kba }));
 
         cut.Find(".tm-signing-external-step__start-button").TextContent.Should().Contain("Start KBA");
@@ -51,7 +51,7 @@ public class TmSigningExternalStepTests : LocalizationTestBase
     [Fact]
     public void Kba_WithQuestions_RendersQuestionInputs()
     {
-        var cut = RenderComponent<TmSigningExternalStep>(parameters => parameters
+        var cut = Render<TmSigningExternalStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "KBA", Type = SigningFieldType.Kba })
             .Add(p => p.Questions, ["What city?"]));
 
@@ -69,7 +69,7 @@ public class TmSigningExternalStepTests : LocalizationTestBase
             Type = SigningFieldType.Payment,
             Preferences = new SigningFieldPreferences { Currency = "EUR", Price = 19.5m }
         };
-        var cut = RenderComponent<TmSigningExternalStep>(parameters => parameters
+        var cut = Render<TmSigningExternalStep>(parameters => parameters
             .Add(p => p.Field, field)
             .Add(p => p.OnCheckout, EventCallback.Factory.Create<SigningField>(this, value => checkedOut = value)));
 

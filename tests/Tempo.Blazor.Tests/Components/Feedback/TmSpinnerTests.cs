@@ -16,7 +16,7 @@ public class TmSpinnerTests : LocalizationTestBase
     [Fact]
     public void TmSpinner_Renders_Svg_Element()
     {
-        var cut = RenderComponent<TmSpinner>();
+        var cut = Render<TmSpinner>();
 
         cut.Find("svg").Should().NotBeNull();
     }
@@ -24,7 +24,7 @@ public class TmSpinnerTests : LocalizationTestBase
     [Fact]
     public void TmSpinner_Has_Base_CssClass()
     {
-        var cut = RenderComponent<TmSpinner>();
+        var cut = Render<TmSpinner>();
 
         cut.Find("svg").ClassList.Should().Contain("tm-spinner");
     }
@@ -32,7 +32,7 @@ public class TmSpinnerTests : LocalizationTestBase
     [Fact]
     public void TmSpinner_Is_AriaHidden()
     {
-        var cut = RenderComponent<TmSpinner>();
+        var cut = Render<TmSpinner>();
 
         cut.Find("svg").GetAttribute("aria-hidden").Should().Be("true");
     }
@@ -40,7 +40,7 @@ public class TmSpinnerTests : LocalizationTestBase
     [Fact]
     public void TmSpinner_Has_Status_Role()
     {
-        var cut = RenderComponent<TmSpinner>();
+        var cut = Render<TmSpinner>();
 
         cut.Find("svg").GetAttribute("role").Should().Be("status");
     }
@@ -54,7 +54,7 @@ public class TmSpinnerTests : LocalizationTestBase
     [InlineData(SpinnerSize.Lg, "tm-spinner-lg")]
     public void TmSpinner_Applies_Size_CssClass(SpinnerSize size, string expectedClass)
     {
-        var cut = RenderComponent<TmSpinner>(p => p
+        var cut = Render<TmSpinner>(p => p
             .Add(c => c.Size, size));
 
         cut.Find("svg").ClassList.Should().Contain(expectedClass);
@@ -63,7 +63,7 @@ public class TmSpinnerTests : LocalizationTestBase
     [Fact]
     public void TmSpinner_Default_Size_Is_Sm()
     {
-        var cut = RenderComponent<TmSpinner>();
+        var cut = Render<TmSpinner>();
 
         cut.Find("svg").ClassList.Should().Contain("tm-spinner-sm");
     }
@@ -76,7 +76,7 @@ public class TmSpinnerTests : LocalizationTestBase
     [InlineData(SpinnerColor.White,   "tm-spinner-white")]
     public void TmSpinner_Applies_Color_CssClass(SpinnerColor color, string expectedClass)
     {
-        var cut = RenderComponent<TmSpinner>(p => p
+        var cut = Render<TmSpinner>(p => p
             .Add(c => c.Color, color));
 
         cut.Find("svg").ClassList.Should().Contain(expectedClass);
@@ -85,7 +85,7 @@ public class TmSpinnerTests : LocalizationTestBase
     [Fact]
     public void TmSpinner_Default_Color_Is_Current()
     {
-        var cut = RenderComponent<TmSpinner>();
+        var cut = Render<TmSpinner>();
 
         cut.Find("svg").ClassList.Should().Contain("tm-spinner-current");
     }

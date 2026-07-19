@@ -8,7 +8,7 @@ public class TmDiagramToolboxTests : DiagramTestBase
     [Fact]
     public void Renders_All_Categories_By_Default()
     {
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
 
         var categories = cut.FindAll(".tm-diagram-toolbox__category-header");
         categories.Should().NotBeEmpty();
@@ -17,7 +17,7 @@ public class TmDiagramToolboxTests : DiagramTestBase
     [Fact]
     public void Search_Filters_Stencils_In_Realtime()
     {
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
 
         // Type "Rectangle" into search input
         var searchInput = cut.Find(".tm-diagram-toolbox__search input");
@@ -32,7 +32,7 @@ public class TmDiagramToolboxTests : DiagramTestBase
     [Fact]
     public void Search_Shows_NoResults_When_No_Match()
     {
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
 
         var searchInput = cut.Find(".tm-diagram-toolbox__search input");
         searchInput.Input("xyznonexistent");
@@ -44,7 +44,7 @@ public class TmDiagramToolboxTests : DiagramTestBase
     [Fact]
     public void Search_Shows_Only_Categories_With_Matching_Stencils()
     {
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
 
         var searchInput = cut.Find(".tm-diagram-toolbox__search input");
         searchInput.Input("Cloud");
@@ -59,7 +59,7 @@ public class TmDiagramToolboxTests : DiagramTestBase
     [Fact]
     public void Clear_Search_Restores_All_Categories()
     {
-        var cut = RenderComponent<TmDiagramToolbox>();
+        var cut = Render<TmDiagramToolbox>();
 
         var initialCategories = cut.FindAll(".tm-diagram-toolbox__category-header").Count;
 

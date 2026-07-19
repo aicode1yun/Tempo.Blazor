@@ -31,7 +31,7 @@ public class TmNotionSpreadsheetEditModalTests : LocalizationTestBase
         var tcs = new TaskCompletionSource<SpreadsheetWorkbook?>();
         provider.GetSpreadsheetDocumentAsync(Arg.Any<Guid>()).Returns(tcs.Task);
 
-        var cut = RenderComponent<TmNotionSpreadsheetEditModal>(p => p
+        var cut = Render<TmNotionSpreadsheetEditModal>(p => p
             .Add(x => x.SpreadsheetDocumentId, Guid.NewGuid())
             .Add(x => x.Provider, provider));
 
@@ -48,7 +48,7 @@ public class TmNotionSpreadsheetEditModalTests : LocalizationTestBase
         provider.GetSpreadsheetDocumentAsync(Arg.Any<Guid>())
                 .Returns(Task.FromResult<SpreadsheetWorkbook?>(MakeWorkbook()));
 
-        var cut = RenderComponent<TmNotionSpreadsheetEditModal>(p => p
+        var cut = Render<TmNotionSpreadsheetEditModal>(p => p
             .Add(x => x.SpreadsheetDocumentId, Guid.NewGuid())
             .Add(x => x.Provider, provider));
 
@@ -72,7 +72,7 @@ public class TmNotionSpreadsheetEditModalTests : LocalizationTestBase
                 .Returns(ci => Task.FromResult(ci.Arg<SpreadsheetWorkbook>()));
 
         SpreadsheetWorkbook? saved = null;
-        var cut = RenderComponent<TmNotionSpreadsheetEditModal>(p => p
+        var cut = Render<TmNotionSpreadsheetEditModal>(p => p
             .Add(x => x.SpreadsheetDocumentId, documentId)
             .Add(x => x.Provider, provider)
             .Add(x => x.OnSaved, EventCallback.Factory.Create<SpreadsheetWorkbook>(this, wb => saved = wb)));
@@ -96,7 +96,7 @@ public class TmNotionSpreadsheetEditModalTests : LocalizationTestBase
                 .Returns(Task.FromResult<SpreadsheetWorkbook?>(MakeWorkbook()));
 
         var discardCalled = false;
-        var cut = RenderComponent<TmNotionSpreadsheetEditModal>(p => p
+        var cut = Render<TmNotionSpreadsheetEditModal>(p => p
             .Add(x => x.SpreadsheetDocumentId, Guid.NewGuid())
             .Add(x => x.Provider, provider)
             .Add(x => x.OnDiscarded, EventCallback.Factory.Create(this, () => discardCalled = true)));
@@ -115,7 +115,7 @@ public class TmNotionSpreadsheetEditModalTests : LocalizationTestBase
     [Fact]
     public async Task Render_NullProvider_RendersWithEmptyWorkbook()
     {
-        var cut = RenderComponent<TmNotionSpreadsheetEditModal>(p => p
+        var cut = Render<TmNotionSpreadsheetEditModal>(p => p
             .Add(x => x.SpreadsheetDocumentId, Guid.NewGuid())
             .Add(x => x.Provider, (ISpreadsheetDocumentProvider?)null));
 

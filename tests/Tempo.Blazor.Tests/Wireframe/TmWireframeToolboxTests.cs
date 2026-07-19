@@ -43,7 +43,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
 
         cut.Find(".tm-wd-toolbox").Should().NotBeNull();
     }
@@ -54,7 +54,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
 
         cut.Find("input[type=\"search\"]").Should().NotBeNull();
     }
@@ -70,7 +70,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
             MakeDef("TmSelect",    "Inputs"));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
 
         cut.FindAll(".tm-wd-toolbox__item").Should().HaveCount(3);
     }
@@ -81,7 +81,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
         var item = cut.Find(".tm-wd-toolbox__item");
 
         item.GetAttribute("draggable").Should().Be("true");
@@ -93,7 +93,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
         var item = cut.Find(".tm-wd-toolbox__item");
 
         item.GetAttribute("data-component-type").Should().Be("TmButton");
@@ -105,7 +105,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         var registry = BuildRegistry(MakeDef("TmButton", "Buttons", displayName: "Button"));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
 
         cut.Find(".tm-wd-toolbox__item-name").TextContent.Should().Be("Button");
     }
@@ -116,7 +116,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
 
         cut.Find(".tm-wd-toolbox__category-name").TextContent.Should().Be("Buttons");
     }
@@ -131,7 +131,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
             MakeDef("TmTextInput", "Inputs",  displayName: "Text Input"));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
 
         cut.Find("input[type=\"search\"]").Input("Button");
 
@@ -147,7 +147,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
             MakeDef("TmTextInput", "Inputs"));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
 
         cut.Find("input[type=\"search\"]").Input("X");
         cut.Find("input[type=\"search\"]").Input("");
@@ -161,7 +161,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
 
         cut.Find("input[type=\"search\"]").Input("xyzzy_no_match");
 
@@ -176,7 +176,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
             MakeDef("TmCard",   "Layout"));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
 
         cut.Find("input[type=\"search\"]").Input("Layout");
 
@@ -192,7 +192,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         var registry = BuildRegistry(MakeDef("TmButton", "Buttons", isBuiltIn: true));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
 
         cut.FindAll(".tm-wd-toolbox__filters").Should().BeEmpty();
     }
@@ -205,7 +205,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
             MakeDef("HeroSection","Custom",   isBuiltIn: false));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
 
         cut.Find(".tm-wd-toolbox__filters").Should().NotBeNull();
     }
@@ -217,7 +217,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
             MakeDef("HeroSection", "Custom", isBuiltIn: false));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
 
         cut.Find(".tm-wd-toolbox__item-badge--custom").Should().NotBeNull();
     }
@@ -228,7 +228,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         var registry = BuildRegistry(MakeDef("TmButton", "Buttons", isBuiltIn: true));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
 
         cut.FindAll(".tm-wd-toolbox__item-badge--custom").Should().BeEmpty();
     }
@@ -245,7 +245,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         registry.RegisterDefinition(MakeDef("InvoiceCard", "Custom", isBuiltIn: false, displayName: "B Invoice"), scopeAppId: appB);
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>(p => p
+        var cut = Render<TmWireframeToolbox>(p => p
             .Add(x => x.ComponentScope, WireframeComponentScope.ForApp(appA)));
 
         var types = cut.FindAll(".tm-wd-toolbox__item")
@@ -266,7 +266,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         Services.AddSingleton(registry);
 
         string? activated = null;
-        var cut = RenderComponent<TmWireframeToolbox>(p => p
+        var cut = Render<TmWireframeToolbox>(p => p
             .Add(x => x.OnComponentActivated, t => activated = t));
 
         cut.Find(".tm-wd-toolbox__item")
@@ -282,7 +282,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         Services.AddSingleton(registry);
 
         string? activated = null;
-        var cut = RenderComponent<TmWireframeToolbox>(p => p
+        var cut = Render<TmWireframeToolbox>(p => p
             .Add(x => x.OnComponentActivated, t => activated = t));
 
         cut.Find(".tm-wd-toolbox__item")
@@ -298,7 +298,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         Services.AddSingleton(registry);
 
         string? activated = null;
-        var cut = RenderComponent<TmWireframeToolbox>(p => p
+        var cut = Render<TmWireframeToolbox>(p => p
             .Add(x => x.OnComponentActivated, t => activated = t));
 
         cut.Find(".tm-wd-toolbox__item")
@@ -315,7 +315,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>(p => p.Add(x => x.Class, "my-class"));
+        var cut = Render<TmWireframeToolbox>(p => p.Add(x => x.Class, "my-class"));
 
         cut.Find(".tm-wd-toolbox").ClassList.Should().Contain("my-class");
     }
@@ -328,7 +328,7 @@ public class TmWireframeToolboxTests : LocalizationTestBase
         var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
         Services.AddSingleton(registry);
 
-        var cut = RenderComponent<TmWireframeToolbox>();
+        var cut = Render<TmWireframeToolbox>();
 
         cut.Find(".tm-wd-toolbox__item-preview svg").Should().NotBeNull();
     }

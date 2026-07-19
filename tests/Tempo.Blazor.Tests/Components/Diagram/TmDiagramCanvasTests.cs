@@ -30,7 +30,7 @@ public class TmDiagramCanvasTests : LocalizationTestBase
             H = 60
         });
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -53,7 +53,7 @@ public class TmDiagramCanvasTests : LocalizationTestBase
             H = 60
         });
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -83,7 +83,7 @@ public class TmDiagramCanvasTests : LocalizationTestBase
 
         (string NodeId, string Direction)? captured = null;
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false)
             .Add(c => c.OnConnectArrowClicked, async args => { captured = args; }));
@@ -103,7 +103,7 @@ public class TmDiagramCanvasTests : LocalizationTestBase
     {
         var doc = new DiagramDocument { Width = 800, Height = 600 };
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, true));
 
@@ -120,7 +120,7 @@ public class TmDiagramCanvasTests : LocalizationTestBase
     {
         var doc = new DiagramDocument { Width = 800, Height = 600 };
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
@@ -139,7 +139,7 @@ public class TmDiagramCanvasTests : LocalizationTestBase
         doc.Nodes.Add(n2);
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 
@@ -160,7 +160,7 @@ public class TmDiagramCanvasTests : LocalizationTestBase
         doc.Nodes.Add(n2);
         doc.Edges.Add(edge);
 
-        var cut = RenderComponent<TmDiagramCanvas>(p => p
+        var cut = Render<TmDiagramCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.ReadOnly, false));
 

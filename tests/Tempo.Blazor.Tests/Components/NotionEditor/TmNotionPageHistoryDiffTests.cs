@@ -23,7 +23,7 @@ public sealed class TmNotionPageHistoryDiffTests : LocalizationTestBase
             HistoryProvider = provider
         };
 
-        var host = RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        var host = Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(component => component.Value, context)
             .AddChildContent<TmNotionPageHistory>(child => child
                 .Add(component => component.Visible, true)

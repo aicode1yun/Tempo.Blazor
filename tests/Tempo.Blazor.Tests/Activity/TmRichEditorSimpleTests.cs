@@ -11,7 +11,7 @@ public class TmRichEditorSimpleTests : LocalizationTestBase
     [Fact]
     public void RichEditorSimple_RendersContainer()
     {
-        var cut = RenderComponent<TmRichEditorSimple>();
+        var cut = Render<TmRichEditorSimple>();
 
         cut.FindAll(".tm-rich-editor-simple").Should().NotBeEmpty();
     }
@@ -19,7 +19,7 @@ public class TmRichEditorSimpleTests : LocalizationTestBase
     [Fact]
     public void RichEditorSimple_RendersContentEditable()
     {
-        var cut = RenderComponent<TmRichEditorSimple>();
+        var cut = Render<TmRichEditorSimple>();
 
         // Contenteditable element should exist
         var editor = cut.Find(".tm-rte-editor-content");
@@ -31,7 +31,7 @@ public class TmRichEditorSimpleTests : LocalizationTestBase
     [Fact]
     public void RichEditorSimple_RendersToolbar()
     {
-        var cut = RenderComponent<TmRichEditorSimple>();
+        var cut = Render<TmRichEditorSimple>();
 
         cut.FindAll(".tm-rte-toolbar").Should().NotBeEmpty();
     }
@@ -39,7 +39,7 @@ public class TmRichEditorSimpleTests : LocalizationTestBase
     [Fact]
     public void RichEditorSimple_Placeholder_Displayed()
     {
-        var cut = RenderComponent<TmRichEditorSimple>(p => p
+        var cut = Render<TmRichEditorSimple>(p => p
             .Add(c => c.Placeholder, "Write something..."));
 
         var editor = cut.Find(".tm-rte-editor-content");
@@ -49,7 +49,7 @@ public class TmRichEditorSimpleTests : LocalizationTestBase
     [Fact]
     public void RichEditorSimple_Disabled_State()
     {
-        var cut = RenderComponent<TmRichEditorSimple>(p => p
+        var cut = Render<TmRichEditorSimple>(p => p
             .Add(c => c.IsDisabled, true));
 
         var editor = cut.Find(".tm-rte-editor-content");
@@ -61,7 +61,7 @@ public class TmRichEditorSimpleTests : LocalizationTestBase
     [Fact]
     public void RichEditorSimple_MaxLength_ShowsCounter()
     {
-        var cut = RenderComponent<TmRichEditorSimple>(p => p
+        var cut = Render<TmRichEditorSimple>(p => p
             .Add(c => c.MaxLength, 200));
 
         cut.FindAll(".tm-rte-char-count").Should().NotBeEmpty();

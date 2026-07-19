@@ -11,7 +11,7 @@ public class TmSigningStepShellTests : LocalizationTestBase
     [Fact]
     public void Render_Field_RendersLabelAndRequiredMarker()
     {
-        var cut = RenderComponent<TmSigningStepShell>(parameters => parameters
+        var cut = Render<TmSigningStepShell>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Full name", Required = true }));
 
         cut.Find(".tm-signing-step-shell__title").TextContent.Should().Be("Full name");
@@ -21,7 +21,7 @@ public class TmSigningStepShellTests : LocalizationTestBase
     [Fact]
     public void Render_OptionalField_RendersOptionalMarker()
     {
-        var cut = RenderComponent<TmSigningStepShell>(parameters => parameters
+        var cut = Render<TmSigningStepShell>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Company" }));
 
         cut.Find(".tm-signing-step-shell__optional").TextContent.Should().Contain("Optional");
@@ -30,7 +30,7 @@ public class TmSigningStepShellTests : LocalizationTestBase
     [Fact]
     public void Render_Description_RendersSimpleMarkdown()
     {
-        var cut = RenderComponent<TmSigningStepShell>(parameters => parameters
+        var cut = Render<TmSigningStepShell>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Terms" })
             .Add(p => p.Description, "Accept **all** terms"));
 
@@ -47,7 +47,7 @@ public class TmSigningStepShellTests : LocalizationTestBase
             Descriptions = { Translations = { ["cs"] = "Vyplňte **jméno** podepisujícího." } }
         };
 
-        var cut = RenderComponent<TmSigningStepShell>(parameters => parameters
+        var cut = Render<TmSigningStepShell>(parameters => parameters
             .Add(p => p.Field, field)
             .Add(p => p.Culture, "cs-CZ"));
 
@@ -59,7 +59,7 @@ public class TmSigningStepShellTests : LocalizationTestBase
     [Fact]
     public void Render_ValidationMessage_AddsInvalidClass()
     {
-        var cut = RenderComponent<TmSigningStepShell>(parameters => parameters
+        var cut = Render<TmSigningStepShell>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Terms" })
             .Add(p => p.ValidationMessage, "Required"));
 
@@ -70,7 +70,7 @@ public class TmSigningStepShellTests : LocalizationTestBase
     [Fact]
     public void Render_AppearsOn_ShowsDocumentPosition()
     {
-        var cut = RenderComponent<TmSigningStepShell>(parameters => parameters
+        var cut = Render<TmSigningStepShell>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Terms" })
             .Add(p => p.AppearsOn, "Page 2"));
 

@@ -10,7 +10,7 @@ public class TmFormSectionTests : LocalizationTestBase
     [Fact]
     public void FormSection_RendersTitle()
     {
-        var cut = RenderComponent<TmFormSection>(p => p.Add(c => c.Title, "Personal Info"));
+        var cut = Render<TmFormSection>(p => p.Add(c => c.Title, "Personal Info"));
 
         cut.Find(".tm-form-section-title").TextContent.Should().Contain("Personal Info");
     }
@@ -18,7 +18,7 @@ public class TmFormSectionTests : LocalizationTestBase
     [Fact]
     public void FormSection_RendersDescription()
     {
-        var cut = RenderComponent<TmFormSection>(p => p
+        var cut = Render<TmFormSection>(p => p
             .Add(c => c.Title,       "Address")
             .Add(c => c.Description, "Enter your mailing address."));
 
@@ -28,7 +28,7 @@ public class TmFormSectionTests : LocalizationTestBase
     [Fact]
     public void FormSection_RendersChildContent()
     {
-        var cut = RenderComponent<TmFormSection>(p => p
+        var cut = Render<TmFormSection>(p => p
             .Add(c => c.Title, "Fields")
             .AddChildContent("<input class='test-input' />"));
 
@@ -38,7 +38,7 @@ public class TmFormSectionTests : LocalizationTestBase
     [Fact]
     public void FormSection_Collapsible_TogglesContent()
     {
-        var cut = RenderComponent<TmFormSection>(p => p
+        var cut = Render<TmFormSection>(p => p
             .Add(c => c.Title,      "Collapsible")
             .Add(c => c.Collapsible, true)
             .AddChildContent("<p class='inner'>Content</p>"));

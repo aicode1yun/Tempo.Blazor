@@ -21,7 +21,7 @@ public class DocumentEditorRenderSignatureSafetyNetTests : LocalizationTestBase
     [Fact]
     public void EveryValueParameter_TriggersRerenderWhenChanged()
     {
-        var cut = RenderComponent<TmDocumentEditorToolbar>();
+        var cut = Render<TmDocumentEditorToolbar>();
         var mutable = GetMutableValueParameters();
         mutable.Should().HaveCountGreaterThan(50, "toolbar má ~75 hodnotových parametrů — příliš nízký počet značí rozbitou detekci");
 
@@ -36,7 +36,8 @@ public class DocumentEditorRenderSignatureSafetyNetTests : LocalizationTestBase
             }
 
             var before = cut.RenderCount;
-            cut.SetParametersAndRender(ComponentParameter.CreateParameter(parameter.Name, changedValue));
+            cut.Render(Microsoft.AspNetCore.Components.ParameterView.FromDictionary(
+                new Dictionary<string, object?> { [parameter.Name] = changedValue }));
             if (cut.RenderCount == before)
             {
                 missing.Add($"{parameter.Name} ({parameter.PropertyType.Name})");
@@ -52,13 +53,13 @@ public class DocumentEditorRenderSignatureSafetyNetTests : LocalizationTestBase
     {
         // CaptureUnmatchedValues: rodič staví NOVÝ dictionary při každém renderu — gating musí
         // hashovat obsah, ne referenci, jinak pro ikony s atributy nikdy nefunguje.
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, IconNames.Check)
             .AddUnmatched("data-role", "toolbar-icon")
             .AddUnmatched("title", "Check"));
         var before = cut.RenderCount;
 
-        cut.SetParametersAndRender(p => p
+        cut.Render(p => p
             .Add(c => c.Name, IconNames.Check)
             .AddUnmatched("data-role", "toolbar-icon")
             .AddUnmatched("title", "Check"));
@@ -70,12 +71,12 @@ public class DocumentEditorRenderSignatureSafetyNetTests : LocalizationTestBase
     [Fact]
     public void TmIcon_ChangedAttributeContent_TriggersRerender()
     {
-        var cut = RenderComponent<TmIcon>(p => p
+        var cut = Render<TmIcon>(p => p
             .Add(c => c.Name, IconNames.Check)
             .AddUnmatched("title", "Check"));
         var before = cut.RenderCount;
 
-        cut.SetParametersAndRender(p => p
+        cut.Render(p => p
             .Add(c => c.Name, IconNames.Check)
             .AddUnmatched("title", "Changed"));
 

@@ -12,7 +12,7 @@ public class TmImportWizardTests : LocalizationTestBase
     [Fact]
     public void TmImportWizard_Renders_Container()
     {
-        var cut = RenderComponent<TmImportWizard>(p => p
+        var cut = Render<TmImportWizard>(p => p
             .AddChildContent<TmImportWizardStep>(sp => sp
                 .Add(s => s.Title, "Step 1")
                 .AddChildContent("<p>Content 1</p>"))
@@ -26,7 +26,7 @@ public class TmImportWizardTests : LocalizationTestBase
     [Fact]
     public void TmImportWizard_Shows_Step_Indicator()
     {
-        var cut = RenderComponent<TmImportWizard>(p => p
+        var cut = Render<TmImportWizard>(p => p
             .Add(c => c.ShowStepIndicator, true)
             .AddChildContent<TmImportWizardStep>(sp => sp
                 .Add(s => s.Title, "Step 1")
@@ -41,7 +41,7 @@ public class TmImportWizardTests : LocalizationTestBase
     [Fact]
     public void TmImportWizard_Hides_Step_Indicator_When_Disabled()
     {
-        var cut = RenderComponent<TmImportWizard>(p => p
+        var cut = Render<TmImportWizard>(p => p
             .Add(c => c.ShowStepIndicator, false)
             .AddChildContent<TmImportWizardStep>(sp => sp
                 .Add(s => s.Title, "Step 1")
@@ -53,7 +53,7 @@ public class TmImportWizardTests : LocalizationTestBase
     [Fact]
     public void TmImportWizard_Shows_Active_Step_Content()
     {
-        var cut = RenderComponent<TmImportWizard>(p => p
+        var cut = Render<TmImportWizard>(p => p
             .AddChildContent<TmImportWizardStep>(sp => sp
                 .Add(s => s.Title, "Step 1")
                 .AddChildContent("<p>First content</p>"))
@@ -69,7 +69,7 @@ public class TmImportWizardTests : LocalizationTestBase
     public void TmImportWizard_Next_Moves_To_Next_Step()
     {
         int activeStep = 0;
-        var cut = RenderComponent<TmImportWizard>(p => p
+        var cut = Render<TmImportWizard>(p => p
             .Add(c => c.ActiveStep, 0)
             .Add(c => c.ActiveStepChanged, EventCallback.Factory.Create<int>(this, v => activeStep = v))
             .AddChildContent<TmImportWizardStep>(sp => sp
@@ -88,7 +88,7 @@ public class TmImportWizardTests : LocalizationTestBase
     public void TmImportWizard_Back_Moves_To_Previous_Step()
     {
         int activeStep = 1;
-        var cut = RenderComponent<TmImportWizard>(p => p
+        var cut = Render<TmImportWizard>(p => p
             .Add(c => c.ActiveStep, 1)
             .Add(c => c.ActiveStepChanged, EventCallback.Factory.Create<int>(this, v => activeStep = v))
             .AddChildContent<TmImportWizardStep>(sp => sp
@@ -106,7 +106,7 @@ public class TmImportWizardTests : LocalizationTestBase
     [Fact]
     public void TmImportWizard_Back_Hidden_On_First_Step()
     {
-        var cut = RenderComponent<TmImportWizard>(p => p
+        var cut = Render<TmImportWizard>(p => p
             .Add(c => c.ActiveStep, 0)
             .AddChildContent<TmImportWizardStep>(sp => sp
                 .Add(s => s.Title, "Step 1")
@@ -121,7 +121,7 @@ public class TmImportWizardTests : LocalizationTestBase
     [Fact]
     public void TmImportWizard_Shows_Complete_On_Last_Step()
     {
-        var cut = RenderComponent<TmImportWizard>(p => p
+        var cut = Render<TmImportWizard>(p => p
             .Add(c => c.ActiveStep, 1)
             .AddChildContent<TmImportWizardStep>(sp => sp
                 .Add(s => s.Title, "Step 1")
@@ -138,7 +138,7 @@ public class TmImportWizardTests : LocalizationTestBase
     public void TmImportWizard_Complete_Fires_OnComplete()
     {
         bool completed = false;
-        var cut = RenderComponent<TmImportWizard>(p => p
+        var cut = Render<TmImportWizard>(p => p
             .Add(c => c.ActiveStep, 1)
             .Add(c => c.OnComplete, EventCallback.Factory.Create(this, () => completed = true))
             .AddChildContent<TmImportWizardStep>(sp => sp
@@ -157,7 +157,7 @@ public class TmImportWizardTests : LocalizationTestBase
     public void TmImportWizard_Cancel_Fires_OnCancel()
     {
         bool cancelled = false;
-        var cut = RenderComponent<TmImportWizard>(p => p
+        var cut = Render<TmImportWizard>(p => p
             .Add(c => c.OnCancel, EventCallback.Factory.Create(this, () => cancelled = true))
             .AddChildContent<TmImportWizardStep>(sp => sp
                 .Add(s => s.Title, "Step 1")
@@ -171,7 +171,7 @@ public class TmImportWizardTests : LocalizationTestBase
     [Fact]
     public void TmImportWizard_Custom_Button_Texts()
     {
-        var cut = RenderComponent<TmImportWizard>(p => p
+        var cut = Render<TmImportWizard>(p => p
             .Add(c => c.ActiveStep, 0)
             .Add(c => c.NextText, "Forward")
             .Add(c => c.CancelText, "Abort")
@@ -189,7 +189,7 @@ public class TmImportWizardTests : LocalizationTestBase
     [Fact]
     public void TmImportWizard_Applies_Custom_Class()
     {
-        var cut = RenderComponent<TmImportWizard>(p => p
+        var cut = Render<TmImportWizard>(p => p
             .Add(c => c.Class, "my-wizard")
             .AddChildContent<TmImportWizardStep>(sp => sp
                 .Add(s => s.Title, "Step 1")

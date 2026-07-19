@@ -83,7 +83,7 @@ public sealed class CanvasEngineQuickWinPerfTests : LocalizationTestBase
             }
         });
 
-        var cut = RenderComponent<TmDocumentCanvasEngineHost>(parameters => parameters
+        var cut = Render<TmDocumentCanvasEngineHost>(parameters => parameters
             .Add(p => p.Document, document)
             .Add(p => p.AriaLabel, "Document editor")
             .Add(p => p.InputAriaLabel, "Document editor"));
@@ -114,7 +114,7 @@ public sealed class CanvasEngineQuickWinPerfTests : LocalizationTestBase
                 Inlines = [new DocumentMathRun { MathId = "eq-a" }, new DocumentMathRun { MathId = "eq-b" }]
             }
         });
-        cut.SetParametersAndRender(parameters => parameters.Add(p => p.Document, replacement));
+        cut.Render(parameters => parameters.Add(p => p.Document, replacement));
         cut.Find("[data-testid='document-canvas-engine-host']")
             .GetAttribute("data-canvas-source-math-count")
             .Should().Be("2", "a new Document reference must recompute the count");

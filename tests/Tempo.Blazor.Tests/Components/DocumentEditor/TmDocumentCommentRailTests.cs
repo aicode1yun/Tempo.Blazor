@@ -29,7 +29,7 @@ public class TmDocumentCommentRailTests : LocalizationTestBase
     {
         DocumentCommentFilter? filter = null;
         DocumentCommentSortMode? sort = null;
-        var cut = RenderComponent<TmDocumentCommentRail>(parameters => parameters
+        var cut = Render<TmDocumentCommentRail>(parameters => parameters
             .Add(p => p.Comments, new[] { Comment("open", DocumentCommentStatus.Open, "me") })
             .Add(p => p.CurrentAuthorId, "me")
             .Add(p => p.FilterChanged, value => filter = value)
@@ -43,7 +43,7 @@ public class TmDocumentCommentRailTests : LocalizationTestBase
     }
 
     private IRenderedComponent<TmDocumentCommentRail> Render(DocumentCommentFilter filter, IReadOnlyList<DocumentComment> comments)
-        => RenderComponent<TmDocumentCommentRail>(parameters => parameters
+        => Render<TmDocumentCommentRail>(parameters => parameters
             .Add(p => p.Comments, comments)
             .Add(p => p.CurrentAuthorId, "me")
             .Add(p => p.Filter, filter));

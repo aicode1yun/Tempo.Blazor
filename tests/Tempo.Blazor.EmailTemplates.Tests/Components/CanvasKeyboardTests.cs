@@ -11,7 +11,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.EmailTemplates.Tests.Components;
 
-public class CanvasKeyboardTests : TestContext
+public class CanvasKeyboardTests : BunitContext
 {
     public CanvasKeyboardTests()
     {
@@ -35,7 +35,7 @@ public class CanvasKeyboardTests : TestContext
     }
 
     private IRenderedComponent<TmEmailTemplateCanvas> Render(EmailTemplateDocument doc, Guid? selected, Action<Guid?> onSel)
-        => RenderComponent<TmEmailTemplateCanvas>(p => p
+        => Render<TmEmailTemplateCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.SelectedId, selected)
             .Add(c => c.SelectedIdChanged, id => onSel(id))

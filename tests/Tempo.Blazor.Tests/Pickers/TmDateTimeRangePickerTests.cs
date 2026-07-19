@@ -10,7 +10,7 @@ public class TmDateTimeRangePickerTests : LocalizationTestBase
     [Fact]
     public void DateTimeRangePicker_ShowsDateAndTimeForBothBounds()
     {
-        var cut = RenderComponent<TmDateTimeRangePicker>();
+        var cut = Render<TmDateTimeRangePicker>();
 
         // Should render two TmDateTimePicker sections
         cut.FindAll(".tm-datetime-range-start").Should().HaveCount(1);
@@ -22,7 +22,7 @@ public class TmDateTimeRangePickerTests : LocalizationTestBase
     {
         var start = new DateTime(2025, 6, 1, 8, 0, 0);
         var end   = new DateTime(2025, 6, 30, 18, 0, 0);
-        var cut   = RenderComponent<TmDateTimeRangePicker>(p => p
+        var cut   = Render<TmDateTimeRangePicker>(p => p
             .Add(c => c.Value, (start, end)));
 
         // Start section shows hours 08
@@ -38,7 +38,7 @@ public class TmDateTimeRangePickerTests : LocalizationTestBase
     {
         var start = new DateTime(2025, 6, 15, 12, 0, 0);
         var end   = new DateTime(2025, 6, 10, 8, 0, 0);
-        var cut   = RenderComponent<TmDateTimeRangePicker>(p => p
+        var cut   = Render<TmDateTimeRangePicker>(p => p
             .Add(c => c.Value, (start, end)));
 
         cut.FindAll(".tm-datetime-range--invalid, [role='alert']").Should().NotBeEmpty();
@@ -48,7 +48,7 @@ public class TmDateTimeRangePickerTests : LocalizationTestBase
     public void DateTimeRangePicker_ClearButton_ClearsBothValues()
     {
         (DateTime? s, DateTime? e)? captured = null;
-        var cut = RenderComponent<TmDateTimeRangePicker>(p => p
+        var cut = Render<TmDateTimeRangePicker>(p => p
             .Add(c => c.Value,        (new DateTime(2025, 1, 1, 9, 0, 0), new DateTime(2025, 1, 31, 17, 0, 0)))
             .Add(c => c.ValueChanged, ((DateTime? s, DateTime? e) v) => captured = v));
 

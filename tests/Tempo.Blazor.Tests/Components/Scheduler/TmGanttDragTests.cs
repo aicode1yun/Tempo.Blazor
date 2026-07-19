@@ -20,7 +20,7 @@ public class TmGanttDragTests : LocalizationTestBase
     [Fact]
     public void TmGantt_TreeRow_HasDragHandle()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var handles = cut.FindAll(".tm-gantt__drag-handle");
@@ -30,7 +30,7 @@ public class TmGanttDragTests : LocalizationTestBase
     [Fact]
     public void TmGantt_TreeRow_IsDraggable()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var row = cut.Find(".tm-gantt__tree-row");
@@ -40,7 +40,7 @@ public class TmGanttDragTests : LocalizationTestBase
     [Fact]
     public void TmGantt_DragStart_SetsDraggingClass()
     {
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks()));
 
         var row = cut.Find(".tm-gantt__tree-row");
@@ -57,7 +57,7 @@ public class TmGanttDragTests : LocalizationTestBase
     public void TmGantt_Drop_Invokes_OnTaskReordered()
     {
         GanttTaskReorderedArgs? reordered = null;
-        var cut = RenderComponent<TmGantt>(p => p
+        var cut = Render<TmGantt>(p => p
             .Add(c => c.Items, GetSampleTasks())
             .Add(c => c.OnTaskReordered, args => reordered = args));
 

@@ -30,7 +30,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Renders_Container()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         cut.Find(".tm-file-manager").Should().NotBeNull();
@@ -39,7 +39,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Renders_Toolbar()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         cut.Find(".tm-file-manager__toolbar").Should().NotBeNull();
@@ -48,7 +48,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Renders_Breadcrumb()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         cut.Find(".tm-file-manager__breadcrumb").Should().NotBeNull();
@@ -57,7 +57,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Renders_Folder_Tree()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         cut.Find(".tm-file-manager__sidebar").Should().NotBeNull();
@@ -66,7 +66,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Default_ViewMode_Is_List()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         cut.Find(".tm-file-manager__content--list").Should().NotBeNull();
@@ -75,7 +75,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Grid_View_Shows_Grid_Class()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider())
             .Add(c => c.ViewMode, FileManagerViewMode.Grid));
 
@@ -85,7 +85,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Loads_Root_Contents()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         // Root contains Documents and Pictures folders
@@ -96,7 +96,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Click_Folder_Navigates()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         // Double-click on Documents folder
@@ -111,7 +111,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Breadcrumb_Updates_On_Navigate()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         var folder = cut.FindAll(".tm-file-manager__item").First(e => e.TextContent.Contains("Documents"));
@@ -123,7 +123,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Select_Item_Highlights()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         var item = cut.Find(".tm-file-manager__item");
@@ -138,7 +138,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Disabled_Hides_Toolbar_Actions()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider())
             .Add(c => c.Disabled, true));
 
@@ -148,7 +148,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_ShowUploadButton_False_Hides_Upload()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider())
             .Add(c => c.ShowUploadButton, false));
 
@@ -158,7 +158,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Custom_Class_Applied()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider())
             .Add(c => c.Class, "my-custom-class"));
 
@@ -168,7 +168,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Rename_Button_Shows_Input_When_Selected()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         // Select the first item (Documents folder)
@@ -187,7 +187,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Create_Folder_Starts_Inline_Rename()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         // Click New Folder button
@@ -204,7 +204,7 @@ public class TmFileManagerTests : LocalizationTestBase
     public void TmFileManager_Rename_Enter_Commits()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, provider));
 
         // Select Documents folder
@@ -229,7 +229,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Rename_Escape_Cancels()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         // Select Documents folder
@@ -256,7 +256,7 @@ public class TmFileManagerTests : LocalizationTestBase
     public void TmFileManager_Rename_Blur_Commits()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, provider));
 
         // Select Documents folder
@@ -282,7 +282,7 @@ public class TmFileManagerTests : LocalizationTestBase
     public void TmFileManager_Rename_Enter_Does_Not_Open_Folder()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, provider));
 
         // Select Documents folder and start rename
@@ -305,7 +305,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Delete_Click_Shows_Confirm_Dialog()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         // Select Documents folder
@@ -326,7 +326,7 @@ public class TmFileManagerTests : LocalizationTestBase
     public void TmFileManager_Delete_Confirm_Removes_Item()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, provider));
 
         // Select Documents folder
@@ -351,7 +351,7 @@ public class TmFileManagerTests : LocalizationTestBase
     public void TmFileManager_Delete_Cancel_Keeps_Item()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, provider));
 
         // Select Documents folder
@@ -377,7 +377,7 @@ public class TmFileManagerTests : LocalizationTestBase
     public async Task TmFileManager_Upload_Preserves_FileName()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, provider));
 
         // Simulate file upload via InputFile
@@ -394,7 +394,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Keyboard_ArrowDown_Selects_Next_Item()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         var wrapper = cut.Find(".tm-file-manager");
@@ -409,7 +409,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Keyboard_ArrowDown_Twice_Clamps_To_Last()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         var wrapper = cut.Find(".tm-file-manager");
@@ -425,7 +425,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Keyboard_Enter_Navigates_Folder()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         var wrapper = cut.Find(".tm-file-manager");
@@ -439,7 +439,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Keyboard_Delete_Shows_Confirm_Dialog()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         var wrapper = cut.Find(".tm-file-manager");
@@ -452,7 +452,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Keyboard_F2_Starts_Rename()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         var wrapper = cut.Find(".tm-file-manager");
@@ -465,7 +465,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Keyboard_CtrlA_Selects_All()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         var wrapper = cut.Find(".tm-file-manager");
@@ -479,7 +479,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_Keyboard_Backspace_Goes_Up()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         // Navigate to Documents first
@@ -498,7 +498,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_CtrlClick_Toggles_Selection()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         var items = cut.FindAll(".tm-file-manager__item");
@@ -515,7 +515,7 @@ public class TmFileManagerTests : LocalizationTestBase
     [Fact]
     public void TmFileManager_CtrlClick_Deselects()
     {
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, CreateMockProvider()));
 
         var items = cut.FindAll(".tm-file-manager__item");
@@ -533,7 +533,7 @@ public class TmFileManagerTests : LocalizationTestBase
     public void TmFileManager_ShiftClick_Selects_Range()
     {
         var provider = CreateMockProvider();
-        var cut = RenderComponent<TmFileManager>(p => p
+        var cut = Render<TmFileManager>(p => p
             .Add(c => c.DataProvider, provider));
 
         var items = cut.FindAll(".tm-file-manager__item");

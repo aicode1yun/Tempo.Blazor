@@ -12,7 +12,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     [Fact]
     public void Render_EmptyConditions_RendersEmptyConditionRow()
     {
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target"));
 
@@ -23,7 +23,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     [Fact]
     public void Render_Fields_ShowsSupportedSourceFieldSelectOptions()
     {
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target"));
 
@@ -36,7 +36,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     [Fact]
     public void Render_Fields_FiltersCurrentField()
     {
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target"));
 
@@ -49,7 +49,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     [Fact]
     public void Render_Fields_FiltersUnsupportedStaticFieldTypes()
     {
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target"));
 
@@ -63,7 +63,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     public void Change_Field_InvokesConditionsChanged()
     {
         IReadOnlyList<SigningFieldCondition>? captured = null;
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target")
                       .Add(p => p.ConditionsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningFieldCondition>>(this, value => captured = value)));
@@ -82,7 +82,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     [InlineData("name", SigningConditionAction.Empty, SigningConditionAction.NotEmpty)]
     public void Actions_FieldType_RendersExpectedActions(string fieldUuid, params SigningConditionAction[] expectedActions)
     {
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target")
                       .Add(p => p.Conditions, [new SigningFieldCondition { FieldUuid = fieldUuid }]));
@@ -96,7 +96,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     [Fact]
     public void Actions_NumberField_RendersNumericActions()
     {
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target")
                       .Add(p => p.Conditions, [new SigningFieldCondition { FieldUuid = "amount" }]));
@@ -123,7 +123,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
             ? SigningConditionAction.Contains
             : SigningConditionAction.Equal;
 
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target")
                       .Add(p => p.Conditions, [new SigningFieldCondition { FieldUuid = fieldUuid, Action = action }]));
@@ -138,7 +138,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     [Fact]
     public void Value_NumberField_RendersNumberInput()
     {
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target")
                       .Add(p => p.Conditions, [new SigningFieldCondition
@@ -153,7 +153,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     [Fact]
     public void Value_EmptyAction_DoesNotRenderValueInput()
     {
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target")
                       .Add(p => p.Conditions, [new SigningFieldCondition
@@ -170,7 +170,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     [Fact]
     public void Value_RequiredActionWithoutValue_ShowsValidation()
     {
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target")
                       .Add(p => p.Conditions, [new SigningFieldCondition
@@ -186,7 +186,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     [Fact]
     public void AddCondition_AddsSecondConditionRow()
     {
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target"));
 
@@ -199,7 +199,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     public void Operation_SecondCondition_CanSwitchToOr()
     {
         IReadOnlyList<SigningFieldCondition>? captured = null;
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target")
                       .Add(p => p.Conditions, [
@@ -218,7 +218,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     public void Operation_DraftCondition_DoesNotNotifyBeforeFieldIsSelected()
     {
         IReadOnlyList<SigningFieldCondition>? captured = null;
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target")
                       .Add(p => p.ConditionsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningFieldCondition>>(this, value => captured = value)));
@@ -234,7 +234,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     public void Operation_DraftCondition_IsPreservedWhenFieldIsSelected()
     {
         IReadOnlyList<SigningFieldCondition>? captured = null;
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target")
                       .Add(p => p.ConditionsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningFieldCondition>>(this, value => captured = value)));
@@ -253,7 +253,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     public void RemoveCondition_RemovesConditionAndNotifies()
     {
         IReadOnlyList<SigningFieldCondition>? captured = null;
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target")
                       .Add(p => p.Conditions, [
@@ -284,14 +284,14 @@ public class TmConditionBuilderTests : LocalizationTestBase
             }
         };
 
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, fields)
                       .Add(p => p.CurrentFieldUuid, "target")
                       .Add(p => p.Conditions, conditions)
                       .Add(p => p.Culture, "en-US")
                       .Add(p => p.ConditionsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningFieldCondition>>(this, value => captured = value)));
 
-        cut.SetParametersAndRender(parameters => parameters.Add(p => p.Culture, "cs-CZ"));
+        cut.Render(parameters => parameters.Add(p => p.Culture, "cs-CZ"));
 
         captured.Should().BeNull();
         cut.Find(".tm-condition-builder__field").GetAttribute("value").Should().Be("country");
@@ -301,7 +301,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
     [Fact]
     public void Cycle_DirectDependencyOnCurrentField_ShowsValidation()
     {
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, CreateFields())
                       .Add(p => p.CurrentFieldUuid, "target")
                       .Add(p => p.Conditions, [new SigningFieldCondition
@@ -328,7 +328,7 @@ public class TmConditionBuilderTests : LocalizationTestBase
             Action = SigningConditionAction.NotEmpty
         });
 
-        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+        var cut = Render<TmConditionBuilder>(parameters =>
             parameters.Add(p => p.Fields, fields)
                       .Add(p => p.CurrentFieldUuid, "target")
                       .Add(p => p.Conditions, [new SigningFieldCondition

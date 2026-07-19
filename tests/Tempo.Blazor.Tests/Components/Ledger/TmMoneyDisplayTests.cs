@@ -17,7 +17,7 @@ public class TmMoneyDisplayTests : LocalizationTestBase
         decimal? amount,
         string currency = "CZK",
         Action<Bunit.ComponentParameterCollectionBuilder<TmMoneyDisplay>>? configure = null)
-        => RenderComponent<TmMoneyDisplay>(p =>
+        => Render<TmMoneyDisplay>(p =>
         {
             p.Add(x => x.Amount, amount);
             p.Add(x => x.Currency, currency);

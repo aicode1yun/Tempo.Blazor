@@ -13,7 +13,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     [Fact]
     public void Render_RootAndEmptyState()
     {
-        var cut = RenderComponent<TmPdfTemplateDesigner>();
+        var cut = Render<TmPdfTemplateDesigner>();
 
         cut.Find(".tm-pdf-template-designer").Should().NotBeNull();
         cut.Find(".tm-empty-state").TextContent.Should().Contain("No documents");
@@ -22,7 +22,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     [Fact]
     public void Render_DocumentsAndFields_UsesViewerAndOverlay()
     {
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, CreateFields()));
 
@@ -38,7 +38,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
         var field = CreateField("field-1", "Name");
         field.Labels.Translations["cs-CZ"] = "Jméno";
         IRenderedComponent<TmPdfTemplateDesigner>? cut = null;
-        cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, new[] { field })
                       .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" })
@@ -47,7 +47,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
                       .Add(p => p.CultureChanged, EventCallback.Factory.Create<string?>(this, value =>
                       {
                           culture = value;
-                          cut!.SetParametersAndRender(parameters => parameters.Add(p => p.Culture, value));
+                          cut!.Render(parameters => parameters.Add(p => p.Culture, value));
                       })));
 
         cut.Find("[data-field-uuid='field-1']").Click();
@@ -62,7 +62,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     [Fact]
     public void Render_ContinuousView_RendersAllPages()
     {
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, CreateFields())
                       .Add(p => p.ViewMode, DocumentPageViewMode.Continuous));
@@ -74,7 +74,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     public void PageNavigation_NextAndPreviousChangeVisiblePage()
     {
         int? pageIndex = null;
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.PageIndexChanged, value => pageIndex = value));
 
@@ -95,7 +95,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     {
         double? scale = null;
         DocumentPageZoomMode? zoomMode = null;
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.ScaleChanged, value => scale = value)
                       .Add(p => p.ZoomModeChanged, value => zoomMode = value));
@@ -115,7 +115,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     public void Render_AcceptsFieldsChangedAndDocuments()
     {
         IReadOnlyList<SigningField>? captured = null;
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, CreateFields())
                       .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
@@ -130,7 +130,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     [Fact]
     public void Palette_RendersAllowedFieldTypesAndCanBeFiltered()
     {
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.AllowedFieldTypes, new[] { SigningFieldType.Text, SigningFieldType.Signature }));
 
@@ -142,7 +142,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     [Fact]
     public void Palette_ClickFieldType_EntersDrawMode()
     {
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages()));
 
         cut.Find("[data-field-type='Text']").Click();
@@ -155,7 +155,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     public void Palette_DragDropFieldType_CreatesDefaultSizedField()
     {
         IReadOnlyList<SigningField>? captured = null;
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
 
@@ -178,7 +178,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     public void Palette_DragDropFieldType_AfterCultureChangeCreatesLocalizedDefaultLabel()
     {
         IReadOnlyList<SigningField>? captured = null;
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Culture, "cs-CZ")
                       .Add(p => p.FallbackCulture, "en-US")
@@ -199,7 +199,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     [Fact]
     public void Palette_WhenDisabled_IsHidden()
     {
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Disabled, true));
 
@@ -210,7 +210,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     public void DrawField_CreatesFieldAndArea()
     {
         IReadOnlyList<SigningField>? captured = null;
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.SubmitterRoles, CreateRoles())
                       .Add(p => p.SelectedSubmitterUuid, "role-2")
@@ -237,7 +237,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     public void DrawField_SmallRectangle_IsIgnored()
     {
         IReadOnlyList<SigningField>? captured = null;
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
 
@@ -253,7 +253,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     public void SelectMoveAndResize_UpdateFieldArea()
     {
         IReadOnlyList<SigningField>? captured = null;
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, CreateFields())
                       .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
@@ -274,7 +274,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     [Fact]
     public void Select_WithControlKey_AddsToMultiSelect()
     {
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, CreateFields()));
 
@@ -288,7 +288,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     [Fact]
     public void Select_WithControlMouseDown_DoesNotReplaceExistingSelection()
     {
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, CreateFields()));
 
@@ -302,7 +302,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     [Fact]
     public void DragSelectionBox_SelectsMultipleFields()
     {
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, CreateFields()));
 
@@ -318,7 +318,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     public void DeleteSelected_RemovesMultipleFields()
     {
         IReadOnlyList<SigningField>? captured = null;
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, CreateFields())
                       .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
@@ -335,7 +335,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     public void DeleteKey_RemovesSelectedField()
     {
         IReadOnlyList<SigningField>? captured = null;
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, CreateFields())
                       .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
@@ -350,7 +350,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     [Fact]
     public void ContextMenus_RenderUsingContextMenuComponent()
     {
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, CreateFields()));
 
@@ -365,7 +365,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     [Fact]
     public void PageContextMenu_OffersPasteAndAutodetect()
     {
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.OnDetectFields, () => Task.FromResult<IReadOnlyList<SigningField>>([])));
 
@@ -379,7 +379,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     public void CopyPaste_CreatesFieldCopyOnCurrentPage()
     {
         IReadOnlyList<SigningField>? captured = null;
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, CreateFields().Take(1).ToArray())
                       .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
@@ -409,7 +409,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     public void CopySelection_PastesAllSelectedFields()
     {
         IReadOnlyList<SigningField>? captured = null;
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, CreateFields())
                       .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
@@ -436,7 +436,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     public void CopyToAllPages_CreatesAreaOnEachDocumentPage()
     {
         IReadOnlyList<SigningField>? captured = null;
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, CreateFields().Take(1).ToArray())
                       .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
@@ -452,7 +452,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     public void DetectFields_AddsReturnedFieldsAndShowsLoadingState()
     {
         IReadOnlyList<SigningField>? captured = null;
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.OnDetectFields, () => Task.FromResult<IReadOnlyList<SigningField>>([CreateField("detected", "Detected")]))
                       .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
@@ -466,7 +466,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     [Fact]
     public void DetectFields_Error_ShowsAlert()
     {
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.OnDetectFields, () => throw new InvalidOperationException("Detection failed")));
 
@@ -478,7 +478,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     [Fact]
     public void MobileMode_UsesCompactPalette()
     {
-        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+        var cut = Render<TmPdfTemplateDesigner>(parameters =>
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.MobileMode, true));
 

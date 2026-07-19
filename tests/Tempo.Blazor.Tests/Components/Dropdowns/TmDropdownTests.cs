@@ -12,7 +12,7 @@ public class TmDropdownTests : LocalizationTestBase
     [Fact]
     public void TmDropdown_Renders_Trigger_Button()
     {
-        var cut = RenderComponent<TmDropdown>(p => p
+        var cut = Render<TmDropdown>(p => p
             .Add(c => c.Text, "Options"));
 
         cut.Find("button.tm-dropdown-trigger").Should().NotBeNull();
@@ -21,7 +21,7 @@ public class TmDropdownTests : LocalizationTestBase
     [Fact]
     public void TmDropdown_Trigger_Shows_Text()
     {
-        var cut = RenderComponent<TmDropdown>(p => p
+        var cut = Render<TmDropdown>(p => p
             .Add(c => c.Text, "Actions"));
 
         cut.Find("button.tm-dropdown-trigger").TextContent.Should().Contain("Actions");
@@ -30,7 +30,7 @@ public class TmDropdownTests : LocalizationTestBase
     [Fact]
     public void TmDropdown_Menu_Hidden_By_Default()
     {
-        var cut = RenderComponent<TmDropdown>(p => p
+        var cut = Render<TmDropdown>(p => p
             .Add(c => c.Text, "Options"));
 
         cut.FindAll(".tm-dropdown-menu").Should().BeEmpty();
@@ -39,7 +39,7 @@ public class TmDropdownTests : LocalizationTestBase
     [Fact]
     public void TmDropdown_Click_Opens_Menu()
     {
-        var cut = RenderComponent<TmDropdown>(p => p
+        var cut = Render<TmDropdown>(p => p
             .Add(c => c.Text, "Options")
             .AddChildContent("<div class='item'>Item 1</div>"));
 
@@ -51,7 +51,7 @@ public class TmDropdownTests : LocalizationTestBase
     [Fact]
     public void TmDropdown_Click_Again_Closes_Menu()
     {
-        var cut = RenderComponent<TmDropdown>(p => p
+        var cut = Render<TmDropdown>(p => p
             .Add(c => c.Text, "Options")
             .AddChildContent("<div>Item</div>"));
 
@@ -64,7 +64,7 @@ public class TmDropdownTests : LocalizationTestBase
     [Fact]
     public void TmDropdown_Escape_Key_Closes_Menu()
     {
-        var cut = RenderComponent<TmDropdown>(p => p
+        var cut = Render<TmDropdown>(p => p
             .Add(c => c.Text, "Options")
             .AddChildContent("<div>Item</div>"));
 
@@ -77,7 +77,7 @@ public class TmDropdownTests : LocalizationTestBase
     [Fact]
     public void TmDropdown_Trigger_Has_Aria_Expanded_False_When_Closed()
     {
-        var cut = RenderComponent<TmDropdown>(p => p
+        var cut = Render<TmDropdown>(p => p
             .Add(c => c.Text, "Options"));
 
         cut.Find("button.tm-dropdown-trigger").GetAttribute("aria-expanded").Should().Be("false");
@@ -86,7 +86,7 @@ public class TmDropdownTests : LocalizationTestBase
     [Fact]
     public void TmDropdown_Trigger_Has_Aria_Expanded_True_When_Open()
     {
-        var cut = RenderComponent<TmDropdown>(p => p
+        var cut = Render<TmDropdown>(p => p
             .Add(c => c.Text, "Options")
             .AddChildContent("<div>Item</div>"));
 

@@ -210,7 +210,7 @@ public sealed class TmNotionTableAdvancedTests : LocalizationTestBase
     {
         var context = new NotionEditorContext { BlockProvider = provider };
 
-        return RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        return Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(component => component.Value, context)
             .AddChildContent<TmNotionTableBlock>(child => child
                 .Add(component => component.Block, provider.Table)

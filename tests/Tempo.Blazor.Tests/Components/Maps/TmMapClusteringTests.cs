@@ -66,7 +66,7 @@ public class TmMapClusteringTests : LocalizationTestBase
             new("cell-2", 49.2, 16.6, 7, null),
         };
 
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.ClusterPoints, clusters));
 
         var invocation = module.Invocations.Single(i => i.Identifier == "setData");
@@ -85,7 +85,7 @@ public class TmMapClusteringTests : LocalizationTestBase
         var module = SetupMapModule();
         var clusters = new List<MapClusterPoint> { new("k", 50.0, 14.0, 12345, null) };
 
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.ClusterPoints, clusters));
 
         var payload = PayloadOf(module.Invocations.Single(i => i.Identifier == "setData"));
@@ -101,7 +101,7 @@ public class TmMapClusteringTests : LocalizationTestBase
         var module = SetupMapModule();
         var markers = new List<MapMarker> { new("m1", 50.0, 14.0, null) };
 
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.Markers, markers)
             .Add(p => p.UseClientClustering, true));
 
@@ -116,12 +116,12 @@ public class TmMapClusteringTests : LocalizationTestBase
     public void SwitchingMarkersToClusters_IsSingleAtomicSetData()
     {
         var module = SetupMapModule();
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.Markers, new List<MapMarker> { new("m1", 50.0, 14.0, null) }));
 
         module.Invocations.Count(i => i.Identifier == "setData").Should().Be(1);
 
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.Markers, (IReadOnlyList<MapMarker>?)null)
             .Add(p => p.ClusterPoints, new List<MapClusterPoint> { new("c", 49.0, 15.0, 10, null) }));
 
@@ -140,7 +140,7 @@ public class TmMapClusteringTests : LocalizationTestBase
     {
         SetupMapModule();
         MapClusterPoint? received = null;
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.OnClusterClick, EventCallback.Factory.Create<MapClusterPoint>(
                 this, c => received = c)));
 
@@ -160,7 +160,7 @@ public class TmMapClusteringTests : LocalizationTestBase
     {
         var module = SetupMapModule();
         module.Setup<string>("addClusterGroup", _ => true).SetResult("cluster-1");
-        var cut = RenderComponent<TmMap>();
+        var cut = Render<TmMap>();
 
         var clusterId = await cut.Instance.AddClusterGroupAsync();
         clusterId.Should().Be("cluster-1");
@@ -179,7 +179,7 @@ public class TmMapClusteringTests : LocalizationTestBase
         var provider = new FakeMapDataProvider((v, _) => Task.FromResult(new MapDataResult(
             Markers: [new MapMarker("m1", v.Latitude, v.Longitude, null)])));
 
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.CenterLatitude, 49.8)
             .Add(p => p.CenterLongitude, 15.5)
             .Add(p => p.Zoom, 8.0)
@@ -202,7 +202,7 @@ public class TmMapClusteringTests : LocalizationTestBase
     {
         SetupMapModule();
         var provider = new FakeMapDataProvider();
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.DataProvider, provider)
             .Add(p => p.DataRequestDebounceMs, 100));
 
@@ -245,7 +245,7 @@ public class TmMapClusteringTests : LocalizationTestBase
                 Markers: [new MapMarker($"call-{index}", v.Latitude, v.Longitude, null)]));
         });
 
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.DataProvider, provider)
             .Add(p => p.DataRequestDebounceMs, 1));
 
@@ -280,7 +280,7 @@ public class TmMapClusteringTests : LocalizationTestBase
             ? Task.FromException<MapDataResult>(new InvalidOperationException("backend down"))
             : Task.FromResult(new MapDataResult(Markers: [new MapMarker("ok", v.Latitude, v.Longitude, null)])));
 
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.DataProvider, provider)
             .Add(p => p.DataRequestDebounceMs, 1)
             .Add(p => p.OnDataError, EventCallback.Factory.Create<Exception>(this, e => received = e)));
@@ -301,7 +301,7 @@ public class TmMapClusteringTests : LocalizationTestBase
     public async Task RefreshDataAsync_WithoutProvider_DoesNotThrow()
     {
         SetupMapModule();
-        var cut = RenderComponent<TmMap>();
+        var cut = Render<TmMap>();
 
         var act = async () => await cut.Instance.RefreshDataAsync();
 
@@ -317,7 +317,7 @@ public class TmMapClusteringTests : LocalizationTestBase
         var markers = Enumerable.Range(0, 50_000)
             .Select(i => new MapMarker($"m{i}", 48.5 + (i % 200) * 0.01, 12.0 + (i / 200) * 0.02, null))
             .ToList();
-        var cut = RenderComponent<TmMap>();
+        var cut = Render<TmMap>();
 
         await cut.Instance.SetMarkersAsync(markers);
 
@@ -333,7 +333,7 @@ public class TmMapClusteringTests : LocalizationTestBase
         var module = SetupMapModule();
         var provider = new FakeMapDataProvider();
 
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.DataProvider, provider));
 
         await WaitUntilAsync(() => module.Invocations.Any(i => i.Identifier == "setData"));
@@ -350,7 +350,7 @@ public class TmMapClusteringTests : LocalizationTestBase
         var module = SetupMapModule();
         var clusters = new List<MapClusterPoint> { new("single", 50.0, 14.0, 1, "one") };
 
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.ClusterPoints, clusters));
 
         var payload = PayloadOf(module.Invocations.Single(i => i.Identifier == "setData"));
@@ -365,7 +365,7 @@ public class TmMapClusteringTests : LocalizationTestBase
         var module = SetupMapModule();
         var clusters = new List<MapClusterPoint> { new("k", 50.0, 14.0, 5, null) };
 
-        var cut = RenderComponent<TmMap>(parameters => parameters
+        var cut = Render<TmMap>(parameters => parameters
             .Add(p => p.ClusterPoints, clusters));
 
         var payload = PayloadOf(module.Invocations.Single(i => i.Identifier == "setData"));

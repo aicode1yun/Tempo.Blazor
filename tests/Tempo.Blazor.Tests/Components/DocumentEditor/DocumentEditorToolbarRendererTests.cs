@@ -1,3 +1,4 @@
+using Bunit.Rendering;
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
@@ -174,22 +175,22 @@ public class DocumentEditorToolbarRendererTests : LocalizationTestBase
         Value = value
     };
 
-    private IRenderedFragment RenderSelect(DocumentToolbarItem item, DocumentEditorCommandState? state, Action<object?>? onExecute = null)
+    private IRenderedComponent<ContainerFragment> RenderSelect(DocumentToolbarItem item, DocumentEditorCommandState? state, Action<object?>? onExecute = null)
         => RenderFragmentFor(new DocumentToolbarSelectRenderer().Render(BuildContext(item, state, onExecute)));
 
-    private IRenderedFragment RenderColorPicker(DocumentEditorCommandState? state, Action<object?>? onExecute = null)
+    private IRenderedComponent<ContainerFragment> RenderColorPicker(DocumentEditorCommandState? state, Action<object?>? onExecute = null)
         => RenderFragmentFor(new DocumentToolbarColorPickerRenderer().Render(BuildContext(
             new DocumentToolbarItem { Id = "textColor", CommandName = "textColor", Kind = DocumentToolbarItemKind.ColorPicker },
             state,
             onExecute)));
 
-    private IRenderedFragment RenderButton(DocumentEditorCommandState? state, Action<object?>? onExecute = null)
+    private IRenderedComponent<ContainerFragment> RenderButton(DocumentEditorCommandState? state, Action<object?>? onExecute = null)
         => RenderFragmentFor(new DocumentToolbarButtonRenderer().Render(BuildContext(
             new DocumentToolbarItem { Id = "save", CommandName = "save", Kind = DocumentToolbarItemKind.Button },
             state,
             onExecute)));
 
-    private IRenderedFragment RenderToggle(DocumentEditorCommandState? state, Action<object?>? onExecute = null)
+    private IRenderedComponent<ContainerFragment> RenderToggle(DocumentEditorCommandState? state, Action<object?>? onExecute = null)
         => RenderFragmentFor(new DocumentToolbarToggleRenderer().Render(BuildContext(
             new DocumentToolbarItem { Id = "bold", CommandName = "bold", Kind = DocumentToolbarItemKind.Toggle },
             state,
@@ -202,5 +203,5 @@ public class DocumentEditorToolbarRendererTests : LocalizationTestBase
             Execute: onExecute is null ? default : EventCallback.Factory.Create<object?>(this, onExecute),
             CommandState: state);
 
-    private IRenderedFragment RenderFragmentFor(RenderFragment fragment) => Render(fragment);
+    private IRenderedComponent<ContainerFragment> RenderFragmentFor(RenderFragment fragment) => Render(fragment);
 }

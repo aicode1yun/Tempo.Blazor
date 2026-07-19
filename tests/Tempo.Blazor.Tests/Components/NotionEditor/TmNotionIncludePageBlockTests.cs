@@ -126,7 +126,7 @@ public sealed class TmNotionIncludePageBlockTests : LocalizationTestBase
             NavigateTo = _ => Task.CompletedTask
         };
 
-        return RenderComponent<CascadingValue<NotionEditorContext>>(parameters => parameters
+        return Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(component => component.Value, context)
             .AddChildContent<TmNotionIncludePageBlock>(child => child
                 .Add(component => component.Block, block)

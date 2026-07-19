@@ -83,7 +83,7 @@ public sealed class TmNotionReadingModeTests : LocalizationTestBase
     private IRenderedComponent<TmNotionEditor> RenderEditor()
     {
         var provider = new ReadingModeProvider();
-        return RenderComponent<TmNotionEditor>(parameters => parameters
+        return Render<TmNotionEditor>(parameters => parameters
             .Add(component => component.DataProvider, provider)
             .Add(component => component.BlockProvider, provider)
             .Add(component => component.InitialPageId, ReadingModeProvider.PageId.ToString("D"))

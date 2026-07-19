@@ -70,7 +70,7 @@ public class TmTabsTests : LocalizationTestBase
     public void Tabs_ClickTab_SwitchesContent()
     {
         var activeId = "tab1";
-        var cut = RenderComponent<TmTabs>(p => p
+        var cut = Render<TmTabs>(p => p
             .Add(x => x.ActiveTabId, activeId)
             .Add(x => x.ActiveTabIdChanged, EventCallback.Factory.Create<string>(this, v => activeId = v))
             .AddChildContent<TmTabPanel>(tp => tp
@@ -92,7 +92,7 @@ public class TmTabsTests : LocalizationTestBase
     public void Tabs_ClickActiveTab_DoesNothing()
     {
         int changeCount = 0;
-        var cut = RenderComponent<TmTabs>(p => p
+        var cut = Render<TmTabs>(p => p
             .Add(x => x.ActiveTabId, "tab1")
             .Add(x => x.ActiveTabIdChanged, EventCallback.Factory.Create<string>(this, _ => changeCount++))
             .AddChildContent<TmTabPanel>(tp => tp
@@ -110,7 +110,7 @@ public class TmTabsTests : LocalizationTestBase
     [Fact]
     public void Tabs_DisabledTab_HasAriaDisabled()
     {
-        var cut = RenderComponent<TmTabs>(p => p
+        var cut = Render<TmTabs>(p => p
             .Add(x => x.ActiveTabId, "tab1")
             .AddChildContent<TmTabPanel>(tp => tp
                 .Add(x => x.Id, "tab1")
@@ -130,7 +130,7 @@ public class TmTabsTests : LocalizationTestBase
     public void Tabs_ClickDisabledTab_DoesNotSwitch()
     {
         int changeCount = 0;
-        var cut = RenderComponent<TmTabs>(p => p
+        var cut = Render<TmTabs>(p => p
             .Add(x => x.ActiveTabId, "tab1")
             .Add(x => x.ActiveTabIdChanged, EventCallback.Factory.Create<string>(this, _ => changeCount++))
             .AddChildContent<TmTabPanel>(tp => tp
@@ -154,7 +154,7 @@ public class TmTabsTests : LocalizationTestBase
     [Fact]
     public void Tabs_Badge_RendersInHeader()
     {
-        var cut = RenderComponent<TmTabs>(p => p
+        var cut = Render<TmTabs>(p => p
             .Add(x => x.ActiveTabId, "tab1")
             .AddChildContent<TmTabPanel>(tp => tp
                 .Add(x => x.Id, "tab1")
@@ -171,7 +171,7 @@ public class TmTabsTests : LocalizationTestBase
     [Fact]
     public void Tabs_Icon_RendersInHeader()
     {
-        var cut = RenderComponent<TmTabs>(p => p
+        var cut = Render<TmTabs>(p => p
             .Add(x => x.ActiveTabId, "tab1")
             .AddChildContent<TmTabPanel>(tp => tp
                 .Add(x => x.Id, "tab1")
@@ -191,7 +191,7 @@ public class TmTabsTests : LocalizationTestBase
     [InlineData(TabVariant.Enclosed, "tm-tabs--enclosed")]
     public void Tabs_Variant_AppliesCssClass(TabVariant variant, string expectedClass)
     {
-        var cut = RenderComponent<TmTabs>(p => p
+        var cut = Render<TmTabs>(p => p
             .Add(x => x.ActiveTabId, "tab1")
             .Add(x => x.Variant, variant)
             .AddChildContent<TmTabPanel>(tp => tp
@@ -205,7 +205,7 @@ public class TmTabsTests : LocalizationTestBase
     [Fact]
     public void Tabs_Wrap_AppliesWrapCssClassAlongsideVariant()
     {
-        var cut = RenderComponent<TmTabs>(p => p
+        var cut = Render<TmTabs>(p => p
             .Add(x => x.ActiveTabId, "tab1")
             .Add(x => x.Variant, TabVariant.Line)
             .Add(x => x.Wrap, true)
@@ -220,7 +220,7 @@ public class TmTabsTests : LocalizationTestBase
     [Fact]
     public void Tabs_WrapDefaultsOff_DoesNotApplyWrapClass()
     {
-        var cut = RenderComponent<TmTabs>(p => p
+        var cut = Render<TmTabs>(p => p
             .Add(x => x.ActiveTabId, "tab1")
             .AddChildContent<TmTabPanel>(tp => tp
                 .Add(x => x.Id, "tab1")
@@ -235,7 +235,7 @@ public class TmTabsTests : LocalizationTestBase
     [Fact]
     public void Tabs_CustomClass_IsApplied()
     {
-        var cut = RenderComponent<TmTabs>(p => p
+        var cut = Render<TmTabs>(p => p
             .Add(x => x.ActiveTabId, "tab1")
             .Add(x => x.Class, "my-custom")
             .AddChildContent<TmTabPanel>(tp => tp
@@ -252,7 +252,7 @@ public class TmTabsTests : LocalizationTestBase
     public void Tabs_ArrowRight_MovesToNextTab()
     {
         var activeId = "tab1";
-        var cut = RenderComponent<TmTabs>(p => p
+        var cut = Render<TmTabs>(p => p
             .Add(x => x.ActiveTabId, activeId)
             .Add(x => x.ActiveTabIdChanged, EventCallback.Factory.Create<string>(this, v => activeId = v))
             .AddChildContent<TmTabPanel>(tp => tp
@@ -274,7 +274,7 @@ public class TmTabsTests : LocalizationTestBase
     public void Tabs_ArrowLeft_MovesToPreviousTab()
     {
         var activeId = "tab2";
-        var cut = RenderComponent<TmTabs>(p => p
+        var cut = Render<TmTabs>(p => p
             .Add(x => x.ActiveTabId, activeId)
             .Add(x => x.ActiveTabIdChanged, EventCallback.Factory.Create<string>(this, v => activeId = v))
             .AddChildContent<TmTabPanel>(tp => tp
@@ -308,7 +308,7 @@ public class TmTabsTests : LocalizationTestBase
 
     private IRenderedComponent<TmTabs> RenderTabs(string activeId)
     {
-        return RenderComponent<TmTabs>(p => p
+        return Render<TmTabs>(p => p
             .Add(x => x.ActiveTabId, activeId)
             .AddChildContent<TmTabPanel>(tp => tp
                 .Add(x => x.Id, "tab1")

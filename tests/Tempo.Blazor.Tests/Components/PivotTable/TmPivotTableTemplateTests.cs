@@ -60,7 +60,7 @@ public class TmPivotTableTemplateTests : LocalizationTestBase
     [Fact]
     public void TmPivotTable_DataCellTemplate_RendersCustomContent()
     {
-        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotTable<Transaction>>(parameters => parameters
             .Add(p => p.Items, TestData)
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
@@ -78,7 +78,7 @@ public class TmPivotTableTemplateTests : LocalizationTestBase
     [Fact]
     public void TmPivotTable_DataCellTemplate_NullValue_HandlesGracefully()
     {
-        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotTable<Transaction>>(parameters => parameters
             .Add(p => p.Items, TestData)
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
@@ -102,7 +102,7 @@ public class TmPivotTableTemplateTests : LocalizationTestBase
     {
         PivotCellContext? capturedContext = null;
 
-        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotTable<Transaction>>(parameters => parameters
             .Add(p => p.Items, TestData)
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
@@ -130,7 +130,7 @@ public class TmPivotTableTemplateTests : LocalizationTestBase
     [Fact]
     public void TmPivotTable_RowHeaderTemplate_RendersCustomContent()
     {
-        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotTable<Transaction>>(parameters => parameters
             .Add(p => p.Items, TestData)
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
@@ -150,7 +150,7 @@ public class TmPivotTableTemplateTests : LocalizationTestBase
     {
         PivotRowHeaderContext? capturedContext = null;
 
-        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotTable<Transaction>>(parameters => parameters
             .Add(p => p.Items, TestData)
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
@@ -178,7 +178,7 @@ public class TmPivotTableTemplateTests : LocalizationTestBase
     [Fact]
     public void TmPivotTable_ColumnHeaderTemplate_RendersCustomContent()
     {
-        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotTable<Transaction>>(parameters => parameters
             .Add(p => p.Items, TestData)
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
@@ -198,7 +198,7 @@ public class TmPivotTableTemplateTests : LocalizationTestBase
     {
         PivotColumnHeaderContext? capturedContext = null;
 
-        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotTable<Transaction>>(parameters => parameters
             .Add(p => p.Items, TestData)
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])
@@ -226,7 +226,7 @@ public class TmPivotTableTemplateTests : LocalizationTestBase
     [Fact]
     public void TmPivotTable_NoTemplates_RendersDefaultContent()
     {
-        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+        var cut = Render<TmPivotTable<Transaction>>(parameters => parameters
             .Add(p => p.Items, TestData)
             .Add(p => p.Fields, Fields)
             .Add(p => p.RowFieldKeys, ["Category"])

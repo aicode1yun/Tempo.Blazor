@@ -43,7 +43,7 @@ public class TmEntityPickerTests : LocalizationTestBase
     [Fact]
     public void EntityPicker_Renders()
     {
-        var cut = RenderComponent<TmEntityPicker<TestItem, int>>(p => p
+        var cut = Render<TmEntityPicker<TestItem, int>>(p => p
             .Add(x => x.SearchProvider, SearchProvider)
             .Add(x => x.ValueSelector, i => i.Id)
             .Add(x => x.DisplaySelector, i => i.Name));
@@ -55,7 +55,7 @@ public class TmEntityPickerTests : LocalizationTestBase
     [Fact]
     public void EntityPicker_Label_Renders()
     {
-        var cut = RenderComponent<TmEntityPicker<TestItem, int>>(p => p
+        var cut = Render<TmEntityPicker<TestItem, int>>(p => p
             .Add(x => x.SearchProvider, SearchProvider)
             .Add(x => x.ValueSelector, i => i.Id)
             .Add(x => x.DisplaySelector, i => i.Name)
@@ -67,7 +67,7 @@ public class TmEntityPickerTests : LocalizationTestBase
     [Fact]
     public async Task EntityPicker_Search_ShowsResults()
     {
-        var cut = RenderComponent<TmEntityPicker<TestItem, int>>(p => p
+        var cut = Render<TmEntityPicker<TestItem, int>>(p => p
             .Add(x => x.SearchProvider, SearchProvider)
             .Add(x => x.ValueSelector, i => i.Id)
             .Add(x => x.DisplaySelector, i => i.Name)
@@ -84,7 +84,7 @@ public class TmEntityPickerTests : LocalizationTestBase
     [Fact]
     public async Task EntityPicker_SelectItem_ClosesDropdown()
     {
-        var cut = RenderComponent<TmEntityPicker<TestItem, int>>(p => p
+        var cut = Render<TmEntityPicker<TestItem, int>>(p => p
             .Add(x => x.SearchProvider, SearchProvider)
             .Add(x => x.ValueSelector, i => i.Id)
             .Add(x => x.DisplaySelector, i => i.Name)
@@ -101,7 +101,7 @@ public class TmEntityPickerTests : LocalizationTestBase
     [Fact]
     public async Task EntityPicker_MinSearchLength_RespectsThreshold()
     {
-        var cut = RenderComponent<TmEntityPicker<TestItem, int>>(p => p
+        var cut = Render<TmEntityPicker<TestItem, int>>(p => p
             .Add(x => x.SearchProvider, SearchProvider)
             .Add(x => x.ValueSelector, i => i.Id)
             .Add(x => x.DisplaySelector, i => i.Name)
@@ -116,7 +116,7 @@ public class TmEntityPickerTests : LocalizationTestBase
     [Fact]
     public void EntityPicker_Disabled_DisablesInput()
     {
-        var cut = RenderComponent<TmEntityPicker<TestItem, int>>(p => p
+        var cut = Render<TmEntityPicker<TestItem, int>>(p => p
             .Add(x => x.SearchProvider, SearchProvider)
             .Add(x => x.ValueSelector, i => i.Id)
             .Add(x => x.DisplaySelector, i => i.Name)
@@ -128,7 +128,7 @@ public class TmEntityPickerTests : LocalizationTestBase
     [Fact]
     public void EntityPicker_Error_Renders()
     {
-        var cut = RenderComponent<TmEntityPicker<TestItem, int>>(p => p
+        var cut = Render<TmEntityPicker<TestItem, int>>(p => p
             .Add(x => x.SearchProvider, SearchProvider)
             .Add(x => x.ValueSelector, i => i.Id)
             .Add(x => x.DisplaySelector, i => i.Name)
@@ -140,7 +140,7 @@ public class TmEntityPickerTests : LocalizationTestBase
     [Fact]
     public async Task EntityPicker_NoResults_ShowsMessage()
     {
-        var cut = RenderComponent<TmEntityPicker<TestItem, int>>(p => p
+        var cut = Render<TmEntityPicker<TestItem, int>>(p => p
             .Add(x => x.SearchProvider, SearchProvider)
             .Add(x => x.ValueSelector, i => i.Id)
             .Add(x => x.DisplaySelector, i => i.Name)
@@ -155,7 +155,7 @@ public class TmEntityPickerTests : LocalizationTestBase
     [Fact]
     public void EntityPicker_Placeholder_Renders()
     {
-        var cut = RenderComponent<TmEntityPicker<TestItem, int>>(p => p
+        var cut = Render<TmEntityPicker<TestItem, int>>(p => p
             .Add(x => x.SearchProvider, SearchProvider)
             .Add(x => x.ValueSelector, i => i.Id)
             .Add(x => x.DisplaySelector, i => i.Name)
@@ -171,7 +171,7 @@ public class TmEntityPickerTests : LocalizationTestBase
     {
         // Backward compatibility: the single Value/ValueChanged path is unchanged when MultiSelect is off.
         int? value = null;
-        var cut = RenderComponent<TmEntityPicker<TestItem, int>>(p => p
+        var cut = Render<TmEntityPicker<TestItem, int>>(p => p
             .Add(x => x.SearchProvider, SearchProvider)
             .Add(x => x.ValueSelector, i => i.Id)
             .Add(x => x.DisplaySelector, i => i.Name)
@@ -190,7 +190,7 @@ public class TmEntityPickerTests : LocalizationTestBase
     public async Task EntityPicker_MultiSelect_Selecting_RaisesSelectedValuesChanged_And_AddsChip()
     {
         IReadOnlyList<int> selected = new List<int>();
-        var cut = RenderComponent<TmEntityPicker<TestItem, int>>(p => p
+        var cut = Render<TmEntityPicker<TestItem, int>>(p => p
             .Add(x => x.SearchProvider, SearchProvider)
             .Add(x => x.ValueSelector, i => i.Id)
             .Add(x => x.DisplaySelector, i => i.Name)
@@ -204,7 +204,7 @@ public class TmEntityPickerTests : LocalizationTestBase
         cut.Find(".tm-entity-picker__option").Click();
 
         selected.Should().ContainSingle().Which.Should().Be(1);
-        cut.SetParametersAndRender(p => p.Add(x => x.SelectedValues, selected));
+        cut.Render(p => p.Add(x => x.SelectedValues, selected));
         cut.FindAll(".tm-entity-picker__chip").Should().ContainSingle();
     }
 
@@ -212,7 +212,7 @@ public class TmEntityPickerTests : LocalizationTestBase
     public async Task EntityPicker_MultiSelect_DeselectingSelected_RemovesValue()
     {
         IReadOnlyList<int> selected = new List<int> { 1 };
-        var cut = RenderComponent<TmEntityPicker<TestItem, int>>(p => p
+        var cut = Render<TmEntityPicker<TestItem, int>>(p => p
             .Add(x => x.SearchProvider, SearchProvider)
             .Add(x => x.ValueSelector, i => i.Id)
             .Add(x => x.DisplaySelector, i => i.Name)
@@ -232,7 +232,7 @@ public class TmEntityPickerTests : LocalizationTestBase
     public async Task EntityPicker_CreateNew_AddsAndSelectsItem()
     {
         int? value = null;
-        var cut = RenderComponent<TmEntityPicker<TestItem, int>>(p => p
+        var cut = Render<TmEntityPicker<TestItem, int>>(p => p
             .Add(x => x.SearchProvider, SearchProvider)
             .Add(x => x.ValueSelector, i => i.Id)
             .Add(x => x.DisplaySelector, i => i.Name)
@@ -251,7 +251,7 @@ public class TmEntityPickerTests : LocalizationTestBase
     [Fact]
     public void EntityPicker_Recent_RendersItems_OnFocus()
     {
-        var cut = RenderComponent<TmEntityPicker<TestItem, int>>(p => p
+        var cut = Render<TmEntityPicker<TestItem, int>>(p => p
             .Add(x => x.SearchProvider, SearchProvider)
             .Add(x => x.ValueSelector, i => i.Id)
             .Add(x => x.DisplaySelector, i => i.Name)

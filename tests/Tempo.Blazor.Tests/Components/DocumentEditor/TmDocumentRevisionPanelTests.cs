@@ -18,7 +18,7 @@ public class TmDocumentRevisionPanelTests : LocalizationTestBase
             CreateRevision("revision-3", DocumentRevisionAction.Pending)
         };
 
-        var cut = RenderComponent<TmDocumentRevisionPanel>(parameters => parameters
+        var cut = Render<TmDocumentRevisionPanel>(parameters => parameters
             .Add(p => p.Revisions, revisions)
             .Add(p => p.CanReview, true));
 
@@ -28,7 +28,7 @@ public class TmDocumentRevisionPanelTests : LocalizationTestBase
     [Fact]
     public void Panel_DisablesAcceptRejectButtonsWhileReviewActionIsBusy()
     {
-        var cut = RenderComponent<TmDocumentRevisionPanel>(parameters => parameters
+        var cut = Render<TmDocumentRevisionPanel>(parameters => parameters
             .Add(p => p.Revisions, new[] { CreateRevision("revision-1", DocumentRevisionAction.Pending) })
             .Add(p => p.CanReview, true)
             .Add(p => p.IsBusy, true));
@@ -48,7 +48,7 @@ public class TmDocumentRevisionPanelTests : LocalizationTestBase
     [Fact]
     public void Panel_ReviewActionsUseSemanticHierarchyAndIcons()
     {
-        var cut = RenderComponent<TmDocumentRevisionPanel>(parameters => parameters
+        var cut = Render<TmDocumentRevisionPanel>(parameters => parameters
             .Add(p => p.Revisions, new[] { CreateRevision("revision-1", DocumentRevisionAction.Pending) })
             .Add(p => p.CanReview, true));
 
@@ -80,7 +80,7 @@ public class TmDocumentRevisionPanelTests : LocalizationTestBase
     [Fact]
     public void Panel_DisablesBatchReviewButtonsWhenUserCannotReview()
     {
-        var cut = RenderComponent<TmDocumentRevisionPanel>(parameters => parameters
+        var cut = Render<TmDocumentRevisionPanel>(parameters => parameters
             .Add(p => p.Revisions, new[] { CreateRevision("revision-1", DocumentRevisionAction.Pending) })
             .Add(p => p.CanReview, false));
 
@@ -93,7 +93,7 @@ public class TmDocumentRevisionPanelTests : LocalizationTestBase
     [Fact]
     public void Panel_FiltersPendingRevisionsByAuthorAndType()
     {
-        var cut = RenderComponent<TmDocumentRevisionPanel>(parameters => parameters
+        var cut = Render<TmDocumentRevisionPanel>(parameters => parameters
             .Add(p => p.Revisions, new[]
             {
                 CreateRevision("revision-1", DocumentRevisionAction.Pending, "author-1", DocumentRevisionType.Insertion),
@@ -113,7 +113,7 @@ public class TmDocumentRevisionPanelTests : LocalizationTestBase
     public void Panel_RaisesAcceptAllWithCurrentFilter()
     {
         DocumentRevisionFilter? filter = null;
-        var cut = RenderComponent<TmDocumentRevisionPanel>(parameters => parameters
+        var cut = Render<TmDocumentRevisionPanel>(parameters => parameters
             .Add(p => p.Revisions, new[]
             {
                 CreateRevision("revision-1", DocumentRevisionAction.Pending, "author-1", DocumentRevisionType.Insertion),

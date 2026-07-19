@@ -28,7 +28,7 @@ public class TmNotionStatusPickerTests : LocalizationTestBase
     [Fact]
     public void StatusPicker_WhenHidden_RendersNothing()
     {
-        var cut = RenderComponent<TmNotionStatusPicker>(p => p
+        var cut = Render<TmNotionStatusPicker>(p => p
             .Add(x => x.Visible, false));
 
         cut.FindAll(".tm-notion-status-picker").Should().BeEmpty();
@@ -37,7 +37,7 @@ public class TmNotionStatusPickerTests : LocalizationTestBase
     [Fact]
     public void StatusPicker_RendersInitialLabelAndColor()
     {
-        var cut = RenderComponent<TmNotionStatusPicker>(p => p
+        var cut = Render<TmNotionStatusPicker>(p => p
             .Add(x => x.Visible, true)
             .Add(x => x.Top, 120)
             .Add(x => x.Left, 240)
@@ -53,7 +53,7 @@ public class TmNotionStatusPickerTests : LocalizationTestBase
     public async Task StatusPicker_SelectsColorAndInsertsTrimmedLabel()
     {
         (string Label, NotionStatusColor Color) inserted = default;
-        var cut = RenderComponent<TmNotionStatusPicker>(p => p
+        var cut = Render<TmNotionStatusPicker>(p => p
             .Add(x => x.Visible, true)
             .Add(x => x.Top, 120)
             .Add(x => x.Left, 240)
@@ -73,7 +73,7 @@ public class TmNotionStatusPickerTests : LocalizationTestBase
     public async Task StatusPicker_DoesNotInsertEmptyLabel()
     {
         var fired = false;
-        var cut = RenderComponent<TmNotionStatusPicker>(p => p
+        var cut = Render<TmNotionStatusPicker>(p => p
             .Add(x => x.Visible, true)
             .Add(x => x.Top, 120)
             .Add(x => x.Left, 240)

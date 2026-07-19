@@ -11,7 +11,7 @@ public sealed class TmModelingInspectorTests : LocalizationTestBase
     [Fact]
     public void Null_input_renders_empty_state()
     {
-        using var cut = RenderComponent<TmModelingInspector>();
+        using var cut = Render<TmModelingInspector>();
 
         cut.Find("[data-testid='modeling-inspector']").GetAttribute("data-kind").Should().Be("empty");
         cut.Find("[data-testid='modeling-inspector-empty']").TextContent.Should().Contain("Select an element");
@@ -26,7 +26,7 @@ public sealed class TmModelingInspectorTests : LocalizationTestBase
                 index => $"property-{index:00}",
                 index => JsonSerializer.SerializeToElement($"Value {index:00}"));
 
-        using var cut = RenderComponent<TmModelingInspector>(parameters => parameters
+        using var cut = Render<TmModelingInspector>(parameters => parameters
             .Add(p => p.Element, element));
 
         cut.FindAll(".tm-modeling-inspector__properties-table tbody tr").Should().HaveCount(50);
@@ -39,7 +39,7 @@ public sealed class TmModelingInspectorTests : LocalizationTestBase
         var element = CreateElement();
         element.Properties.Clear();
 
-        using var cut = RenderComponent<TmModelingInspector>(parameters => parameters
+        using var cut = Render<TmModelingInspector>(parameters => parameters
             .Add(p => p.Element, element));
 
         cut.Find("[data-testid='modeling-inspector-no-properties']").TextContent.Should().Contain("(None)");
@@ -51,7 +51,7 @@ public sealed class TmModelingInspectorTests : LocalizationTestBase
         var element = CreateElement();
         element.Properties["html"] = JsonSerializer.SerializeToElement("<b>test</b>");
 
-        using var cut = RenderComponent<TmModelingInspector>(parameters => parameters
+        using var cut = Render<TmModelingInspector>(parameters => parameters
             .Add(p => p.Element, element));
 
         var property = cut.Find("[data-testid='modeling-inspector-property-html']");
@@ -66,12 +66,12 @@ public sealed class TmModelingInspectorTests : LocalizationTestBase
         var target = CreateElement(id: "task-b", name: "Ship order");
         var relationship = CreateRelationship();
 
-        using var cut = RenderComponent<TmModelingInspector>(parameters => parameters
+        using var cut = Render<TmModelingInspector>(parameters => parameters
             .Add(p => p.Element, source)
             .Add(p => p.Elements, new[] { source, target }));
 
         cut.Find("[data-testid='modeling-inspector']").GetAttribute("data-kind").Should().Be("element");
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.Element, null)
             .Add(p => p.Relationship, relationship)
             .Add(p => p.Elements, new[] { source, target }));
@@ -93,7 +93,7 @@ public sealed class TmModelingInspectorTests : LocalizationTestBase
             DataSource = null!
         };
 
-        using var cut = RenderComponent<TmModelingInspector>(parameters => parameters
+        using var cut = Render<TmModelingInspector>(parameters => parameters
             .Add(p => p.Element, element));
 
         cut.Find("[data-testid='modeling-inspector-governance']").Should().NotBeNull();

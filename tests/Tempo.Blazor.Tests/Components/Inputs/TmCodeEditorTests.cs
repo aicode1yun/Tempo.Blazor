@@ -12,7 +12,7 @@ public class TmCodeEditorTests : LocalizationTestBase
     [Fact]
     public void TmCodeEditor_Renders_Textarea_And_Overlay()
     {
-        var cut = RenderComponent<TmCodeEditor>();
+        var cut = Render<TmCodeEditor>();
         cut.Find("textarea").ClassList.Should().Contain("tm-code-editor__textarea");
         cut.Find("pre.tm-code-editor__highlight").Should().NotBeNull();
     }
@@ -20,56 +20,56 @@ public class TmCodeEditorTests : LocalizationTestBase
     [Fact]
     public void TmCodeEditor_Root_Has_Default_TestId()
     {
-        var cut = RenderComponent<TmCodeEditor>();
+        var cut = Render<TmCodeEditor>();
         cut.Find("[data-testid='code-editor']").Should().NotBeNull();
     }
 
     [Fact]
     public void TmCodeEditor_DataTestId_Overrides_Root_TestId()
     {
-        var cut = RenderComponent<TmCodeEditor>(p => p.Add(c => c.DataTestId, "job-attributes"));
+        var cut = Render<TmCodeEditor>(p => p.Add(c => c.DataTestId, "job-attributes"));
         cut.Find("[data-testid='job-attributes']").Should().NotBeNull();
     }
 
     [Fact]
     public void TmCodeEditor_Default_Rows_Is_8()
     {
-        var cut = RenderComponent<TmCodeEditor>();
+        var cut = Render<TmCodeEditor>();
         cut.Find("textarea").GetAttribute("rows").Should().Be("8");
     }
 
     [Fact]
     public void TmCodeEditor_Label_Renders_Label_Element()
     {
-        var cut = RenderComponent<TmCodeEditor>(p => p.Add(c => c.Label, "Attributes"));
+        var cut = Render<TmCodeEditor>(p => p.Add(c => c.Label, "Attributes"));
         cut.Find("label").TextContent.Trim().Should().Be("Attributes");
     }
 
     [Fact]
     public void TmCodeEditor_Placeholder_Applied()
     {
-        var cut = RenderComponent<TmCodeEditor>(p => p.Add(c => c.Placeholder, "{ }"));
+        var cut = Render<TmCodeEditor>(p => p.Add(c => c.Placeholder, "{ }"));
         cut.Find("textarea").GetAttribute("placeholder").Should().Be("{ }");
     }
 
     [Fact]
     public void TmCodeEditor_Disabled_Sets_Disabled_Attribute()
     {
-        var cut = RenderComponent<TmCodeEditor>(p => p.Add(c => c.Disabled, true));
+        var cut = Render<TmCodeEditor>(p => p.Add(c => c.Disabled, true));
         cut.Find("textarea").HasAttribute("disabled").Should().BeTrue();
     }
 
     [Fact]
     public void TmCodeEditor_ReadOnly_Sets_Readonly_Attribute()
     {
-        var cut = RenderComponent<TmCodeEditor>(p => p.Add(c => c.ReadOnly, true));
+        var cut = Render<TmCodeEditor>(p => p.Add(c => c.ReadOnly, true));
         cut.Find("textarea").HasAttribute("readonly").Should().BeTrue();
     }
 
     [Fact]
     public void TmCodeEditor_Language_Sets_Highlight_Language_Class()
     {
-        var cut = RenderComponent<TmCodeEditor>(p => p.Add(c => c.Language, "json"));
+        var cut = Render<TmCodeEditor>(p => p.Add(c => c.Language, "json"));
         cut.Find("pre.tm-code-editor__highlight code").ClassList.Should().Contain("language-json");
     }
 
@@ -77,7 +77,7 @@ public class TmCodeEditorTests : LocalizationTestBase
     public void TmCodeEditor_ValueChanged_Fires_On_Input()
     {
         string? captured = null;
-        var cut = RenderComponent<TmCodeEditor>(p => p
+        var cut = Render<TmCodeEditor>(p => p
             .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => captured = v)));
 
         cut.Find("textarea").Input("{\"a\":1}");
@@ -88,14 +88,14 @@ public class TmCodeEditorTests : LocalizationTestBase
     [Fact]
     public void TmCodeEditor_CopyButton_Rendered_By_Default()
     {
-        var cut = RenderComponent<TmCodeEditor>();
+        var cut = Render<TmCodeEditor>();
         cut.FindAll(".tm-code-editor__copy").Should().NotBeEmpty();
     }
 
     [Fact]
     public void TmCodeEditor_CopyButton_Hidden_When_Disabled_By_Parameter()
     {
-        var cut = RenderComponent<TmCodeEditor>(p => p.Add(c => c.ShowCopyButton, false));
+        var cut = Render<TmCodeEditor>(p => p.Add(c => c.ShowCopyButton, false));
         cut.FindAll(".tm-code-editor__copy").Should().BeEmpty();
     }
 
@@ -104,7 +104,7 @@ public class TmCodeEditorTests : LocalizationTestBase
     [Fact]
     public void TmCodeEditor_ValidateJson_Shows_Error_For_Invalid_Json()
     {
-        var cut = RenderComponent<TmCodeEditor>(p => p
+        var cut = Render<TmCodeEditor>(p => p
             .Add(c => c.Language, "json")
             .Add(c => c.ValidateJson, true));
 
@@ -118,7 +118,7 @@ public class TmCodeEditorTests : LocalizationTestBase
     [Fact]
     public void TmCodeEditor_ValidateJson_No_Error_For_Valid_Json()
     {
-        var cut = RenderComponent<TmCodeEditor>(p => p
+        var cut = Render<TmCodeEditor>(p => p
             .Add(c => c.Language, "json")
             .Add(c => c.ValidateJson, true));
 
@@ -131,7 +131,7 @@ public class TmCodeEditorTests : LocalizationTestBase
     [Fact]
     public void TmCodeEditor_ValidateJson_Ignores_Empty_Value()
     {
-        var cut = RenderComponent<TmCodeEditor>(p => p
+        var cut = Render<TmCodeEditor>(p => p
             .Add(c => c.Language, "json")
             .Add(c => c.ValidateJson, true));
 
@@ -142,7 +142,7 @@ public class TmCodeEditorTests : LocalizationTestBase
     [Fact]
     public void TmCodeEditor_ValidateJson_Inactive_For_Other_Languages()
     {
-        var cut = RenderComponent<TmCodeEditor>(p => p
+        var cut = Render<TmCodeEditor>(p => p
             .Add(c => c.Language, "csharp")
             .Add(c => c.ValidateJson, true));
 
@@ -154,7 +154,7 @@ public class TmCodeEditorTests : LocalizationTestBase
     [Fact]
     public void TmCodeEditor_External_Error_Takes_Precedence_Over_Json_Error()
     {
-        var cut = RenderComponent<TmCodeEditor>(p => p
+        var cut = Render<TmCodeEditor>(p => p
             .Add(c => c.Language, "json")
             .Add(c => c.ValidateJson, true)
             .Add(c => c.Error, "Server rejected the value"));
@@ -169,12 +169,12 @@ public class TmCodeEditorTests : LocalizationTestBase
     [Fact]
     public void TmCodeEditor_FormatButton_Rendered_Only_For_Json()
     {
-        var json = RenderComponent<TmCodeEditor>(p => p
+        var json = Render<TmCodeEditor>(p => p
             .Add(c => c.Language, "json")
             .Add(c => c.ShowFormatButton, true));
         json.FindAll("[data-testid='format-button']").Should().NotBeEmpty();
 
-        var csharp = RenderComponent<TmCodeEditor>(p => p
+        var csharp = Render<TmCodeEditor>(p => p
             .Add(c => c.Language, "csharp")
             .Add(c => c.ShowFormatButton, true));
         csharp.FindAll("[data-testid='format-button']").Should().BeEmpty();
@@ -184,7 +184,7 @@ public class TmCodeEditorTests : LocalizationTestBase
     public async Task TmCodeEditor_FormatJsonAsync_PrettyPrints_Value()
     {
         string? captured = null;
-        var cut = RenderComponent<TmCodeEditor>(p => p
+        var cut = Render<TmCodeEditor>(p => p
             .Add(c => c.Value, "{\"a\":1,\"b\":[true,null]}")
             .Add(c => c.Language, "json")
             .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => captured = v)));
@@ -199,7 +199,7 @@ public class TmCodeEditorTests : LocalizationTestBase
     public async Task TmCodeEditor_FormatJsonAsync_NoOp_For_Invalid_Json()
     {
         string? captured = null;
-        var cut = RenderComponent<TmCodeEditor>(p => p
+        var cut = Render<TmCodeEditor>(p => p
             .Add(c => c.Value, "{broken")
             .Add(c => c.Language, "json")
             .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => captured = v)));
@@ -214,7 +214,7 @@ public class TmCodeEditorTests : LocalizationTestBase
     [Fact]
     public void TmCodeEditor_TestIdPrefix_Namespaces_Internal_TestIds()
     {
-        var cut = RenderComponent<TmCodeEditor>(p => p
+        var cut = Render<TmCodeEditor>(p => p
             .Add(c => c.TestIdPrefix, "job-attrs")
             .Add(c => c.Language, "json")
             .Add(c => c.ValidateJson, true));

@@ -23,7 +23,7 @@ public sealed class TmModelingEditorTests : LocalizationTestBase
         var provider = new DelayedModelingModelProvider();
         Services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingModelProvider>(provider));
 
-        using var cut = RenderComponent<TmModelingEditor>(parameters => parameters
+        using var cut = Render<TmModelingEditor>(parameters => parameters
             .Add(p => p.ProviderKey, DelayedModelingModelProvider.Key));
 
         cut.Find("[data-testid='modeling-editor-loading']").Should().NotBeNull();
@@ -35,7 +35,7 @@ public sealed class TmModelingEditorTests : LocalizationTestBase
         Services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingModelProvider>(new SuccessfulModelingModelProvider()));
         DiagramDocument? generatedDocument = null;
 
-        using var cut = RenderComponent<TmModelingEditor>(parameters => parameters
+        using var cut = Render<TmModelingEditor>(parameters => parameters
             .Add(p => p.ProviderKey, SuccessfulModelingModelProvider.Key)
             .Add(p => p.OnDiagramGenerated, EventCallback.Factory.Create<DiagramDocument>(this, document => generatedDocument = document)));
 
@@ -56,7 +56,7 @@ public sealed class TmModelingEditorTests : LocalizationTestBase
     {
         Services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingModelProvider>(new SuccessfulModelingModelProvider()));
 
-        using var cut = RenderComponent<TmModelingEditor>(parameters => parameters
+        using var cut = Render<TmModelingEditor>(parameters => parameters
             .Add(p => p.ProviderKey, SuccessfulModelingModelProvider.Key));
 
         cut.WaitForAssertion(() =>
@@ -81,7 +81,7 @@ public sealed class TmModelingEditorTests : LocalizationTestBase
         var provider = new CountingModelingModelProvider();
         Services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingModelProvider>(provider));
 
-        using var cut = RenderComponent<TmModelingEditor>(parameters => parameters
+        using var cut = Render<TmModelingEditor>(parameters => parameters
             .Add(p => p.ProviderKey, CountingModelingModelProvider.Key)
             .Add(p => p.NotationKey, "bpmn"));
 
@@ -98,7 +98,7 @@ public sealed class TmModelingEditorTests : LocalizationTestBase
             provider.LoadCount.Should().Be(1);
         });
 
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.ProviderKey, CountingModelingModelProvider.Key)
             .Add(p => p.NotationKey, "bpmn"));
 
@@ -111,7 +111,7 @@ public sealed class TmModelingEditorTests : LocalizationTestBase
         Services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingModelProvider>(new ThrowingModelingModelProvider()));
         var callbackRaised = false;
 
-        using var cut = RenderComponent<TmModelingEditor>(parameters => parameters
+        using var cut = Render<TmModelingEditor>(parameters => parameters
             .Add(p => p.ProviderKey, ThrowingModelingModelProvider.Key)
             .Add(p => p.OnDiagramGenerated, EventCallback.Factory.Create<DiagramDocument>(this, _ => callbackRaised = true)));
 
@@ -128,7 +128,7 @@ public sealed class TmModelingEditorTests : LocalizationTestBase
     {
         var callbackRaised = false;
 
-        using var cut = RenderComponent<TmModelingEditor>(parameters => parameters
+        using var cut = Render<TmModelingEditor>(parameters => parameters
             .Add(p => p.ProviderKey, "missing-provider")
             .Add(p => p.OnDiagramGenerated, EventCallback.Factory.Create<DiagramDocument>(this, _ => callbackRaised = true)));
 
@@ -142,7 +142,7 @@ public sealed class TmModelingEditorTests : LocalizationTestBase
     {
         var callbackRaised = false;
 
-        using var cut = RenderComponent<TmModelingEditor>(parameters => parameters
+        using var cut = Render<TmModelingEditor>(parameters => parameters
             .Add(p => p.ProviderKey, (string?)null)
             .Add(p => p.OnDiagramGenerated, EventCallback.Factory.Create<DiagramDocument>(this, _ => callbackRaised = true)));
 

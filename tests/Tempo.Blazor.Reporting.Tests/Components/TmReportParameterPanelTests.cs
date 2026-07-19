@@ -11,7 +11,7 @@ public sealed class TmReportParameterPanelTests : ReportingComponentTestBase
     [Fact]
     public void ParameterPanel_GeneratesControlsForSupportedParameterTypes()
     {
-        var cut = RenderComponent<TmReportParameterPanel>(parameters => parameters
+        var cut = Render<TmReportParameterPanel>(parameters => parameters
             .Add(component => component.Parameters, Parameters()));
 
         cut.Find("[data-testid='tm-report-param-Text']").GetAttribute("type").Should().Be("text");
@@ -25,7 +25,7 @@ public sealed class TmReportParameterPanelTests : ReportingComponentTestBase
     [Fact]
     public void ParameterPanel_ValidatesRequiredValues()
     {
-        var cut = RenderComponent<TmReportParameterPanel>(parameters => parameters
+        var cut = Render<TmReportParameterPanel>(parameters => parameters
             .Add(component => component.Parameters, [TextParameter(required: true)]));
 
         cut.Find("button").Click();
@@ -37,7 +37,7 @@ public sealed class TmReportParameterPanelTests : ReportingComponentTestBase
     public void ParameterPanel_SubmitsChangedValues()
     {
         IReadOnlyDictionary<string, ReportParameterValue>? submitted = null;
-        var cut = RenderComponent<TmReportParameterPanel>(parameters => parameters
+        var cut = Render<TmReportParameterPanel>(parameters => parameters
             .Add(component => component.Parameters, Parameters())
             .Add(component => component.OnSubmit, args => submitted = args.Values));
 

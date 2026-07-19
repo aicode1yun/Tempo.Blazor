@@ -27,7 +27,7 @@ public class TmNotificationBellLocalizationTests : LocalizationTestBase
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmNotificationBell>();
+        var cut = Render<TmNotificationBell>();
 
         cut.Find(".tm-notification-bell__button").GetAttribute("aria-label")
             .Should().Be("Oznámení");
@@ -36,7 +36,7 @@ public class TmNotificationBellLocalizationTests : LocalizationTestBase
     [Fact]
     public void TmNotificationBell_AriaLabel_English_ShowsEnglishText()
     {
-        var cut = RenderComponent<TmNotificationBell>();
+        var cut = Render<TmNotificationBell>();
 
         cut.Find(".tm-notification-bell__button").GetAttribute("aria-label")
             .Should().Be("Notifications");
@@ -48,7 +48,7 @@ public class TmNotificationBellLocalizationTests : LocalizationTestBase
         UseCzechLocalization();
         _store.PublishAsync(MakeNotification("Test")).Wait();
 
-        var cut = RenderComponent<TmNotificationBell>();
+        var cut = Render<TmNotificationBell>();
         cut.Find(".tm-notification-bell__button").Click();
 
         cut.Find(".tm-notification-bell__title").TextContent
@@ -61,7 +61,7 @@ public class TmNotificationBellLocalizationTests : LocalizationTestBase
         UseCzechLocalization();
         _store.PublishAsync(MakeNotification("Test")).Wait();
 
-        var cut = RenderComponent<TmNotificationBell>();
+        var cut = Render<TmNotificationBell>();
         cut.Find(".tm-notification-bell__button").Click();
 
         cut.Find(".tm-notification-bell__mark-all").TextContent.Trim()
@@ -73,7 +73,7 @@ public class TmNotificationBellLocalizationTests : LocalizationTestBase
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmNotificationBell>();
+        var cut = Render<TmNotificationBell>();
         cut.Find(".tm-notification-bell__button").Click();
 
         cut.Find(".tm-notification-bell__empty").TextContent
@@ -83,7 +83,7 @@ public class TmNotificationBellLocalizationTests : LocalizationTestBase
     [Fact]
     public void TmNotificationBell_NoNotifications_English_ShowsEnglishText()
     {
-        var cut = RenderComponent<TmNotificationBell>();
+        var cut = Render<TmNotificationBell>();
         cut.Find(".tm-notification-bell__button").Click();
 
         cut.Find(".tm-notification-bell__empty").TextContent

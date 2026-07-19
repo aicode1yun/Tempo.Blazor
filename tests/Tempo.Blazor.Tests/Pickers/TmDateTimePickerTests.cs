@@ -10,7 +10,7 @@ public class TmDateTimePickerTests : LocalizationTestBase
     [Fact]
     public void DateTimePicker_RendersDateAndTimeSections()
     {
-        var cut = RenderComponent<TmDateTimePicker>();
+        var cut = Render<TmDateTimePicker>();
 
         cut.Find(".tm-date-picker-trigger").Should().NotBeNull();
         cut.FindAll(".tm-time-input").Should().HaveCount(1);
@@ -20,7 +20,7 @@ public class TmDateTimePickerTests : LocalizationTestBase
     public void DateTimePicker_Value_Binding_Works()
     {
         var dt  = new DateTime(2025, 6, 15, 10, 30, 0);
-        var cut = RenderComponent<TmDateTimePicker>(p => p.Add(c => c.Value, dt));
+        var cut = Render<TmDateTimePicker>(p => p.Add(c => c.Value, dt));
 
         cut.Find(".tm-date-picker-trigger").TextContent.Should().Contain("15");
         cut.Find(".tm-time-seg--hours").GetAttribute("value").Should().Be("10");
@@ -31,7 +31,7 @@ public class TmDateTimePickerTests : LocalizationTestBase
     public void DateTimePicker_SelectDate_KeepsExistingTime()
     {
         DateTime? captured = null;
-        var cut = RenderComponent<TmDateTimePicker>(p => p
+        var cut = Render<TmDateTimePicker>(p => p
             .Add(c => c.Value,        new DateTime(2025, 6, 15, 14, 45, 0))
             .Add(c => c.ValueChanged, (DateTime? v) => captured = v));
 
@@ -49,7 +49,7 @@ public class TmDateTimePickerTests : LocalizationTestBase
     public void DateTimePicker_ChangeTime_KeepsExistingDate()
     {
         DateTime? captured = null;
-        var cut = RenderComponent<TmDateTimePicker>(p => p
+        var cut = Render<TmDateTimePicker>(p => p
             .Add(c => c.Value,        new DateTime(2025, 6, 15, 14, 45, 0))
             .Add(c => c.ValueChanged, (DateTime? v) => captured = v));
 
@@ -65,7 +65,7 @@ public class TmDateTimePickerTests : LocalizationTestBase
     public void DateTimePicker_ClearButton_ClearsDateAndTime()
     {
         DateTime? captured = null;
-        var cut = RenderComponent<TmDateTimePicker>(p => p
+        var cut = Render<TmDateTimePicker>(p => p
             .Add(c => c.Value,        new DateTime(2025, 6, 15, 10, 0, 0))
             .Add(c => c.ValueChanged, (DateTime? v) => captured = v));
 
@@ -77,7 +77,7 @@ public class TmDateTimePickerTests : LocalizationTestBase
     [Fact]
     public void DateTimePicker_MinDateTime_Enforced()
     {
-        var cut = RenderComponent<TmDateTimePicker>(p => p
+        var cut = Render<TmDateTimePicker>(p => p
             .Add(c => c.Value,    new DateTime(2025, 1, 1, 7, 0, 0))
             .Add(c => c.MinValue, new DateTime(2025, 1, 1, 9, 0, 0)));
 
@@ -88,7 +88,7 @@ public class TmDateTimePickerTests : LocalizationTestBase
     [Fact]
     public void DateTimePicker_MaxDateTime_Enforced()
     {
-        var cut = RenderComponent<TmDateTimePicker>(p => p
+        var cut = Render<TmDateTimePicker>(p => p
             .Add(c => c.Value,    new DateTime(2025, 12, 31, 23, 0, 0))
             .Add(c => c.MaxValue, new DateTime(2025, 12, 31, 20, 0, 0)));
 
@@ -101,14 +101,14 @@ public class TmDateTimePickerTests : LocalizationTestBase
     [Fact]
     public void DateTimePicker_Required_SetsAriaRequiredOnTrigger()
     {
-        var cut = RenderComponent<TmDateTimePicker>(p => p.Add(c => c.Required, true));
+        var cut = Render<TmDateTimePicker>(p => p.Add(c => c.Required, true));
         cut.Find(".tm-date-picker-trigger").GetAttribute("aria-required").Should().Be("true");
     }
 
     [Fact]
     public void DateTimePicker_Required_AddsRequiredMarkerClassToLabel()
     {
-        var cut = RenderComponent<TmDateTimePicker>(p => p
+        var cut = Render<TmDateTimePicker>(p => p
             .Add(c => c.Label, "Occurred")
             .Add(c => c.Required, true));
         cut.Find(".tm-picker-label").ClassList.Should().Contain("tm-input-label-required");
@@ -117,7 +117,7 @@ public class TmDateTimePickerTests : LocalizationTestBase
     [Fact]
     public void DateTimePicker_NotRequired_HasNoAriaRequiredAndNoMarker()
     {
-        var cut = RenderComponent<TmDateTimePicker>(p => p.Add(c => c.Label, "Occurred"));
+        var cut = Render<TmDateTimePicker>(p => p.Add(c => c.Label, "Occurred"));
         cut.Find(".tm-date-picker-trigger").HasAttribute("aria-required").Should().BeFalse();
         cut.Find(".tm-picker-label").ClassList.Should().NotContain("tm-input-label-required");
     }

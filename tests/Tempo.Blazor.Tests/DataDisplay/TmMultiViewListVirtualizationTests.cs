@@ -23,7 +23,7 @@ public class TmMultiViewListVirtualizationTests : LocalizationTestBase
         int itemCount = 50,
         string? virtualScrollHeight = "600px")
     {
-        return RenderComponent<TmMultiViewList<MvlVirtualItem>>(p =>
+        return Render<TmMultiViewList<MvlVirtualItem>>(p =>
         {
             p.Add(c => c.Items, MakeItems(itemCount));
             p.Add(c => c.ViewMode, viewMode);
@@ -133,7 +133,7 @@ public class TmMultiViewListVirtualizationTests : LocalizationTestBase
     [Fact]
     public void MultiViewList_ScrollMode_DefaultsTo_Pagination()
     {
-        var cut = RenderComponent<TmMultiViewList<MvlVirtualItem>>(p =>
+        var cut = Render<TmMultiViewList<MvlVirtualItem>>(p =>
         {
             p.Add(c => c.Items, MakeItems(5));
             p.Add(c => c.TitleField, x => x.Name);
@@ -148,7 +148,7 @@ public class TmMultiViewListVirtualizationTests : LocalizationTestBase
     [Fact]
     public void MultiViewList_Virtualized_WithGrouping_RendersGroupRows()
     {
-        var cut = RenderComponent<TmMultiViewList<MvlVirtualItem>>(p =>
+        var cut = Render<TmMultiViewList<MvlVirtualItem>>(p =>
         {
             p.Add(c => c.Items, MakeItems(10));
             p.Add(c => c.ViewMode, ListViewMode.Table);

@@ -30,7 +30,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     [Fact]
     public void Kanban_Renders_Columns()
     {
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -46,7 +46,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     [Fact]
     public void Kanban_ColumnHeaders_ShowTitles()
     {
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -60,7 +60,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     [Fact]
     public void Kanban_CardsDistributed_PerColumn()
     {
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -74,7 +74,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     [Fact]
     public void Kanban_CardTemplate_Rendered()
     {
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -92,7 +92,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     public void Kanban_CardClick_FiresCallback()
     {
         KanbanTask? clicked = null;
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -113,7 +113,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
             new(1, "Task A", "todo"),
         };
 
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, items)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -133,7 +133,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
             new("done", "Done"),
         };
 
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, columnsWithLimit)
             .Add(x => x.Items, Tasks) // 2 items in "todo" but limit is 1
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -146,7 +146,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     [Fact]
     public void Kanban_ColumnCount_ShowsItemCount()
     {
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -159,7 +159,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     [Fact]
     public void Kanban_DraggableAttribute_OnCards()
     {
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -175,7 +175,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     [Fact]
     public void Kanban_CustomClass()
     {
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -188,7 +188,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     [Fact]
     public void Kanban_ColumnColor_AppliedAsStyle()
     {
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -234,7 +234,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     public void Kanban_Reorder_SameColumn_DropBelowCard_FiresOnItemReordered_WithEndIndex()
     {
         KanbanMoveEvent<KanbanTask>? move = null;
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -257,7 +257,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     public void Kanban_Reorder_SameColumn_DropAboveCard_FiresOnItemReordered_WithCardIndex()
     {
         KanbanMoveEvent<KanbanTask>? move = null;
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -279,7 +279,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     public void Kanban_Reorder_SameColumn_DropOnColumnBackground_TargetIsEnd()
     {
         KanbanMoveEvent<KanbanTask>? move = null;
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -302,7 +302,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     public void Kanban_CrossColumn_DropOnCard_FiresOnItemMoved_WithTargetIndex()
     {
         KanbanMoveEvent<KanbanTask>? move = null;
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -325,7 +325,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     public void Kanban_CrossColumn_DropOnColumnBackground_TargetIsEnd()
     {
         KanbanMoveEvent<KanbanTask>? move = null;
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -354,7 +354,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
         };
 
         KanbanMoveEvent<KanbanTask>? move = null;
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, items)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -377,7 +377,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     [Fact]
     public void Kanban_DropIndicator_Shown_WhileDraggingOverColumn()
     {
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -394,7 +394,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     [Fact]
     public void Kanban_DropIndicator_Cleared_AfterDrop()
     {
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -415,7 +415,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     {
         KanbanMoveEvent<KanbanTask>? moved = null;
         KanbanMoveEvent<KanbanTask>? reordered = null;
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -443,7 +443,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     public void Kanban_SameColumnDrop_WithoutOnItemReordered_IsNoOp()
     {
         KanbanMoveEvent<KanbanTask>? moved = null;
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -463,7 +463,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     {
         // A 2.0.x consumer that ignores the new positional fields keeps working.
         KanbanMoveEvent<KanbanTask>? moved = null;
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -499,7 +499,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
         Action<ComponentParameterCollectionBuilder<TmKanbanBoard<LaneTask>>>? extra = null,
         IReadOnlyList<LaneTask>? items = null,
         IReadOnlyList<KanbanColumn>? columns = null)
-        => RenderComponent<TmKanbanBoard<LaneTask>>(p =>
+        => Render<TmKanbanBoard<LaneTask>>(p =>
         {
             p.Add(x => x.Columns, columns ?? Columns)
              .Add(x => x.Items, items ?? LaneTasks)
@@ -653,7 +653,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     [Fact]
     public void Kanban_ColumnHeaderTemplate_Rendered_WhenProvided()
     {
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -673,7 +673,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     public void Kanban_EmptyColumnTemplate_Rendered_WhenProvided()
     {
         var items = new List<KanbanTask> { new(1, "A", "todo") }; // doing + done empty
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, items)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -693,7 +693,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     [Fact]
     public void Kanban_NoSwimlaneSelector_NoSwimlaneMarkup()
     {
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -727,7 +727,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
         // scroll container that renders the visible window through <Virtualize>.
         var many = Enumerable.Range(1, 60).Select(i => new KanbanTask(i, $"Task {i}", "todo")).ToList();
 
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, many)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -749,7 +749,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
     public void Kanban_VirtualizeCards_DefaultFalse_UsesStandardColumnBody()
     {
         // Default (opt-out) keeps the exact existing @foreach card rendering — no virtual container.
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, Tasks)
             .Add(x => x.ColumnSelector, t => t.Status)
@@ -766,7 +766,7 @@ public class TmKanbanBoardTests : LocalizationTestBase
         KanbanTask? clicked = null;
         var many = Enumerable.Range(1, 30).Select(i => new KanbanTask(i, $"Task {i}", "todo")).ToList();
 
-        var cut = RenderComponent<TmKanbanBoard<KanbanTask>>(p => p
+        var cut = Render<TmKanbanBoard<KanbanTask>>(p => p
             .Add(x => x.Columns, Columns)
             .Add(x => x.Items, many)
             .Add(x => x.ColumnSelector, t => t.Status)

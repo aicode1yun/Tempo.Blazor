@@ -140,7 +140,7 @@ public class DiagramUml25Phase5Tests : LocalizationTestBase
         var node = CreateClassNode(registry);
         (string DataKey, object Value)? edit = null;
 
-        var cut = RenderComponent<TmDiagramStencilShape>(parameters => parameters
+        var cut = Render<TmDiagramStencilShape>(parameters => parameters
             .Add(p => p.Node, node)
             .Add(p => p.OnSectionEdit, EventCallback.Factory.Create<(string DataKey, object Value)>(this, value => edit = value)));
 
@@ -164,7 +164,7 @@ public class DiagramUml25Phase5Tests : LocalizationTestBase
         doc.Nodes.Add(node);
         var stack = new DiagramCommandStack();
 
-        var cut = RenderComponent<CascadingValue<DiagramCommandStack>>(parameters => parameters
+        var cut = Render<CascadingValue<DiagramCommandStack>>(parameters => parameters
             .Add(p => p.Value, stack)
             .AddChildContent<TmDiagramPropertiesPanel>(child => child
                 .Add(p => p.Document, doc)
@@ -191,7 +191,7 @@ public class DiagramUml25Phase5Tests : LocalizationTestBase
         doc.Nodes.Add(node);
         var stack = new DiagramCommandStack();
 
-        var cut = RenderComponent<CascadingValue<DiagramCommandStack>>(parameters => parameters
+        var cut = Render<CascadingValue<DiagramCommandStack>>(parameters => parameters
             .Add(p => p.Value, stack)
             .AddChildContent<TmDiagramPropertiesPanel>(child => child
                 .Add(p => p.Document, doc)

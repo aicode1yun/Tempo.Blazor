@@ -24,7 +24,7 @@ public class TmDataTableInlineEditTests : LocalizationTestBase
         List<EditablePerson> items,
         Func<EditablePerson, Task<bool>>? onCommit = null,
         bool editable = true)
-        => RenderComponent<TmDataTable<EditablePerson>>(p =>
+        => Render<TmDataTable<EditablePerson>>(p =>
         {
             p.Add(c => c.ViewContext, "edit-test");
             p.Add(c => c.Editable, editable);
@@ -122,7 +122,7 @@ public class TmDataTableInlineEditTests : LocalizationTestBase
     public void DuplicateValueEqualRows_OnlyClickedRowEntersEdit()
     {
         var items = new List<DupPerson> { new("Same"), new("Same"), new("Other") };
-        var cut = RenderComponent<TmDataTable<DupPerson>>(p =>
+        var cut = Render<TmDataTable<DupPerson>>(p =>
         {
             p.Add(c => c.ViewContext, "dup-test");
             p.Add(c => c.Editable, true);

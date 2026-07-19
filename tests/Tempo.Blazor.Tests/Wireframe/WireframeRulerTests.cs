@@ -182,7 +182,7 @@ public class WireframeRulerTests : LocalizationTestBase
     [Fact]
     public void Render_Horizontal_HasCorrectClass()
     {
-        var cut = RenderComponent<TmWireframeRuler>(parameters => parameters
+        var cut = Render<TmWireframeRuler>(parameters => parameters
             .Add(p => p.Orientation, "Horizontal")
             .Add(p => p.ViewBoxW, 1200)
             .Add(p => p.ViewBoxH, 800));
@@ -193,7 +193,7 @@ public class WireframeRulerTests : LocalizationTestBase
     [Fact]
     public void Render_Vertical_HasCorrectClass()
     {
-        var cut = RenderComponent<TmWireframeRuler>(parameters => parameters
+        var cut = Render<TmWireframeRuler>(parameters => parameters
             .Add(p => p.Orientation, "Vertical")
             .Add(p => p.ViewBoxW, 1200)
             .Add(p => p.ViewBoxH, 800));
@@ -204,7 +204,7 @@ public class WireframeRulerTests : LocalizationTestBase
     [Fact]
     public void Render_ContainsTicks()
     {
-        var cut = RenderComponent<TmWireframeRuler>(parameters => parameters
+        var cut = Render<TmWireframeRuler>(parameters => parameters
             .Add(p => p.ViewBoxX, 0)
             .Add(p => p.ViewBoxW, 200)
             .Add(p => p.Scale, 1.0));
@@ -216,7 +216,7 @@ public class WireframeRulerTests : LocalizationTestBase
     [Fact]
     public void Render_ContainsLabels()
     {
-        var cut = RenderComponent<TmWireframeRuler>(parameters => parameters
+        var cut = Render<TmWireframeRuler>(parameters => parameters
             .Add(p => p.ViewBoxX, 0)
             .Add(p => p.ViewBoxW, 200)
             .Add(p => p.Scale, 1.0));
@@ -230,7 +230,7 @@ public class WireframeRulerTests : LocalizationTestBase
     [Fact]
     public void Render_WithoutIndicator_NoCursorLine()
     {
-        var cut = RenderComponent<TmWireframeRuler>(parameters => parameters
+        var cut = Render<TmWireframeRuler>(parameters => parameters
             .Add(p => p.IndicatorPos, (double?)null));
 
         // All lines should be tick lines (same stroke color as ticks), not cursor lines
@@ -243,7 +243,7 @@ public class WireframeRulerTests : LocalizationTestBase
     [Fact]
     public void Render_WithIndicator_HasCursorLine()
     {
-        var cut = RenderComponent<TmWireframeRuler>(parameters => parameters
+        var cut = Render<TmWireframeRuler>(parameters => parameters
             .Add(p => p.Orientation, "Horizontal")
             .Add(p => p.IndicatorPos, 150.0));
 
@@ -256,7 +256,7 @@ public class WireframeRulerTests : LocalizationTestBase
     [Fact]
     public void Render_HorizontalAriaLabel()
     {
-        var cut = RenderComponent<TmWireframeRuler>(parameters => parameters
+        var cut = Render<TmWireframeRuler>(parameters => parameters
             .Add(p => p.Orientation, "Horizontal"));
 
         cut.Find("svg").GetAttribute("aria-label").Should().Be("Horizontal ruler");
@@ -265,7 +265,7 @@ public class WireframeRulerTests : LocalizationTestBase
     [Fact]
     public void Render_VerticalAriaLabel()
     {
-        var cut = RenderComponent<TmWireframeRuler>(parameters => parameters
+        var cut = Render<TmWireframeRuler>(parameters => parameters
             .Add(p => p.Orientation, "Vertical"));
 
         cut.Find("svg").GetAttribute("aria-label").Should().Be("Vertical ruler");
@@ -276,7 +276,7 @@ public class WireframeRulerTests : LocalizationTestBase
     [Fact]
     public void ViewBox_Horizontal_IsCorrect()
     {
-        var cut = RenderComponent<TmWireframeRuler>(parameters => parameters
+        var cut = Render<TmWireframeRuler>(parameters => parameters
             .Add(p => p.Orientation, "Horizontal")
             .Add(p => p.ViewBoxX, 100)
             .Add(p => p.ViewBoxW, 500)
@@ -289,7 +289,7 @@ public class WireframeRulerTests : LocalizationTestBase
     [Fact]
     public void ViewBox_Vertical_IsCorrect()
     {
-        var cut = RenderComponent<TmWireframeRuler>(parameters => parameters
+        var cut = Render<TmWireframeRuler>(parameters => parameters
             .Add(p => p.Orientation, "Vertical")
             .Add(p => p.ViewBoxY, 50)
             .Add(p => p.ViewBoxH, 600)

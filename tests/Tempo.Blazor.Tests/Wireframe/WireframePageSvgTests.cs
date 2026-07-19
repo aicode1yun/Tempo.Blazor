@@ -9,7 +9,7 @@ namespace Tempo.Blazor.Tests.Wireframe;
 /// contains NONE of the editor's interaction chrome (selection/resize handles, connector hit-test
 /// paths, waypoint handles, pointer-events, cursor styling).
 /// </summary>
-public class WireframePageSvgTests : Bunit.TestContext
+public class WireframePageSvgTests : Bunit.BunitContext
 {
     // ── Helpers ────────────────────────────────────────────────────────────────
 

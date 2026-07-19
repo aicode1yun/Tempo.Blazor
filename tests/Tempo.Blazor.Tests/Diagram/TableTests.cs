@@ -123,7 +123,7 @@ public class TableTests : DiagramTestBase
             ]
         };
 
-        var cut = RenderComponent<TmDiagramCanvas>(parameters => parameters
+        var cut = Render<TmDiagramCanvas>(parameters => parameters
             .Add(p => p.Document, doc));
 
         var table = cut.Find("table.tm-diagram-node__table");
@@ -168,7 +168,7 @@ public class TableTests : DiagramTestBase
             ]
         };
 
-        var cut = RenderComponent<TmDiagramCanvas>(parameters => parameters
+        var cut = Render<TmDiagramCanvas>(parameters => parameters
             .Add(p => p.Document, doc));
 
         var cell = cut.Find(".tm-diagram-node__table-cell");
@@ -180,7 +180,7 @@ public class TableTests : DiagramTestBase
         var cells = TableLayoutService.GetCells(node);
         cells[0].Text = "New";
 
-        cut.SetParametersAndRender(parameters => parameters
+        cut.Render(parameters => parameters
             .Add(p => p.Document, doc));
 
         cell = cut.Find(".tm-diagram-node__table-cell");

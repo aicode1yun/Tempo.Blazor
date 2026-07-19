@@ -62,7 +62,7 @@ public class TmAuditLogViewerTests : LocalizationTestBase
     private IRenderedComponent<TmAuditLogViewer> Render(
         IAuditLogProvider provider,
         Action<Bunit.ComponentParameterCollectionBuilder<TmAuditLogViewer>>? configure = null)
-        => RenderComponent<TmAuditLogViewer>(p =>
+        => Render<TmAuditLogViewer>(p =>
         {
             p.Add(x => x.Provider, provider);
             p.Add(x => x.Virtualized, false);
@@ -334,7 +334,7 @@ public class TmAuditLogViewerTests : LocalizationTestBase
         var provider = new InMemoryAuditLogProvider(
             Enumerable.Range(0, 500).Select(i => Entry(i, dayOffset: i % 30)).ToArray());
 
-        var act = () => RenderComponent<TmAuditLogViewer>(p => p
+        var act = () => Render<TmAuditLogViewer>(p => p
             .Add(x => x.Provider, provider)
             .Add(x => x.Virtualized, true));
 

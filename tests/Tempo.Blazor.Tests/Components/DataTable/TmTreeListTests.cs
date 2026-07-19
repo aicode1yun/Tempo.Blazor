@@ -24,7 +24,7 @@ public class TmTreeListTests : LocalizationTestBase
     public void TmTreeList_Renders_Table()
     {
         var data = MakeData();
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -37,7 +37,7 @@ public class TmTreeListTests : LocalizationTestBase
     public void TmTreeList_Renders_Rows_For_Roots_Only_When_Collapsed()
     {
         var data = MakeData();
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -53,7 +53,7 @@ public class TmTreeListTests : LocalizationTestBase
     public void TmTreeList_Expand_Root_Shows_Children()
     {
         var data = MakeData();
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -72,7 +72,7 @@ public class TmTreeListTests : LocalizationTestBase
     {
         var data = MakeData();
         var expanded = new HashSet<object> { 1 };
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -95,7 +95,7 @@ public class TmTreeListTests : LocalizationTestBase
     {
         var data = MakeData();
         var expanded = new HashSet<object> { 1, 2 };
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -117,7 +117,7 @@ public class TmTreeListTests : LocalizationTestBase
     public void TmTreeList_Leaf_Has_No_Toggle()
     {
         var data = new List<TreeEmp> { new(1, "CEO", null) };
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -130,7 +130,7 @@ public class TmTreeListTests : LocalizationTestBase
     public void TmTreeList_Parent_Has_Toggle()
     {
         var data = MakeData();
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -144,7 +144,7 @@ public class TmTreeListTests : LocalizationTestBase
     {
         var data = MakeData();
         TreeEmp? selected = null;
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -163,7 +163,7 @@ public class TmTreeListTests : LocalizationTestBase
     public void TmTreeList_Selectable_Adds_Selected_Class()
     {
         var data = MakeData();
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -179,7 +179,7 @@ public class TmTreeListTests : LocalizationTestBase
     [Fact]
     public void TmTreeList_Empty_Data_Shows_NoData_Message()
     {
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, new List<TreeEmp>())
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -193,7 +193,7 @@ public class TmTreeListTests : LocalizationTestBase
     {
         var data = MakeData();
         var expanded = new HashSet<object> { 1 };
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -214,7 +214,7 @@ public class TmTreeListTests : LocalizationTestBase
     {
         var data = MakeData();
         var expanded = new HashSet<object> { 1 };
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -236,7 +236,7 @@ public class TmTreeListTests : LocalizationTestBase
     {
         var data = MakeData();
         var expanded = new HashSet<object> { 1 };
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -256,7 +256,7 @@ public class TmTreeListTests : LocalizationTestBase
     public void TmTreeList_Filter_NoMatch_Shows_Empty()
     {
         var data = MakeData();
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -273,7 +273,7 @@ public class TmTreeListTests : LocalizationTestBase
     {
         var data = MakeData();
         var expanded = new HashSet<object> { 1 };
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -297,7 +297,7 @@ public class TmTreeListTests : LocalizationTestBase
         TreeEmp? edited = null;
         var data = MakeData();
         var expanded = new HashSet<object> { 1 };
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -324,7 +324,7 @@ public class TmTreeListTests : LocalizationTestBase
     {
         var data = MakeData();
         var expanded = new HashSet<object> { 1 };
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -353,7 +353,7 @@ public class TmTreeListTests : LocalizationTestBase
     {
         var data = MakeData();
         var expanded = new HashSet<object> { 1 };
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -370,7 +370,7 @@ public class TmTreeListTests : LocalizationTestBase
     {
         var data = MakeData();
         var expanded = new HashSet<object> { 1 };
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -391,7 +391,7 @@ public class TmTreeListTests : LocalizationTestBase
     {
         var data = MakeData();
         var expanded = new HashSet<object> { 1 };
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -412,7 +412,7 @@ public class TmTreeListTests : LocalizationTestBase
     {
         var data = MakeData();
         var expanded = new HashSet<object> { 1 };
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -438,7 +438,7 @@ public class TmTreeListTests : LocalizationTestBase
     {
         var data = MakeData();
         var expanded = new HashSet<object> { 1 };
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)
@@ -459,7 +459,7 @@ public class TmTreeListTests : LocalizationTestBase
     {
         var data = MakeData();
         var expanded = new HashSet<object> { 1 };
-        var cut = RenderComponent<TmTreeList<TreeEmp>>(p => p
+        var cut = Render<TmTreeList<TreeEmp>>(p => p
             .Add(c => c.Items, data)
             .Add(c => c.IdSelector, x => x.Id)
             .Add(c => c.ParentIdSelector, x => x.ManagerId)

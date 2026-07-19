@@ -12,7 +12,7 @@ public class TmSigningTextStepTests : LocalizationTestBase
     [Fact]
     public void Render_TextField_RendersSingleLineInput()
     {
-        var cut = RenderComponent<TmSigningTextStep>(parameters => parameters
+        var cut = Render<TmSigningTextStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Name", Type = SigningFieldType.Text }));
 
         cut.Find("input.tm-signing-text-step__input[type='text']").Should().NotBeNull();
@@ -21,7 +21,7 @@ public class TmSigningTextStepTests : LocalizationTestBase
     [Fact]
     public void Render_MultilineFormat_RendersTextarea()
     {
-        var cut = RenderComponent<TmSigningTextStep>(parameters => parameters
+        var cut = Render<TmSigningTextStep>(parameters => parameters
             .Add(p => p.Field, new SigningField
             {
                 Name = "Notes",
@@ -35,7 +35,7 @@ public class TmSigningTextStepTests : LocalizationTestBase
     [Fact]
     public void Render_CellsField_SetsMaxLengthFromArea()
     {
-        var cut = RenderComponent<TmSigningTextStep>(parameters => parameters
+        var cut = Render<TmSigningTextStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Code", Type = SigningFieldType.Cells })
             .Add(p => p.Area, new SigningFieldArea { Width = 0.4, CellWidth = 0.1 }));
 
@@ -45,7 +45,7 @@ public class TmSigningTextStepTests : LocalizationTestBase
     [Fact]
     public void Change_InvalidPattern_ShowsCustomMessage()
     {
-        var cut = RenderComponent<TmSigningTextStep>(parameters => parameters
+        var cut = Render<TmSigningTextStep>(parameters => parameters
             .Add(p => p.Field, new SigningField
             {
                 Name = "Code",
@@ -62,7 +62,7 @@ public class TmSigningTextStepTests : LocalizationTestBase
     public void Change_ValidValue_InvokesValueChanged()
     {
         string? captured = null;
-        var cut = RenderComponent<TmSigningTextStep>(parameters => parameters
+        var cut = Render<TmSigningTextStep>(parameters => parameters
             .Add(p => p.Field, new SigningField { Name = "Name", Type = SigningFieldType.Text })
             .Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
 

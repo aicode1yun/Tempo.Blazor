@@ -24,7 +24,7 @@ public class TmDataTableVirtualizationTests : LocalizationTestBase
         string? virtualScrollHeight = "600px",
         bool showPagination = true)
     {
-        return RenderComponent<TmDataTable<VirtualPerson>>(p =>
+        return Render<TmDataTable<VirtualPerson>>(p =>
         {
             p.Add(c => c.Items, MakePeople(itemCount));
             p.Add(c => c.ScrollMode, scrollMode);
@@ -109,7 +109,7 @@ public class TmDataTableVirtualizationTests : LocalizationTestBase
     [Fact]
     public void DataTable_Virtualized_RowAttributes_Applies_CustomAttributes_ToRows()
     {
-        var cut = RenderComponent<TmDataTable<VirtualPerson>>(p =>
+        var cut = Render<TmDataTable<VirtualPerson>>(p =>
         {
             p.Add(c => c.Items, MakePeople(5));
             p.Add(c => c.ScrollMode, DataTableScrollMode.Virtualized);
@@ -136,7 +136,7 @@ public class TmDataTableVirtualizationTests : LocalizationTestBase
     [Fact]
     public void DataTable_Virtualized_RowAttributes_Drops_ReservedNames_ToRows()
     {
-        var cut = RenderComponent<TmDataTable<VirtualPerson>>(p =>
+        var cut = Render<TmDataTable<VirtualPerson>>(p =>
         {
             p.Add(c => c.Items, MakePeople(5));
             p.Add(c => c.ScrollMode, DataTableScrollMode.Virtualized);
@@ -199,7 +199,7 @@ public class TmDataTableVirtualizationTests : LocalizationTestBase
                     PageSize = 10
                 }));
 
-        var cut = RenderComponent<TmDataTable<VirtualPerson>>(p =>
+        var cut = Render<TmDataTable<VirtualPerson>>(p =>
         {
             p.Add(c => c.DataProvider, provider);
             p.Add(c => c.ScrollMode, DataTableScrollMode.Virtualized);
@@ -234,7 +234,7 @@ public class TmDataTableVirtualizationTests : LocalizationTestBase
                     PageSize = 25
                 }));
 
-        var cut = RenderComponent<TmDataTable<VirtualPerson>>(p =>
+        var cut = Render<TmDataTable<VirtualPerson>>(p =>
         {
             p.Add(c => c.DataProvider, provider);
             p.Add(c => c.ScrollMode, DataTableScrollMode.Virtualized);
@@ -257,7 +257,7 @@ public class TmDataTableVirtualizationTests : LocalizationTestBase
     [Fact]
     public void DataTable_ScrollMode_DefaultsTo_Pagination()
     {
-        var cut = RenderComponent<TmDataTable<VirtualPerson>>(p =>
+        var cut = Render<TmDataTable<VirtualPerson>>(p =>
         {
             p.Add(c => c.Items, MakePeople(5));
         });

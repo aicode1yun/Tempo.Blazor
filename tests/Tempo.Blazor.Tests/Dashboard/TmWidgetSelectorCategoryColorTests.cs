@@ -45,7 +45,7 @@ public class TmWidgetSelectorCategoryColorTests : LocalizationTestBase
     }
 
     private IRenderedComponent<TmWidgetSelector> RenderSelector()
-        => RenderComponent<TmWidgetSelector>(p => p.Add(x => x.WidgetRegistry, CreateRegistry()));
+        => Render<TmWidgetSelector>(p => p.Add(x => x.WidgetRegistry, CreateRegistry()));
 
     [Fact]
     public void WidgetSelector_BuiltInCategory_UsesTokenClass_NotRawHex()

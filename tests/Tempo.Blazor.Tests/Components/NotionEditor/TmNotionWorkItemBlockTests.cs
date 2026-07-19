@@ -106,7 +106,7 @@ public sealed class TmNotionWorkItemBlockTests : LocalizationTestBase
     private IRenderedComponent<TmNotionWorkItemBlock> RenderWorkItem(
         WorkItemBlockContent content,
         IReadOnlyList<ITmWorkItemProvider> providers)
-        => RenderComponent<TmNotionWorkItemBlock>(parameters => parameters
+        => Render<TmNotionWorkItemBlock>(parameters => parameters
             .Add(component => component.Content, content)
             .Add(component => component.WorkItemProviders, new TmWorkItemProviderRegistry(providers))
             .Add(component => component.ReadOnly, false));

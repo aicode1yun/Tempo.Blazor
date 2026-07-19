@@ -11,7 +11,7 @@ public sealed class SchedulesPageTests : ReportServerWebTestBase
     public void SchedulesPage_CreatesScheduleTogglesItAndRunsEmailDelivery()
     {
         SignIn();
-        var cut = RenderComponent<SchedulesPage>();
+        var cut = Render<SchedulesPage>();
 
         cut.Find("[data-testid='f16-schedules-page']").TextContent.Should().Contain("Schedules");
         cut.Find("[data-testid='schedule-name']").Input("Monday ops pack");

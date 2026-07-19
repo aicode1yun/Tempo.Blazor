@@ -85,7 +85,7 @@ public class TmAccordionTests : LocalizationTestBase
     [Fact]
     public void Accordion_DisabledItem_CannotExpand()
     {
-        var cut = RenderComponent<TmAccordion>(p => p
+        var cut = Render<TmAccordion>(p => p
             .AddChildContent<TmAccordionItem>(i => i
                 .Add(x => x.Title, "Disabled")
                 .Add(x => x.Disabled, true)
@@ -98,7 +98,7 @@ public class TmAccordionTests : LocalizationTestBase
     [Fact]
     public void Accordion_DisabledItem_HasDisabledClass()
     {
-        var cut = RenderComponent<TmAccordion>(p => p
+        var cut = Render<TmAccordion>(p => p
             .AddChildContent<TmAccordionItem>(i => i
                 .Add(x => x.Title, "Disabled")
                 .Add(x => x.Disabled, true)
@@ -110,7 +110,7 @@ public class TmAccordionTests : LocalizationTestBase
     [Fact]
     public void Accordion_Subtitle_Renders()
     {
-        var cut = RenderComponent<TmAccordion>(p => p
+        var cut = Render<TmAccordion>(p => p
             .AddChildContent<TmAccordionItem>(i => i
                 .Add(x => x.Title, "Main")
                 .Add(x => x.Subtitle, "Additional info")
@@ -144,7 +144,7 @@ public class TmAccordionTests : LocalizationTestBase
     [Fact]
     public void Accordion_CustomClass_IsApplied()
     {
-        var cut = RenderComponent<TmAccordion>(p => p
+        var cut = Render<TmAccordion>(p => p
             .Add(x => x.Class, "my-acc")
             .AddChildContent<TmAccordionItem>(i => i
                 .Add(x => x.Title, "Item")
@@ -164,7 +164,7 @@ public class TmAccordionTests : LocalizationTestBase
     // ── Helper ─────────────────────────────────────────────
     private IRenderedComponent<TmAccordion> RenderAccordion(bool multiple = false)
     {
-        return RenderComponent<TmAccordion>(p => p
+        return Render<TmAccordion>(p => p
             .Add(x => x.Multiple, multiple)
             .AddChildContent<TmAccordionItem>(i => i
                 .Add(x => x.Title, "First")

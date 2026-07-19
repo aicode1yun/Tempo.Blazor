@@ -16,7 +16,7 @@ public class TmSchedulerMonthViewTests : LocalizationTestBase
     [Fact]
     public void Renders_Month_Container()
     {
-        var cut = RenderComponent<TmSchedulerMonthView>(p => p
+        var cut = Render<TmSchedulerMonthView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 15)));
 
         cut.Find(".tm-scheduler-month").Should().NotBeNull();
@@ -26,7 +26,7 @@ public class TmSchedulerMonthViewTests : LocalizationTestBase
     [Fact]
     public void Renders_42_Day_Cells()
     {
-        var cut = RenderComponent<TmSchedulerMonthView>(p => p
+        var cut = Render<TmSchedulerMonthView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 15)));
 
         cut.FindAll(".tm-scheduler-month-day").Count.Should().Be(42);
@@ -35,7 +35,7 @@ public class TmSchedulerMonthViewTests : LocalizationTestBase
     [Fact]
     public void Renders_7_Day_Headers()
     {
-        var cut = RenderComponent<TmSchedulerMonthView>(p => p
+        var cut = Render<TmSchedulerMonthView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 15)));
 
         cut.FindAll(".tm-scheduler-month-day-header").Count.Should().Be(7);
@@ -44,7 +44,7 @@ public class TmSchedulerMonthViewTests : LocalizationTestBase
     [Fact]
     public void Today_Has_Today_Class()
     {
-        var cut = RenderComponent<TmSchedulerMonthView>(p => p
+        var cut = Render<TmSchedulerMonthView>(p => p
             .Add(c => c.CurrentDate, DateTime.Today));
 
         cut.FindAll(".tm-scheduler-month-day--today").Count.Should().Be(1);
@@ -53,7 +53,7 @@ public class TmSchedulerMonthViewTests : LocalizationTestBase
     [Fact]
     public void Other_Month_Days_Have_Other_Class()
     {
-        var cut = RenderComponent<TmSchedulerMonthView>(p => p
+        var cut = Render<TmSchedulerMonthView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 15)));
 
         cut.FindAll(".tm-scheduler-month-day--other").Count.Should().BeGreaterThan(0);
@@ -67,7 +67,7 @@ public class TmSchedulerMonthViewTests : LocalizationTestBase
             Evt("Meeting", new DateTime(2025, 6, 10, 14, 0, 0), new DateTime(2025, 6, 10, 15, 0, 0))
         };
 
-        var cut = RenderComponent<TmSchedulerMonthView>(p => p
+        var cut = Render<TmSchedulerMonthView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 15))
             .Add(c => c.Events, events));
 
@@ -84,7 +84,7 @@ public class TmSchedulerMonthViewTests : LocalizationTestBase
             Evt("Holiday", new DateTime(2025, 6, 10), new DateTime(2025, 6, 11), allDay: true)
         };
 
-        var cut = RenderComponent<TmSchedulerMonthView>(p => p
+        var cut = Render<TmSchedulerMonthView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 15))
             .Add(c => c.Events, events));
 
@@ -99,7 +99,7 @@ public class TmSchedulerMonthViewTests : LocalizationTestBase
             Evt("Meeting", new DateTime(2025, 6, 10, 14, 30, 0), new DateTime(2025, 6, 10, 15, 0, 0))
         };
 
-        var cut = RenderComponent<TmSchedulerMonthView>(p => p
+        var cut = Render<TmSchedulerMonthView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 15))
             .Add(c => c.Events, events));
 
@@ -111,7 +111,7 @@ public class TmSchedulerMonthViewTests : LocalizationTestBase
     public void Day_Click_Fires_OnSlotClick()
     {
         (DateTime Start, DateTime End)? slot = null;
-        var cut = RenderComponent<TmSchedulerMonthView>(p => p
+        var cut = Render<TmSchedulerMonthView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 15))
             .Add(c => c.OnSlotClick, EventCallback.Factory.Create<(DateTime, DateTime)>(this, s => slot = s)));
 
@@ -132,7 +132,7 @@ public class TmSchedulerMonthViewTests : LocalizationTestBase
             Evt("Standup", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 9, 30, 0))
         };
 
-        var cut = RenderComponent<TmSchedulerMonthView>(p => p
+        var cut = Render<TmSchedulerMonthView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 15))
             .Add(c => c.Events, events)
             .Add(c => c.OnEventClick, EventCallback.Factory.Create<TmScheduleEvent>(this, e => clicked = e)));
@@ -155,7 +155,7 @@ public class TmSchedulerMonthViewTests : LocalizationTestBase
             Evt("Evt5", new DateTime(2025, 6, 10, 14, 0, 0), new DateTime(2025, 6, 10, 15, 0, 0)),
         };
 
-        var cut = RenderComponent<TmSchedulerMonthView>(p => p
+        var cut = Render<TmSchedulerMonthView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 15))
             .Add(c => c.Events, events)
             .Add(c => c.MaxVisibleEvents, 3));
@@ -175,7 +175,7 @@ public class TmSchedulerMonthViewTests : LocalizationTestBase
             Evt("Colored", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0), color: "#ff5722")
         };
 
-        var cut = RenderComponent<TmSchedulerMonthView>(p => p
+        var cut = Render<TmSchedulerMonthView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 15))
             .Add(c => c.Events, events));
 
@@ -191,7 +191,7 @@ public class TmSchedulerMonthViewTests : LocalizationTestBase
             Evt("Maintenance", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0), color: "#dc2626")
         };
 
-        var cut = RenderComponent<TmSchedulerMonthView>(p => p
+        var cut = Render<TmSchedulerMonthView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 15))
             .Add(c => c.Events, events)
             .Add(c => c.EventTemplate, (RenderFragment<TmScheduleEvent>)(e => builder =>

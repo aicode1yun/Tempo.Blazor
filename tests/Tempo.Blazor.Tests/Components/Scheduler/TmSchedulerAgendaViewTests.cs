@@ -18,7 +18,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
     [Fact]
     public void Renders_Agenda_Container()
     {
-        var cut = RenderComponent<TmSchedulerAgendaView>(p => p
+        var cut = Render<TmSchedulerAgendaView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 1)));
 
         cut.Find(".tm-scheduler-agenda").Should().NotBeNull();
@@ -27,7 +27,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
     [Fact]
     public void Shows_Empty_State_When_No_Events()
     {
-        var cut = RenderComponent<TmSchedulerAgendaView>(p => p
+        var cut = Render<TmSchedulerAgendaView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 1)));
 
         cut.Find(".tm-scheduler-agenda-empty").Should().NotBeNull();
@@ -43,7 +43,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
             Evt("Evt C", new DateTime(2025, 6, 12, 9, 0, 0), new DateTime(2025, 6, 12, 10, 0, 0)),
         };
 
-        var cut = RenderComponent<TmSchedulerAgendaView>(p => p
+        var cut = Render<TmSchedulerAgendaView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 1))
             .Add(c => c.Events, events));
 
@@ -60,7 +60,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
             Evt("Evt B", new DateTime(2025, 6, 20, 9, 0, 0), new DateTime(2025, 6, 20, 10, 0, 0)),
         };
 
-        var cut = RenderComponent<TmSchedulerAgendaView>(p => p
+        var cut = Render<TmSchedulerAgendaView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 1))
             .Add(c => c.Events, events));
 
@@ -76,7 +76,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
             Evt("Team Standup", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 9, 30, 0))
         };
 
-        var cut = RenderComponent<TmSchedulerAgendaView>(p => p
+        var cut = Render<TmSchedulerAgendaView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 1))
             .Add(c => c.Events, events));
 
@@ -91,7 +91,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
             Evt("Meeting", new DateTime(2025, 6, 10, 14, 30, 0), new DateTime(2025, 6, 10, 16, 0, 0))
         };
 
-        var cut = RenderComponent<TmSchedulerAgendaView>(p => p
+        var cut = Render<TmSchedulerAgendaView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 1))
             .Add(c => c.Events, events));
 
@@ -108,7 +108,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
             Evt("Holiday", new DateTime(2025, 6, 10), new DateTime(2025, 6, 11), allDay: true)
         };
 
-        var cut = RenderComponent<TmSchedulerAgendaView>(p => p
+        var cut = Render<TmSchedulerAgendaView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 1))
             .Add(c => c.Events, events));
 
@@ -126,7 +126,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
             Evt("Review", new DateTime(2025, 6, 10, 15, 0, 0), new DateTime(2025, 6, 10, 16, 0, 0))
         };
 
-        var cut = RenderComponent<TmSchedulerAgendaView>(p => p
+        var cut = Render<TmSchedulerAgendaView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 1))
             .Add(c => c.Events, events)
             .Add(c => c.OnEventClick, EventCallback.Factory.Create<TmScheduleEvent>(this, e => clicked = e)));
@@ -145,7 +145,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
             Evt("Sprint Planning", new DateTime(2025, 6, 10, 10, 0, 0), new DateTime(2025, 6, 10, 11, 0, 0), desc: "Q3 planning session")
         };
 
-        var cut = RenderComponent<TmSchedulerAgendaView>(p => p
+        var cut = Render<TmSchedulerAgendaView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 1))
             .Add(c => c.Events, events));
 
@@ -160,7 +160,7 @@ public class TmSchedulerAgendaViewTests : LocalizationTestBase
             Evt("Colored", new DateTime(2025, 6, 10, 9, 0, 0), new DateTime(2025, 6, 10, 10, 0, 0), color: "#e74c3c")
         };
 
-        var cut = RenderComponent<TmSchedulerAgendaView>(p => p
+        var cut = Render<TmSchedulerAgendaView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 1))
             .Add(c => c.Events, events));
 

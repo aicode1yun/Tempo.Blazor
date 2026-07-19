@@ -17,7 +17,7 @@ public class TmDiagramEditorPageTabsTests : DiagramTestBase
         doc.EnsurePages();
         doc.Pages.Add(new DiagramPage { Name = "Page 2" });
 
-        var cut = RenderComponent<TmDiagramEditor>(
+        var cut = Render<TmDiagramEditor>(
             parameters => parameters.Add(p => p.Document, doc));
 
         var tabs = cut.FindAll(".tm-diagram-editor__page-tab");
@@ -35,7 +35,7 @@ public class TmDiagramEditorPageTabsTests : DiagramTestBase
         doc.Pages.Add(new DiagramPage { Name = "Page 2" });
         doc.Pages[1].Nodes.Add(new DiagramNode { Id = "n2", StencilId = "rect", X = 20, Y = 20, W = 100, H = 100 });
 
-        var cut = RenderComponent<TmDiagramEditor>(
+        var cut = Render<TmDiagramEditor>(
             parameters => parameters.Add(p => p.Document, doc));
 
         var tabs = cut.FindAll(".tm-diagram-editor__page-tab");
@@ -60,7 +60,7 @@ public class TmDiagramEditorPageTabsTests : DiagramTestBase
         doc.Pages.Add(new DiagramPage { Name = "Page 2" });
         doc.Pages.Add(new DiagramPage { Name = "Page 3" });
 
-        var cut = RenderComponent<TmDiagramEditor>(
+        var cut = Render<TmDiagramEditor>(
             parameters => parameters.Add(p => p.Document, doc));
 
         var tabs = cut.FindAll(".tm-diagram-editor__page-tab");
@@ -88,7 +88,7 @@ public class TmDiagramEditorPageTabsTests : DiagramTestBase
         var doc = new DiagramDocument();
         doc.EnsurePages();
 
-        var cut = RenderComponent<TmDiagramEditor>(
+        var cut = Render<TmDiagramEditor>(
             parameters => parameters.Add(p => p.Document, doc));
 
         var addBtn = cut.Find(".tm-diagram-editor__page-tab-add");
@@ -109,7 +109,7 @@ public class TmDiagramEditorPageTabsTests : DiagramTestBase
         doc.EnsurePages();
         doc.Pages.Add(new DiagramPage { Name = "Page 2" });
 
-        var cut = RenderComponent<TmDiagramEditor>(
+        var cut = Render<TmDiagramEditor>(
             parameters => parameters.Add(p => p.Document, doc));
 
         // Page 1: add a node

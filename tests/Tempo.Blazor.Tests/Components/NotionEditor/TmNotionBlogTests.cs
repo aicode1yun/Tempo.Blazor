@@ -1,3 +1,4 @@
+using Bunit.Rendering;
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
@@ -95,7 +96,7 @@ public sealed class TmNotionBlogTests : LocalizationTestBase
             cut.Find("[data-testid='notion-blog-empty']").TextContent.Should().Contain("No blog posts"));
     }
 
-    private IRenderedFragment RenderBlog(INotionBlogProvider provider)
+    private IRenderedComponent<ContainerFragment> RenderBlog(INotionBlogProvider provider)
     {
         var context = new NotionEditorContext
         {

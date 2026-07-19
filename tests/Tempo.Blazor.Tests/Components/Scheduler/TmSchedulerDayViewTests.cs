@@ -13,7 +13,7 @@ public class TmSchedulerDayViewTests : LocalizationTestBase
     [Fact]
     public void Renders_Day_Container()
     {
-        var cut = RenderComponent<TmSchedulerDayView>(p => p
+        var cut = Render<TmSchedulerDayView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10)));
 
         cut.Find(".tm-scheduler-day").Should().NotBeNull();
@@ -22,7 +22,7 @@ public class TmSchedulerDayViewTests : LocalizationTestBase
     [Fact]
     public void Contains_TimeGrid_With_Single_Column()
     {
-        var cut = RenderComponent<TmSchedulerDayView>(p => p
+        var cut = Render<TmSchedulerDayView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10)));
 
         cut.Find(".tm-scheduler-timegrid").Should().NotBeNull();
@@ -37,7 +37,7 @@ public class TmSchedulerDayViewTests : LocalizationTestBase
             new() { Title = "Daily Standup", Start = new DateTime(2025, 6, 10, 9, 0, 0), End = new DateTime(2025, 6, 10, 9, 30, 0) }
         };
 
-        var cut = RenderComponent<TmSchedulerDayView>(p => p
+        var cut = Render<TmSchedulerDayView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.Events, events));
 
@@ -48,7 +48,7 @@ public class TmSchedulerDayViewTests : LocalizationTestBase
     public void Slot_Click_Fires_Callback()
     {
         (DateTime Start, DateTime End)? slot = null;
-        var cut = RenderComponent<TmSchedulerDayView>(p => p
+        var cut = Render<TmSchedulerDayView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.OnSlotClick, EventCallback.Factory.Create<(DateTime, DateTime)>(this, s => slot = s)));
 
@@ -66,7 +66,7 @@ public class TmSchedulerDayViewTests : LocalizationTestBase
             new() { Title = "Review", Start = new DateTime(2025, 6, 10, 15, 0, 0), End = new DateTime(2025, 6, 10, 16, 0, 0) }
         };
 
-        var cut = RenderComponent<TmSchedulerDayView>(p => p
+        var cut = Render<TmSchedulerDayView>(p => p
             .Add(c => c.CurrentDate, new DateTime(2025, 6, 10))
             .Add(c => c.Events, events)
             .Add(c => c.OnEventClick, EventCallback.Factory.Create<TmScheduleEvent>(this, e => clicked = e)));

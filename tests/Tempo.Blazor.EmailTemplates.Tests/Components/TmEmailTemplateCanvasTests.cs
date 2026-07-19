@@ -10,7 +10,7 @@ using Tempo.Blazor.Localization;
 
 namespace Tempo.Blazor.EmailTemplates.Tests.Components;
 
-public class TmEmailTemplateCanvasTests : TestContext
+public class TmEmailTemplateCanvasTests : BunitContext
 {
     public TmEmailTemplateCanvasTests()
     {
@@ -41,7 +41,7 @@ public class TmEmailTemplateCanvasTests : TestContext
     {
         var doc = TwoColumnsThreeBlocks();
 
-        var cut = RenderComponent<TmEmailTemplateCanvas>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateCanvas>(p => p.Add(c => c.Document, doc));
 
         cut.FindAll("[data-tm-section]").Should().HaveCount(1);
         cut.FindAll("[data-tm-column]").Should().HaveCount(2);
@@ -52,7 +52,7 @@ public class TmEmailTemplateCanvasTests : TestContext
     public void TextBlock_ShowsStrippedContent()
     {
         var doc = TwoColumnsThreeBlocks();
-        var cut = RenderComponent<TmEmailTemplateCanvas>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateCanvas>(p => p.Add(c => c.Document, doc));
 
         cut.Markup.Should().Contain("Hello world");
         cut.Markup.Should().NotContain("<b>world</b>");
@@ -61,7 +61,7 @@ public class TmEmailTemplateCanvasTests : TestContext
     [Fact]
     public void EmptyDocument_ShowsEmptyState()
     {
-        var cut = RenderComponent<TmEmailTemplateCanvas>(p => p.Add(c => c.Document, new EmailTemplateDocument()));
+        var cut = Render<TmEmailTemplateCanvas>(p => p.Add(c => c.Document, new EmailTemplateDocument()));
         cut.FindAll("[data-tm-block-id]").Should().BeEmpty();
         cut.FindAll(".tm-empty-state").Should().ContainSingle();
     }
@@ -73,7 +73,7 @@ public class TmEmailTemplateCanvasTests : TestContext
         Guid? selected = null;
         var blockId = doc.Sections[0].Columns[0].Blocks[1].Id;
 
-        var cut = RenderComponent<TmEmailTemplateCanvas>(p => p
+        var cut = Render<TmEmailTemplateCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.SelectedIdChanged, id => selected = id));
 
@@ -88,7 +88,7 @@ public class TmEmailTemplateCanvasTests : TestContext
         var doc = TwoColumnsThreeBlocks();
         var blockId = doc.Sections[0].Columns[0].Blocks[0].Id;
 
-        var cut = RenderComponent<TmEmailTemplateCanvas>(p => p
+        var cut = Render<TmEmailTemplateCanvas>(p => p
             .Add(c => c.Document, doc)
             .Add(c => c.SelectedId, blockId));
 
@@ -101,7 +101,7 @@ public class TmEmailTemplateCanvasTests : TestContext
     public void Blocks_HaveListitemRoleAndAriaLabel()
     {
         var doc = TwoColumnsThreeBlocks();
-        var cut = RenderComponent<TmEmailTemplateCanvas>(p => p.Add(c => c.Document, doc));
+        var cut = Render<TmEmailTemplateCanvas>(p => p.Add(c => c.Document, doc));
 
         var first = cut.Find("[data-tm-block-id]");
         first.GetAttribute("role").Should().Be("listitem");

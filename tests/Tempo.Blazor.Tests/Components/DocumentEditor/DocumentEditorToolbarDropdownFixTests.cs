@@ -72,7 +72,7 @@ public class DocumentEditorToolbarDropdownFixTests : LocalizationTestBase
     private IRenderedComponent<TmDocumentEditorToolbar> RenderToolbar(bool showAdvancedCharacterFormatting = false)
     {
         var registry = BuildRegistry("fontFamily", "fontSize", "changeCase", "bold", "lineSpacing");
-        return RenderComponent<TmDocumentEditorToolbar>(p => p
+        return Render<TmDocumentEditorToolbar>(p => p
             .Add(x => x.CommandRegistry, registry)
             .Add(x => x.ShowAdvancedCharacterFormatting, showAdvancedCharacterFormatting));
     }

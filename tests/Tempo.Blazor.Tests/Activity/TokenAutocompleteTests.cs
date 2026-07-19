@@ -18,7 +18,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     [Fact]
     public void TokenAutocomplete_NotVisible_RendersNothing()
     {
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, false)
             .Add(c => c.Tokens, CreateTestTokens()));
 
@@ -28,7 +28,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     [Fact]
     public void TokenAutocomplete_Visible_RendersDropdown()
     {
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, CreateTestTokens()));
 
@@ -39,7 +39,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     public void TokenAutocomplete_ShowsAllTokens()
     {
         var tokens = CreateTestTokens();
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens));
 
@@ -50,7 +50,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     public void TokenAutocomplete_FiltersTokensByQuery()
     {
         var tokens = CreateTestTokens();
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens)
             .Add(c => c.Query, "email"));
@@ -62,7 +62,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     public void TokenAutocomplete_DisplaysKey()
     {
         var tokens = CreateTestTokens();
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens));
 
@@ -75,7 +75,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     public void TokenAutocomplete_DisplaysDescription()
     {
         var tokens = CreateTestTokens();
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens));
 
@@ -88,7 +88,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     public void TokenAutocomplete_WithCategories_ShowsSectionHeaders()
     {
         var tokens = CreateTestTokens();
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens));
 
@@ -102,7 +102,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     public void TokenAutocomplete_WithCategories_HidesCategoryBadge()
     {
         var tokens = CreateTestTokens();
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens));
 
@@ -117,7 +117,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
             new TokenItem { Key = "a", DisplayName = "A" },
             new TokenItem { Key = "b", DisplayName = "B" },
         };
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens));
 
@@ -133,7 +133,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
             new TokenItem { Key = "b", DisplayName = "B" },
         };
         // When at least one token has category, grouped mode is active → no badges
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, new List<TokenItem>
             {
@@ -148,7 +148,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     public void TokenAutocomplete_HighlightsItem()
     {
         var tokens = CreateTestTokens();
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens)
             .Add(c => c.HighlightedIndex, 1));
@@ -161,7 +161,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     public void TokenAutocomplete_EmptyQuery_ShowsAll()
     {
         var tokens = CreateTestTokens();
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens)
             .Add(c => c.Query, ""));
@@ -173,7 +173,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     public void TokenAutocomplete_NoMatch_ShowsEmptyMessage()
     {
         var tokens = CreateTestTokens();
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens)
             .Add(c => c.Query, "nonexistent"));
@@ -185,7 +185,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     public void TokenAutocomplete_SupportsCreation_ShowsCreateButton()
     {
         var tokens = CreateTestTokens();
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens)
             .Add(c => c.SupportsCreation, true));
@@ -197,7 +197,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     public void TokenAutocomplete_NoCreation_HidesCreateButton()
     {
         var tokens = CreateTestTokens();
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens)
             .Add(c => c.SupportsCreation, false));
@@ -210,7 +210,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     {
         TokenItem? selectedToken = null;
         var tokens = CreateTestTokens();
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens)
             .Add(c => c.OnTokenSelected, EventCallback.Factory.Create<TokenItem>(this, t => selectedToken = t)));
@@ -226,7 +226,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     {
         string? createQuery = "unset";
         var tokens = CreateTestTokens();
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens)
             .Add(c => c.SupportsCreation, true)
@@ -242,7 +242,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     public void TokenAutocomplete_FilterByDescription()
     {
         var tokens = CreateTestTokens();
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens)
             .Add(c => c.Query, "Today"));
@@ -256,7 +256,7 @@ public class TokenAutocompleteTests : LocalizationTestBase
     {
         int? highlightedIndex = null;
         var tokens = CreateTestTokens();
-        var cut = RenderComponent<TokenAutocomplete>(p => p
+        var cut = Render<TokenAutocomplete>(p => p
             .Add(c => c.IsVisible, true)
             .Add(c => c.Tokens, tokens)
             .Add(c => c.OnHighlightedIndexChanged, EventCallback.Factory.Create<int>(this, i => highlightedIndex = i)));
