@@ -55,6 +55,10 @@
 
         <!-- Time section -->
         <div class="tm-datetime-time-section">
+            @if (!string.IsNullOrEmpty(TimeLabel))
+            {
+                <label class="tm-picker-label">@TimeLabel</label>
+            }
             <TmTimeInput Value="@_time"
                          ValueChanged="OnTimeChanged"
                          ShowSeconds="@ShowSeconds"
@@ -77,6 +81,8 @@
     [Parameter] public bool       Required     { get; set; }
     [Parameter] public bool       HideClear    { get; set; }
     [Parameter] public string?    Label        { get; set; }
+    /// <summary>Optional label rendered above the time (HH:mm) sub-field. Null = no label (backward compatible).</summary>
+    [Parameter] public string?    TimeLabel    { get; set; }
     [Parameter] public string?    Class        { get; set; }
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
