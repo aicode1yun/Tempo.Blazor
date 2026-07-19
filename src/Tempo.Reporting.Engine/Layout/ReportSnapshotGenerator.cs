@@ -28,11 +28,27 @@ public sealed record ReportSnapshotGeneratorOptions
     public double MinimumOrphanHeight { get; init; } = 12;
 }
 
+/// <summary>Snapshot plus the interactive drill-through regions projected during layout.</summary>
+public sealed record ReportSnapshotGenerationResult(
+    ReportSnapshot Snapshot,
+    IReadOnlyList<ReportDrillThroughRegion> DrillThroughRegions);
+
 /// <summary>Generates fixed-page snapshots from processed report instances.</summary>
 public static class ReportSnapshotGenerator
 {
     /// <summary>Generates a deterministic snapshot from a processed report instance.</summary>
     public static ReportSnapshot Generate(
+        ReportInstance instance,
+        ITextMeasurer measurer,
+        ReportSnapshotGeneratorOptions? options = null)
+        => GenerateInteractive(instance, measurer, options).Snapshot;
+
+    /// <summary>
+    /// Generates a snapshot together with the drill-through regions projected from each element's
+    /// <see cref="ReportDrillThroughAction"/> (chart series, table cells and text boxes), anchored to the
+    /// element's rendered rectangle and carrying the bound row/category context.
+    /// </summary>
+    public static ReportSnapshotGenerationResult GenerateInteractive(
         ReportInstance instance,
         ITextMeasurer measurer,
         ReportSnapshotGeneratorOptions? options = null)
@@ -48,13 +64,17 @@ public static class ReportSnapshotGenerator
         var totalPages = composition.Pages.Count;
         var processingContext = instance.ProcessingContext ??
             new ReportProcessingContext(new ReportExecutionContext("report", "report", "en-US"), dataSets: instance.DataSets);
-        return new ReportSnapshot
-        {
-            SnapshotId = options.SnapshotId,
-            Pages = composition.Pages
-                .Select(page => CreateSnapshotPage(composition.Definition, page, totalPages, measurer, options, processingContext))
-                .ToList(),
-        };
+        var regions = new List<ReportDrillThroughRegion>();
+        var pages = composition.Pages
+            .Select(page => CreateSnapshotPage(composition.Definition, page, totalPages, measurer, options, processingContext, regions))
+            .ToList();
+        return new ReportSnapshotGenerationResult(
+            new ReportSnapshot
+            {
+                SnapshotId = options.SnapshotId,
+                Pages = pages,
+            },
+            regions);
     }
 
     private static ReportSnapshotPage CreateSnapshotPage(
@@ -63,7 +83,8 @@ public static class ReportSnapshotGenerator
         int totalPages,
         ITextMeasurer measurer,
         ReportSnapshotGeneratorOptions options,
-        ReportProcessingContext processingContext)
+        ReportProcessingContext processingContext,
+        List<ReportDrillThroughRegion> regions)
     {
         var commands = new List<ReportSnapshotCommand>
         {
@@ -81,7 +102,7 @@ public static class ReportSnapshotGenerator
         var placementIndex = 0;
         foreach (var placement in page.Placements)
         {
-            foreach (var command in CreateBandCommands(definition, placement, page.PageNumber, totalPages, measurer, placementIndex, processingContext))
+            foreach (var command in CreateBandCommands(definition, placement, page.PageNumber, totalPages, measurer, placementIndex, processingContext, regions))
             {
                 commands.Add(command);
             }
@@ -105,7 +126,8 @@ public static class ReportSnapshotGenerator
         int totalPages,
         ITextMeasurer measurer,
         int placementIndex,
-        ReportProcessingContext processingContext)
+        ReportProcessingContext processingContext,
+        List<ReportDrillThroughRegion> regions)
     {
         if (placement.TablePage is not null)
         {
@@ -120,6 +142,11 @@ public static class ReportSnapshotGenerator
                 yield return command;
             }
 
+            regions.AddRange(ReportTableLayouter.CollectDrillThroughRegions(
+                placement.TablePage,
+                placement.X,
+                placement.Y,
+                pageNumber));
             yield break;
         }
 
@@ -127,7 +154,7 @@ public static class ReportSnapshotGenerator
         foreach (var element in placement.Band.Elements)
         {
             var idPrefix = $"p{pageNumber:000}-b{placementIndex:000}-e{elementIndex:000}-{element.ElementId}";
-            foreach (var command in CreateElementCommands(definition, placement, element, pageNumber, totalPages, measurer, idPrefix, processingContext))
+            foreach (var command in CreateElementCommands(definition, placement, element, pageNumber, totalPages, measurer, idPrefix, processingContext, regions))
             {
                 yield return command;
             }
@@ -144,7 +171,8 @@ public static class ReportSnapshotGenerator
         int totalPages,
         ITextMeasurer measurer,
         string idPrefix,
-        ReportProcessingContext processingContext)
+        ReportProcessingContext processingContext,
+        List<ReportDrillThroughRegion> regions)
     {
         var source = element.Source;
         var x = placement.X + source.X;
@@ -153,6 +181,20 @@ public static class ReportSnapshotGenerator
         switch (source)
         {
             case ReportTextBoxElement textBox when element is ReportTextBoxInstance textBoxInstance:
+                if (textBox.DrillThrough is not null)
+                {
+                    regions.Add(new ReportDrillThroughRegion
+                    {
+                        PageNumber = pageNumber,
+                        X = x,
+                        Y = y,
+                        Width = textBox.Width,
+                        Height = textBox.Height,
+                        Action = textBox.DrillThrough,
+                        Context = BuildRowContext(placement.Band.Row),
+                    });
+                }
+
                 foreach (var command in CreateTextBoxCommands(definition, textBox, textBoxInstance, x, y, pageNumber, totalPages, measurer, idPrefix))
                 {
                     yield return command;
@@ -184,7 +226,7 @@ public static class ReportSnapshotGenerator
                 break;
 
             case ReportChartElement chart:
-                foreach (var command in ReportChartLayouter.ToSnapshotCommands(chart, processingContext, x, y, idPrefix, measurer))
+                foreach (var command in ReportChartLayouter.ToSnapshotCommands(chart, processingContext, x, y, idPrefix, measurer, regions, pageNumber))
                 {
                     yield return command;
                 }
@@ -192,6 +234,14 @@ public static class ReportSnapshotGenerator
                 break;
         }
     }
+
+    private static IReadOnlyDictionary<string, string?> BuildRowContext(ProcessedDataRow? row)
+        => row is null
+            ? new Dictionary<string, string?>(StringComparer.Ordinal)
+            : row.Values.ToDictionary(
+                pair => pair.Key,
+                pair => Convert.ToString(pair.Value, CultureInfo.InvariantCulture),
+                StringComparer.Ordinal);
 
     private static IEnumerable<ReportSnapshotCommand> CreateTextBoxCommands(
         ReportDefinition definition,

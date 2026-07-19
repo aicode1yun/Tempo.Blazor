@@ -4077,6 +4077,7 @@
   "TmReportExplorer_Search": "Hledat reporty",
   "TmReportExplorer_SearchPlaceholder": "Hledat reporty...",
   "TmReportExplorer_ThumbnailAlt": "Náhled reportu {0}",
+  "TmReportViewer_DrillThrough": "Přejít na související report",
   "TmReportViewer_EmptyDescription": "Nastavte parametry a spusťte report.",
   "TmReportViewer_EmptyTitle": "Report není vykreslený",
   "TmReportViewer_ErrorTitle": "Report se nepodařilo vykreslit",

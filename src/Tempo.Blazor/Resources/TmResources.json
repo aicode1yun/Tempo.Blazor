@@ -4103,6 +4103,7 @@
   "TmReportExplorer_Search": "Search reports",
   "TmReportExplorer_SearchPlaceholder": "Search reports...",
   "TmReportExplorer_ThumbnailAlt": "{0} thumbnail",
+  "TmReportViewer_DrillThrough": "Drill through to related report",
   "TmReportViewer_EmptyDescription": "Set parameters and run the report.",
   "TmReportViewer_EmptyTitle": "No report rendered",
   "TmReportViewer_ErrorTitle": "Report could not be rendered",

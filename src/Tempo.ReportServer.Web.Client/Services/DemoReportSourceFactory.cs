@@ -300,7 +300,19 @@ public sealed class DemoReportSourceFactory
             Height = 30,
             Elements =
             [
-                FieldText("customer", "=Fields.Customer", 0, 0, 170, 18),
+                FieldText("customer", "=Fields.Customer", 0, 0, 170, 18) with
+                {
+                    // Definition-driven drill-through: clicking a customer opens the sales register scoped to
+                    // that row's region. The engine projects this into an anchored region with the row context.
+                    DrillThrough = new ReportDrillThroughAction
+                    {
+                        TargetReportPath = "Finance/Sales Register",
+                        ParameterMappings =
+                        [
+                            new ReportDrillThroughParameterMapping("Region", ReportDrillThroughSourceKind.Field, "Region"),
+                        ],
+                    },
+                },
                 FieldText("region", "=Fields.Region", 180, 0, 70, 18),
                 FieldText("total", "=Fields.Total", 270, 0, 100, 18, ReportHorizontalAlignment.Right),
                 FieldText("status", "=Fields.Status", 400, 0, 90, 18),
@@ -393,7 +405,20 @@ public sealed class DemoReportSourceFactory
                 Height = 18,
                 Cells =
                 [
-                    new ReportTableCell { Expression = "=Fields.Customer" },
+                    new ReportTableCell
+                    {
+                        Expression = "=Fields.Customer",
+                        // Demonstrates the drill-through DTO on a table cell: clicking a customer opens the
+                        // sales register scoped to that row's region.
+                        DrillThrough = new ReportDrillThroughAction
+                        {
+                            TargetReportPath = "Finance/Sales Register",
+                            ParameterMappings =
+                            [
+                                new ReportDrillThroughParameterMapping("Region", ReportDrillThroughSourceKind.Field, "Region"),
+                            ],
+                        },
+                    },
                     new ReportTableCell { Expression = "=Fields.Region" },
                     new ReportTableCell { Expression = "=Fields.Total", NumberFormat = "#,##0.00", HorizontalAlignment = ReportHorizontalAlignment.Right },
                     new ReportTableCell { Expression = "=Fields.Status" },

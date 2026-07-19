@@ -4103,6 +4103,7 @@
   "TmReportExplorer_Search": "Rechercher des rapports",
   "TmReportExplorer_SearchPlaceholder": "Rechercher des rapports...",
   "TmReportExplorer_ThumbnailAlt": "Miniature de {0}",
+  "TmReportViewer_DrillThrough": "Explorer le rapport associé",
   "TmReportViewer_EmptyDescription": "Définissez les paramètres et exécutez le rapport.",
   "TmReportViewer_EmptyTitle": "Aucun rapport rendu",
   "TmReportViewer_ErrorTitle": "Impossible de rendre le rapport",

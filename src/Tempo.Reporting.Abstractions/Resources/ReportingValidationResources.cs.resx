@@ -72,6 +72,15 @@
   <data name="ReportSubReport_ReportId_Required" xml:space="preserve">
     <value>Id podreportu je povinné.</value>
   </data>
+  <data name="ReportDrillThrough_Target_Required" xml:space="preserve">
+    <value>Akce prokliku musí cílit na cestu nebo id reportu.</value>
+  </data>
+  <data name="ReportDrillThrough_Mapping_ParameterName_Required" xml:space="preserve">
+    <value>Mapování parametru prokliku musí určit název cílového parametru.</value>
+  </data>
+  <data name="ReportDrillThrough_Mapping_Source_Required" xml:space="preserve">
+    <value>Mapování prokliku typu pole nebo parametr musí určit název zdroje.</value>
+  </data>
   <data name="ReportParameter_Name_Required" xml:space="preserve">
     <value>Název parametru je povinný.</value>
   </data>

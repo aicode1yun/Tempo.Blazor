@@ -63,6 +63,9 @@ public sealed record ReportTextBoxElement : ReportElement
 
     /// <summary>Allows the text box to grow vertically during layout.</summary>
     public bool CanGrow { get; init; }
+
+    /// <summary>Optional drill-through action navigating to another report when the text box is clicked in the interactive viewer.</summary>
+    public ReportDrillThroughAction? DrillThrough { get; init; }
 }
 
 /// <summary>Image source kind.</summary>
@@ -276,6 +279,9 @@ public sealed record ReportTableCell
 
     /// <summary>Optional element content hosted by this cell. Text boxes are supported in the F7 layout core.</summary>
     public List<ReportElement> Elements { get; init; } = [];
+
+    /// <summary>Optional drill-through action navigating to another report when the cell is clicked in the interactive viewer.</summary>
+    public ReportDrillThroughAction? DrillThrough { get; init; }
 }
 
 /// <summary>Table grouping definition.</summary>
@@ -376,6 +382,9 @@ public sealed record ReportChartSeries
 
     /// <summary>Optional series color. Falls back to the chart palette.</summary>
     public string? Color { get; init; }
+
+    /// <summary>Optional drill-through action navigating to another report when a point of this series is clicked in the interactive viewer.</summary>
+    public ReportDrillThroughAction? DrillThrough { get; init; }
 }
 
 /// <summary>Sub-report element.</summary>
@@ -408,6 +417,64 @@ public sealed record ReportSubReportParameterMapping
 
     /// <summary>Source expression.</summary>
     public string Expression { get; init; } = string.Empty;
+}
+
+/// <summary>Kind of source that feeds a drill-through target parameter.</summary>
+public enum ReportDrillThroughSourceKind
+{
+    /// <summary>A constant literal value.</summary>
+    Static,
+
+    /// <summary>A named field of the clicked data point (for example a chart category or a table row field).</summary>
+    Field,
+
+    /// <summary>A parameter value of the current (source) report.</summary>
+    Parameter,
+}
+
+/// <summary>Maps a single target-report parameter to a value derived from the clicked context.</summary>
+public sealed record ReportDrillThroughParameterMapping
+{
+    /// <summary>Creates an empty mapping.</summary>
+    public ReportDrillThroughParameterMapping()
+    {
+    }
+
+    /// <summary>Creates a drill-through parameter mapping.</summary>
+    public ReportDrillThroughParameterMapping(string parameterName, ReportDrillThroughSourceKind sourceKind, string source)
+    {
+        ParameterName = parameterName;
+        SourceKind = sourceKind;
+        Source = source;
+    }
+
+    /// <summary>Name of the target report parameter that receives the mapped value.</summary>
+    public string ParameterName { get; init; } = string.Empty;
+
+    /// <summary>How the value is sourced.</summary>
+    public ReportDrillThroughSourceKind SourceKind { get; init; } = ReportDrillThroughSourceKind.Static;
+
+    /// <summary>
+    /// A static literal, a source field name, or a source parameter name depending on <see cref="SourceKind"/>.
+    /// </summary>
+    public string Source { get; init; } = string.Empty;
+}
+
+/// <summary>
+/// Navigates the interactive viewer to another report when the owning element is clicked, passing
+/// parameter values derived from the clicked context. Target the report by path (preferred, resolved
+/// through <c>/resolve</c>) or by identifier.
+/// </summary>
+public sealed record ReportDrillThroughAction
+{
+    /// <summary>Folder-qualified path of the target report. Preferred; resolved through <c>/resolve</c>.</summary>
+    public string? TargetReportPath { get; init; }
+
+    /// <summary>Identifier of the target report. Used when a path is not supplied.</summary>
+    public string? TargetReportId { get; init; }
+
+    /// <summary>Parameter mappings applied to the target report.</summary>
+    public List<ReportDrillThroughParameterMapping> ParameterMappings { get; init; } = [];
 }
 
 #pragma warning restore MA0016, MA0048

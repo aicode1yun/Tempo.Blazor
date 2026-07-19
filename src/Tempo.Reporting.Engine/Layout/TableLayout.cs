@@ -208,7 +208,9 @@ public sealed record ReportTableLayoutCell
         ReportBorder? border,
         string? backgroundColor,
         ReportHorizontalAlignment horizontalAlignment,
-        bool canGrow)
+        bool canGrow,
+        ReportDrillThroughAction? drillThrough = null,
+        IReadOnlyDictionary<string, string?>? context = null)
     {
         ColumnIndex = columnIndex;
         X = x;
@@ -222,6 +224,8 @@ public sealed record ReportTableLayoutCell
         BackgroundColor = backgroundColor;
         HorizontalAlignment = horizontalAlignment;
         CanGrow = canGrow;
+        DrillThrough = drillThrough;
+        Context = context;
     }
 
     /// <summary>Column index.</summary>
@@ -260,13 +264,19 @@ public sealed record ReportTableLayoutCell
     /// <summary>Whether cell text can grow vertically.</summary>
     public bool CanGrow { get; }
 
+    /// <summary>Optional drill-through action declared on the source cell.</summary>
+    public ReportDrillThroughAction? DrillThrough { get; }
+
+    /// <summary>Bound row field values used to evaluate a field-source drill-through mapping.</summary>
+    public IReadOnlyDictionary<string, string?>? Context { get; }
+
     /// <summary>Creates a copy with page-slice y coordinates.</summary>
     public ReportTableLayoutCell WithY(double y)
-        => new(ColumnIndex, X, y, Width, Height, Text, TextStyle, Padding, Border, BackgroundColor, HorizontalAlignment, CanGrow);
+        => new(ColumnIndex, X, y, Width, Height, Text, TextStyle, Padding, Border, BackgroundColor, HorizontalAlignment, CanGrow, DrillThrough, Context);
 
     /// <summary>Creates a copy with a row-resolved height.</summary>
     public ReportTableLayoutCell WithHeight(double height)
-        => new(ColumnIndex, X, Y, Width, height, Text, TextStyle, Padding, Border, BackgroundColor, HorizontalAlignment, CanGrow);
+        => new(ColumnIndex, X, Y, Width, height, Text, TextStyle, Padding, Border, BackgroundColor, HorizontalAlignment, CanGrow, DrillThrough, Context);
 }
 
 /// <summary>Lays out report tablix elements.</summary>
@@ -342,6 +352,41 @@ public static class ReportTableLayouter
         {
             yield return command;
         }
+    }
+
+    /// <summary>Projects drill-through regions for cells whose source declares a drill-through action.</summary>
+    public static IReadOnlyList<ReportDrillThroughRegion> CollectDrillThroughRegions(
+        ReportTableLayoutPage page,
+        double originX,
+        double originY,
+        int pageNumber)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+
+        var regions = new List<ReportDrillThroughRegion>();
+        foreach (var row in page.Rows)
+        {
+            foreach (var cell in row.Cells)
+            {
+                if (cell.DrillThrough is null)
+                {
+                    continue;
+                }
+
+                regions.Add(new ReportDrillThroughRegion
+                {
+                    PageNumber = pageNumber,
+                    X = originX + cell.X,
+                    Y = originY + cell.Y,
+                    Width = cell.Width,
+                    Height = cell.Height,
+                    Action = cell.DrillThrough,
+                    Context = cell.Context ?? new Dictionary<string, string?>(StringComparer.Ordinal),
+                });
+            }
+        }
+
+        return regions;
     }
 
     private static IReadOnlyList<ReportSnapshotCommand> CreateBackgroundCommands(
@@ -688,8 +733,18 @@ public static class ReportTableLayouter
             border,
             background ?? rowBackground,
             horizontalAlignment,
-            canGrow);
+            canGrow,
+            cell.DrillThrough,
+            cell.DrillThrough is null ? null : BuildRowContext(currentRow));
     }
+
+    private static IReadOnlyDictionary<string, string?> BuildRowContext(ProcessedDataRow? row)
+        => row is null
+            ? new Dictionary<string, string?>(StringComparer.Ordinal)
+            : row.Values.ToDictionary(
+                pair => pair.Key,
+                pair => System.Convert.ToString(pair.Value, System.Globalization.CultureInfo.InvariantCulture),
+                StringComparer.Ordinal);
 
     private static IReadOnlyList<ReportTableLayoutPage> PaginateRows(
         ReportTableLayoutRequest request,

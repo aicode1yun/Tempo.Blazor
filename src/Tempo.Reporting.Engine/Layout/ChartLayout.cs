@@ -40,7 +40,9 @@ public static class ReportChartLayouter
         double x,
         double y,
         string idPrefix,
-        ITextMeasurer measurer)
+        ITextMeasurer measurer,
+        List<ReportDrillThroughRegion>? regions = null,
+        int pageNumber = 1)
     {
         ArgumentNullException.ThrowIfNull(chart);
         ArgumentNullException.ThrowIfNull(context);
@@ -52,17 +54,18 @@ public static class ReportChartLayouter
         }
 
         var series = ResolveSeries(chart, dataSet, context);
+        var sink = new ChartRegionSink(chart, regions, pageNumber, context.Culture);
         return chart.ChartType switch
         {
-            ReportChartType.Bar => CreateBarChart(chart, series, x, y, idPrefix, measurer, context.Culture),
+            ReportChartType.Bar => CreateBarChart(chart, series, x, y, idPrefix, measurer, context.Culture, sink),
             ReportChartType.Line => CreateLineChart(chart, series, x, y, idPrefix, measurer, context.Culture, fillArea: false),
             ReportChartType.Area => CreateLineChart(chart, series, x, y, idPrefix, measurer, context.Culture, fillArea: true),
             ReportChartType.Pie => CreateRadialChart(chart, series, x, y, idPrefix, measurer, context.Culture, donut: false),
             ReportChartType.Donut => CreateRadialChart(chart, series, x, y, idPrefix, measurer, context.Culture, donut: true),
-            ReportChartType.StackedColumn => CreateStackedColumnChart(chart, series, x, y, idPrefix, measurer, context.Culture),
-            ReportChartType.StackedBar => CreateStackedBarChart(chart, series, x, y, idPrefix, measurer, context.Culture),
+            ReportChartType.StackedColumn => CreateStackedColumnChart(chart, series, x, y, idPrefix, measurer, context.Culture, sink),
+            ReportChartType.StackedBar => CreateStackedBarChart(chart, series, x, y, idPrefix, measurer, context.Culture, sink),
             ReportChartType.StackedArea => CreateStackedAreaChart(chart, series, x, y, idPrefix, measurer, context.Culture),
-            _ => CreateColumnChart(chart, series, x, y, idPrefix, measurer, context.Culture),
+            _ => CreateColumnChart(chart, series, x, y, idPrefix, measurer, context.Culture, sink),
         };
     }
 
@@ -73,7 +76,8 @@ public static class ReportChartLayouter
         double y,
         string idPrefix,
         ITextMeasurer measurer,
-        CultureInfo culture)
+        CultureInfo culture,
+        ChartRegionSink sink)
     {
         var commands = new List<ReportSnapshotCommand>();
         AddTitle(chart, commands, x, y, idPrefix, measurer);
@@ -110,6 +114,7 @@ public static class ReportChartLayouter
                     Round(barWidth),
                     Round(height),
                     current.Color));
+                sink.Add(seriesIndex, categories[categoryIndex], Round(barX), Round(barY), Round(barWidth), Round(height));
             }
         }
 
@@ -123,7 +128,8 @@ public static class ReportChartLayouter
         double y,
         string idPrefix,
         ITextMeasurer measurer,
-        CultureInfo culture)
+        CultureInfo culture,
+        ChartRegionSink sink)
     {
         var commands = new List<ReportSnapshotCommand>();
         AddTitle(chart, commands, x, y, idPrefix, measurer);
@@ -150,6 +156,7 @@ public static class ReportChartLayouter
                     Round(width),
                     Round(barHeight),
                     current.Color));
+                sink.Add(seriesIndex, categories[categoryIndex], Round(frame.AxisLeft), Round(centerY - barHeight / 2), Round(width), Round(barHeight));
             }
         }
 
@@ -318,7 +325,8 @@ public static class ReportChartLayouter
         double y,
         string idPrefix,
         ITextMeasurer measurer,
-        CultureInfo culture)
+        CultureInfo culture,
+        ChartRegionSink sink)
     {
         var commands = new List<ReportSnapshotCommand>();
         AddTitle(chart, commands, x, y, idPrefix, measurer);
@@ -353,6 +361,7 @@ public static class ReportChartLayouter
                     Round(barWidth),
                     Round(height),
                     current.Color));
+                sink.Add(seriesIndex, categories[categoryIndex], Round(barX), Round(barY), Round(barWidth), Round(height));
                 cumulative += height;
             }
         }
@@ -367,7 +376,8 @@ public static class ReportChartLayouter
         double y,
         string idPrefix,
         ITextMeasurer measurer,
-        CultureInfo culture)
+        CultureInfo culture,
+        ChartRegionSink sink)
     {
         var commands = new List<ReportSnapshotCommand>();
         AddTitle(chart, commands, x, y, idPrefix, measurer);
@@ -399,6 +409,7 @@ public static class ReportChartLayouter
                     Round(width),
                     Round(barHeight),
                     current.Color));
+                sink.Add(seriesIndex, categories[categoryIndex], Round(frame.AxisLeft + cumulative), Round(centerY - barHeight / 2), Round(width), Round(barHeight));
                 cumulative += width;
             }
         }
@@ -965,6 +976,88 @@ public static class ReportChartLayouter
 
     private static double Round(double value)
         => Math.Round(value, 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>Extracts the bound field name from a simple <c>=Fields.Name</c> / <c>=Fields!Name</c> expression.</summary>
+    internal static string? ExtractFieldName(string? expression)
+    {
+        if (string.IsNullOrWhiteSpace(expression))
+        {
+            return null;
+        }
+
+        var text = expression.Trim();
+        if (text.StartsWith("=", StringComparison.Ordinal))
+        {
+            text = text[1..].Trim();
+        }
+
+        foreach (var prefix in new[] { "Fields.", "Fields!" })
+        {
+            if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                var name = text[prefix.Length..].Trim();
+                return name.Length == 0 ? null : name;
+            }
+        }
+
+        return null;
+    }
+
+    // Collects a drill-through region for each rendered bar whose owning series declares a DrillThrough
+    // action. The region is anchored to the bar rectangle and carries the category value under both a
+    // conventional "Category" key and the bound category field name, so a Field-source mapping resolves.
+    private sealed class ChartRegionSink
+    {
+        private readonly ReportChartElement _chart;
+        private readonly List<ReportDrillThroughRegion>? _regions;
+        private readonly int _pageNumber;
+        private readonly CultureInfo _culture;
+
+        public ChartRegionSink(
+            ReportChartElement chart,
+            List<ReportDrillThroughRegion>? regions,
+            int pageNumber,
+            CultureInfo culture)
+        {
+            _chart = chart;
+            _regions = regions;
+            _pageNumber = pageNumber;
+            _culture = culture;
+        }
+
+        public void Add(int seriesIndex, ChartCategoryKey category, double x, double y, double width, double height)
+        {
+            if (_regions is null || seriesIndex < 0 || seriesIndex >= _chart.Series.Count)
+            {
+                return;
+            }
+
+            var definition = _chart.Series[seriesIndex];
+            if (definition.DrillThrough is null)
+            {
+                return;
+            }
+
+            var value = FormatCategory(category, _culture);
+            var context = new Dictionary<string, string?>(StringComparer.Ordinal) { ["Category"] = value };
+            var field = ExtractFieldName(definition.CategoryExpression);
+            if (!string.IsNullOrEmpty(field))
+            {
+                context[field] = value;
+            }
+
+            _regions.Add(new ReportDrillThroughRegion
+            {
+                PageNumber = _pageNumber,
+                X = x,
+                Y = y,
+                Width = width,
+                Height = height,
+                Action = definition.DrillThrough,
+                Context = context,
+            });
+        }
+    }
 
     private sealed record NiceAxisDefinition(double Maximum, int TickCount);
 

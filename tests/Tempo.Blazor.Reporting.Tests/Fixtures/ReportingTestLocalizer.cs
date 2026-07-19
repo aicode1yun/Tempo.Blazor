@@ -32,6 +32,7 @@ internal sealed class ReportingTestLocalizer : ITmLocalizer
         ["TmReportViewer_ExportXlsx"] = "XLSX",
         ["TmReportViewer_ExportCsvUnavailable"] = "CSV / XLSX after F15",
         ["TmReportViewer_Print"] = "Print",
+        ["TmReportViewer_DrillThrough"] = "Drill through to related report",
         ["TmReportViewer_SelectValue"] = "Select value",
         ["TmReportViewer_ParameterRequired"] = "{0} is required.",
         ["TmReportExplorer_Folders"] = "Folders",

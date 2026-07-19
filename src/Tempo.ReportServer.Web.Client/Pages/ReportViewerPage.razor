@@ -1,6 +1,7 @@
 @namespace Tempo.ReportServer.Web.Pages
 @page "/reports/{*Path}"
 @using Microsoft.AspNetCore.WebUtilities
+@using Tempo.Reporting.Abstractions.Definitions
 @inject NavigationManager Navigation
 @inject IPortalIdentity Session
 @inject ITempoReportServerClient Client
@@ -134,6 +135,7 @@
                                 TenantId="@Session.CurrentTenantId"
                                 UserId="@Session.UserName"
                                 CultureName="en-US"
+                                OnDrillThrough="HandleDrillThrough"
                                 PdfExported="HandleExported"
                                 CsvExported="HandleExported"
                                 XlsxExported="HandleExported" />
@@ -357,4 +359,16 @@
 
     private void HandleExported(ReportViewerExportResult export)
         => _lastExport = export;
+
+    // Drill-through: the viewer resolves the target report reference + mapped parameter values; the host
+    // navigates to the target's deep link (/reports/{path}?param=value) — the same shape shared links use,
+    // so the target opens with its parameters pre-seeded from the clicked context.
+    private void HandleDrillThrough(ReportDrillThroughResolution resolution)
+    {
+        var url = ReportDeepLink.Build(resolution);
+        if (url is not null)
+        {
+            Navigation.NavigateTo(url);
+        }
+    }
 }

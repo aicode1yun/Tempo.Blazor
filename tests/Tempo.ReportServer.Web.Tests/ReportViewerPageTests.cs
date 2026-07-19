@@ -147,6 +147,29 @@ public sealed class ReportViewerPageTests : ReportServerWebTestBase
     }
 
     [Fact]
+    public void ViewerPage_DrillThroughClick_NavigatesToTargetDeepLinkWithMappedParameters()
+    {
+        // The sales register's Customer detail text box declares a drill-through in its DEFINITION; the
+        // engine projects an anchored region carrying the clicked row's field values. Clicking it resolves
+        // the target + maps Region <- the row's Region (EU by default) and the host navigates to the deep
+        // link — the same /reports/{path}?param shape shared links use, so the target opens pre-filtered.
+        SignIn();
+        var navigation = Services.GetRequiredService<NavigationManager>();
+
+        var cut = RenderComponent<ReportViewerPage>(parameters => parameters.Add(page => page.Path, ReportPath));
+
+        // The demo preview source renders asynchronously (sampled data with simulated latency), so wait for
+        // the overlaid drill-through target to appear before clicking it.
+        cut.WaitForElement("[data-testid='drillthrough-target']", TimeSpan.FromSeconds(15)).Click();
+
+        // The drill-through handler is async (the viewer raises OnDrillThrough, the host navigates), so wait
+        // for the navigation to settle before asserting the resolved deep link.
+        cut.WaitForAssertion(
+            () => navigation.Uri.Should().EndWith("/reports/Finance/Sales%20Register?Region=EU"),
+            TimeSpan.FromSeconds(5));
+    }
+
+    [Fact]
     public void ViewerPage_ParameterForm_SeedsInitialValuesFromDeepLinkQuery()
     {
         SignIn();

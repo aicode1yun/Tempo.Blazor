@@ -78,7 +78,8 @@ public sealed class EmbeddedReportSource : IReportSource
         var processing = await ProcessAsync(request, cancellationToken).ConfigureAwait(false);
         var primaryDataSet = ResolvePrimaryDataSet(processing.Context.DataSets);
         var instance = ReportBandInstantiator.Instantiate(_definition, primaryDataSet, processing.Context);
-        var snapshot = ReportSnapshotGenerator.Generate(instance, _textMeasurer, _snapshotOptions);
+        var generation = ReportSnapshotGenerator.GenerateInteractive(instance, _textMeasurer, _snapshotOptions);
+        var snapshot = generation.Snapshot;
         var metadata = await GetMetadataAsync(
             new ReportViewerMetadataRequest
             {
@@ -95,6 +96,7 @@ public sealed class EmbeddedReportSource : IReportSource
             Metadata = metadata,
             Parameters = processing.Context.Parameters,
             InteractionToken = request.InteractionToken,
+            DrillThroughRegions = generation.DrillThroughRegions,
         };
     }
 

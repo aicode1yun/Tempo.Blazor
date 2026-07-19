@@ -10,17 +10,20 @@ internal sealed class RecordingReportSource : IReportSource
     private readonly ReportViewerMetadata _metadata;
     private readonly IReadOnlyDictionary<string, ReportParameterValue>? _renderedParameters;
     private readonly Exception? _renderException;
+    private readonly IReadOnlyList<ReportDrillThroughRegion> _drillThroughRegions;
 
     public RecordingReportSource(
         ReportSnapshot? snapshot = null,
         ReportViewerMetadata? metadata = null,
         IReadOnlyDictionary<string, ReportParameterValue>? renderedParameters = null,
-        Exception? renderException = null)
+        Exception? renderException = null,
+        IReadOnlyList<ReportDrillThroughRegion>? drillThroughRegions = null)
     {
         _snapshot = snapshot ?? ReportingSnapshots.TwoPageSnapshot();
         _metadata = metadata ?? new ReportViewerMetadata { ReportId = "test", Title = "Test" };
         _renderedParameters = renderedParameters;
         _renderException = renderException;
+        _drillThroughRegions = drillThroughRegions ?? [];
     }
 
     public List<ReportViewerMetadataRequest> MetadataRequests { get; } = [];
@@ -64,6 +67,7 @@ internal sealed class RecordingReportSource : IReportSource
             Metadata = _metadata,
             Parameters = _renderedParameters ?? request.Parameters,
             InteractionToken = request.InteractionToken,
+            DrillThroughRegions = _drillThroughRegions,
         };
     }
 

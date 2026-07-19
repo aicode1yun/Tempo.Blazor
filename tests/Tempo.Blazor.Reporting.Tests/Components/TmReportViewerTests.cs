@@ -3,6 +3,7 @@ using Tempo.Blazor.Reporting.Models;
 using Tempo.Blazor.Reporting.Tests.Fixtures;
 using Tempo.Reporting.Abstractions.Data;
 using Tempo.Reporting.Abstractions.Definitions;
+using Tempo.Reporting.Engine.Snapshot;
 
 namespace Tempo.Blazor.Reporting.Tests.Components;
 
@@ -134,6 +135,54 @@ public sealed class TmReportViewerTests : ReportingComponentTestBase
 
         source.RenderRequests.Should().HaveCount(2);
         source.RenderRequests[1].InteractionToken.Should().Be("details");
+    }
+
+    [Fact]
+    public void Viewer_ClickingDrillThroughRegion_RaisesResolvedTargetAndMappedParameters()
+    {
+        ReportDrillThroughResolution? resolution = null;
+        var source = new RecordingReportSource(drillThroughRegions:
+        [
+            new ReportDrillThroughRegion
+            {
+                PageNumber = 1,
+                X = 10,
+                Y = 12,
+                Width = 80,
+                Height = 20,
+                Context = new Dictionary<string, string?>(StringComparer.Ordinal) { ["Customer"] = "Ada" },
+                Action = new ReportDrillThroughAction
+                {
+                    TargetReportPath = "Finance/Customer Detail",
+                    ParameterMappings =
+                    [
+                        new ReportDrillThroughParameterMapping("Customer", ReportDrillThroughSourceKind.Field, "Customer"),
+                    ],
+                },
+            },
+        ]);
+
+        var cut = RenderComponent<TmReportViewer>(parameters => parameters
+            .Add(component => component.ReportSource, source)
+            .Add(component => component.OnDrillThrough, value => resolution = value));
+
+        cut.WaitForElement("[data-testid='drillthrough-target']").Click();
+
+        resolution.Should().NotBeNull();
+        resolution!.TargetReportPath.Should().Be("Finance/Customer Detail");
+        resolution.Parameters.Should().ContainKey("Customer").WhoseValue.Should().Be("Ada");
+    }
+
+    [Fact]
+    public void Viewer_WithoutDrillThroughRegions_RendersNoTargets()
+    {
+        var source = new RecordingReportSource();
+
+        var cut = RenderComponent<TmReportViewer>(parameters => parameters
+            .Add(component => component.ReportSource, source));
+
+        cut.WaitForAssertion(() => source.RenderRequests.Should().HaveCount(1));
+        cut.FindAll("[data-testid='drillthrough-target']").Should().BeEmpty();
     }
 
     private static ReportViewerMetadata Metadata()
