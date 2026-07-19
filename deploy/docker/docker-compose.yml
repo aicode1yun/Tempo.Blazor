@@ -1,0 +1,147 @@
+# ---------------------------------------------------------------------------
+# Tempo Report Server — full container topology (Fáze 16 / C1).
+#
+#   mssql     SQL Server 2022 catalog store (SQL-auth login per ADR-0001).
+#   keycloak  OIDC provider; imports the committed tempo-reports realm export.
+#   api       Standalone REST API host (EF migrates on start, renders PDFs via SkiaSharp).
+#   web       Blazor Web App (BFF + InteractiveAuto portal / embedding demo).
+#
+# Secrets come from a local .env (see .env.example) — NONE are committed.
+#
+# Build context is the repository root (../..) so the API/Web Dockerfiles can
+# reach the ProjectReferences under ../../src.
+#
+# NOTE (browser <-> Keycloak/API hostnames): the SERVER legs reach `keycloak`
+# and `api` over the compose network. The BROWSER also uses those exact URLs
+# (baked into the WASM appsettings + the realm issuer), so for the interactive
+# portal add to your hosts file:  127.0.0.1 keycloak api
+# The CI smoke does not need this — it only curls published ports on localhost.
+# ---------------------------------------------------------------------------
+name: tempo-report-server
+
+services:
+  mssql:
+    image: ${MSSQL_IMAGE:-mcr.microsoft.com/mssql/server:2022-latest}
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in .env}
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    restart: unless-stopped
+    healthcheck:
+      # TCP-open probe via bash /dev/tcp — no dependency on sqlcmd being present
+      # in the image. The API also has restart:on-failure to absorb the brief
+      # window between "port open" and "query ready".
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/1433' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 25s
+
+  keycloak:
+    image: ${KEYCLOAK_IMAGE:-quay.io/keycloak/keycloak:26.3}
+    entrypoint: ["bash", "/opt/keycloak/keycloak-import.sh"]
+    command: ["start-dev", "--import-realm"]
+    environment:
+      # KC 26 bootstrap admin (new names) + legacy names for older tags.
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env}
+      # Issuer/frontend URL — same host the browser AND the api/web containers use.
+      KC_HOSTNAME: http://keycloak:8080
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      # Consumed by keycloak-import.sh to fill the realm's ${...} secret placeholders.
+      TEMPO_REPORT_WEB_SECRET: ${TEMPO_REPORT_WEB_SECRET:?set TEMPO_REPORT_WEB_SECRET in .env}
+      TEMPO_REPORT_M2M_SECRET: ${TEMPO_REPORT_M2M_SECRET:?set TEMPO_REPORT_M2M_SECRET in .env}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../keycloak/tempo-reports-realm.json:/opt/keycloak/data/import-src/tempo-reports-realm.json:ro
+      - ./keycloak-import.sh:/opt/keycloak/keycloak-import.sh:ro
+    restart: unless-stopped
+    healthcheck:
+      # TCP-open probe on the management port 9000. NOTE: 9000 accepts connections
+      # early in startup and can be up BEFORE realm import finishes — this proves
+      # "Keycloak is coming up", not "realm imported". Nothing gates on this health;
+      # the CI smoke waits on the real OIDC discovery endpoint to confirm the import.
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/9000' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+
+  api:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Api.Dockerfile
+    image: tempo-report-server-api:local
+    environment:
+      ASPNETCORE_URLS: http://+:8081
+      ASPNETCORE_ENVIRONMENT: Production
+      # SQL-auth connection string (ADR-0001: Linux cannot use Windows integrated auth).
+      ConnectionStrings__ReportServer: "Server=mssql,1433;Database=TempoReportServer;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=true;Encrypt=true"
+      Database__Provider: SqlServer
+      Authentication__Jwt__Authority: http://keycloak:8080/realms/tempo-reports
+      Authentication__Jwt__Audience: tempo-report-api
+      Authentication__Jwt__RequireHttpsMetadata: "false"
+      Cors__FrontendOrigin: http://localhost:5000
+    ports:
+      - "8081:8081"
+    depends_on:
+      mssql:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    # Absorbs the residual mssql "port open but not query-ready" race on first migrate.
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  web:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Web.Dockerfile
+      args:
+        # Browser (WASM) static config — baked at build time (env cannot reach the browser).
+        PUBLIC_API_BASEURL: http://api:8081
+        OIDC_AUTHORITY: http://keycloak:8080/realms/tempo-reports
+        OIDC_CLIENT_ID: tempo-report-web
+    image: tempo-report-server-web:local
+    environment:
+      ASPNETCORE_URLS: http://+:5000
+      ASPNETCORE_ENVIRONMENT: Production
+      # Server (host) leg config — reaches the API/Keycloak over the compose network.
+      Api__BaseUrl: http://api:8081
+      ReportServer__BaseUrl: http://api:8081
+      Authentication__Oidc__Authority: http://keycloak:8080/realms/tempo-reports
+      Authentication__Oidc__ClientId: tempo-report-web
+      Authentication__Oidc__ClientSecret: ${TEMPO_REPORT_WEB_SECRET}
+      Authentication__Oidc__RequireHttpsMetadata: "false"
+      Authentication__Oidc__Scopes__0: tempo-report-api-audience
+    ports:
+      - "5000:5000"
+    depends_on:
+      keycloak:
+        condition: service_started
+      api:
+        condition: service_started
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+volumes:
+  mssql-data:

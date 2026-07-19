@@ -1,0 +1,2 @@
+# Local container secrets — never commit. The template is .env.example.
+.env

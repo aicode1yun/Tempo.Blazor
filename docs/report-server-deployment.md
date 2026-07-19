@@ -245,4 +245,96 @@ dev-only in-memory distributed cache jako fallback.
 
 - Reálný Keycloak OIDC flow — Fáze 4 (hotovo); JIT provisioning je fail-open (transientní výpadek DB
   neshodí autentizovaný request).
-- Dockerfile — Fáze 9.
+
+## Fáze 16 — Nasazení v kontejnerech (Docker Compose)
+
+Kompletní kontejnerová topologie je v `deploy/docker/`: `Api.Dockerfile`, `Web.Dockerfile`,
+`docker-compose.yml`, `keycloak-import.sh`, `.env.example`. Ověření běhu zajišťuje CI workflow
+`.github/workflows/report-server-container-smoke.yml` (na tomto stroji Docker není).
+
+> **Předpoklad:** Docker + Compose v2 (`docker compose`).
+
+### Služby a porty
+
+| Služba | Image | Host port | Role |
+| --- | --- | --- | --- |
+| `mssql` | `mcr.microsoft.com/mssql/server:2022-latest` | `1433` | Katalogová DB (SQL-auth login `sa`, ADR-0001). |
+| `keycloak` | `quay.io/keycloak/keycloak:26.x` | `8080` | OIDC provider, importuje realm `tempo-reports`. |
+| `api` | build `Api.Dockerfile` | `8081` | REST API, EF migrace při startu, PDF přes SkiaSharp. |
+| `web` | build `Web.Dockerfile` | `5000` | Blazor Web App — BFF + InteractiveAuto portál. |
+
+Issuer i URL sdílené prohlížečem a kontejnery jsou `http://keycloak:8080` a `http://api:8081`.
+Web musí být v prohlížeči na `http://localhost:5000` (odpovídá `redirectUris` v realm exportu).
+
+### Tajné hodnoty (`.env`)
+
+Přes `deploy/docker/.env` (git-ignored, template `.env.example`) — **nic reálného se necommituje**.
+
+```bash
+cp deploy/docker/.env.example deploy/docker/.env   # vyplň hesla a client secrety
+```
+
+`MSSQL_SA_PASSWORD`, `KEYCLOAK_ADMIN(_PASSWORD)`, `TEMPO_REPORT_WEB_SECRET`, `TEMPO_REPORT_M2M_SECRET`.
+`TEMPO_REPORT_WEB_SECRET` se musí shodovat mezi službou `keycloak` (import) a `web` (BFF).
+
+- **SQL-auth (ADR-0001):** Linux neumí Windows integrated auth → API používá SQL login (injektováno
+  přes `ConnectionStrings__ReportServer`, ne v image):
+  `Server=mssql,1433;Database=TempoReportServer;User Id=sa;Password=***;TrustServerCertificate=true;Encrypt=true`.
+- **Browser vs. server konfigurace Webu:** serverová noha čte proměnné prostředí za běhu; prohlížečová
+  (WASM) noha čte **statický `wwwroot/appsettings.json`**, jehož hodnoty (`Api:BaseUrl`, OIDC
+  `Authority`/`ClientId`) se **pečou do image** přes build-args `Web.Dockerfile`
+  (`PUBLIC_API_BASEURL`, `OIDC_AUTHORITY`, `OIDC_CLIENT_ID`).
+
+### Import Keycloak realmu
+
+Realm export `deploy/keycloak/tempo-reports-realm.json` je připojen read-only. Entrypoint
+`keycloak-import.sh` nahradí placeholdery `${TEMPO_REPORT_WEB_SECRET}` / `${TEMPO_REPORT_M2M_SECRET}`
+hodnotami z prostředí, zapíše do `/opt/keycloak/data/import/` a spustí `kc.sh start-dev --import-realm`.
+Test users (heslo `Pass123!`): `admin1`, `author1`, `viewer1`.
+
+### Spuštění
+
+```bash
+cd deploy/docker
+docker compose build api web
+docker compose up -d
+docker compose ps
+```
+
+API při startu aplikuje **EF Core migrace** (`Database.MigrateAsync`) — žádný samostatný migrační krok;
+DB se vytvoří, pokud neexistuje. `restart: on-failure` jistí okno „port otevřen, DB ještě neodpovídá".
+
+| Co | URL |
+| --- | --- |
+| Portál (Web) | `http://localhost:5000` (Login je anonymní, přihlášení přes Keycloak) |
+| API health | `http://localhost:8081/health` (`Healthy` až po migraci) |
+| Keycloak konzole | `http://localhost:8080` |
+| OIDC discovery | `http://localhost:8080/realms/tempo-reports/.well-known/openid-configuration` |
+
+**Hosts soubor pro interaktivní přihlášení:** prohlížeč používá stejné URL jako kontejnery, proto přidej
+`127.0.0.1 keycloak api` do hosts souboru. **CI smoke to nepotřebuje** (testuje jen `localhost` porty).
+
+### SkiaSharp / fonty (kritické pro PDF)
+
+Renderer PDF používá SkiaSharp s `SkiaSharp.NativeAssets.Linux.NoDependencies` (dodá `libSkiaSharp.so`,
+ale ne jeho systémové závislosti/fonty). Runtime image `api` i `web` proto přes `apt` instalují
+`libfontconfig1` + `fontconfig` (nutné pro `libSkiaSharp.so`) a `fonts-dejavu-core` + `fonts-liberation`
+(glyfy — fallback `SKTypeface.FromFamilyName` bez fontů vykreslí prázdno). Bez nich selže render textu za běhu.
+
+### CI smoke (`report-server-container-smoke.yml`)
+
+Trigger: `workflow_dispatch`, noční `schedule`, push/PR měnící kontejnerové artefakty / report-server hosty.
+Kroky: `docker compose config` (validace) → `build api web` → `up -d` → čekání na **API `/health` = `Healthy`**,
+**Web `/` = `200`**, **OIDC discovery = `200`**, **anonymní `/api/folders` = `401`**; při selhání vypíše logy,
+vždy `docker compose down -v`. Smoke záměrně neprovádí plný browser OIDC login (pokrývá E2E z Fáze 10).
+
+### Teardown
+
+```bash
+docker compose down       # zastaví/odstraní kontejnery
+docker compose down -v    # + smaže volume mssql-data
+```
+
+Poznámka: tag Keycloaku je parametrizovaný (`KEYCLOAK_IMAGE`, default `26.3`) — zvol tag odpovídající
+verzi realm exportu. Compose běží v HTTP (dev/demo); pro produkci předřaď TLS reverzní proxy a nastav
+`RequireHttpsMetadata=true`.
