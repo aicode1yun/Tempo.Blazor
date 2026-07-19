@@ -178,8 +178,11 @@ public class JintDocumentLayoutEngineTests
     [Fact]
     public void ConcurrentCalls_AllSucceedAndEngineCountStaysBoundedByParallelism()
     {
-        using var service = new JintDocumentLayoutEngine();
+        // Retention must cover the test's parallelism: the default (processor count) is lower on
+        // small CI machines, where returned engines get disposed and later waves create new ones
+        // — the "engines ≤ parallelism" invariant is a property of a sufficiently-retaining pool.
         const int Threads = 8;
+        using var service = new JintDocumentLayoutEngine(maxRetainedEngines: Threads);
         const int CallsPerThread = 3;
         var snapshots = new ConcurrentBag<string>();
 
