@@ -317,6 +317,15 @@ public enum ReportChartType
 
     /// <summary>Donut chart.</summary>
     Donut,
+
+    /// <summary>Stacked vertical column chart: each category's series segments stack cumulatively.</summary>
+    StackedColumn,
+
+    /// <summary>Stacked horizontal bar chart: each category's series segments stack cumulatively.</summary>
+    StackedBar,
+
+    /// <summary>Stacked area chart: each series is filled on top of the cumulative baseline of the ones below it.</summary>
+    StackedArea,
 }
 
 /// <summary>Chart element structure rendered by the reporting engine.</summary>
