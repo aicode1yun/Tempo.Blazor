@@ -1,0 +1,10 @@
+{
+  "itemName": "TempoDocumentLayoutException",
+  "kind": "Class",
+  "category": "HeadlessLayout",
+  "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+  "description": "Fail-closed headless layout error: thrown when a layout could not be produced with WYSIWYG parity — no fonts were provided, the document references font families the provided faces cannot resolve (UnknownFontFamilies), glyphs are missing from resolved faces (MissingGlyphs), or the JS engine failed. Carries the measurement diagnostics so callers can report exactly which font faces to provide.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/ITempoDocumentLayoutService.cs",
+  "documentationStatus": "generated"
+}

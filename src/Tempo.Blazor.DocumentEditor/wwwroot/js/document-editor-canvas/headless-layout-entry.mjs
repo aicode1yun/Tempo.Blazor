@@ -18,6 +18,11 @@ export {
     translateDisplayListToLayoutSnapshot,
     collectRedactedRunIds,
 } from './render/layout-snapshot-export.mjs';
+export {
+    generateHeadlessLayoutSnapshot,
+    generateHeadlessLayoutSnapshotJson,
+} from './headless-layout-runtime.mjs';
+export { createCanvasDocumentModel } from './model/canvas-document-model.mjs';
 export { buildDisplayList } from './render/display-list.mjs';
 export { layoutCanvasDocument } from './layout/pagination.mjs';
 export { DEFAULT_PAGE_SETUP, normalizePageSettings } from './layout/page-geometry.mjs';

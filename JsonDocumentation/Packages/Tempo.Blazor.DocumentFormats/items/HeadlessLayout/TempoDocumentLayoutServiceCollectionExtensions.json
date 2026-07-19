@@ -1,0 +1,10 @@
+{
+  "itemName": "TempoDocumentLayoutServiceCollectionExtensions",
+  "kind": "Class",
+  "category": "HeadlessLayout",
+  "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+  "description": "DI registration for the headless document layout service: AddTempoDocumentLayout() registers ITempoDocumentLayoutService backed by the pooled Jint host (JintDocumentLayoutEngine) as an idempotent singleton.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentLayoutServiceCollectionExtensions.cs",
+  "documentationStatus": "generated"
+}

@@ -100,6 +100,9 @@ test('bundle exports the headless layout chain API', () => {
         'normalizePageSettings',
         'parseFontAdvanceTable',
         'createAdvanceFontMetricsService',
+        'createCanvasDocumentModel',
+        'generateHeadlessLayoutSnapshot',
+        'generateHeadlessLayoutSnapshotJson',
     ]) {
         assert.equal(typeof bundle[name], 'function', `bundle must export ${name}`);
     }

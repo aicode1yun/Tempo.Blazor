@@ -36,6 +36,25 @@
   the Node lane replays Czech-diacritics and letter-spacing samples through the real JS measurer
   and asserts bit-identical widths; per-glyph advances equal `SKFont.MeasureText` exactly.
 
+### Headless document runtime — Phase 2: `ITempoDocumentLayoutService` + Jint host
+
+- New `ITempoDocumentLayoutService` in `Tempo.Blazor.DocumentFormats.HeadlessLayout`:
+  `GenerateLayoutSnapshotJson(document, pageSetup?, fonts, reviewDisplayMode)` lays out a
+  `DocumentEditorDocument` server-side with the exact canvas layout chain and returns the schema
+  v1 snapshot JSON (`DocumentPdfExportRequest.LayoutSnapshotJson` contract). Register with
+  `services.AddTempoDocumentLayout()`.
+- `JintDocumentLayoutEngine` hosts the embedded bundle in pooled Jint engines (thread-safe,
+  bounded by concurrency — no engine allocation per call; `CreatedEngineCount` diagnostics).
+  Data-in/data-out JSON seam (`generateHeadlessLayoutSnapshotJson` in the bundle, also exported
+  for Node consumers) — no .NET↔JS callbacks per glyph. Fail-closed with diagnostics: missing
+  fonts, unknown font families and unmeasurable glyphs throw `TempoDocumentLayoutException`
+  (`UnknownFontFamilies`, `MissingGlyphs`) instead of silently degrading to synthetic metrics.
+  Page-setup override (size/orientation/margins in points) applies document-wide incl. sections;
+  redaction-marked runs are destroyed in the snapshot; redline modes supported.
+- Measured 2026-07-19 (Jint 4.13, .NET 10, Debug): ≈ 2.2 s cold (engine + bundle evaluation) and
+  ≈ 0.9 s warm for a 54-page document (≈ 17 ms/page); 369-page stress run 5.4 s cold / 3.8 s
+  warm. Perf gate budgets: 15 s cold / 6 s warm at 21+ pages.
+
 ## 2.3.9 - 2026-07-19
 
 ### Document editor — canvas command layer completed (TmDocumentEditor)

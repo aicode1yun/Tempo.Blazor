@@ -1,0 +1,10 @@
+{
+  "itemName": "TempoDocumentLayoutMissingGlyph",
+  "kind": "Class",
+  "category": "HeadlessLayout",
+  "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+  "description": "Diagnostic record for a glyph the provided font faces cannot measure: the resolved font family whose advance table lacks the glyph and the Unicode code point of the unmeasurable character. Reported by TempoDocumentLayoutException.MissingGlyphs.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/ITempoDocumentLayoutService.cs",
+  "documentationStatus": "generated"
+}

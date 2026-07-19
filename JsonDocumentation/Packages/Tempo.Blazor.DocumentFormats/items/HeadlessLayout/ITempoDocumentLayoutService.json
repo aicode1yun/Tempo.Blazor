@@ -1,0 +1,10 @@
+{
+  "itemName": "ITempoDocumentLayoutService",
+  "kind": "Interface",
+  "category": "HeadlessLayout",
+  "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+  "description": "Server-side document layout contract: GenerateLayoutSnapshotJson lays out a DocumentEditorDocument with the SAME JavaScript layout chain the canvas editor paints with (the embedded headless bundle) and returns the schema v1 layout snapshot JSON — the exact contract of DocumentPdfExportRequest.LayoutSnapshotJson, consumable by TempoDocumentPdfRenderer for WYSIWYG-parity PDF output without a browser. Accepts an optional page-setup override (size/orientation/margins in points), the font faces the PDF renderer embeds (required — layout fails closed without them), and a tracked-changes display mode for redline printing. Implementations are engine-hosting details (JintDocumentLayoutEngine today, swappable for another JS host or a native port without touching consumers); register via AddTempoDocumentLayout().",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/ITempoDocumentLayoutService.cs",
+  "documentationStatus": "generated"
+}

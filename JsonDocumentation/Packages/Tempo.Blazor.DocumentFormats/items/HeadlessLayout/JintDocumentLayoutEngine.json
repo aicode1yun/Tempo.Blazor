@@ -1,0 +1,10 @@
+{
+  "itemName": "JintDocumentLayoutEngine",
+  "kind": "Class",
+  "category": "HeadlessLayout",
+  "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+  "description": "ITempoDocumentLayoutService hosted in Jint: evaluates the embedded headless layout bundle once per pooled engine and calls its generateHeadlessLayoutSnapshotJson seam — one JSON request in (canvas model + Skia advance tables), one JSON result out, no .NET↔JS callbacks per glyph. Engines are pooled thread-safely and bounded by observed concurrency, so repeated MCP/preview traffic never allocates an engine per call (CreatedEngineCount exposes pooling diagnostics). Fail-closed: missing fonts, an unknown font family, an unmeasurable glyph, or a JS failure throw TempoDocumentLayoutException with diagnostics instead of degrading the layout silently. Measured 2026-07-19 (Jint 4.13, .NET 10, Debug): ≈2.2 s cold / ≈0.9 s warm for a 54-page document (≈17 ms/page warm).",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/JintDocumentLayoutEngine.cs",
+  "documentationStatus": "generated"
+}
