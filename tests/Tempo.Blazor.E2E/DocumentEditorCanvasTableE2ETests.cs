@@ -167,6 +167,158 @@ public sealed class DocumentEditorCanvasTableE2ETests : WasmTestBase
         TestContext.AddResultFile(manifestPath);
     }
 
+    [TestMethod]
+    public async Task Phase4_InsertTableFromToolbarGrid_RendersTypesAndPersists()
+    {
+        // Command-layer plan phase 4: the toolbar "Insert table" grid used to route an insertTable
+        // command the engine never registered — the grid was a silent no-op (earlier table E2E worked
+        // on seeds that already contained tables, masking it). This drives the REAL grid picker.
+        await DocumentEditorE2EReset.ResetAsync();
+        var context = await CreateContextAsync();
+        var page = await context.NewPageAsync();
+        await page.SetViewportSizeAsync(1440, 1000);
+        await page.GotoAsync($"{BaseUrl}/canvas-engine-host?documentId=phase-12-canvas-history-save&showToolbar=true", new PageGotoOptions
+        {
+            WaitUntil = WaitUntilState.DOMContentLoaded,
+            Timeout = 60_000
+        });
+        await page.WaitForFunctionAsync(
+            """
+            () => document.querySelector('[data-testid="document-canvas-engine-host"][data-canvas-engine-ready="true"]')
+                && document.querySelector('[data-testid="document-ribbon-tab-insert"]')
+                && Number(document.querySelector('[data-testid="document-canvas-page"]')?.getAttribute('data-canvas-model-table-block-count') || '0') >= 1
+            """,
+            new PageWaitForFunctionOptions { Timeout = 30_000 });
+
+        var output = CreateOutputDirectory("phase4-insert-table-grid");
+        var afterInsertPath = Path.Combine(output, "00-inserted-table-typed.png");
+        var reloadPath = Path.Combine(output, "01-inserted-table-after-reload.png");
+
+        var baselineTableBlocks = await page.EvaluateAsync<int>(
+            "() => Number(document.querySelector('[data-testid=\"document-canvas-page\"]')?.getAttribute('data-canvas-model-table-block-count') || '0')");
+
+        // Insert ribbon → table grid → 3 columns × 2 rows (grid cell row index 1, column index 2).
+        await page.GetByTestId("document-ribbon-tab-insert").ClickAsync();
+        await page.GetByTestId("document-toolbar-table").ClickAsync();
+        await page.GetByTestId("document-table-grid-cell-1-2").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10_000 });
+        await page.GetByTestId("document-table-grid-cell-1-2").ClickAsync();
+
+        await page.WaitForFunctionAsync(
+            """
+            baseline => Number(document.querySelector('[data-testid="document-canvas-page"]')?.getAttribute('data-canvas-model-table-block-count') || '0') === baseline + 1
+            """,
+            baselineTableBlocks,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+
+        // The engine renders the new table (canvas cell selectors) and moves the caret into its
+        // first cell, so typing lands there without any extra click.
+        await page.WaitForFunctionAsync(
+            """
+            () => document.querySelector('[data-canvas-table-cell][data-cell-id="inserted-table-r1c1"]')
+                && document.querySelector('[data-testid="document-canvas-engine-root"]')?.getAttribute('data-canvas-selection-cell-id') === 'inserted-table-r1c1'
+            """,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+
+        // Edge case FIRST (before typing adds its own transactions): undo removes the whole inserted
+        // table atomically, redo restores it including the caret in the first cell.
+        await page.GetByTestId("document-undo").ClickAsync();
+        await page.WaitForFunctionAsync(
+            """
+            baseline => Number(document.querySelector('[data-testid="document-canvas-page"]')?.getAttribute('data-canvas-model-table-block-count') || '0') === baseline
+            """,
+            baselineTableBlocks,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+        await page.GetByTestId("document-redo").ClickAsync();
+        await page.WaitForFunctionAsync(
+            """
+            baseline => Number(document.querySelector('[data-testid="document-canvas-page"]')?.getAttribute('data-canvas-model-table-block-count') || '0') === baseline + 1
+                && document.querySelector('[data-canvas-table-cell][data-cell-id="inserted-table-r1c1"]')
+            """,
+            baselineTableBlocks,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+
+        // Deterministic caret: click the first inserted cell and verify the engine resolved it
+        // (post-layout click race — see ClickCanvasBlockAsync learning) before typing.
+        for (var attempt = 0; ; attempt++)
+        {
+            var cell = await ReadCellRectAsync(page, "inserted-table-r1c1");
+            await page.Mouse.ClickAsync((float)cell.CenterX, (float)cell.CenterY);
+            var selected = await page.EvaluateAsync<string>(
+                "() => document.querySelector('[data-testid=\"document-canvas-engine-root\"]')?.getAttribute('data-canvas-selection-cell-id') || ''");
+            if (selected == "inserted-table-r1c1")
+            {
+                break;
+            }
+
+            if (attempt >= 9)
+            {
+                Assert.Fail($"Click kept resolving to cell '{selected}' instead of inserted-table-r1c1.");
+            }
+
+            await page.WaitForTimeoutAsync(250);
+        }
+
+        await page.EvaluateAsync("() => document.querySelector('[data-testid=\"document-canvas-hidden-input\"]')?.focus()");
+        await page.Keyboard.TypeAsync("Grid inserted cell");
+        await page.WaitForFunctionAsync(
+            "() => document.querySelector('[data-testid=\"document-canvas-a11y-mirror\"]')?.textContent?.includes('Grid inserted cell') === true",
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+
+        await DocumentEditorCanvasVisualAssert.AssertNoTextOverlapAsync(page);
+        await page.GetByTestId("document-editor-demo").ScreenshotAsync(new LocatorScreenshotOptions { Path = afterInsertPath, Type = ScreenshotType.Png });
+
+        await page.GetByTestId("document-save").ClickAsync();
+        await WaitForSaveBoundaryAsync(page);
+        await NavigateWithinBlazorAsync(page, "/canvas-engine-host?documentId=phase-5-canvas-render");
+        await page.WaitForFunctionAsync(
+            """
+            () => document.querySelector('[data-testid="document-canvas-page"]')?.getAttribute('data-canvas-model-document-id') === 'phase-5-canvas-render'
+            """,
+            new PageWaitForFunctionOptions { Timeout = 20_000 });
+        await NavigateWithinBlazorAsync(page, "/canvas-engine-host?documentId=phase-12-canvas-history-save&showToolbar=true");
+        await page.WaitForFunctionAsync(
+            """
+            baseline => document.querySelector('[data-testid="document-canvas-engine-host"][data-canvas-engine-ready="true"]')
+                && Number(document.querySelector('[data-testid="document-canvas-page"]')?.getAttribute('data-canvas-model-table-block-count') || '0') === baseline + 1
+            """,
+            baselineTableBlocks,
+            new PageWaitForFunctionOptions { Timeout = 30_000 });
+
+        // Both the table structure and the typed cell text must survive the save/reload boundary.
+        await page.WaitForFunctionAsync(
+            """
+            () => document.querySelector('[data-canvas-table-cell][data-cell-id="inserted-table-r1c1"]')
+                && document.querySelector('[data-testid="document-canvas-a11y-mirror"]')?.textContent?.includes('Grid inserted cell') === true
+            """,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+
+        await DocumentEditorCanvasVisualAssert.AssertNoTextOverlapAsync(page);
+        await DocumentEditorCanvasVisualAssert.AssertCanvasNonBlankAsync(page.Locator("[data-canvas-layer='content']").First);
+        await page.GetByTestId("document-editor-demo").ScreenshotAsync(new LocatorScreenshotOptions { Path = reloadPath, Type = ScreenshotType.Png });
+
+        var manifestPath = Path.Combine(output, "manifest.json");
+        await File.WriteAllTextAsync(manifestPath, JsonSerializer.Serialize(new
+        {
+            testName = nameof(Phase4_InsertTableFromToolbarGrid_RendersTypesAndPersists),
+            seedDocumentId = "phase-12-canvas-history-save",
+            userActions = new[]
+            {
+                "Open the phase 12 canvas document through the production TmDocumentEditor route.",
+                "Insert ribbon tab, open the table grid picker, and pick 3×2.",
+                "Undo (whole table disappears atomically) and redo (table returns).",
+                "Click into the first cell of the inserted table and type text.",
+                "Save, navigate away, navigate back, and verify the inserted table and typed text persisted."
+            },
+            expectedVisibleChanges = "A new 2-row × 3-column table renders at the end of the body, typing lands in its first cell, undo/redo treat the insert as one transaction, and the inserted table survives save/reload.",
+            screenshotPaths = new[] { afterInsertPath, reloadPath },
+            baselineTableBlocks
+        }, new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true }));
+
+        TestContext.AddResultFile(afterInsertPath);
+        TestContext.AddResultFile(reloadPath);
+        TestContext.AddResultFile(manifestPath);
+    }
+
     private async Task OpenPhase14DocumentAsync(IPage page)
     {
         await page.GotoAsync($"{BaseUrl}/canvas-engine-host?documentId={Phase14DocumentId}&showToolbar=true", new PageGotoOptions

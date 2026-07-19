@@ -203,6 +203,7 @@ export function createCanvasCommandRuntime(options = {}) {
         dispatcher.register(command, payload => executeParagraphCommand(command, payload));
     }
     for (const command of [
+        'inserttable',
         'addtablerow',
         'inserttablerow',
         'inserttablerowafter',

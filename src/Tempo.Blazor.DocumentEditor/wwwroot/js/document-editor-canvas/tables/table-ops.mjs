@@ -6,6 +6,7 @@ import {
 } from './table-selection.mjs';
 
 const TABLE_COMMAND_ALIASES = new Map([
+    ['inserttable', 'insertTable'],
     ['addtablerow', 'insertRowAfter'],
     ['inserttablerow', 'insertRowAfter'],
     ['inserttablerowafter', 'insertRowAfter'],
@@ -60,6 +61,26 @@ export function applyTableCommand(model, selection, commandId, payload = null) {
 
     const working = clone(model || {});
     ensureBodyBlocks(working);
+    if (command === 'insertTable') {
+        const result = insertTable(working, selection, payload);
+        if (!result.changed) {
+            return unchanged(working, selection, command);
+        }
+
+        working.version = Number(working.version || 0) + 1;
+        synchronizeSectionsWithBody(working);
+        return {
+            changed: true,
+            model: working,
+            selection: result.selection || selection,
+            operation: command,
+            dirtyBlockIds: result.dirtyBlockIds || [],
+            insertedBlockIds: result.insertedBlockIds || [],
+            removedBlockIds: [],
+            table: result.table || null,
+        };
+    }
+
     if (command === 'convertTextToTable') {
         const result = convertTextToTable(working, selection, payload);
         if (!result.changed) {
@@ -161,6 +182,8 @@ export function queryTableCommandState(model, selection) {
             }
             : null,
         commands: {
+            // insertTable creates a NEW table wherever the caret is — it never needs an existing cell.
+            inserttable: commandState(true),
             addtablerow: commandState(enabled),
             addtablecolumn: commandState(enabled),
             insertrowbefore: commandState(enabled),
@@ -482,6 +505,153 @@ function convertTableToText(model, selectedCell, payload) {
         dirtyBlockIds: [blockId],
         insertedBlockIds: [blockId],
         removedBlockIds: [selectedCell.tableBlock.id || ''],
+    };
+}
+
+// Cap mirrors the toolbar grid picker (TmDocumentTableGridPicker MaxRows/MaxCols = 10×10);
+// the picker is the only UI producing this payload, so anything larger is a malformed call.
+const INSERT_TABLE_MAX_DIMENSION = 10;
+
+function insertTable(model, selection, payload) {
+    const rows = clampTableDimension(payload?.rows ?? payload?.Rows, 2);
+    const columns = clampTableDimension(payload?.columns ?? payload?.Columns, 2);
+    const appendToBodyEnd = payload?.appendToBodyEnd === true || payload?.AppendToBodyEnd === true;
+
+    const blocks = model.body.blocks;
+    const caretBlockId = String(selection?.focus?.blockId || selection?.anchor?.blockId || '');
+    // The caret may sit inside a table cell paragraph — the new table always lands at the top
+    // level, after the body block that CONTAINS the caret (Word behaviour, never nested).
+    let anchorIndex = blocks.length - 1;
+    if (!appendToBodyEnd) {
+        const containing = topLevelBlockIndexContaining(blocks, caretBlockId);
+        anchorIndex = containing >= 0 ? containing : blocks.length - 1;
+    }
+
+    const anchor = blocks[anchorIndex] || null;
+    const insertIndex = Math.min(blocks.length, anchorIndex + 1);
+    const next = blocks[insertIndex] || null;
+    const order = next
+        ? (Number(anchor?.order || 0) + Number(next.order || 0)) / 2
+        : Number(anchor?.order || 0) + 10;
+
+    const existingIds = collectAllBlockIds(blocks);
+    const tableId = uniqueId('inserted-table', existingIds);
+    existingIds.push(tableId);
+    const columnWidth = defaultInsertedColumnWidth(model, columns);
+    const tableRows = Array.from({ length: rows }, (_, rowIndex) => ({
+        id: `${tableId}-row-${rowIndex + 1}`,
+        cells: Array.from({ length: columns }, (_, columnIndex) =>
+            createInsertedCell(tableId, rowIndex, columnIndex, columnWidth, existingIds)),
+    }));
+
+    const tableBlock = {
+        id: tableId,
+        sectionId: anchor?.sectionId || model.sections?.[0]?.id || '',
+        type: 'table',
+        order,
+        paragraphProperties: {},
+        content: {
+            type: 'table',
+            table: {
+                layout: { cellPadding: 8 },
+                rows: tableRows,
+            },
+        },
+        preserve: {},
+    };
+
+    blocks.splice(insertIndex, 0, tableBlock);
+    return {
+        changed: true,
+        selection: collapsedSelection(firstEditablePositionInCell(tableRows[0].cells[0])),
+        dirtyBlockIds: [tableBlock.id],
+        insertedBlockIds: tableRows.flatMap(row => row.cells.flatMap(cell => cell.blocks.map(block => block.id))),
+        table: {
+            tableId,
+            rowCount: rows,
+            columnCount: columns,
+            activeCellId: tableRows[0].cells[0].id,
+        },
+    };
+}
+
+function clampTableDimension(value, fallback) {
+    const parsed = Number(value);
+    const base = Number.isFinite(parsed) ? Math.trunc(parsed) : fallback;
+    return Math.max(1, Math.min(INSERT_TABLE_MAX_DIMENSION, base));
+}
+
+/** Even split of the printable content width (page width minus horizontal margins). */
+function defaultInsertedColumnWidth(model, columns) {
+    const settings = model?.pageSettings || {};
+    const pageWidth = Number(settings.width) > 0 ? Number(settings.width) : 794;
+    const marginLeft = Number.isFinite(Number(settings.marginLeft)) ? Number(settings.marginLeft) : 72;
+    const marginRight = Number.isFinite(Number(settings.marginRight)) ? Number(settings.marginRight) : 72;
+    const contentWidth = Math.max(120, pageWidth - marginLeft - marginRight);
+    return Math.floor(contentWidth / Math.max(1, columns));
+}
+
+/** Index of the top-level body block that is or (recursively, via table cells) contains blockId. */
+function topLevelBlockIndexContaining(blocks, blockId) {
+    if (!blockId) {
+        return -1;
+    }
+
+    const containsBlock = block => {
+        if (String(block?.id || '') === blockId) {
+            return true;
+        }
+
+        const rows = block?.content?.table?.rows;
+        return Array.isArray(rows) && rows.some(row =>
+            (row?.cells || []).some(cell => (cell?.blocks || []).some(containsBlock)));
+    };
+    return blocks.findIndex(containsBlock);
+}
+
+function collectAllBlockIds(blocks) {
+    const ids = [];
+    const visit = block => {
+        if (block?.id) {
+            ids.push(String(block.id));
+        }
+
+        for (const row of block?.content?.table?.rows || []) {
+            for (const cell of row?.cells || []) {
+                if (cell?.id) {
+                    ids.push(String(cell.id));
+                }
+
+                for (const nested of cell?.blocks || []) {
+                    visit(nested);
+                }
+            }
+        }
+    };
+    for (const block of blocks) {
+        visit(block);
+    }
+
+    return ids;
+}
+
+/** Plain (non-header) cell for a freshly inserted table — Word inserts unstyled grids. */
+function createInsertedCell(tableId, rowIndex, columnIndex, width, existingIds) {
+    const id = uniqueId(`${tableId}-r${rowIndex + 1}c${columnIndex + 1}`, existingIds);
+    existingIds.push(id, `${id}-p`, `${id}-p-run`);
+    return {
+        id,
+        columnSpan: 1,
+        rowSpan: 1,
+        isHeader: false,
+        merge: { isOrigin: true, originCellId: null },
+        width,
+        backgroundColor: null,
+        borders: {},
+        verticalAlignment: 0,
+        padding: 8,
+        blocks: [createParagraph(`${id}-p`, '')],
+        preserve: {},
     };
 }
 

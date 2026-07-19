@@ -3617,6 +3617,39 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task InsertTableGridPicker_RoutesInsertTableCommandWithDimensions()
+    {
+        // Phase 4 contract: the toolbar "Insert table" grid must route execCommand('insertTable',
+        // { rows, columns, appendToBodyEnd: true }) — the engine registers this command since the
+        // command-layer plan; a payload/name drift would make the grid a silent no-op again.
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderDocumentEditor(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+        await MarkCanvasReadyAsync(cut);
+
+        cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-toolbar-table']").Should().NotBeNull());
+        await cut.Find("[data-testid='document-toolbar-table']").ClickAsync(new MouseEventArgs());
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-table-grid-cell-1-2']").Should().NotBeNull());
+
+        // Grid cell (row index 1, column index 2) → a 2×3 table.
+        await cut.Find("[data-testid='document-table-grid-cell-1-2']").ClickAsync(new MouseEventArgs());
+
+        var insertInvocation = SetupDocumentCanvasModule().Invocations
+            .LastOrDefault(invocation => invocation.Identifier == "execCommand"
+                && invocation.Arguments.Count > 2
+                && string.Equals(invocation.Arguments[1]?.ToString(), "insertTable", StringComparison.Ordinal));
+        insertInvocation.Should().NotBeNull("the grid picker must route the insertTable engine command");
+        var payload = insertInvocation!.Arguments[2]?.ToString() ?? string.Empty;
+        payload.Should().Contain("\"rows\":2");
+        payload.Should().Contain("\"columns\":3");
+        payload.Should().Contain("\"appendToBodyEnd\":true");
+    }
+
+    [Fact]
     public async Task HeaderFooterToggles_RouteEngineRegisteredCommandIdsWithTargetState()
     {
         // Regression: the ribbon toggles routed "toggleDifferentFirstPage"/"toggleDifferentOddEven",
