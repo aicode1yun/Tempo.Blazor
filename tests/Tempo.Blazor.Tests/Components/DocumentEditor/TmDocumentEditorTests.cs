@@ -3617,6 +3617,82 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task DocumentProtection_TogglesAndMarkersRouteSetProtectionModePayloads()
+    {
+        // Phase 8 contract: the ribbon protect/mark-editable actions route setProtectionMode with
+        // {isProtected, markers[]} — the engine command that stores the state in the model and
+        // engages the (existing) text-edit veto and overlay.
+        var provider = new InMemoryDocumentEditorProvider();
+        var seeded = provider.SeedContractDocument("doc-1");
+        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+
+        var cut = RenderDocumentEditor(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+        await MarkCanvasReadyAsync(cut);
+
+        cut.Find("[data-testid='document-ribbon-tab-review']").Click();
+        await cut.Find("[data-testid='document-protect-document']").ClickAsync(new MouseEventArgs());
+
+        var protectInvocation = SetupDocumentCanvasModule().Invocations
+            .LastOrDefault(invocation => invocation.Identifier == "execCommand"
+                && invocation.Arguments.Count > 2
+                && string.Equals(invocation.Arguments[1]?.ToString(), "setProtectionMode", StringComparison.Ordinal));
+        protectInvocation.Should().NotBeNull("protect must route setProtectionMode");
+        protectInvocation!.Arguments[2]?.ToString().Should().Contain("\"isProtected\":true");
+
+        // Give the editor a body range selection, then mark it editable.
+        await NotifyCanvasMiniToolbarAsync(cut, new WysiwygMiniToolbarRequest
+        {
+            IsVisible = true,
+            Left = 100,
+            Top = 80,
+            Width = 180,
+            Height = 40,
+            Selection = new WysiwygSelectionSnapshot
+            {
+                Region = "Body",
+                AnchorBlockId = paragraph.Id,
+                AnchorInlineId = inline.Id,
+                AnchorOffset = 2,
+                FocusBlockId = paragraph.Id,
+                FocusInlineId = inline.Id,
+                FocusOffset = 9,
+                IsCollapsed = false
+            }
+        }, new TmDocumentCanvasEngineHost.CanvasEngineUiState
+        {
+            Formatting = new TmDocumentCanvasEngineHost.CanvasEngineFormattingState()
+        });
+
+        cut.Find("[data-testid='document-ribbon-tab-review']").Click();
+        cut.WaitForAssertion(() =>
+            cut.Find("[data-testid='document-protect-document']").GetAttribute("aria-pressed").Should().Be("true",
+                "the protect toggle must reflect the protected state"));
+        // Regression: protection administration must stay operable while protected — both buttons
+        // are affectsData commands and used to be auto-disabled by the registry protection gate,
+        // locking the user out of marking regions and even unprotecting.
+        cut.WaitForAssertion(() =>
+            cut.Find("[data-testid='document-mark-editable-region']").HasAttribute("disabled").Should().BeFalse(
+                "mark-editable-region must enable once the document is protected"));
+        cut.Find("[data-testid='document-protect-document']").HasAttribute("disabled").Should().BeFalse(
+            "the protect toggle must stay enabled so protection can be turned off again");
+        await cut.Find("[data-testid='document-mark-editable-region']").ClickAsync(new MouseEventArgs());
+
+        var markerInvocation = SetupDocumentCanvasModule().Invocations
+            .LastOrDefault(invocation => invocation.Identifier == "execCommand"
+                && invocation.Arguments.Count > 2
+                && string.Equals(invocation.Arguments[1]?.ToString(), "setProtectionMode", StringComparison.Ordinal)
+                && (invocation.Arguments[2]?.ToString() ?? string.Empty).Contains("startBlockId"));
+        markerInvocation.Should().NotBeNull("mark-editable-region must route setProtectionMode with markers");
+        var payload = markerInvocation!.Arguments[2]?.ToString() ?? string.Empty;
+        payload.Should().Contain("\"isProtected\":true");
+        payload.Should().Contain($"\"startBlockId\":\"{paragraph.Id}\"");
+        payload.Should().Contain("\"startOffset\":2");
+        payload.Should().Contain("\"endOffset\":9");
+    }
+
+    [Fact]
     public async Task CanvasContextMenu_OnPageBreakBlock_OffersAndRoutesDeletePageBreak()
     {
         // Phase 6: the canvas context-menu path never set BlockType = "PageBreak" (only "Image"),

@@ -6,7 +6,7 @@ import {
     deleteCommentFromCanvasModel,
 } from './annotations/comment-overlay.mjs';
 import { createCanvasRevisionOverlay, applyReviewDecision, applyReviewDecisionAll, normalizeReviewDisplayMode } from './annotations/revision-render.mjs';
-import { createRestrictedEditingRuntime } from './annotations/restricted-editing.mjs';
+import { applyProtectionMode, createRestrictedEditingRuntime } from './annotations/restricted-editing.mjs';
 import { createCanvasClipboardController } from './clipboard/clipboard-controller.mjs';
 import { createCanvasOperationLog } from './collaboration/op-log.mjs';
 import { createCanvasPresenceOverlay } from './collaboration/presence-overlay.mjs';
@@ -1466,6 +1466,31 @@ export class CanvasDocumentEngine {
                     blockId: marker?.blockId || '',
                     offset: Math.max(0, Number(marker?.startOffset || 0) || 0),
                 },
+                formattingState: this.commandRuntime.queryCommandState(),
+                history: this.history.snapshot(),
+            };
+        }
+
+        if (normalized === 'setprotectionmode' || normalized === 'protectdocument') {
+            // Protection lives IN the model (isProtected + restrictedMarkers), so it survives
+            // replaceModel document switches and the C#↔canvas save round-trip without extra
+            // options plumbing. Deliberately NOT pushed to history — undoing back into an
+            // unprotected document with Ctrl+Z would be a protection bypass.
+            const before = this.modelStore.getModel();
+            const result = applyProtectionMode(before, argument || {});
+            if (result.changed) {
+                this.modelStore.setModel(result.model);
+                this.restrictedEditing.update(result.model);
+                this.recordLocalCollaborationChange(before, result.model, { result });
+                this.render({ dirtyBlockIds: [], structural: false });
+                this.publishCommandDiagnostics({ result, command: { id: normalized, changed: true } });
+                this.notifyExternalModelChanged({ result });
+            }
+
+            return {
+                handled: true,
+                commandId: normalized,
+                result,
                 formattingState: this.commandRuntime.queryCommandState(),
                 history: this.history.snapshot(),
             };

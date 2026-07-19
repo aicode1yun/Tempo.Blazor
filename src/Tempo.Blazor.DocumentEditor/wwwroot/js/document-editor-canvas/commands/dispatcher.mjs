@@ -32,6 +32,7 @@ import {
     isFieldCommand,
     queryFieldCommandState,
 } from './fields.mjs';
+import { canEditRestrictedSelection } from '../annotations/restricted-editing.mjs';
 import {
     applyMathCommand,
     canonicalMathCommandId,
@@ -677,6 +678,18 @@ export function createCanvasCommandRuntime(options = {}) {
     }
 
     function executeInlineCommand(commandId, argument) {
+        // Restricted editing (phase 8): formatting is a mutation like typing — veto it outside
+        // the editable markers while the document is protected.
+        const inlineGuard = canEditRestrictedSelection(getModel(), getSelection());
+        if (!inlineGuard.allowed) {
+            return {
+                changed: false,
+                commandId: normalizeCommandId(commandId),
+                blocked: 'protected',
+                readonlyReason: inlineGuard.reason,
+            };
+        }
+
         const before = captureSnapshot();
         const result = applyInlineFormatCommand(getModel(), getSelection(), commandId, argument, formatState);
         formatState = result.state;
@@ -731,6 +744,20 @@ export function createCanvasCommandRuntime(options = {}) {
 
     function executeParagraphCommand(commandId, argument) {
         const canonical = canonicalCommandId(commandId);
+        // Restricted editing (phase 8): veto paragraph MUTATIONS outside the editable markers —
+        // canvas view commands (zoom, ruler, show blocks…) are not mutations and stay allowed.
+        if (!isCanvasViewCommand(canonical)) {
+            const paragraphGuard = canEditRestrictedSelection(getModel(), getSelection());
+            if (!paragraphGuard.allowed) {
+                return {
+                    changed: false,
+                    commandId: normalizeCommandId(commandId),
+                    blocked: 'protected',
+                    readonlyReason: paragraphGuard.reason,
+                };
+            }
+        }
+
         const effectiveArgument = /^heading[1-6]$/i.test(String(commandId || ''))
             ? { styleName: `Heading ${String(commandId).match(/[1-6]/)?.[0] || 1}` }
             : argument;

@@ -54,6 +54,34 @@ export function createRestrictedEditingRuntime(options = {}) {
     };
 }
 
+/// Applies the host's protection state to the model (phase 8 — the setProtectionMode command).
+/// Protection lives IN the model (isProtected + restrictedMarkers) so it persists through
+/// replaceModel document switches and the C#↔canvas save/reload round-trip for free.
+export function applyProtectionMode(model, options = {}) {
+    const working = typeof structuredClone === 'function'
+        ? structuredClone(model || {})
+        : JSON.parse(JSON.stringify(model ?? {}));
+    const nextProtected = options.isProtected === true || options.IsProtected === true;
+    const nextMarkers = normalizeRestrictedMarkers(options.markers || options.Markers || []);
+
+    const currentProtected = isProtected(working);
+    const currentMarkers = normalizeRestrictedMarkers(working.restrictedMarkers || working.RestrictedMarkers || []);
+    const sameMarkers = currentMarkers.length === nextMarkers.length
+        && currentMarkers.every((marker, index) =>
+            marker.startBlockId === nextMarkers[index].startBlockId
+            && marker.startOffset === nextMarkers[index].startOffset
+            && marker.endBlockId === nextMarkers[index].endBlockId
+            && marker.endOffset === nextMarkers[index].endOffset);
+    if (currentProtected === nextProtected && sameMarkers) {
+        return { changed: false, model: working, operation: 'setProtectionMode', markerCount: currentMarkers.length };
+    }
+
+    working.isProtected = nextProtected;
+    working.restrictedMarkers = nextMarkers;
+    working.version = Number(working.version || 0) + 1;
+    return { changed: true, model: working, operation: 'setProtectionMode', markerCount: nextMarkers.length };
+}
+
 export function canEditRestrictedSelection(model, selection) {
     return createRestrictedEditingRuntime({ protectedMode: isProtected(model), markers: model?.restrictedMarkers || model?.RestrictedMarkers || [] })
         .canEdit(selection, model);

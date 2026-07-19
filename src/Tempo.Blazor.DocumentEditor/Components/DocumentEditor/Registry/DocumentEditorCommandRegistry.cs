@@ -223,5 +223,9 @@ public sealed class DocumentEditorCommandRegistry
     private static bool CanRunOutsideProtectedEditableRegion(string commandName) =>
         string.Equals(commandName, "undo", StringComparison.OrdinalIgnoreCase)
         || string.Equals(commandName, "redo", StringComparison.OrdinalIgnoreCase)
-        || string.Equals(commandName, "save", StringComparison.OrdinalIgnoreCase);
+        || string.Equals(commandName, "save", StringComparison.OrdinalIgnoreCase)
+        // Protection administration must stay operable while the document is protected —
+        // otherwise enabling protection locks out marking editable regions AND unprotecting.
+        || string.Equals(commandName, "protectDocument", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(commandName, "markEditableRegion", StringComparison.OrdinalIgnoreCase);
 }

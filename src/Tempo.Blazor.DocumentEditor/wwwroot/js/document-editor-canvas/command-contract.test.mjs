@@ -19,7 +19,6 @@ import { extractCanvasCommandIds, findRepoRoot } from '../../../../../scripts/ex
 const KNOWN_MISSING = new Set([
   // Audit 2026-07-19 (plan fáze 3–9): toolbar/context-menu commands that are
   // currently silent no-ops in the engine.
-  'setprotectionmode',
   'opentokenmenu',
   // Discovered by this contract test beyond the manual audit: ribbon registry
   // commands routed through ExecuteTableRuntimeCommandAsync/ExecuteImageRuntimeCommandAsync
