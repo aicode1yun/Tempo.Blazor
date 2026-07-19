@@ -3,10 +3,14 @@
    ═══════════════════════════════════════════════════════ */
 
 /* ── Overlay ───────────────────────────────────────────── */
+/* Backdrop MUSÍ zůstat pod panelem draweru. Token --tm-z-overlay (1060) je nad
+   --tm-z-modal (1040) — je určený pro top-tier překryvy (lightbox nad vším). Backdrop
+   draweru patří do modal vrstvy TĚSNĚ POD panel, jinak by překryl panel a každý klik
+   by přes CloseOnOverlayClick drawer zavřel. */
 .tm-drawer__overlay {
     position: fixed;
     inset: 0;
-    z-index: var(--tm-z-overlay, 1040);
+    z-index: var(--tm-z-modal, 1040);
     background-color: rgba(0, 0, 0, 0.5);
     animation: tm-fade-in 0.2s ease;
 }
@@ -16,7 +20,7 @@
     position: fixed;
     top: 0;
     bottom: 0;
-    z-index: var(--tm-z-modal, 1050);
+    z-index: calc(var(--tm-z-modal, 1040) + 1);
     display: flex;
 }
 
