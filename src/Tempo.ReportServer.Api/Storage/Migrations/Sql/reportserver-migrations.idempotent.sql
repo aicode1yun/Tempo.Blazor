@@ -358,3 +358,56 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719052344_AclSubjectKindAndEffect'
+)
+BEGIN
+    DROP INDEX [IX_FolderPermissions_TenantId_SubjectId_FolderId] ON [FolderPermissions];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719052344_AclSubjectKindAndEffect'
+)
+BEGIN
+    ALTER TABLE [FolderPermissions] ADD [Effect] int NOT NULL DEFAULT 0;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719052344_AclSubjectKindAndEffect'
+)
+BEGIN
+    ALTER TABLE [FolderPermissions] ADD [Permissions] int NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719052344_AclSubjectKindAndEffect'
+)
+BEGIN
+    ALTER TABLE [FolderPermissions] ADD [SubjectKind] int NOT NULL DEFAULT 0;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719052344_AclSubjectKindAndEffect'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_FolderPermissions_TenantId_FolderId_SubjectKind_SubjectId_Effect] ON [FolderPermissions] ([TenantId], [FolderId], [SubjectKind], [SubjectId], [Effect]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719052344_AclSubjectKindAndEffect'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260719052344_AclSubjectKindAndEffect', N'10.0.9');
+END;
+
+COMMIT;
+GO
+

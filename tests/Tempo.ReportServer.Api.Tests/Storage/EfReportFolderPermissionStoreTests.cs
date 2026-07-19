@@ -7,11 +7,12 @@ using Tempo.ReportServer.Api.Storage;
 namespace Tempo.ReportServer.Api.Tests.Persistence;
 
 /// <summary>
-/// Guards the allow-only, user-subject-only contract of <see cref="EfReportFolderPermissionStore"/>.
-/// The EF folder-ACL model cannot represent Deny effects or Role/Application subjects, so those
-/// combinations must fail loudly (<see cref="ReportPermissionUnsupportedException"/>) instead of being
-/// silently dropped, which would produce a false security assurance and a lying audit trail. The
-/// in-memory store keeps supporting the full model unchanged.
+/// Guards the full-fidelity ACL persistence contract of <see cref="EfReportFolderPermissionStore"/>.
+/// The EF folder-ACL model persists the subject kind (User/Role/Application), the effect (Allow/Deny)
+/// and the explicit permission flags of each entry, so Deny effects and Role/Application subjects round
+/// trip faithfully instead of being rejected. Legacy rows (no explicit permission bits) still project
+/// their granted role into permissions for backward compatibility. The in-memory store keeps supporting
+/// the full model unchanged.
 /// </summary>
 public sealed class EfReportFolderPermissionStoreTests
 {
@@ -30,51 +31,158 @@ public sealed class EfReportFolderPermissionStoreTests
             context);
 
         var entries = await harness.Store.ListFolderAclEntriesAsync(FolderId, context);
-        entries.Should().ContainSingle(entry => entry.SubjectId == "user-1" && entry.Effect == ReportAclEffect.Allow);
+        entries.Should().ContainSingle(entry =>
+            entry.SubjectKind == ReportAclSubjectKind.User &&
+            entry.SubjectId == "user-1" &&
+            entry.Effect == ReportAclEffect.Allow);
     }
 
     [Fact]
-    public async Task GrantAclEntry_UserDeny_Throws_AndPersistsNothing()
+    public async Task GrantAclEntry_RoleAllow_RoundTripsAsRoleEntry()
     {
         using var harness = await StoreHarness.CreateAsync();
         var context = harness.ExecutionContext;
 
-        var act = async () => await harness.Store.GrantAclEntryAsync(
-            FolderId,
-            ReportFolderAclEntry.DenyUser(FolderId, "user-1", ReportPermission.View),
-            context);
-
-        await act.Should().ThrowAsync<ReportPermissionUnsupportedException>();
-        (await harness.Store.ListFolderAclEntriesAsync(FolderId, context)).Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task GrantAclEntry_RoleAllow_Throws_AndPersistsNothing()
-    {
-        using var harness = await StoreHarness.CreateAsync();
-        var context = harness.ExecutionContext;
-
-        var act = async () => await harness.Store.GrantAclEntryAsync(
+        await harness.Store.GrantAclEntryAsync(
             FolderId,
             ReportFolderAclEntry.AllowRole(FolderId, ReportServerRole.Author, ReportPermission.View),
             context);
 
-        await act.Should().ThrowAsync<ReportPermissionUnsupportedException>();
+        var entries = await harness.Store.ListFolderAclEntriesAsync(FolderId, context);
+        entries.Should().ContainSingle(entry =>
+            entry.SubjectKind == ReportAclSubjectKind.Role &&
+            entry.SubjectId == ReportServerRole.Author.ToString() &&
+            entry.Effect == ReportAclEffect.Allow);
+    }
+
+    [Fact]
+    public async Task GrantAclEntry_ApplicationAllow_RoundTripsAsApplicationEntry()
+    {
+        using var harness = await StoreHarness.CreateAsync();
+        var context = harness.ExecutionContext;
+
+        await harness.Store.GrantAclEntryAsync(
+            FolderId,
+            ReportFolderAclEntry.AllowApplication(FolderId, "embed-app", ReportPermission.Render),
+            context);
+
+        var entries = await harness.Store.ListFolderAclEntriesAsync(FolderId, context);
+        entries.Should().ContainSingle(entry =>
+            entry.SubjectKind == ReportAclSubjectKind.Application &&
+            entry.SubjectId == "embed-app" &&
+            entry.Effect == ReportAclEffect.Allow);
+    }
+
+    [Fact]
+    public async Task GrantAclEntry_UserDeny_RoundTripsAsDeny_AndIsInherited()
+    {
+        using var harness = await StoreHarness.CreateAsync();
+        var context = harness.ExecutionContext;
+
+        await harness.Store.GrantAclEntryAsync(
+            FolderId,
+            ReportFolderAclEntry.DenyUser(FolderId, "user-1", ReportPermission.Render),
+            context);
+
+        var direct = await harness.Store.ListFolderAclEntriesAsync(FolderId, context);
+        direct.Should().ContainSingle(entry =>
+            entry.SubjectId == "user-1" && entry.Effect == ReportAclEffect.Deny);
+
+        var inherited = await harness.Store.ListInheritedAclEntriesAsync(FolderId, context);
+        inherited.Should().ContainSingle(entry =>
+            entry.SubjectId == "user-1" && entry.Effect == ReportAclEffect.Deny);
+    }
+
+    [Fact]
+    public async Task GrantAclEntry_ExplicitPermissionBits_RoundTripExactly_NotRoleProjected()
+    {
+        using var harness = await StoreHarness.CreateAsync();
+        var context = harness.ExecutionContext;
+
+        // Render only: a role projection would widen this to View|Render|Export, so an exact round trip
+        // proves the store persists the raw permission bits rather than re-deriving them from the role.
+        await harness.Store.GrantAclEntryAsync(
+            FolderId,
+            ReportFolderAclEntry.AllowUser(FolderId, "user-1", ReportPermission.Render),
+            context);
+
+        var entries = await harness.Store.ListFolderAclEntriesAsync(FolderId, context);
+        entries.Single(entry => entry.SubjectId == "user-1").Permissions.Should().Be(ReportPermission.Render);
+    }
+
+    [Fact]
+    public async Task GrantAclEntry_AllowAndDenyForSameSubject_CoexistOnFolder()
+    {
+        using var harness = await StoreHarness.CreateAsync();
+        var context = harness.ExecutionContext;
+
+        await harness.Store.GrantAclEntryAsync(
+            FolderId,
+            ReportFolderAclEntry.AllowUser(FolderId, "user-1", ReportPermission.View),
+            context);
+        await harness.Store.GrantAclEntryAsync(
+            FolderId,
+            ReportFolderAclEntry.DenyUser(FolderId, "user-1", ReportPermission.Render),
+            context);
+
+        var entries = await harness.Store.ListFolderAclEntriesAsync(FolderId, context);
+        entries.Should().Contain(entry => entry.SubjectId == "user-1" && entry.Effect == ReportAclEffect.Allow);
+        entries.Should().Contain(entry => entry.SubjectId == "user-1" && entry.Effect == ReportAclEffect.Deny);
+    }
+
+    [Fact]
+    public async Task RevokeAclEntry_RoleSubject_RemovesTheGrant()
+    {
+        using var harness = await StoreHarness.CreateAsync();
+        var context = harness.ExecutionContext;
+        await harness.Store.GrantAclEntryAsync(
+            FolderId,
+            ReportFolderAclEntry.AllowRole(FolderId, ReportServerRole.Author, ReportPermission.View),
+            context);
+
+        await harness.Store.RevokeAclEntryAsync(
+            FolderId,
+            ReportAclSubjectKind.Role,
+            ReportServerRole.Author.ToString(),
+            context);
+
         (await harness.Store.ListFolderAclEntriesAsync(FolderId, context)).Should().BeEmpty();
     }
 
     [Fact]
-    public async Task RevokeAclEntry_NonUserSubject_Throws()
+    public async Task SetAclEntries_PersistsMixedSubjectsAndEffects()
     {
         using var harness = await StoreHarness.CreateAsync();
+        var context = harness.ExecutionContext;
 
-        var act = async () => await harness.Store.RevokeAclEntryAsync(
+        await harness.Store.SetAclEntriesAsync(
             FolderId,
-            ReportAclSubjectKind.Role,
-            ReportServerRole.Author.ToString(),
-            harness.ExecutionContext);
+            [
+                ReportFolderAclEntry.AllowRole(FolderId, ReportServerRole.Viewer, ReportPermission.Render),
+                ReportFolderAclEntry.AllowApplication(FolderId, "embed-app", ReportPermission.Render),
+                ReportFolderAclEntry.DenyUser(FolderId, "user-1", ReportPermission.Render),
+            ],
+            context);
 
-        await act.Should().ThrowAsync<ReportPermissionUnsupportedException>();
+        var entries = await harness.Store.ListFolderAclEntriesAsync(FolderId, context);
+        entries.Should().Contain(entry => entry.SubjectKind == ReportAclSubjectKind.Role && entry.Effect == ReportAclEffect.Allow);
+        entries.Should().Contain(entry => entry.SubjectKind == ReportAclSubjectKind.Application);
+        entries.Should().Contain(entry => entry.SubjectKind == ReportAclSubjectKind.User && entry.Effect == ReportAclEffect.Deny);
+    }
+
+    [Fact]
+    public async Task LegacyRoleGrant_WithoutExplicitPermissions_ProjectsRoleIntoPermissions()
+    {
+        using var harness = await StoreHarness.CreateAsync();
+        var context = harness.ExecutionContext;
+
+        // GrantAsync is the legacy role-based grant path: it stores a role name with no explicit
+        // permission bits, so the store must project the role into permissions when reading back.
+        await harness.Store.GrantAsync(FolderId, "sub-viewer", ReportServerRole.Viewer, context);
+
+        var entries = await harness.Store.ListFolderAclEntriesAsync(FolderId, context);
+        entries.Single(entry => entry.SubjectId == "sub-viewer").Permissions
+            .Should().Be(ReportPermission.View | ReportPermission.Render | ReportPermission.Export);
     }
 
     [Fact]

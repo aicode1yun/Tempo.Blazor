@@ -215,6 +215,9 @@ public sealed class ReportServerF10ApiTests
             builder.WebHost.UseTestServer();
             builder.Services.AddRouting();
             builder.Services.AddTempoReportServerApi(options => options.UseSqlite(connection));
+            // Open dev/test host: no authentication gate is wired, so allow anonymous operations
+            // rather than fail closed (401) in the in-handler ACL enforcement.
+            builder.Services.Configure<Tempo.ReportServer.Api.ReportServerApiOptions>(o => o.AllowAnonymousOperations = true);
             var app = builder.Build();
             app.UseTempoReportServerTenantContext();
             app.MapTempoReportServerApi();

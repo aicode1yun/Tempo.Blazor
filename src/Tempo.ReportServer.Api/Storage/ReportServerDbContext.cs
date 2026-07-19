@@ -153,9 +153,21 @@ public sealed class ReportServerDbContext : DbContext
             entity.Property(permission => permission.FolderId).HasMaxLength(IdMaxLength);
             entity.Property(permission => permission.Path).HasMaxLength(PathMaxLength);
             entity.Property(permission => permission.SubjectId).HasMaxLength(ActorIdMaxLength);
+            entity.Property(permission => permission.SubjectKind).HasDefaultValue(0);
+            entity.Property(permission => permission.Effect).HasDefaultValue(0);
+            entity.Property(permission => permission.Permissions);
             entity.Property(permission => permission.Role).HasMaxLength(32);
             entity.HasIndex(permission => new { permission.TenantId, permission.FolderId });
-            entity.HasIndex(permission => new { permission.TenantId, permission.SubjectId, permission.FolderId }).IsUnique();
+            // The natural key includes the subject kind and effect so an Allow and a Deny (or a User
+            // "Author" and a Role "Author") can coexist as distinct grants on the same folder.
+            entity.HasIndex(permission => new
+            {
+                permission.TenantId,
+                permission.FolderId,
+                permission.SubjectKind,
+                permission.SubjectId,
+                permission.Effect,
+            }).IsUnique();
         });
 
         // Schedules and runs are not tenant-query-filtered: the scheduling worker sweeps every

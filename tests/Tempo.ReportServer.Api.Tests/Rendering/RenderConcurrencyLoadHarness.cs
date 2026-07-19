@@ -162,6 +162,9 @@ public sealed class RenderConcurrencyLoadHarness
             builder.WebHost.UseTestServer();
             builder.Services.AddRouting();
             builder.Services.AddTempoReportServerApi(options => options.UseSqlite(connectionString));
+            // Load harness maps the API without an authentication gate and POSTs /api/render with no
+            // principal; allow anonymous operations so enforcement does not fail closed (401).
+            builder.Services.Configure<Tempo.ReportServer.Api.ReportServerApiOptions>(o => o.AllowAnonymousOperations = true);
             builder.Services.AddScoped<IReportDataProvider>(_ => new RowGeneratingDataProvider(detailRows));
             var app = builder.Build();
             app.UseTempoReportServerTenantContext();

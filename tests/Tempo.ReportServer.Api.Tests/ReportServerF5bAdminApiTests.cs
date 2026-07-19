@@ -90,7 +90,7 @@ public sealed class ReportServerF5bAdminApiTests
     }
 
     [Fact]
-    public async Task Permissions_GrantDenyOnEfBackend_Returns400_AndWritesNoAclAudit()
+    public async Task Permissions_GrantDenyOnEfBackend_PersistsDenyEntry_AndAuditsTheChange()
     {
         await using var host = await AdminTestApp.CreateAsync(useEfSecurityStores: true);
         var api = new TempoReportServerClient(host.CreateApiKeyClient());
@@ -107,12 +107,13 @@ public sealed class ReportServerF5bAdminApiTests
             Permissions = ReportPermissionsDto.View,
         });
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest, "the EF store cannot represent Deny entries");
+        response.StatusCode.Should().Be(HttpStatusCode.OK, "the EF store now persists Deny entries with full fidelity");
 
-        // Nothing was persisted and no lying "Allowed ChangeAcl" audit must have been written.
+        // The Deny entry is persisted and round-trips as a Deny, and the change is audited.
         var entries = await api.GetFolderPermissionsAsync(TenantId, folder.FolderId);
-        entries.Should().NotContain(entry => entry.SubjectId == "user-1");
-        (await host.CountChangeAclAuditEventsAsync(TenantId)).Should().Be(0, "a failed grant must not emit an 'Allowed' audit event");
+        entries.Should().ContainSingle(entry =>
+            entry.SubjectId == "user-1" && entry.Effect == ReportAclEffectDto.Deny);
+        (await host.CountChangeAclAuditEventsAsync(TenantId)).Should().Be(1, "a successful grant emits an 'Allowed' ChangeAcl audit event");
     }
 
     [Fact]

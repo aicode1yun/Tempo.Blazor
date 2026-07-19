@@ -73,17 +73,12 @@ public sealed class ReportServerSecurityPersistenceE2ETests
         });
         render.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // 3. Audit the render through the host's EF audit log and assert the row lands in the DB.
+        // 3. The render is audited by the /render endpoint itself (Fáze 11 in-handler enforcement);
+        //    assert the RenderReport row lands in the DB through the host's EF audit log.
         using (var scope = host.Services.CreateScope())
         {
             var auditLog = scope.ServiceProvider.GetRequiredService<IReportAuditLog>();
             auditLog.Should().BeOfType<EfReportAuditLog>("the host must use the EF-persisted audit log");
-            await auditLog.WriteAsync(ReportAuditEvent.Allowed(
-                TenantId,
-                "api:e2e-embed",
-                ReportAuditAction.RenderReport,
-                ReportResourceKind.Render,
-                reportId));
 
             var events = await auditLog.QueryAsync(new ReportAuditQuery
             {
@@ -95,7 +90,10 @@ public sealed class ReportServerSecurityPersistenceE2ETests
 
         await using (var verify = _db.CreateDbContext(TenantId))
         {
-            (await verify.AuditEvents.CountAsync(e => e.TenantId == TenantId)).Should().Be(1);
+            // The render endpoint persists exactly one RenderReport audit (the catalog seed writes
+            // separate ChangeDefinition rows, which are not counted here).
+            (await verify.AuditEvents.CountAsync(e =>
+                e.TenantId == TenantId && e.Action == (int)ReportAuditAction.RenderReport)).Should().Be(1);
         }
 
         // 4. Revoke the key.

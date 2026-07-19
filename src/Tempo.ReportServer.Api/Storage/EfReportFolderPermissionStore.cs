@@ -6,9 +6,11 @@ namespace Tempo.ReportServer.Api.Storage;
 
 /// <summary>
 /// EF Core <see cref="IReportPermissionStore"/>. Per-folder grants are persisted as
-/// <see cref="ReportFolderPermissionEntity"/> rows (subject = OIDC <c>sub</c>, role name); folder
-/// inheritance is resolved against the catalog folder tree, and grants are expanded into
-/// <see cref="ReportFolderAclEntry"/> allow entries the resolver already understands.
+/// <see cref="ReportFolderPermissionEntity"/> rows carrying the subject kind (User/Role/Application),
+/// the effect (Allow/Deny) and explicit permission flags; folder inheritance is resolved against the
+/// catalog folder tree and grants are reconstructed into <see cref="ReportFolderAclEntry"/> values the
+/// resolver understands. Legacy rows without explicit permission bits project their role name into
+/// permissions for backward compatibility.
 /// </summary>
 public sealed class EfReportFolderPermissionStore : IReportPermissionStore
 {
@@ -28,7 +30,7 @@ public sealed class EfReportFolderPermissionStore : IReportPermissionStore
         => Task.CompletedTask;
 
     /// <inheritdoc />
-    /// <remarks>Replaces the user-subject allow grants on a single folder.</remarks>
+    /// <remarks>Replaces every ACL entry on a single folder with the supplied set.</remarks>
     public async Task SetAclEntriesAsync(
         string folderId,
         IReadOnlyList<ReportFolderAclEntry> entries,
@@ -44,23 +46,20 @@ public sealed class EfReportFolderPermissionStore : IReportPermissionStore
         _dbContext.FolderPermissions.RemoveRange(existing);
 
         var path = await ResolveFolderPathAsync(folderId, context).ConfigureAwait(false);
-        foreach (var entry in entries.Where(entry =>
-                     entry.SubjectKind == ReportAclSubjectKind.User && entry.Effect == ReportAclEffect.Allow))
+        var pathLeaf = path.LastOrDefault() ?? folderId;
+        foreach (var entry in entries)
         {
-            _dbContext.FolderPermissions.Add(new ReportFolderPermissionEntity
-            {
-                TenantId = tenantId,
-                FolderId = folderId,
-                Path = path.LastOrDefault() ?? folderId,
-                SubjectId = entry.SubjectId,
-                Role = RoleFromPermissions(entry.Permissions),
-            });
+            _dbContext.FolderPermissions.Add(ToEntity(tenantId, folderId, pathLeaf, entry));
         }
 
         await _dbContext.SaveChangesAsync(context.CancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>Grants a role to a subject on a folder (upsert).</summary>
+    /// <summary>Grants a role to a subject on a folder (legacy role-based upsert).</summary>
+    /// <remarks>
+    /// Stores the role name without explicit permission bits, so the row projects the role into
+    /// permissions when read back. Retained for the Fáze 4 JIT-provisioning surface.
+    /// </remarks>
     public async Task GrantAsync(
         string folderId,
         string subjectId,
@@ -72,7 +71,9 @@ public sealed class EfReportFolderPermissionStore : IReportPermissionStore
             .FirstOrDefaultAsync(
                 permission => permission.TenantId == tenantId &&
                     permission.FolderId == folderId &&
-                    permission.SubjectId == subjectId,
+                    permission.SubjectKind == (int)ReportAclSubjectKind.User &&
+                    permission.SubjectId == subjectId &&
+                    permission.Effect == (int)ReportAclEffect.Allow,
                 context.CancellationToken)
             .ConfigureAwait(false);
         var path = await ResolveFolderPathAsync(folderId, context).ConfigureAwait(false);
@@ -84,36 +85,53 @@ public sealed class EfReportFolderPermissionStore : IReportPermissionStore
                 FolderId = folderId,
                 Path = path.LastOrDefault() ?? folderId,
                 SubjectId = subjectId,
+                SubjectKind = (int)ReportAclSubjectKind.User,
+                Effect = (int)ReportAclEffect.Allow,
+                Permissions = null,
                 Role = RoleName(role),
             });
         }
         else
         {
             entity.Role = RoleName(role);
+            entity.Permissions = null;
         }
 
         await _dbContext.SaveChangesAsync(context.CancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
-    /// <remarks>
-    /// The EF store persists user-subject allow grants only (role-projected), matching the F4 folder
-    /// ACL design. Role/application subjects and deny entries are not persisted here.
-    /// </remarks>
+    /// <remarks>Upserts a single ACL entry, keyed by (folder, subject kind, subject id, effect).</remarks>
     public async Task GrantAclEntryAsync(
         string folderId,
         ReportFolderAclEntry entry,
         ReportExecutionContext context)
     {
         ArgumentNullException.ThrowIfNull(entry);
-        if (entry.SubjectKind != ReportAclSubjectKind.User || entry.Effect != ReportAclEffect.Allow)
+        var tenantId = context.TenantId;
+        var subjectKind = (int)entry.SubjectKind;
+        var effect = (int)entry.Effect;
+        var existing = await _dbContext.FolderPermissions
+            .FirstOrDefaultAsync(
+                permission => permission.TenantId == tenantId &&
+                    permission.FolderId == folderId &&
+                    permission.SubjectKind == subjectKind &&
+                    permission.SubjectId == entry.SubjectId &&
+                    permission.Effect == effect,
+                context.CancellationToken)
+            .ConfigureAwait(false);
+        if (existing is null)
         {
-            throw new ReportPermissionUnsupportedException(
-                "EF permission store supports only User-subject Allow grants; " +
-                $"'{entry.SubjectKind}' subjects and '{entry.Effect}' effects are not supported.");
+            var path = await ResolveFolderPathAsync(folderId, context).ConfigureAwait(false);
+            _dbContext.FolderPermissions.Add(ToEntity(tenantId, folderId, path.LastOrDefault() ?? folderId, entry));
+        }
+        else
+        {
+            existing.Permissions = (int)entry.Permissions;
+            existing.Role = RoleFromPermissions(entry.Permissions);
         }
 
-        await GrantAsync(folderId, entry.SubjectId, RoleForPermissions(entry.Permissions), context).ConfigureAwait(false);
+        await _dbContext.SaveChangesAsync(context.CancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -128,12 +146,7 @@ public sealed class EfReportFolderPermissionStore : IReportPermissionStore
             .ToListAsync(context.CancellationToken)
             .ConfigureAwait(false);
 
-        return grants
-            .Select(grant => ReportFolderAclEntry.AllowUser(
-                grant.FolderId,
-                grant.SubjectId,
-                PermissionsFromRole(grant.Role)) with { TenantId = tenantId })
-            .ToArray();
+        return grants.Select(grant => ToEntry(tenantId, grant)).ToArray();
     }
 
     /// <inheritdoc />
@@ -143,16 +156,12 @@ public sealed class EfReportFolderPermissionStore : IReportPermissionStore
         string subjectId,
         ReportExecutionContext context)
     {
-        if (subjectKind != ReportAclSubjectKind.User)
-        {
-            throw new ReportPermissionUnsupportedException(
-                $"EF permission store supports only User-subject grants; '{subjectKind}' subjects are not supported.");
-        }
-
         var tenantId = context.TenantId;
+        var kind = (int)subjectKind;
         var existing = await _dbContext.FolderPermissions
             .Where(permission => permission.TenantId == tenantId &&
                 permission.FolderId == folderId &&
+                permission.SubjectKind == kind &&
                 permission.SubjectId == subjectId)
             .ToListAsync(context.CancellationToken)
             .ConfigureAwait(false);
@@ -163,16 +172,6 @@ public sealed class EfReportFolderPermissionStore : IReportPermissionStore
 
         _dbContext.FolderPermissions.RemoveRange(existing);
         await _dbContext.SaveChangesAsync(context.CancellationToken).ConfigureAwait(false);
-    }
-
-    private static ReportServerRole RoleForPermissions(ReportPermission permissions)
-    {
-        if (permissions.HasFlag(ReportPermission.ManagePermissions) || permissions == ReportPermission.All)
-        {
-            return ReportServerRole.TenantAdmin;
-        }
-
-        return permissions.HasFlag(ReportPermission.EditDefinition) ? ReportServerRole.Author : ReportServerRole.Viewer;
     }
 
     /// <inheritdoc />
@@ -198,13 +197,38 @@ public sealed class EfReportFolderPermissionStore : IReportPermissionStore
             .ToListAsync(context.CancellationToken)
             .ConfigureAwait(false);
 
-        return grants
-            .Select(grant => ReportFolderAclEntry.AllowUser(
-                grant.FolderId,
-                grant.SubjectId,
-                PermissionsFromRole(grant.Role)) with { TenantId = tenantId })
-            .ToArray();
+        return grants.Select(grant => ToEntry(tenantId, grant)).ToArray();
     }
+
+    private static ReportFolderPermissionEntity ToEntity(
+        string tenantId,
+        string folderId,
+        string pathLeaf,
+        ReportFolderAclEntry entry)
+        => new()
+        {
+            TenantId = tenantId,
+            FolderId = folderId,
+            Path = pathLeaf,
+            SubjectId = entry.SubjectId,
+            SubjectKind = (int)entry.SubjectKind,
+            Effect = (int)entry.Effect,
+            Permissions = (int)entry.Permissions,
+            Role = RoleFromPermissions(entry.Permissions),
+        };
+
+    private static ReportFolderAclEntry ToEntry(string tenantId, ReportFolderPermissionEntity grant)
+        => new()
+        {
+            TenantId = tenantId,
+            FolderId = grant.FolderId,
+            SubjectKind = (ReportAclSubjectKind)grant.SubjectKind,
+            SubjectId = grant.SubjectId,
+            Effect = (ReportAclEffect)grant.Effect,
+            Permissions = grant.Permissions is { } bits
+                ? (ReportPermission)bits
+                : PermissionsFromRole(grant.Role),
+        };
 
     private async Task<IReadOnlyList<string>> ResolveFolderPathAsync(string folderId, ReportExecutionContext context)
     {

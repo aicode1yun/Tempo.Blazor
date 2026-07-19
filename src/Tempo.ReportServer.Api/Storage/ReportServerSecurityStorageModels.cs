@@ -92,9 +92,11 @@ public sealed class ReportServerUserEntity
 }
 
 /// <summary>
-/// EF entity for a per-folder permission grant. A grant maps an ACL subject (a user <c>sub</c>) to a
-/// folder and a role (Admin/Author/Viewer); the resolver expands it into permission flags and
-/// inherits it down the folder tree. Keycloak realm roles remain the capability ceiling.
+/// EF entity for a per-folder permission grant. A grant maps an ACL subject (a user <c>sub</c>, a
+/// built-in role name, or an embedding application id) to a folder and either an explicit set of
+/// permission flags (<see cref="Permissions"/>) or, for legacy rows, a role name projected into
+/// permissions. The resolver inherits grants down the folder tree and applies <see cref="Effect"/>
+/// (Allow/Deny) with deny winning. Keycloak realm roles remain the capability ceiling.
 /// </summary>
 public sealed class ReportFolderPermissionEntity
 {
@@ -110,9 +112,27 @@ public sealed class ReportFolderPermissionEntity
     /// <summary>Canonical folder path (denormalized for auditing/reporting).</summary>
     public string Path { get; set; } = string.Empty;
 
-    /// <summary>ACL subject identifier (OIDC <c>sub</c>).</summary>
+    /// <summary>ACL subject identifier (user <c>sub</c>, role name, or application id).</summary>
     public string SubjectId { get; set; } = string.Empty;
 
-    /// <summary>Granted role name: <c>Admin</c>, <c>Author</c> or <c>Viewer</c>.</summary>
+    /// <summary>
+    /// Subject kind stored as the integer value of <see cref="Security.ReportAclSubjectKind"/>.
+    /// Defaults to <c>0</c> (User) so legacy rows read as user grants.
+    /// </summary>
+    public int SubjectKind { get; set; }
+
+    /// <summary>
+    /// ACL effect stored as the integer value of <see cref="Security.ReportAclEffect"/>.
+    /// Defaults to <c>0</c> (Allow) so legacy rows read as allow grants.
+    /// </summary>
+    public int Effect { get; set; }
+
+    /// <summary>
+    /// Explicit permission flags (integer value of <see cref="Security.ReportPermission"/>). When
+    /// <see langword="null"/> (legacy rows) the store projects <see cref="Role"/> into permissions.
+    /// </summary>
+    public int? Permissions { get; set; }
+
+    /// <summary>Granted role name: <c>Admin</c>, <c>Author</c> or <c>Viewer</c> (kept for display/back-compat).</summary>
     public string Role { get; set; } = string.Empty;
 }

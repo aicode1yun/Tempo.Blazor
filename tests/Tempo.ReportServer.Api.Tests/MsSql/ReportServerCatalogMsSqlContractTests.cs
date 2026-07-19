@@ -100,6 +100,9 @@ public sealed class ReportServerCatalogMsSqlContractTests
         builder.Services.AddTempoReportServerApi(options => options.UseSqlServer(
             _db.ConnectionString,
             sql => sql.MigrationsAssembly(typeof(Storage.ReportServerDbContext).Assembly.GetName().Name)));
+        // Catalog contract host has no authentication gate; allow anonymous operations so the
+        // in-handler ACL enforcement does not fail closed (401) for principal-less requests.
+        builder.Services.Configure<ReportServerApiOptions>(o => o.AllowAnonymousOperations = true);
         var app = builder.Build();
         app.UseTempoReportServerTenantContext();
         app.MapTempoReportServerApi();
