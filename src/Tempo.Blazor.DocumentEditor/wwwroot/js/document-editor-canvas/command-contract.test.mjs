@@ -25,8 +25,6 @@ const KNOWN_MISSING = new Set([
   'settableproperties',
   'setcellproperties',
   'deletepagebreak',
-  'toggledifferentfirstpage',
-  'toggledifferentoddeven',
   'setprotectionmode',
   'opentokenmenu',
   // Discovered by this contract test beyond the manual audit: ribbon registry

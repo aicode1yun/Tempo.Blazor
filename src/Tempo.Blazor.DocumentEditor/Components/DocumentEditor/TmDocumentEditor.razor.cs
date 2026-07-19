@@ -5839,7 +5839,10 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
 
         if (UsingCanvasEngine && _canvasHost is not null)
         {
-            await RouteToCanvasEngineAsync("toggleDifferentFirstPage", argument: null, focus: true);
+            // The engine registers differentFirstPage (not toggleDifferentFirstPage); sending the
+            // target state makes the command idempotent so the ribbon checkbox and the engine's
+            // section flag cannot diverge.
+            await RouteToCanvasEngineAsync("differentFirstPage", new { enabled }, focus: true);
             await GetCurrentDocumentForProviderExportAsync();
             return;
         }
@@ -5873,7 +5876,8 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
 
         if (UsingCanvasEngine && _canvasHost is not null)
         {
-            await RouteToCanvasEngineAsync("toggleDifferentOddEven", argument: null, focus: true);
+            // Same contract as differentFirstPage: engine-registered id + target state.
+            await RouteToCanvasEngineAsync("differentOddEven", new { enabled }, focus: true);
             await GetCurrentDocumentForProviderExportAsync();
             return;
         }

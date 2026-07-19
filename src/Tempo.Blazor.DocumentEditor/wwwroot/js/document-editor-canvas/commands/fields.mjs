@@ -94,11 +94,11 @@ export function applyFieldCommand(model, selection, commandId, payload = null) {
     }
 
     if (command === 'toggleDifferentFirstPage') {
-        return toggleSectionFlag(working, 'differentFirstPage');
+        return toggleSectionFlag(working, 'differentFirstPage', payload);
     }
 
     if (command === 'toggleDifferentOddEven') {
-        return toggleSectionFlag(working, 'differentOddAndEvenPages');
+        return toggleSectionFlag(working, 'differentOddAndEvenPages', payload);
     }
 
     return unchanged(working, selection, command);
@@ -490,14 +490,23 @@ function setPageSettings(model, payload) {
     return { changed: true, model, selection: null, operation: 'setPageSettings', dirtyBlockIds: allBodyBlockIds(model) };
 }
 
-function toggleSectionFlag(model, key) {
+function toggleSectionFlag(model, key, payload = null) {
     const section = firstSection(model);
     if (!section) {
         return unchanged(model, null, key);
     }
 
     section.properties = section.properties || {};
-    section.properties[key] = section.properties[key] !== true;
+    // Set-mode when the payload carries the target state (the C# ribbon checkbox sends
+    // {enabled} so the host and engine cannot diverge); blind toggle otherwise (legacy
+    // togglefirstpageheaderfooter/toggleoddevenheaderfooter callers).
+    const requested = payload?.enabled ?? payload?.Enabled;
+    const next = requested == null ? section.properties[key] !== true : requested === true;
+    if ((section.properties[key] === true) === next) {
+        return unchanged(model, null, key);
+    }
+
+    section.properties[key] = next;
     model.version = Number(model.version || 0) + 1;
     return { changed: true, model, selection: null, operation: key, dirtyBlockIds: [] };
 }

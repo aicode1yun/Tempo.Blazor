@@ -106,6 +106,51 @@ test('inline formatting commands each create undoable redoable runtime transacti
     }
 });
 
+test('differentFirstPage and differentOddEven set or toggle the section flag with undo/redo', () => {
+    const cases = [
+        ['differentFirstPage', 'differentFirstPage'],
+        ['differentOddEven', 'differentOddAndEvenPages'],
+    ];
+
+    for (const [commandId, sectionKey] of cases) {
+        let model = createModel();
+        let selection = range(0, 0);
+        const runtime = createCanvasCommandRuntime({
+            getModel: () => model,
+            getSelection: () => selection,
+            history: createHistoryStore(),
+            commit(change) {
+                model = change.model;
+                selection = change.selection ?? selection;
+            },
+        });
+
+        // The C# ribbon checkbox sends the TARGET state ({enabled}) so C# and engine
+        // cannot diverge — set-mode must be idempotent, not a blind toggle.
+        assert.equal(runtime.execCommand(commandId, { enabled: true }).handled, true, `${commandId} must be handled`);
+        assert.equal(model.sections[0].properties[sectionKey], true, `${commandId} {enabled:true} must set the flag`);
+        assert.equal(runtime.queryCommand(commandId).state, 'active', `${commandId} state must report active`);
+
+        runtime.execCommand(commandId, { enabled: true });
+        assert.equal(model.sections[0].properties[sectionKey], true, `${commandId} {enabled:true} must be idempotent`);
+
+        runtime.execCommand(commandId, { enabled: false });
+        assert.equal(model.sections[0].properties[sectionKey], false, `${commandId} {enabled:false} must clear the flag`);
+
+        // No payload keeps the legacy toggle semantics (togglefirstpageheaderfooter aliases).
+        runtime.execCommand(commandId);
+        assert.equal(model.sections[0].properties[sectionKey], true, `${commandId} without payload must toggle on`);
+
+        const undone = runtime.execCommand('undo');
+        assert.equal(undone.handled, true, `${commandId} undo must be handled`);
+        assert.equal(model.sections[0].properties[sectionKey], false, `${commandId} undo must restore the previous flag`);
+
+        const redone = runtime.execCommand('redo');
+        assert.equal(redone.handled, true, `${commandId} redo must be handled`);
+        assert.equal(model.sections[0].properties[sectionKey], true, `${commandId} redo must reapply the flag`);
+    }
+});
+
 test('link remove and ctrl click open use the command runtime link state', () => {
     let model = createModel();
     let selection = range(0, 5);

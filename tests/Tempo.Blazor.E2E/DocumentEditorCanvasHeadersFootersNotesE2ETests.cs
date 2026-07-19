@@ -310,6 +310,132 @@ public sealed class DocumentEditorCanvasHeadersFootersNotesE2ETests : WasmTestBa
         TestContext.AddResultFile(manifestPath);
     }
 
+    [TestMethod]
+    public async Task Phase3_RibbonHeaderFooterToggles_RouteEngineCommandsAndPersist()
+    {
+        // Regression (command-layer plan phase 3): the ribbon Different-first-page / Different-odd-even
+        // buttons routed command ids the engine never registered (toggleDifferentFirstPage /
+        // toggleDifferentOddEven), so both were silent no-ops. This drives the toggles through the REAL
+        // ribbon (not the command runtime directly) and asserts the layout, the ribbon state, and
+        // save/reload persistence.
+        var context = await CreateContextAsync();
+        var page = await context.NewPageAsync();
+        await page.SetViewportSizeAsync(1440, 1000);
+        await OpenPhase16DocumentAsync(page);
+
+        var output = CreateOutputDirectory("phase3-ribbon-header-footer-toggles");
+        var beforePath = Path.Combine(output, "00-first-page-header-active.png");
+        var afterTogglePath = Path.Combine(output, "01-first-page-header-disabled.png");
+        var reloadPath = Path.Combine(output, "02-after-reload-persisted.png");
+
+        // Seed starts with differentFirstPage=true → page 1 renders the FirstPage-scope header text.
+        var initialProbe = await ReadPhase16ProbeAcrossDocumentAsync(page);
+        Assert.IsTrue(initialProbe.DifferentFirstPage, "Seed must start with different first page enabled.");
+        StringAssert.Contains(await ReadFirstPageLayoutTextsAsync(page), "First page header");
+        await page.GetByTestId("document-editor-demo").ScreenshotAsync(new LocatorScreenshotOptions { Path = beforePath, Type = ScreenshotType.Png });
+
+        await page.GetByTestId("document-ribbon-tab-layout").ClickAsync();
+        var firstPageToggle = page.GetByTestId("document-different-first-page");
+        await Assertions.Expect(firstPageToggle).ToBeVisibleAsync(new() { Timeout = 10_000 });
+        await Assertions.Expect(firstPageToggle).ToHaveAttributeAsync("aria-pressed", "true");
+
+        // Turn OFF through the ribbon: page 1 must fall back to the Primary header (layout snapshot is
+        // the contract here — header text is NOT in the canvas a11y mirror).
+        await firstPageToggle.ClickAsync();
+        await page.WaitForFunctionAsync(
+            """
+            async () => {
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                const handle = host?.getAttribute('data-canvas-engine-handle') || '';
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
+                const model = JSON.parse(module.getModelJson(handle) || '{}');
+                const section = (model.sections || [])[0];
+                return section?.properties?.differentFirstPage !== true;
+            }
+            """,
+            null,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+        await Assertions.Expect(firstPageToggle).ToHaveAttributeAsync("aria-pressed", "false", new() { Timeout = 10_000 });
+
+        var disabledTexts = await ReadFirstPageLayoutTextsAsync(page);
+        Assert.IsFalse(disabledTexts.Contains("First page header", StringComparison.Ordinal),
+            $"With different-first-page off, page 1 must not render the FirstPage header. Page 1 texts: {disabledTexts}");
+        await page.GetByTestId("document-editor-demo").ScreenshotAsync(new LocatorScreenshotOptions { Path = afterTogglePath, Type = ScreenshotType.Png });
+
+        // Edge case: the odd/even ribbon toggle routes too, and re-clicking is idempotent set-mode —
+        // the ribbon state and engine flag stay in lockstep in both directions.
+        var oddEvenToggle = page.GetByTestId("document-different-odd-even");
+        await Assertions.Expect(oddEvenToggle).ToHaveAttributeAsync("aria-pressed", "true");
+        await oddEvenToggle.ClickAsync();
+        await Assertions.Expect(oddEvenToggle).ToHaveAttributeAsync("aria-pressed", "false", new() { Timeout = 10_000 });
+        await oddEvenToggle.ClickAsync();
+        await Assertions.Expect(oddEvenToggle).ToHaveAttributeAsync("aria-pressed", "true", new() { Timeout = 10_000 });
+
+        // Persist: save with different-first-page OFF, reload, and verify both the model flag and the
+        // first-page layout stayed off.
+        await page.GetByTestId("document-save").ClickAsync();
+        await WaitForSaveBoundaryAsync(page);
+
+        await NavigateWithinBlazorAsync(page, "/canvas-engine-host?documentId=phase-5-canvas-render");
+        await page.WaitForFunctionAsync(
+            "() => document.querySelector('[data-testid=\"document-canvas-page\"]')?.getAttribute('data-canvas-model-document-id') === 'phase-5-canvas-render'",
+            null,
+            new PageWaitForFunctionOptions { Timeout = 20_000 });
+        await NavigateWithinBlazorAsync(page, $"/canvas-engine-host?documentId={Phase16DocumentId}&showToolbar=true");
+        await WaitForPhase16ReloadReadyAsync(page);
+
+        var reloadedProbe = await ReadPhase16ProbeAcrossDocumentAsync(page);
+        Assert.IsFalse(reloadedProbe.DifferentFirstPage, "The disabled different-first-page flag must survive save/reload.");
+        Assert.IsTrue(reloadedProbe.DifferentOddAndEvenPages, "The re-enabled different-odd-even flag must survive save/reload.");
+        var reloadedTexts = await ReadFirstPageLayoutTextsAsync(page);
+        Assert.IsFalse(reloadedTexts.Contains("First page header", StringComparison.Ordinal),
+            $"After reload, page 1 must still not render the FirstPage header. Page 1 texts: {reloadedTexts}");
+
+        await page.GetByTestId("document-ribbon-tab-layout").ClickAsync();
+        await Assertions.Expect(page.GetByTestId("document-different-first-page"))
+            .ToHaveAttributeAsync("aria-pressed", "false", new() { Timeout = 10_000 });
+        await page.GetByTestId("document-editor-demo").ScreenshotAsync(new LocatorScreenshotOptions { Path = reloadPath, Type = ScreenshotType.Png });
+
+        TestContext.AddResultFile(beforePath);
+        TestContext.AddResultFile(afterTogglePath);
+        TestContext.AddResultFile(reloadPath);
+    }
+
+    /// <summary>Text drawn on page 1 according to the print layout snapshot (headers are not mirrored).</summary>
+    private static Task<string> ReadFirstPageLayoutTextsAsync(IPage page)
+        => page.EvaluateAsync<string>(
+            """
+            async () => {
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                const handle = host?.getAttribute('data-canvas-engine-handle') || '';
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
+                const snapshot = JSON.parse(module.getLayoutSnapshotJson(handle) || '{}');
+                const first = (snapshot.pages || [])[0];
+                const texts = [];
+                for (const command of first?.commands || []) {
+                    if (typeof command.text === 'string') {
+                        texts.push(command.text);
+                    }
+                }
+                return texts.join('\n');
+            }
+            """);
+
+    /// <summary>Reload readiness without assuming the first-page header scope (the toggle test disables it).</summary>
+    private static Task WaitForPhase16ReloadReadyAsync(IPage page)
+        => page.WaitForFunctionAsync(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                const first = document.querySelector('[data-testid="document-canvas-page"][data-canvas-model-document-id="phase-16-canvas-headers-footers-notes"]');
+                return (host?.getAttribute('data-canvas-engine-handle') || '').length > 0
+                    && first
+                    && Number(first.getAttribute('data-canvas-header-footer-count') || '0') >= 1;
+            }
+            """,
+            null,
+            new PageWaitForFunctionOptions { Timeout = 90_000 });
+
     private async Task OpenPhase16DocumentAsync(IPage page)
     {
         await page.GotoAsync($"{BaseUrl}/canvas-engine-host?documentId={Phase16DocumentId}&showToolbar=true", new PageGotoOptions

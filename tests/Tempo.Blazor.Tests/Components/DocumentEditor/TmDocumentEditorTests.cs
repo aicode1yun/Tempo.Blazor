@@ -1765,7 +1765,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
 
         cut.Find("[data-testid='document-different-first-page']").Click();
 
-        HasCanvasCommand("toggleDifferentFirstPage").Should().BeTrue();
+        HasCanvasCommand("differentFirstPage").Should().BeTrue();
         SetupDocumentCanvasModule().Invocations.Count(invocation => invocation.Identifier == "replaceModel")
             .Should().Be(replaceCallsBeforeToggle, "live header/footer layout commands must not force a C# snapshot reload in the canvas-owned runtime");
     }
@@ -3614,6 +3614,41 @@ public class TmDocumentEditorTests : LocalizationTestBase
                 && invocation.Arguments.Count > 0
                 && Equals(invocation.Arguments[0], false),
                 "exiting fullscreen must invoke the browser global with false"));
+    }
+
+    [Fact]
+    public async Task HeaderFooterToggles_RouteEngineRegisteredCommandIdsWithTargetState()
+    {
+        // Regression: the ribbon toggles routed "toggleDifferentFirstPage"/"toggleDifferentOddEven",
+        // command ids the engine never registered (it registers differentFirstPage/differentOddEven),
+        // so both buttons were silent no-ops. The route must use the registered id AND send the target
+        // state ({enabled}) so the C# checkbox and the engine section flag cannot diverge.
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderDocumentEditor(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+        await MarkCanvasReadyAsync(cut);
+
+        cut.Find("[data-testid='document-ribbon-tab-layout']").Click();
+        await cut.Find("[data-testid='document-different-first-page']").ClickAsync(new MouseEventArgs());
+
+        var firstPageInvocation = SetupDocumentCanvasModule().Invocations
+            .LastOrDefault(invocation => invocation.Identifier == "execCommand"
+                && invocation.Arguments.Count > 2
+                && string.Equals(invocation.Arguments[1]?.ToString(), "differentFirstPage", StringComparison.Ordinal));
+        firstPageInvocation.Should().NotBeNull("the toggle must route the engine-registered differentFirstPage id");
+        firstPageInvocation!.Arguments[2]?.ToString().Should().Contain("\"enabled\":true");
+
+        await cut.Find("[data-testid='document-different-odd-even']").ClickAsync(new MouseEventArgs());
+
+        var oddEvenInvocation = SetupDocumentCanvasModule().Invocations
+            .LastOrDefault(invocation => invocation.Identifier == "execCommand"
+                && invocation.Arguments.Count > 2
+                && string.Equals(invocation.Arguments[1]?.ToString(), "differentOddEven", StringComparison.Ordinal));
+        oddEvenInvocation.Should().NotBeNull("the toggle must route the engine-registered differentOddEven id");
+        oddEvenInvocation!.Arguments[2]?.ToString().Should().Contain("\"enabled\":true");
     }
 
     [Fact]
