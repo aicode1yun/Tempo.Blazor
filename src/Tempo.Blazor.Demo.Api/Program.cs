@@ -111,7 +111,7 @@ builder.Services.AddMcpServer()
 builder.Services.AddSingleton<MockNotionDatabaseStore>();
 builder.Services.AddSingleton<DemoDocumentEditorStore>();
 builder.Services.AddSingleton<DemoDocumentFormatProvider>();
-builder.Services.AddTempoDocumentLayout();
+builder.Services.AddTempoDocumentServices();
 builder.Services.AddSingleton<DemoDocumentExportFontCatalog>();
 builder.Services.AddSingleton<DemoDocumentPdfExportProvider>();
 builder.Services.AddSingleton<DemoDocumentPdfExportCache>();

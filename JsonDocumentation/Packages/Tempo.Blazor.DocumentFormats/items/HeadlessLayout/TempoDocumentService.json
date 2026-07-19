@@ -1,0 +1,10 @@
+{
+  "itemName": "TempoDocumentService",
+  "kind": "Class",
+  "category": "HeadlessLayout",
+  "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+  "description": "Default ITempoDocumentService: composes the server-side document pipeline — document assembly (IF/ELSE conditional chains, repeating sections, computed expressions over token values), headless canvas layout (pooled Jint host) and Skia PDF/raster rendering with embedded fonts. The clock is injectable via TimeProvider, so assembly date functions (TODAY/DATEADD) and the forensic watermark timestamp are deterministic under test; a missing forensic timestamp is stamped from the injected clock rather than an uncontrolled UtcNow. RenderPdfAsync returns the PDF plus page count and the layout snapshot JSON it was rendered from; RenderPageImagesAsync rasters every page to PNG at the requested DPI (96 = CSS pixel scale).",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentService.cs",
+  "documentationStatus": "generated"
+}

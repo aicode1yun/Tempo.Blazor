@@ -1,0 +1,10 @@
+{
+  "itemName": "TempoDocumentPdfResult",
+  "kind": "Class",
+  "category": "HeadlessLayout",
+  "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+  "description": "Result of a headless PDF render: the PDF bytes, the laid-out page count, the layout snapshot JSON (schema v1) the PDF was rendered from — reusable for previews or diagnostics — and the forensic watermark timestamp actually stamped into the PDF when a forensic watermark was requested.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentService.cs",
+  "documentationStatus": "generated"
+}

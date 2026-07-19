@@ -6452,6 +6452,39 @@ doplnit na serveru (viz POST export endpoint v Demo.Api — klient je nemůže p
 Renderer vystavuje `TempoDocumentPdfRenderer.BuildReportSnapshot(request)` pro inspekci
 přesně toho, co se vykreslí.
 
+### Headless dokumentový runtime (`TempoDocumentService`, server-side)
+
+Balíček `Tempo.Blazor.DocumentFormats` umí dokument vyrenderovat **bez prohlížeče** — stejný
+JS layoutový řetěz, kterým kreslí canvas editor, běží na serveru v pooled Jint enginech
+(embedded bundle, drift-gate proti `.mjs` zdrojům) a text měří z předpočítaných Skia advance
+tabulek ze STEJNÝCH font bytes, které PDF embeduje (WYSIWYG parita konstrukcí).
+
+| API | Popis |
+|---|---|
+| `ITempoDocumentService.RenderPdfAsync(request, ct)` | Fasáda: assembly (tokenValues → IF/ELSE, REPEAT, výpočty) → headless layout → vektorové PDF. Vrací `TempoDocumentPdfResult` (PDF, pageCount, layout snapshot JSON, forenzní timestamp). |
+| `ITempoDocumentService.RenderPageImagesAsync(request, dpi, ct)` | Per-page PNG náhledy přes Skia raster (96 dpi = CSS pixely; 192 = 2×) — vizuální zpětná vazba pro agenty a preview tooling. |
+| `TempoDocumentRenderRequest` | `Document` (šablona/dokument), `TokenValues?` (null = bez assembly), `Options` (page setup, review mode, watermark + forensic), `Fonts` (povinné pro WYSIWYG), `FileName`. |
+| `ITempoDocumentLayoutService.GenerateLayoutSnapshotJson(document, pageSetup?, fonts, reviewMode)` | Nižší vrstva: layout snapshot schema v1 (kontrakt `DocumentPdfExportRequest.LayoutSnapshotJson`). Fail-closed: neznámý font/glyf → `TempoDocumentLayoutException` s diagnostikou. |
+| `TempoFontAdvanceTableExtractor` | Skia advance tabulky z `ReportPdfFontFace` bytes (thread-safe lazy cache per face). |
+| `AddTempoDocumentServices()` / `AddTempoDocumentLayout()` | DI registrace fasády resp. samotného layoutu (idempotentní singletony; fasáda respektuje registrovaný `TimeProvider` — deterministické `TODAY()/DATEADD` i forenzní razítko). |
+
+```csharp
+services.AddTempoDocumentServices();
+
+var result = await documentService.RenderPdfAsync(new TempoDocumentRenderRequest
+{
+    Document = template,                       // šablona s IF/REPEAT/výpočty
+    TokenValues = tokens,                      // dataset (scalars + Rows pro REPEAT)
+    Fonts = fonts,                             // stejné ReportPdfFontFace, které PDF embeduje
+    Options = new() { ForensicWatermark = new() { UserName = user, IpAddress = ip } },
+});
+var previews = await documentService.RenderPageImagesAsync(request, dpi: 192);
+```
+
+Demo: `POST /api/document-editor/assembly/render` (Demo.Api) — dataset → PDF nebo PNG
+náhledy čistě server-side; snapshot-less exporty dokumentů jedou stejnou cestou
+(`DemoDocumentPdfExportProvider`).
+
 ### Kolaborace ve větším nasazení (`IDocumentCollaborationBackplane`)
 
 Pro multi-server nasazení fan-outuje backplane operační dávky a kurzory mezi instancemi:

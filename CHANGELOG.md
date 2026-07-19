@@ -78,6 +78,25 @@
   pagination and text layer; both PDFs open in TmPdfViewer (screenshots); empty-document server
   export yields a valid single-page PDF.
 
+### Headless document runtime — Phase 4: `TempoDocumentService` facade + PNG page previews
+
+- New `ITempoDocumentService`/`TempoDocumentService` facade in
+  `Tempo.Blazor.DocumentFormats.HeadlessLayout`: `RenderPdfAsync(template/document +
+  tokenValues, options)` = `DocumentAssemblyService.Assemble` (IF/ELSE chains, repeating
+  sections, computed expressions) → headless layout → `TempoDocumentPdfRenderer`, with
+  watermark + forensic watermark passthrough and an injectable `TimeProvider` clock
+  (deterministic `TODAY()`/`DATEADD` and forensic timestamps). Returns
+  `TempoDocumentPdfResult` (PDF, page count, layout snapshot JSON, stamped forensic time).
+- `RenderPageImagesAsync` rasters every laid-out page to PNG at a parametrizable DPI
+  (`TempoDocumentPageImage`); `ReportPdfRenderer` gained an additive
+  `RenderPagePng(page, options, scale)` overload. Register everything with
+  `services.AddTempoDocumentServices()`.
+- Demo.Api: new `POST /api/document-editor/assembly/render` — the demo assembly contract
+  template + a dataset (scalar values + repeating item rows) → PDF or per-page PNG previews,
+  rendered purely server-side. E2E proves two datasets flip the IF/ELSE branch and compute
+  their totals, with PNG preview screenshots for UX review; COMPONENTS.md gained a
+  "Headless dokumentový runtime" section.
+
 ## 2.3.9 - 2026-07-19
 
 ### Document editor — canvas command layer completed (TmDocumentEditor)

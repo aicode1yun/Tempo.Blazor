@@ -1,0 +1,10 @@
+{
+  "itemName": "TempoDocumentServiceCollectionExtensions",
+  "kind": "Class",
+  "category": "HeadlessLayout",
+  "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+  "description": "DI registration for the headless document facade: AddTempoDocumentServices() registers the full pipeline — ITempoDocumentLayoutService (pooled Jint host) and the ITempoDocumentService facade (assembly → layout → PDF / PNG previews) — as idempotent singletons; the facade resolves a registered TimeProvider when present, otherwise uses the system clock.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentLayoutServiceCollectionExtensions.cs",
+  "documentationStatus": "generated"
+}

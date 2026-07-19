@@ -83,18 +83,30 @@ public sealed class ReportPdfRenderer
 
     /// <summary>Renders one snapshot page to a PNG byte array using the same Skia drawing path.</summary>
     public byte[] RenderPagePng(ReportSnapshotPage page, ReportPdfRendererOptions? options = null)
+        => RenderPagePng(page, options, 1);
+
+    /// <summary>
+    /// Renders one snapshot page to a PNG byte array at a raster scale factor (1 = 96 dpi CSS
+    /// pixels, 2 = 192 dpi, …) using the same Skia drawing path.
+    /// </summary>
+    public byte[] RenderPagePng(ReportSnapshotPage page, ReportPdfRendererOptions? options, double scale)
     {
         ArgumentNullException.ThrowIfNull(page);
+        if (!double.IsFinite(scale) || scale <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(scale), scale, "Raster scale must be a positive finite number.");
+        }
 
         options ??= new ReportPdfRendererOptions();
         using var catalog = new ReportPdfFontCatalog(options);
         var info = new SKImageInfo(
-            Math.Max(1, (int)Math.Ceiling(page.Width)),
-            Math.Max(1, (int)Math.Ceiling(page.Height)),
+            Math.Max(1, (int)Math.Ceiling(page.Width * scale)),
+            Math.Max(1, (int)Math.Ceiling(page.Height * scale)),
             SKColorType.Rgba8888,
             SKAlphaType.Premul);
         using var surface = SKSurface.Create(info);
         surface.Canvas.Clear(SKColors.Transparent);
+        surface.Canvas.Scale((float)scale);
         DrawPage(surface.Canvas, page, catalog, options);
         using var image = surface.Snapshot();
         using var data = image.Encode(SKEncodedImageFormat.Png, 100);

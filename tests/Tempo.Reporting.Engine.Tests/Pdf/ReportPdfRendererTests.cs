@@ -135,6 +135,29 @@ public sealed class ReportPdfRendererTests
     }
 
     [Fact]
+    public void RenderPagePng_WithScale_RastersAtHigherDpiWithSameGeometry()
+    {
+        var page = Page(
+            1,
+            96,
+            48,
+            ReportSnapshotCommand.Rectangle("bg", 0, 0, 96, 48, "#ffffff"),
+            ReportSnapshotCommand.Rectangle("accent", 8, 8, 80, 24, "#2563eb"));
+
+        // scale 2 = 192 dpi: doubled pixel dimensions, identical geometry in page space.
+        var png = new ReportPdfRenderer().RenderPagePng(page, null, 2);
+
+        using var bitmap = SKBitmap.Decode(png);
+        bitmap.Width.Should().Be(192);
+        bitmap.Height.Should().Be(96);
+        bitmap.GetPixel(24, 24).Blue.Should().BeGreaterThan(120, "the accent rectangle must scale with the raster");
+        bitmap.GetPixel(4, 4).Red.Should().BeGreaterThan(200, "the background stays white outside the accent");
+
+        var act = () => new ReportPdfRenderer().RenderPagePng(page, null, 0);
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
     public void RenderPagePng_RasterizesEngineDrawnChartSnapshot()
     {
         var context = ChartContext();

@@ -3,6 +3,7 @@ using Tempo.Blazor.Demo.Api.Hubs;
 using Tempo.Blazor.Demo.Api.Services;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentEditor.Services;
+using Tempo.Blazor.DocumentFormats.HeadlessLayout;
 using Tempo.Blazor.DocumentFormats.Odt;
 
 namespace Tempo.Blazor.Demo.Api.Endpoints;
@@ -340,6 +341,56 @@ public static class DocumentEditorEndpoints
             var exported = await pdfProvider.ExportPdfAsync(request, cancellationToken);
             exportCache.Store(documentId, exported);
             return Results.Ok(exported);
+        });
+
+        // Headless assembly demo: template (IF/ELSE + repeating section + computed values) +
+        // dataset → PDF or per-page PNG previews rendered purely server-side through the
+        // TempoDocumentService facade. No browser, no client snapshot.
+        group.MapPost("/assembly/render", async (
+            DemoAssemblyRenderRequest body,
+            DemoDocumentEditorStore store,
+            ITempoDocumentService documentService,
+            DemoDocumentExportFontCatalog fontCatalog,
+            CancellationToken cancellationToken) =>
+        {
+            var tokenValues = new Dictionary<string, DocumentTokenValue>();
+            foreach (var (key, value) in body.Values ?? [])
+            {
+                tokenValues[key] = DocumentTokenValue.Resolved(key, value);
+            }
+
+            if (body.ItemRows is { Count: > 0 })
+            {
+                tokenValues["items"] = new DocumentTokenValue
+                {
+                    Key = "items",
+                    HasValue = true,
+                    Rows = body.ItemRows,
+                };
+            }
+
+            var request = new TempoDocumentRenderRequest
+            {
+                Document = store.CreateAssemblyDemoTemplate(),
+                TokenValues = tokenValues,
+                Fonts = fontCatalog.Fonts,
+                FileName = "assembly-headless-demo",
+            };
+
+            if (string.Equals(body.Format, "png", StringComparison.OrdinalIgnoreCase))
+            {
+                var images = await documentService.RenderPageImagesAsync(request, body.Dpi ?? 96, cancellationToken);
+                return Results.Ok(new DemoAssemblyRenderPngResult(
+                    images.Count,
+                    images.Select(image => new DemoAssemblyRenderPage(
+                        image.PageIndex,
+                        image.Width,
+                        image.Height,
+                        Convert.ToBase64String(image.Png))).ToList()));
+            }
+
+            var pdf = await documentService.RenderPdfAsync(request, cancellationToken);
+            return Results.File(pdf.PdfContent, "application/pdf", "assembly-headless-demo.pdf");
         });
 
         // Serves the PDF produced by the latest POST export so demo pages (TmPdfViewer) and E2E can
@@ -707,3 +758,20 @@ public static class DocumentEditorEndpoints
         };
     }
 }
+
+/// <summary>Request body of the headless assembly demo render endpoint.</summary>
+/// <param name="Values">Scalar token values keyed by token key (e.g. contract.client, contract.amount).</param>
+/// <param name="ItemRows">Rows for the repeating "items" section (column name → cell value).</param>
+/// <param name="Format">"pdf" (default) or "png".</param>
+/// <param name="Dpi">Raster DPI for PNG previews; defaults to 96.</param>
+public sealed record DemoAssemblyRenderRequest(
+    Dictionary<string, string?>? Values,
+    List<Dictionary<string, string?>>? ItemRows,
+    string? Format = null,
+    double? Dpi = null);
+
+/// <summary>PNG preview response of the headless assembly demo render endpoint.</summary>
+public sealed record DemoAssemblyRenderPngResult(int PageCount, List<DemoAssemblyRenderPage> Pages);
+
+/// <summary>One rendered preview page.</summary>
+public sealed record DemoAssemblyRenderPage(int PageIndex, int Width, int Height, string Png);

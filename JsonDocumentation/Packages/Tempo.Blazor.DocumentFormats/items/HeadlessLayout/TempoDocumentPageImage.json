@@ -1,0 +1,10 @@
+{
+  "itemName": "TempoDocumentPageImage",
+  "kind": "Class",
+  "category": "HeadlessLayout",
+  "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+  "description": "One rendered page preview from ITempoDocumentService.RenderPageImagesAsync: zero-based page index, raster dimensions in pixels and the PNG bytes.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentService.cs",
+  "documentationStatus": "generated"
+}

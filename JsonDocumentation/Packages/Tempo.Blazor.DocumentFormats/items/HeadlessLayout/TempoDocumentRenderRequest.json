@@ -1,0 +1,10 @@
+{
+  "itemName": "TempoDocumentRenderRequest",
+  "kind": "Class",
+  "category": "HeadlessLayout",
+  "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+  "description": "Request for the headless document facade: the template or plain document, optional token values for assembly (null renders the document as-is), export options (page setup, review display mode, watermark, forensic watermark), the font faces to measure and embed with (required for WYSIWYG-accurate output) and optional document id / file name.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentService.cs",
+  "documentationStatus": "generated"
+}

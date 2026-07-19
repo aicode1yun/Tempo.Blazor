@@ -17,3 +17,23 @@ public static class TempoDocumentLayoutServiceCollectionExtensions
         return services;
     }
 }
+
+/// <summary>DI registration for the headless document facade.</summary>
+public static class TempoDocumentServiceCollectionExtensions
+{
+    /// <summary>
+    /// Registers the full headless document pipeline: <see cref="ITempoDocumentLayoutService"/>
+    /// (pooled Jint host) and the <see cref="ITempoDocumentService"/> facade (assembly → layout →
+    /// PDF / PNG previews) as idempotent singletons. The facade resolves a registered
+    /// <see cref="TimeProvider"/> when present, otherwise uses the system clock.
+    /// </summary>
+    public static IServiceCollection AddTempoDocumentServices(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddTempoDocumentLayout();
+        services.TryAddSingleton<ITempoDocumentService>(provider => new TempoDocumentService(
+            provider.GetRequiredService<ITempoDocumentLayoutService>(),
+            provider.GetService<TimeProvider>()));
+        return services;
+    }
+}

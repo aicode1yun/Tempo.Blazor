@@ -582,6 +582,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "ITempoDocumentService",
+      "kind": "Interface",
+      "category": "Headless Layout",
+      "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+      "description": "Headless document rendering facade: one call takes a template (or plain document) plus token values and produces a WYSIWYG PDF (RenderPdfAsync = DocumentAssemblyService.Assemble → ITempoDocumentLayoutService → TempoDocumentPdfRenderer, incl. watermark and forensic watermark passthrough) or per-page PNG previews at a parametrizable DPI (RenderPageImagesAsync — visual feedback for agents, tests and preview tooling). Register via AddTempoDocumentServices().",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentService.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "JintDocumentLayoutEngine",
       "kind": "Class",
       "category": "Headless Layout",
@@ -673,21 +683,57 @@
       "description": "DI registration for the headless document layout service: AddTempoDocumentLayout() registers ITempoDocumentLayoutService backed by the pooled Jint host (JintDocumentLayoutEngine) as an idempotent singleton.",
       "packageId": "Tempo.Blazor.DocumentFormats",
       "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentLayoutServiceCollectionExtensions.cs",
-      "documentationStatus": "merged",
-      "members": [
-        {
-          "name": "AddTempoDocumentLayout",
-          "kind": "Method",
-          "type": "IServiceCollection",
-          "description": "Registers backed by the pooled Jint host () as a singleton. Idempotent.",
-          "parameters": [
-            {
-              "name": "services",
-              "type": "this IServiceCollection"
-            }
-          ]
-        }
-      ]
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TempoDocumentPageImage",
+      "kind": "Record",
+      "category": "Headless Layout",
+      "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+      "description": "One rendered page preview from ITempoDocumentService.RenderPageImagesAsync: zero-based page index, raster dimensions in pixels and the PNG bytes.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentService.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TempoDocumentPdfResult",
+      "kind": "Class",
+      "category": "Headless Layout",
+      "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+      "description": "Result of a headless PDF render: the PDF bytes, the laid-out page count, the layout snapshot JSON (schema v1) the PDF was rendered from — reusable for previews or diagnostics — and the forensic watermark timestamp actually stamped into the PDF when a forensic watermark was requested.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentService.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TempoDocumentRenderRequest",
+      "kind": "Class",
+      "category": "Headless Layout",
+      "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+      "description": "Request for the headless document facade: the template or plain document, optional token values for assembly (null renders the document as-is), export options (page setup, review display mode, watermark, forensic watermark), the font faces to measure and embed with (required for WYSIWYG-accurate output) and optional document id / file name.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentService.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TempoDocumentService",
+      "kind": "Class",
+      "category": "Headless Layout",
+      "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+      "description": "Default ITempoDocumentService: composes the server-side document pipeline — document assembly (IF/ELSE conditional chains, repeating sections, computed expressions over token values), headless canvas layout (pooled Jint host) and Skia PDF/raster rendering with embedded fonts. The clock is injectable via TimeProvider, so assembly date functions (TODAY/DATEADD) and the forensic watermark timestamp are deterministic under test; a missing forensic timestamp is stamped from the injected clock rather than an uncontrolled UtcNow. RenderPdfAsync returns the PDF plus page count and the layout snapshot JSON it was rendered from; RenderPageImagesAsync rasters every page to PNG at the requested DPI (96 = CSS pixel scale).",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentService.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TempoDocumentServiceCollectionExtensions",
+      "kind": "Class",
+      "category": "Headless Layout",
+      "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+      "description": "DI registration for the headless document facade: AddTempoDocumentServices() registers the full pipeline — ITempoDocumentLayoutService (pooled Jint host) and the ITempoDocumentService facade (assembly → layout → PDF / PNG previews) — as idempotent singletons; the facade resolves a registered TimeProvider when present, otherwise uses the system clock.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentLayoutServiceCollectionExtensions.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "TempoFontAdvanceFace",
@@ -912,11 +958,11 @@
     }
   ],
   "summary": {
-    "itemCount": 51,
-    "manualItemCount": 51,
-    "generatedItemCount": 51,
+    "itemCount": 57,
+    "manualItemCount": 57,
+    "generatedItemCount": 57,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 51
+    "publicApiTypeCount": 57
   }
 }

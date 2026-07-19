@@ -1514,4 +1514,110 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             ]
         };
     }
+
+    /// <summary>
+    /// Builds the headless assembly demo template: an IF/ELSE conditional chain over
+    /// contract.amount, a repeating items section, a computed currency total and a DATEADD due
+    /// date — rendered purely server-side by the TempoDocumentService facade.
+    /// </summary>
+    public DocumentEditorDocument CreateAssemblyDemoTemplate()
+    {
+        var document = DocumentEditorDocument.Empty("assembly-headless-demo");
+        var sectionId = document.Sections[0].Id;
+        document.Metadata.Title = "Šablona smlouvy — headless generování";
+
+        DocumentBlock Paragraph(string id, params InlineContent[] inlines) => new()
+        {
+            Id = id,
+            SectionId = sectionId,
+            Type = DocumentBlockType.Paragraph,
+            Content = new ParagraphBlockContent { Inlines = inlines.ToList() },
+        };
+
+        document.Blocks =
+        [
+            new DocumentBlock
+            {
+                Id = "assembly-headless-heading",
+                SectionId = sectionId,
+                Type = DocumentBlockType.Heading,
+                Order = 1,
+                Content = new HeadingBlockContent { Level = 1, Inlines = [new TextRun { Text = "Smlouva o dílo" }] },
+            },
+            Paragraph(
+                "assembly-headless-client",
+                new TextRun { Text = "Objednatel: " },
+                new TokenRun { Key = "contract.client", DisplayName = "Objednatel" }),
+            new DocumentBlock
+            {
+                Id = "assembly-headless-if",
+                SectionId = sectionId,
+                Type = DocumentBlockType.ContentControl,
+                Order = 3,
+                Content = new ContentControlBlockContent
+                {
+                    Control = DocumentAssemblyMetadata.CreateConditionalBlock("if", "contract.amount > 10000", "assembly-headless-approval"),
+                    Blocks =
+                    [
+                        Paragraph(
+                            "assembly-headless-if-clause",
+                            new TextRun { Text = "Smlouva podléhá schválení ředitele — hodnota plnění přesahuje 10 000 Kč." }),
+                    ],
+                },
+            },
+            new DocumentBlock
+            {
+                Id = "assembly-headless-else",
+                SectionId = sectionId,
+                Type = DocumentBlockType.ContentControl,
+                Order = 4,
+                Content = new ContentControlBlockContent
+                {
+                    Control = DocumentAssemblyMetadata.CreateConditionalBlock("else", null, "assembly-headless-approval"),
+                    Blocks =
+                    [
+                        Paragraph(
+                            "assembly-headless-else-clause",
+                            new TextRun { Text = "Smlouvu schvaluje vedoucí oddělení v běžném režimu." }),
+                    ],
+                },
+            },
+            new DocumentBlock
+            {
+                Id = "assembly-headless-items",
+                SectionId = sectionId,
+                Type = DocumentBlockType.ContentControl,
+                Order = 5,
+                Content = new ContentControlBlockContent
+                {
+                    Control = DocumentAssemblyMetadata.CreateRepeatingSection("items"),
+                    Blocks =
+                    [
+                        Paragraph(
+                            "assembly-headless-item-row",
+                            new TextRun { Text = "• " },
+                            new TokenRun { Key = "name", DisplayName = "Položka" },
+                            new TextRun { Text = " — " },
+                            new TokenRun { Key = "price", DisplayName = "Cena" },
+                            new TextRun { Text = " Kč" }),
+                    ],
+                },
+            },
+            Paragraph(
+                "assembly-headless-total",
+                new TextRun { Text = "Cena celkem: " },
+                new TokenRun { Key = "contract.total", DisplayName = "Celkem", Expression = "CURRENCY(SUM(items, 'price'), 'cs-CZ', 'CZK')" }),
+            Paragraph(
+                "assembly-headless-due",
+                new TextRun { Text = "Splatnost: " },
+                new TokenRun { Key = "contract.due", DisplayName = "Splatnost", Expression = "DATEADD(TODAY(), 14)" }),
+        ];
+
+        for (var i = 0; i < document.Blocks.Count; i++)
+        {
+            document.Blocks[i].Order = i + 1;
+        }
+
+        return document;
+    }
 }
