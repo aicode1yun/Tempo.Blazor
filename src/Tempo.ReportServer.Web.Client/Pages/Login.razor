@@ -10,16 +10,16 @@
             <TmIcon Name="@IconNames.BarChart2" Size="IconSize.Lg" />
             <span>Tempo Report Server</span>
         </div>
-        <h1>Sign in</h1>
-        <p>Use the seeded demo identity to manage reports across tenants.</p>
+        <h1>@Loc["ReportServer_Login_SignIn"]</h1>
+        <p>@Loc["ReportServer_Login_Subtitle"]</p>
 
         <label class="rs-field">
-            <span>User</span>
+            <span>@Loc["ReportServer_Field_User"]</span>
             <input data-testid="login-user" value="@_userName" @oninput="HandleUserName" />
         </label>
 
         <label class="rs-field">
-            <span>Tenant</span>
+            <span>@Loc["ReportServer_Tenant"]</span>
             <select data-testid="login-tenant" value="@Session.CurrentTenantId" @onchange="SwitchTenant">
                 @foreach (var tenant in Session.Tenants)
                 {
@@ -34,11 +34,11 @@
                   data-testid="login-submit"
                   Disabled="@(!_interactiveReady)"
                   OnClick="SignIn">
-            Sign in
+            @Loc["ReportServer_Login_SignIn"]
         </TmButton>
         @if (_interactiveReady)
         {
-            <span class="rs-ready-marker" data-testid="login-interactive-ready">Ready</span>
+            <span class="rs-ready-marker" data-testid="login-interactive-ready">@Loc["ReportServer_Login_Ready"]</span>
         }
     </section>
 </main>

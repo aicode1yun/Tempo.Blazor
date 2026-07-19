@@ -3,16 +3,16 @@
 @using Tempo.Reporting.Abstractions.Serialization
 @using Tempo.Reporting.Abstractions.Validation
 
-<div class="rs-newreport" data-testid="new-report-form" role="dialog" aria-label="New report">
+<div class="rs-newreport" data-testid="new-report-form" role="dialog" aria-label="@Loc["ReportServer_NewReport"]">
     <div class="rs-newreport__header">
-        <h3>New report</h3>
-        <button type="button" class="rs-icon-button" aria-label="Cancel" data-testid="new-report-cancel" @onclick="CancelAsync">
+        <h3>@Loc["ReportServer_NewReport"]</h3>
+        <button type="button" class="rs-icon-button" aria-label="@Loc["ReportServer_Cancel"]" data-testid="new-report-cancel" @onclick="CancelAsync">
             <TmIcon Name="@IconNames.X" Size="IconSize.Sm" />
         </button>
     </div>
 
     <label class="rs-field">
-        <span>Name</span>
+        <span>@Loc["ReportServer_Field_Name"]</span>
         <input data-testid="new-report-name" value="@_name" @oninput="HandleNameInput" />
     </label>
     @if (_errors.TryGetValue("Name", out var nameError))
@@ -21,9 +21,9 @@
     }
 
     <label class="rs-field">
-        <span>Target folder</span>
+        <span>@Loc["ReportServer_NewReport_TargetFolder"]</span>
         <select data-testid="new-report-folder" value="@_folderId" @onchange="HandleFolderChange">
-            <option value="">Select a folder…</option>
+            <option value="">@Loc["ReportServer_NewReport_SelectFolder"]</option>
             @foreach (var folder in Folders)
             {
                 <option value="@folder.FolderId">@folder.Path</option>
@@ -36,28 +36,28 @@
     }
 
     <fieldset class="rs-field rs-newreport__source">
-        <span>Definition source</span>
+        <span>@Loc["ReportServer_NewReport_DefinitionSource"]</span>
         <label>
             <input type="radio" name="new-report-source" data-testid="new-report-source-blank"
                    checked="@(_source == DefinitionSource.Blank)" @onchange="() => SetSource(DefinitionSource.Blank)" />
-            Blank
+            @Loc["ReportServer_NewReport_SourceBlank"]
         </label>
         <label>
             <input type="radio" name="new-report-source" data-testid="new-report-source-upload"
                    checked="@(_source == DefinitionSource.Upload)" @onchange="() => SetSource(DefinitionSource.Upload)" />
-            Upload JSON
+            @Loc["ReportServer_NewReport_SourceUpload"]
         </label>
     </fieldset>
 
     @if (_source == DefinitionSource.Upload)
     {
         <label class="rs-field">
-            <span>Definition file (.json)</span>
+            <span>@Loc["ReportServer_NewReport_DefinitionFile"]</span>
             <InputFile OnChange="HandleFileSelectedAsync" accept=".json" data-testid="new-report-file" />
         </label>
         @if (_uploadedJson is not null && _fileError is null)
         {
-            <p class="rs-hint" data-testid="new-report-file-ok">Loaded @_uploadedFileName.</p>
+            <p class="rs-hint" data-testid="new-report-file-ok">@Loc["ReportServer_NewReport_FileLoaded", _uploadedFileName ?? string.Empty]</p>
         }
     }
     @if (_fileError is not null)
@@ -82,7 +82,7 @@
                   data-testid="new-report-submit"
                   Disabled="@(_fileError is not null)"
                   OnClick="SubmitAsync">
-            Create report
+            @Loc["ReportServer_NewReport_Submit"]
         </TmButton>
     </div>
 </div>
@@ -160,7 +160,7 @@
         }
         catch (ReportDefinitionJsonException)
         {
-            _fileError = "The uploaded file is not a valid canonical report definition.";
+            _fileError = Loc["ReportServer_NewReport_InvalidFile"];
         }
     }
 
@@ -176,7 +176,7 @@
         {
             if (_uploadedJson is null || _fileError is not null)
             {
-                _fileError ??= "Upload a JSON report definition to continue.";
+                _fileError ??= Loc["ReportServer_NewReport_UploadRequired"];
                 return;
             }
 
@@ -204,7 +204,9 @@
         {
             foreach (var failure in validation.Errors)
             {
-                _errors[failure.PropertyName] = failure.ErrorMessage;
+                // The validator emits TmResources KEYS (same convention as the favorites validator);
+                // resolve them through the portal localizer so inline errors honor the current culture.
+                _errors[failure.PropertyName] = Loc[failure.ErrorMessage];
             }
 
             return;

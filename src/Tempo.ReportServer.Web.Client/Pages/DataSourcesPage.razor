@@ -3,40 +3,40 @@
 @inject IPortalIdentity Session
 @inject ITempoReportServerClient Client
 
-<ReportServerShell Title="Data sources" ActiveSection="datasources">
+<ReportServerShell Title="@Loc["ReportServer_Nav_DataSources"]" ActiveSection="datasources">
     <div class="rs-page" data-testid="f12-datasources-page">
         <div class="rs-page__heading">
             <div>
-                <p class="rs-kicker">Administration</p>
-                <h2>Data sources</h2>
+                <p class="rs-kicker">@Loc["ReportServer_Kicker_Administration"]</p>
+                <h2>@Loc["ReportServer_Nav_DataSources"]</h2>
             </div>
         </div>
 
         <section class="rs-admin-grid">
             <form class="rs-panel" @onsubmit="AddSourceAsync" @onsubmit:preventDefault>
-                <h3>Add source</h3>
+                <h3>@Loc["ReportServer_DataSources_AddSource"]</h3>
                 <label class="rs-field">
-                    <span>Name</span>
+                    <span>@Loc["ReportServer_Field_Name"]</span>
                     <input data-testid="datasource-name" value="@_name" @oninput="HandleNameInput" />
                 </label>
                 <label class="rs-field">
-                    <span>Provider</span>
+                    <span>@Loc["ReportServer_DataSources_Provider"]</span>
                     <select data-testid="datasource-provider" value="@_provider" @onchange="HandleProviderChange">
                         <option>SQL</option>
                         <option>REST JSON</option>
                     </select>
                 </label>
                 <label class="rs-field">
-                    <span>Endpoint</span>
+                    <span>@Loc["ReportServer_DataSources_Endpoint"]</span>
                     <input data-testid="datasource-endpoint" value="@_endpoint" @oninput="HandleEndpointInput" />
                 </label>
                 <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Plus" data-testid="datasource-add" OnClick="AddSourceAsync">
-                    Add source
+                    @Loc["ReportServer_DataSources_AddSource"]
                 </TmButton>
             </form>
 
             <section class="rs-panel rs-table-panel">
-                <h3>Connections</h3>
+                <h3>@Loc["ReportServer_DataSources_Connections"]</h3>
                 <div class="rs-table" data-testid="datasources-table">
                     @foreach (var source in _dataSources)
                     {
@@ -48,7 +48,7 @@
                             <code>@source.Endpoint</code>
                             <span class="@(source.LastTestSucceeded ? "rs-status rs-status--ok" : "rs-status")">@source.LastTestMessage</span>
                             <button type="button" class="rs-text-button" data-testid="@($"test-datasource-{source.Id}")" @onclick="() => TestSourceAsync(source.Id)">
-                                Test connection
+                                @Loc["ReportServer_DataSources_TestConnection"]
                             </button>
                         </article>
                     }
@@ -122,7 +122,7 @@
     private async Task TestSourceAsync(string dataSourceId)
     {
         var result = await Client.TestDataSourceConnectionAsync(dataSourceId, Session.CurrentTenantId);
-        _testResults[dataSourceId] = (result.Success, result.Message ?? (result.Success ? "Connected" : "Connection failed"));
+        _testResults[dataSourceId] = (result.Success, result.Message ?? (result.Success ? Loc["ReportServer_DataSources_Connected"] : Loc["ReportServer_DataSources_ConnectionFailed"]));
         Rebuild();
     }
 }

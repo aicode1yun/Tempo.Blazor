@@ -5,16 +5,16 @@
 @inject ITempoReportServerClient Client
 @inject DemoReportSourceFactory SourceFactory
 
-<ReportServerShell Title="Report designer" ActiveSection="designer">
+<ReportServerShell Title="@Loc["ReportServer_Designer_Title"]" ActiveSection="designer">
     <div class="rs-page rs-designer-page" data-testid="f13-designer-page">
         <div class="rs-page__heading">
             <div>
                 <p class="rs-kicker">@(_resolved?.FolderId ?? "/finance")</p>
-                <h2>@(_definition?.Name ?? "Report designer")</h2>
+                <h2>@(_definition?.Name ?? Loc["ReportServer_Designer_Title"])</h2>
             </div>
             <div class="rs-page__stats">
-                <span>@(_definition?.DataSets.Count ?? 0) datasets</span>
-                <span>@(_resolved is null ? "Draft report" : $"Revision {_resolved.RevisionNumber}")</span>
+                <span>@Loc["ReportServer_Designer_DatasetCount", _definition?.DataSets.Count ?? 0]</span>
+                <span>@(_resolved is null ? Loc["ReportServer_Designer_DraftReport"] : Loc["ReportServer_Designer_RevisionN", _resolved.RevisionNumber])</span>
             </div>
         </div>
 
@@ -22,8 +22,8 @@
         {
             <div class="rs-empty" data-testid="designer-not-found">
                 <TmIcon Name="@IconNames.AlertTriangle" Size="IconSize.Md" />
-                <strong>Report not found</strong>
-                <span>The requested report does not exist in this tenant.</span>
+                <strong>@Loc["ReportServer_ReportNotFound"]</strong>
+                <span>@Loc["ReportServer_Designer_NotFoundHint"]</span>
             </div>
         }
         else
@@ -37,7 +37,7 @@
         {
             <div class="rs-status" data-testid="designer-save-status">
                 <TmIcon Name="@IconNames.Check" Size="IconSize.Sm" />
-                <span>@_lastSave.Kind saved as revision @_lastSave.Revision</span>
+                <span>@Loc["ReportServer_Designer_SaveStatus", _lastSave.Kind, _lastSave.Revision]</span>
             </div>
         }
     </div>

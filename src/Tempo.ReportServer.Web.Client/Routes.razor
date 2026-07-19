@@ -7,9 +7,9 @@
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
     <NotFound>
-        <PageTitle>Not found</PageTitle>
+        <PageTitle>@Loc["ReportServer_NotFound"]</PageTitle>
         <LayoutView Layout="typeof(Tempo.ReportServer.Web.Components.MainLayout)">
-            <p>Not found</p>
+            <p>@Loc["ReportServer_NotFound"]</p>
         </LayoutView>
     </NotFound>
 </Router>

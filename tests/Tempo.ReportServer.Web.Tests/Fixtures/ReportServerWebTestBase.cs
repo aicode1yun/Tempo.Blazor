@@ -1,7 +1,10 @@
+using System;
+using System.Globalization;
 using Bunit;
 using Tempo.Blazor.EmailTemplates.Abstractions;
 using Tempo.Blazor.EmailTemplates.Abstractions.Contracts;
 using Microsoft.Extensions.DependencyInjection;
+using Tempo.Blazor.Localization;
 using Tempo.Blazor.Reporting.Configuration;
 using Tempo.Reporting.Abstractions.Dtos;
 using Tempo.ReportServer.Api.Security;
@@ -43,5 +46,36 @@ public abstract class ReportServerWebTestBase : TestContext
         var session = Services.GetRequiredService<ReportServerSessionState>();
         session.SignIn(userName);
         return session;
+    }
+
+    /// <summary>
+    /// The portal resolves <see cref="ITmLocalizer"/> through <c>AddTempoBlazorReporting()</c> →
+    /// <c>AddTempoBlazor()</c>, which registers the real JSON-backed localizer over the embedded
+    /// <c>TmResources*.json</c> resources. Rendering inside this scope makes the localizer resolve the
+    /// requested culture (e.g. <c>cs</c> / <c>fr</c>) so tests can assert real translations, then the
+    /// ambient culture is restored. Use it to prove that portal strings are genuinely localizable.
+    /// </summary>
+    protected static IDisposable UseUiCulture(string culture)
+        => new UiCultureScope(culture);
+
+    private sealed class UiCultureScope : IDisposable
+    {
+        private readonly CultureInfo _previousUi;
+        private readonly CultureInfo _previousCulture;
+
+        public UiCultureScope(string culture)
+        {
+            _previousUi = CultureInfo.CurrentUICulture;
+            _previousCulture = CultureInfo.CurrentCulture;
+            var target = CultureInfo.GetCultureInfo(culture);
+            CultureInfo.CurrentUICulture = target;
+            CultureInfo.CurrentCulture = target;
+        }
+
+        public void Dispose()
+        {
+            CultureInfo.CurrentUICulture = _previousUi;
+            CultureInfo.CurrentCulture = _previousCulture;
+        }
     }
 }

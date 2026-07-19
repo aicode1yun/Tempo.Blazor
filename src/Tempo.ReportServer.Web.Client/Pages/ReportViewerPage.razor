@@ -6,14 +6,14 @@
 @inject ITempoReportServerClient Client
 @inject DemoReportSourceFactory SourceFactory
 
-<ReportServerShell Title="@(_resolved?.Name ?? "Report viewer")" ActiveSection="reports">
+<ReportServerShell Title="@(_resolved?.Name ?? Loc["ReportServer_Viewer_Title"])" ActiveSection="reports">
     <div class="rs-page rs-viewer-page" data-testid="f12-viewer-page">
         @if (_resolved is null)
         {
             <div class="rs-empty" data-testid="report-not-found">
                 <TmIcon Name="@IconNames.AlertTriangle" Size="IconSize.Md" />
-                <strong>Report not found</strong>
-                <span>The requested report path does not exist in this tenant.</span>
+                <strong>@Loc["ReportServer_ReportNotFound"]</strong>
+                <span>@Loc["ReportServer_Viewer_NotFoundHint"]</span>
             </div>
         }
         else
@@ -29,11 +29,11 @@
                             class="@(_isFavorite ? "rs-fav rs-fav--on" : "rs-fav")"
                             data-testid="favorite-toggle"
                             aria-pressed="@(_isFavorite ? "true" : "false")"
-                            aria-label="@(_isFavorite ? "Remove from favorites" : "Add to favorites")"
+                            aria-label="@(_isFavorite ? Loc["ReportServer_Viewer_RemoveFavorite"] : Loc["ReportServer_Viewer_AddFavorite"])"
                             disabled="@_isToggling"
                             @onclick="ToggleFavoriteAsync">
                         <TmIcon Name="@IconNames.Star" Size="IconSize.Sm" />
-                        <span>@(_isFavorite ? "Favorited" : "Favorite")</span>
+                        <span>@(_isFavorite ? Loc["ReportServer_Viewer_Favorited"] : Loc["ReportServer_Viewer_Favorite"])</span>
                     </button>
                     @* Read-only summary of the CURRENT parameter values (the single source of truth in
                        _paramValues). Not an input — the editable form below is the only input surface. *@
@@ -101,7 +101,7 @@
 
             <div class="rs-run-bar" data-testid="run-bar">
                 <label class="rs-field rs-field--inline">
-                    <span>Format</span>
+                    <span>@Loc["ReportServer_Column_Format"]</span>
                     <select data-testid="run-format" value="@_runFormat" @onchange="HandleRunFormatChange">
                         @foreach (var format in Enum.GetValues<ReportRenderFormat>())
                         {
@@ -115,12 +115,12 @@
                           Disabled="@_isRunning"
                           IsLoading="@_isRunning"
                           OnClick="RunReportAsync">
-                    Run
+                    @Loc["ReportServer_Viewer_Run"]
                 </TmButton>
                 @if (_lastRun is not null)
                 {
                     <span class="rs-status rs-status--ok" data-testid="run-report-status">
-                        Ran @_lastRun.Format — @_lastRun.PageCount page(s), @_lastRun.Bytes.Length bytes
+                        @Loc["ReportServer_Viewer_RunStatus", _lastRun.Format, _lastRun.PageCount, _lastRun.Bytes.Length]
                     </span>
                 }
             </div>
@@ -142,15 +142,15 @@
             {
                 <div class="rs-empty rs-empty--compact" data-testid="viewer-preview-unavailable">
                     <TmIcon Name="@IconNames.Eye" Size="IconSize.Md" />
-                    <strong>Preview unavailable for this report</strong>
-                    <span>Use Run to render this report through the server.</span>
+                    <strong>@Loc["ReportServer_Viewer_PreviewUnavailable"]</strong>
+                    <span>@Loc["ReportServer_Viewer_PreviewUnavailableHint"]</span>
                 </div>
             }
 
             @if (_lastExport is not null)
             {
                 <div class="rs-export-status" data-testid="viewer-export-status">
-                    Exported @_lastExport.FileName (@_lastExport.Bytes.Length bytes)
+                    @Loc["ReportServer_Viewer_Exported", _lastExport.FileName, _lastExport.Bytes.Length]
                 </div>
             }
         }

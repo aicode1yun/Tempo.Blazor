@@ -10,68 +10,68 @@
             <TmIcon Name="@IconNames.BarChart2" Size="IconSize.Md" />
             <span>Tempo Report Server</span>
         </a>
-        <nav class="rs-nav" aria-label="Report server">
+        <nav class="rs-nav" aria-label="@Loc["ReportServer_Nav_AriaLabel"]">
             @if (Session.CanAccess(PortalRole.Viewer))
             {
                 <a class="@NavClass("reports")" href="/reports" data-testid="nav-reports">
                     <TmIcon Name="@IconNames.FolderOpen" Size="IconSize.Sm" />
-                    <span>Reports</span>
+                    <span>@Loc["ReportServer_Nav_Reports"]</span>
                 </a>
             }
             @if (Session.CanAccess(PortalRole.Viewer))
             {
                 <a class="@NavClass("favorites")" href="/favorites" data-testid="nav-favorites">
                     <TmIcon Name="@IconNames.Star" Size="IconSize.Sm" />
-                    <span>Favorites</span>
+                    <span>@Loc["ReportServer_Nav_Favorites"]</span>
                 </a>
             }
             @if (Session.CanAccess(PortalRole.Viewer))
             {
                 <a class="@NavClass("history")" href="/history" data-testid="nav-history">
                     <TmIcon Name="@IconNames.Clock" Size="IconSize.Sm" />
-                    <span>History</span>
+                    <span>@Loc["ReportServer_Nav_History"]</span>
                 </a>
             }
             @if (Session.CanAccess(PortalRole.Author))
             {
                 <a class="@NavClass("designer")" href="/designer/sales-register" data-testid="nav-designer">
                     <TmIcon Name="@IconNames.Pencil" Size="IconSize.Sm" />
-                    <span>Designer</span>
+                    <span>@Loc["ReportServer_Nav_Designer"]</span>
                 </a>
             }
             @if (Session.CanAccess(PortalRole.Admin))
             {
                 <a class="@NavClass("datasources")" href="/admin/datasources" data-testid="nav-datasources">
                     <TmIcon Name="@IconNames.Database" Size="IconSize.Sm" />
-                    <span>Data sources</span>
+                    <span>@Loc["ReportServer_Nav_DataSources"]</span>
                 </a>
             }
             @if (Session.CanAccess(PortalRole.Author))
             {
                 <a class="@NavClass("schedules")" href="/admin/schedules" data-testid="nav-schedules">
                     <TmIcon Name="@IconNames.Calendar" Size="IconSize.Sm" />
-                    <span>Schedules</span>
+                    <span>@Loc["ReportServer_Nav_Schedules"]</span>
                 </a>
             }
             @if (Session.CanAccess(PortalRole.Admin))
             {
                 <a class="@NavClass("permissions")" href="/admin/permissions" data-testid="nav-permissions">
                     <TmIcon Name="@IconNames.Shield" Size="IconSize.Sm" />
-                    <span>Permissions</span>
+                    <span>@Loc["ReportServer_Nav_Permissions"]</span>
                 </a>
             }
             @if (Session.CanAccess(PortalRole.Author))
             {
                 <a class="@NavClass("revisions")" href="/admin/revisions" data-testid="nav-revisions">
                     <TmIcon Name="@IconNames.FileDiff" Size="IconSize.Sm" />
-                    <span>Revisions</span>
+                    <span>@Loc["ReportServer_Nav_Revisions"]</span>
                 </a>
             }
             @if (Session.CanAccess(PortalRole.Admin))
             {
                 <a class="@NavClass("apikeys")" href="/admin/api-keys" data-testid="nav-apikeys">
                     <TmIcon Name="@IconNames.Key" Size="IconSize.Sm" />
-                    <span>API keys</span>
+                    <span>@Loc["ReportServer_Nav_ApiKeys"]</span>
                 </a>
             }
         </nav>
@@ -87,7 +87,7 @@
                 @if (Session.CanSwitchTenant)
                 {
                     <label class="rs-tenant">
-                        <span>Tenant</span>
+                        <span>@Loc["ReportServer_Tenant"]</span>
                         <select data-testid="tenant-switcher" value="@Session.CurrentTenantId" @onchange="SwitchTenant">
                             @foreach (var tenant in Session.Tenants)
                             {
@@ -99,7 +99,7 @@
                 else
                 {
                     <div class="rs-tenant rs-tenant--fixed" data-testid="tenant-display">
-                        <span>Tenant</span>
+                        <span>@Loc["ReportServer_Tenant"]</span>
                         <strong>@Session.CurrentTenantName</strong>
                     </div>
                 }
@@ -107,7 +107,7 @@
                     <TmIcon Name="@IconNames.UserCheck" Size="IconSize.Sm" />
                     <span>@Session.UserName</span>
                 </div>
-                <button type="button" class="rs-icon-button" aria-label="Sign out" @onclick="SignOut">
+                <button type="button" class="rs-icon-button" aria-label="@Loc["ReportServer_SignOut"]" @onclick="SignOut">
                     <TmIcon Name="@IconNames.LogOut" Size="IconSize.Sm" />
                 </button>
             </div>

@@ -3,28 +3,28 @@
 @inject IPortalIdentity Session
 @inject ITempoReportServerClient Client
 
-<ReportServerShell Title="Schedules" ActiveSection="schedules">
+<ReportServerShell Title="@Loc["ReportServer_Nav_Schedules"]" ActiveSection="schedules">
     <div class="rs-page" data-testid="f16-schedules-page">
         <div class="rs-page__heading">
             <div>
-                <p class="rs-kicker">Automation</p>
-                <h2>Schedules</h2>
+                <p class="rs-kicker">@Loc["ReportServer_Kicker_Automation"]</p>
+                <h2>@Loc["ReportServer_Nav_Schedules"]</h2>
             </div>
             <div class="rs-page__stats">
-                <span>@_schedules.Count schedules</span>
-                <span>@_runs.Count recent runs</span>
+                <span>@Loc["ReportServer_Schedules_CountSchedules", _schedules.Count]</span>
+                <span>@Loc["ReportServer_Schedules_CountRecentRuns", _runs.Count]</span>
             </div>
         </div>
 
         <section class="rs-admin-grid">
             <form class="rs-panel" @onsubmit="SaveScheduleAsync" @onsubmit:preventDefault>
-                <h3>Create schedule</h3>
+                <h3>@Loc["ReportServer_Schedules_Create"]</h3>
                 <label class="rs-field">
-                    <span>Name</span>
+                    <span>@Loc["ReportServer_Field_Name"]</span>
                     <input data-testid="schedule-name" value="@_name" @oninput="HandleNameInput" />
                 </label>
                 <label class="rs-field">
-                    <span>Report</span>
+                    <span>@Loc["ReportServer_Field_Report"]</span>
                     <select data-testid="schedule-report" value="@_reportId" @onchange="HandleReportChange">
                         @foreach (var report in _reports)
                         {
@@ -33,11 +33,11 @@
                     </select>
                 </label>
                 <label class="rs-field">
-                    <span>Cron UTC</span>
+                    <span>@Loc["ReportServer_Schedules_CronUtc"]</span>
                     <input data-testid="schedule-cron" value="@_cron" @oninput="HandleCronInput" />
                 </label>
                 <label class="rs-field">
-                    <span>Format</span>
+                    <span>@Loc["ReportServer_Column_Format"]</span>
                     <select data-testid="schedule-format" value="@_format" @onchange="HandleFormatChange">
                         @foreach (var format in Enum.GetValues<ReportScheduleFormat>())
                         {
@@ -46,11 +46,11 @@
                     </select>
                 </label>
                 <label class="rs-field">
-                    <span>Recipients</span>
+                    <span>@Loc["ReportServer_Schedules_Recipients"]</span>
                     <input data-testid="schedule-email" value="@_email" @oninput="HandleEmailInput" />
                 </label>
                 <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Plus" data-testid="schedule-save" OnClick="SaveScheduleAsync">
-                    Save schedule
+                    @Loc["ReportServer_Schedules_Save"]
                 </TmButton>
                 @if (!string.IsNullOrWhiteSpace(_status))
                 {
@@ -59,11 +59,11 @@
             </form>
 
             <section class="rs-panel rs-table-panel">
-                <h3>Scheduled reports</h3>
+                <h3>@Loc["ReportServer_Schedules_ScheduledReports"]</h3>
                 <div class="rs-table" data-testid="schedules-table">
                     @if (_schedules.Count == 0)
                     {
-                        <p class="rs-hint" data-testid="schedules-empty">No schedules have been created for this tenant.</p>
+                        <p class="rs-hint" data-testid="schedules-empty">@Loc["ReportServer_Schedules_Empty"]</p>
                     }
                     @foreach (var schedule in _schedules)
                     {
@@ -74,7 +74,7 @@
                             </div>
                             <div>
                                 <code>@schedule.CronExpression</code>
-                                <span>Next @schedule.NextRunUtc.ToLocalTime().ToString("g", System.Globalization.CultureInfo.InvariantCulture)</span>
+                                <span>@Loc["ReportServer_Schedules_Next", schedule.NextRunUtc.ToLocalTime().ToString("g", System.Globalization.CultureInfo.InvariantCulture)]</span>
                             </div>
                             <div>
                                 <span>@schedule.DeliveryTarget</span>
@@ -84,7 +84,7 @@
                                     class="rs-text-button"
                                     data-testid="@($"toggle-schedule-{schedule.ScheduleId}")"
                                     @onclick="() => ToggleScheduleAsync(schedule)">
-                                @(schedule.IsEnabled ? "Disable" : "Enable")
+                                @(schedule.IsEnabled ? Loc["ReportServer_Schedules_Disable"] : Loc["ReportServer_Schedules_Enable"])
                             </button>
                         </article>
                     }
@@ -95,17 +95,17 @@
         <section class="rs-panel rs-table-panel" data-testid="schedule-runs">
             <div class="rs-revision__header">
                 <div>
-                    <h3>Recent runs</h3>
-                    <span>Delivered by the report server scheduling tier</span>
+                    <h3>@Loc["ReportServer_Schedules_RecentRuns"]</h3>
+                    <span>@Loc["ReportServer_Schedules_RecentRunsSubtitle"]</span>
                 </div>
-                <span class="rs-status">@_runs.Count runs</span>
+                <span class="rs-status">@Loc["ReportServer_Schedules_CountRuns", _runs.Count]</span>
             </div>
             @if (_runs.Count == 0)
             {
                 <div class="rs-empty rs-empty--compact">
                     <TmIcon Name="@IconNames.Calendar" Size="IconSize.Md" />
-                    <strong>No runs yet</strong>
-                    <span>Runs appear here once the scheduling tier renders and delivers a report.</span>
+                    <strong>@Loc["ReportServer_RunHistory_EmptyTitle"]</strong>
+                    <span>@Loc["ReportServer_Schedules_RunsEmptyHint"]</span>
                 </div>
             }
             else
@@ -116,14 +116,14 @@
                         <article class="rs-revision rs-outbox-item" data-testid="@($"run-row-{run.RunId}")">
                             <div class="rs-revision__header">
                                 <div>
-                                    <strong>@(run.ArtifactFileName ?? "(no artifact)")</strong>
+                                    <strong>@(run.ArtifactFileName ?? Loc["ReportServer_Schedules_NoArtifact"])</strong>
                                     <span>@run.DeliveryTarget</span>
                                 </div>
                                 <span class="@(run.Status == Tempo.Reporting.Abstractions.Dtos.ReportScheduleRunStatus.Delivered ? "rs-status rs-status--ok" : "rs-status")">@run.Status</span>
                             </div>
                             <div class="rs-param-chips">
                                 <span>@ScheduleName(run.ScheduleId)</span>
-                                <span>@run.ArtifactByteCount bytes</span>
+                                <span>@run.ArtifactByteCount @Loc["ReportServer_Unit_Bytes"]</span>
                             </div>
                         </article>
                     }
@@ -172,7 +172,7 @@
     {
         if (string.IsNullOrWhiteSpace(_email))
         {
-            _status = "Recipient is required.";
+            _status = Loc["ReportServer_Schedules_RecipientRequired"];
             return;
         }
 
@@ -193,7 +193,7 @@
             DeliveryTarget = _email.Trim(),
             IsEnabled = true,
         });
-        _status = $"Saved {schedule.Name}";
+        _status = Loc["ReportServer_Schedules_SavedStatus", schedule.Name];
         await ReloadSchedulesAsync();
     }
 

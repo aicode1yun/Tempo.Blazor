@@ -3,20 +3,20 @@
 @inject IPortalIdentity Session
 @inject ITempoReportServerClient Client
 
-<ReportServerShell Title="Permissions" ActiveSection="permissions">
+<ReportServerShell Title="@Loc["ReportServer_Nav_Permissions"]" ActiveSection="permissions">
     <div class="rs-page" data-testid="f12-permissions-page">
         <div class="rs-page__heading">
             <div>
-                <p class="rs-kicker">Administration</p>
-                <h2>Folder permissions</h2>
+                <p class="rs-kicker">@Loc["ReportServer_Kicker_Administration"]</p>
+                <h2>@Loc["ReportServer_Permissions_Heading"]</h2>
             </div>
         </div>
 
         <section class="rs-admin-grid">
             <form class="rs-panel" @onsubmit="GrantAsync" @onsubmit:preventDefault>
-                <h3>Add ACL entry</h3>
+                <h3>@Loc["ReportServer_Permissions_AddEntry"]</h3>
                 <label class="rs-field">
-                    <span>Folder</span>
+                    <span>@Loc["ReportServer_Field_Folder"]</span>
                     <select data-testid="permission-folder" value="@_folderId" @onchange="HandleFolderChange">
                         @foreach (var folder in _folders)
                         {
@@ -25,7 +25,7 @@
                     </select>
                 </label>
                 <label class="rs-field">
-                    <span>Subject kind</span>
+                    <span>@Loc["ReportServer_Permissions_SubjectKind"]</span>
                     <select data-testid="permission-subject-kind" value="@_subjectKind" @onchange="HandleSubjectKindChange">
                         @foreach (var kind in Enum.GetValues<ReportAclSubjectKindDto>())
                         {
@@ -34,11 +34,11 @@
                     </select>
                 </label>
                 <label class="rs-field">
-                    <span>Subject</span>
+                    <span>@Loc["ReportServer_Permissions_Subject"]</span>
                     <input data-testid="permission-subject" value="@_subject" @oninput="HandleSubjectInput" />
                 </label>
                 <fieldset class="rs-field">
-                    <legend>Permissions</legend>
+                    <legend>@Loc["ReportServer_Permissions_Legend"]</legend>
                     @foreach (var permission in SelectablePermissions)
                     {
                         <label class="rs-check">
@@ -52,23 +52,23 @@
                 </fieldset>
                 <label class="rs-check">
                     <input data-testid="permission-deny" type="checkbox" checked="@_isDeny" @onchange="HandleDenyChange" />
-                    <span>Explicit deny</span>
+                    <span>@Loc["ReportServer_Permissions_ExplicitDeny"]</span>
                 </label>
                 @if (!string.IsNullOrEmpty(_errorMessage))
                 {
                     <p class="rs-status rs-status--deny" data-testid="permission-error" role="alert">@_errorMessage</p>
                 }
                 <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Shield" data-testid="permission-add" OnClick="GrantAsync">
-                    Add ACL entry
+                    @Loc["ReportServer_Permissions_AddEntry"]
                 </TmButton>
             </form>
 
             <section class="rs-panel rs-table-panel">
-                <h3>ACL entries on this folder</h3>
+                <h3>@Loc["ReportServer_Permissions_EntriesTitle"]</h3>
                 <div class="rs-table" data-testid="permissions-table">
                     @if (_entries.Count == 0)
                     {
-                        <p class="rs-hint" data-testid="permissions-empty">No ACL entries are defined directly on this folder.</p>
+                        <p class="rs-hint" data-testid="permissions-empty">@Loc["ReportServer_Permissions_Empty"]</p>
                     }
                     @foreach (var entry in _entries)
                     {
@@ -79,7 +79,7 @@
                             </div>
                             <span>@FormatPermissions(entry.Permissions)</span>
                             <span class="@(entry.Effect == ReportAclEffectDto.Deny ? "rs-status rs-status--deny" : "rs-status rs-status--ok")">
-                                @(entry.Effect == ReportAclEffectDto.Deny ? "Deny" : "Allow")
+                                @(entry.Effect == ReportAclEffectDto.Deny ? Loc["ReportServer_Permissions_Deny"] : Loc["ReportServer_Permissions_Allow"])
                             </span>
                             <div class="rs-row-actions">
                                 <TmButton Variant="ButtonVariant.Danger"
@@ -87,7 +87,7 @@
                                           Icon="@IconNames.Trash2"
                                           data-testid="@($"permission-revoke-{entry.SubjectId}")"
                                           OnClick="() => RevokeAsync(entry)">
-                                    Revoke
+                                    @Loc["ReportServer_Action_Revoke"]
                                 </TmButton>
                             </div>
                         </article>
@@ -180,8 +180,8 @@
             // The configured backend may reject the subject/effect combination (the EF persistence
             // store is allow-only, user-subject-only). Surface it instead of failing silently.
             _errorMessage = ex.StatusCode == System.Net.HttpStatusCode.BadRequest
-                ? "This grant was rejected by the server. The configured permission store may support only User-subject Allow grants (Role/Application subjects and Deny effects are not persisted)."
-                : $"The grant could not be saved: {ex.Message}";
+                ? Loc["ReportServer_Permissions_GrantRejected"]
+                : Loc["ReportServer_Permissions_GrantFailed", ex.Message];
             return;
         }
 
@@ -209,6 +209,6 @@
         StateHasChanged();
     }
 
-    private static string FormatPermissions(ReportPermissionsDto permissions)
-        => permissions == ReportPermissionsDto.None ? "None" : permissions.ToString();
+    private string FormatPermissions(ReportPermissionsDto permissions)
+        => permissions == ReportPermissionsDto.None ? Loc["ReportServer_None"] : permissions.ToString();
 }

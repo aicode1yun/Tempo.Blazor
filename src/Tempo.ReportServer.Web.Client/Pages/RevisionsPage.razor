@@ -3,17 +3,17 @@
 @inject IPortalIdentity Session
 @inject ITempoReportServerClient Client
 
-<ReportServerShell Title="Revisions" ActiveSection="revisions">
+<ReportServerShell Title="@Loc["ReportServer_Nav_Revisions"]" ActiveSection="revisions">
     <div class="rs-page" data-testid="f12-revisions-page">
         <div class="rs-page__heading">
             <div>
-                <p class="rs-kicker">Administration</p>
-                <h2>Revision history</h2>
+                <p class="rs-kicker">@Loc["ReportServer_Kicker_Administration"]</p>
+                <h2>@Loc["ReportServer_Revisions_Heading"]</h2>
             </div>
         </div>
 
         <section class="rs-panel rs-table-panel">
-            <h3>Report revisions</h3>
+            <h3>@Loc["ReportServer_Revisions_PanelTitle"]</h3>
             <div class="rs-revisions" data-testid="revisions-table">
                 @foreach (var revision in _revisions.OrderByDescending(item => item.CreatedAt))
                 {
@@ -21,10 +21,10 @@
                         <div class="rs-revision__header">
                             <div>
                                 <strong>@ReportName(revision.ReportId)</strong>
-                                <span>Revision @revision.Version by @revision.Author</span>
+                                <span>@Loc["ReportServer_Revisions_RevisionBy", revision.Version, revision.Author]</span>
                             </div>
                             <span class="@(revision.IsCurrent ? "rs-status rs-status--ok" : "rs-status")">
-                                @(revision.IsCurrent ? "Current" : "Available")
+                                @(revision.IsCurrent ? Loc["ReportServer_Revisions_Current"] : Loc["ReportServer_Revisions_Available"])
                             </span>
                         </div>
                         <pre data-testid="@($"revision-diff-{revision.Id}")">@revision.MetadataDiff</pre>
@@ -33,7 +33,7 @@
                                 disabled="@revision.IsCurrent"
                                 data-testid="@($"rollback-{revision.Id}")"
                                 @onclick="() => RollbackAsync(revision.ReportId, revision.Id)">
-                            Roll back to this revision
+                            @Loc["ReportServer_Revisions_Rollback"]
                         </button>
                     </article>
                 }

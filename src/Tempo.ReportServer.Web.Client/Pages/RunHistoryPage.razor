@@ -3,15 +3,15 @@
 @inject IPortalIdentity Session
 @inject ITempoReportServerClient Client
 
-<ReportServerShell Title="Run history" ActiveSection="history">
+<ReportServerShell Title="@Loc["ReportServer_RunHistory_Title"]" ActiveSection="history">
     <div class="rs-page" data-testid="run-history-page">
         <div class="rs-page__heading">
             <div>
-                <p class="rs-kicker">Activity</p>
-                <h2>Run history</h2>
+                <p class="rs-kicker">@Loc["ReportServer_Kicker_Activity"]</p>
+                <h2>@Loc["ReportServer_RunHistory_Title"]</h2>
             </div>
             <div class="rs-page__stats">
-                <span>@_visibleRuns.Count @(_visibleRuns.Count == 1 ? "run" : "runs")</span>
+                <span>@_visibleRuns.Count @(_visibleRuns.Count == 1 ? Loc["ReportServer_Unit_Run"] : Loc["ReportServer_Unit_Runs"])</span>
             </div>
         </div>
 
@@ -19,9 +19,9 @@
         {
             <div class="rs-filter-bar">
                 <label class="rs-field rs-field--inline">
-                    <span>Report</span>
+                    <span>@Loc["ReportServer_Field_Report"]</span>
                     <select data-testid="run-history-filter" value="@_reportFilter" @onchange="HandleFilterChange">
-                        <option value="">All reports</option>
+                        <option value="">@Loc["ReportServer_RunHistory_AllReports"]</option>
                         @foreach (var reportId in _reportFilterOptions)
                         {
                             <option value="@reportId">@ReportName(reportId)</option>
@@ -35,8 +35,8 @@
         {
             <div class="rs-empty" data-testid="run-history-empty">
                 <TmIcon Name="@IconNames.Clock" Size="IconSize.Md" />
-                <strong>No runs yet</strong>
-                <span>Render a report to build up run history here.</span>
+                <strong>@Loc["ReportServer_RunHistory_EmptyTitle"]</strong>
+                <span>@Loc["ReportServer_RunHistory_EmptyHint"]</span>
             </div>
         }
         else
@@ -44,13 +44,13 @@
             <section class="rs-panel rs-table-panel">
                 <div class="rs-table" data-testid="run-history-table">
                     <div class="rs-table__head rs-run-row" data-testid="run-history-head">
-                        <span>Report</span>
-                        <span>Format</span>
-                        <span>Outcome</span>
-                        <span>Pages</span>
-                        <span>Size</span>
-                        <span>Duration</span>
-                        <span>Time</span>
+                        <span>@Loc["ReportServer_Field_Report"]</span>
+                        <span>@Loc["ReportServer_Column_Format"]</span>
+                        <span>@Loc["ReportServer_Column_Outcome"]</span>
+                        <span>@Loc["ReportServer_Column_Pages"]</span>
+                        <span>@Loc["ReportServer_Column_Size"]</span>
+                        <span>@Loc["ReportServer_Column_Duration"]</span>
+                        <span>@Loc["ReportServer_Column_Time"]</span>
                     </div>
                     @foreach (var run in _visibleRuns)
                     {

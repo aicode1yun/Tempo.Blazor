@@ -3,15 +3,15 @@
 @inject IPortalIdentity Session
 @inject ITempoReportServerClient Client
 
-<ReportServerShell Title="Favorites" ActiveSection="favorites">
+<ReportServerShell Title="@Loc["ReportServer_Nav_Favorites"]" ActiveSection="favorites">
     <div class="rs-page" data-testid="f12-favorites-page">
         <div class="rs-page__heading">
             <div>
-                <p class="rs-kicker">Catalog</p>
-                <h2>Favorites</h2>
+                <p class="rs-kicker">@Loc["ReportServer_Kicker_Catalog"]</p>
+                <h2>@Loc["ReportServer_Nav_Favorites"]</h2>
             </div>
             <div class="rs-page__stats">
-                <span>@_favorites.Count @(_favorites.Count == 1 ? "favorite" : "favorites")</span>
+                <span>@_favorites.Count @(_favorites.Count == 1 ? Loc["ReportServer_Unit_Favorite"] : Loc["ReportServer_Unit_Favorites"])</span>
             </div>
         </div>
 
@@ -19,8 +19,8 @@
         {
             <div class="rs-empty" data-testid="favorites-empty">
                 <TmIcon Name="@IconNames.Star" Size="IconSize.Md" />
-                <strong>No favorites yet</strong>
-                <span>Open a report and use the star to add it here.</span>
+                <strong>@Loc["ReportServer_Favorites_EmptyTitle"]</strong>
+                <span>@Loc["ReportServer_Favorites_EmptyHint"]</span>
             </div>
         }
         else

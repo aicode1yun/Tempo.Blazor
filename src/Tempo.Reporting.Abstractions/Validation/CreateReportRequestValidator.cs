@@ -5,9 +5,10 @@ namespace Tempo.Reporting.Abstractions.Validation;
 
 /// <summary>
 /// Validates <see cref="CreateReportRequestDto"/> for the report-create endpoint and the portal's
-/// new-report form. Unlike the favorites validator (which emits TmResources keys), the report-server
-/// portal is hardcoded-English, so this validator surfaces plain English messages the portal shows
-/// inline without a string localizer. The API host reuses the same validator for a 400 response.
+/// new-report form. Like the favorites validator, messages are TmResources KEYS (resolved by the
+/// caller/UI localizer, e.g. the localized report-server portal), so the validator is reusable by the
+/// Blazor front end without depending on a server-side string localizer. The API host reuses the same
+/// validator for a 400 response, so that body carries the resource key rather than English prose.
 /// </summary>
 public sealed class CreateReportRequestValidator : AbstractValidator<CreateReportRequestDto>
 {
@@ -17,21 +18,21 @@ public sealed class CreateReportRequestValidator : AbstractValidator<CreateRepor
         RuleFor(request => request.TenantId)
             .NotEmpty()
             .WithErrorCode("CreateReport.TenantId.Required")
-            .WithMessage("Tenant is required.");
+            .WithMessage("CreateReport_TenantId_Required");
 
         RuleFor(request => request.FolderId)
             .NotEmpty()
             .WithErrorCode("CreateReport.FolderId.Required")
-            .WithMessage("Target folder is required.");
+            .WithMessage("CreateReport_FolderId_Required");
 
         RuleFor(request => request.Name)
             .NotEmpty()
             .WithErrorCode("CreateReport.Name.Required")
-            .WithMessage("Report name is required.");
+            .WithMessage("CreateReport_Name_Required");
 
         RuleFor(request => request.DefinitionJson)
             .NotEmpty()
             .WithErrorCode("CreateReport.DefinitionJson.Required")
-            .WithMessage("A report definition is required.");
+            .WithMessage("CreateReport_DefinitionJson_Required");
     }
 }

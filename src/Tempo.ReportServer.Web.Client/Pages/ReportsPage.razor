@@ -4,20 +4,20 @@
 @inject IPortalIdentity Session
 @inject ITempoReportServerClient Client
 
-<ReportServerShell Title="Reports" ActiveSection="reports">
+<ReportServerShell Title="@Loc["ReportServer_Nav_Reports"]" ActiveSection="reports">
     <div class="rs-page rs-page--explorer" data-testid="f12-explorer-page">
         <div class="rs-page__heading">
             <div>
-                <p class="rs-kicker">Catalog</p>
-                <h2>Report explorer</h2>
+                <p class="rs-kicker">@Loc["ReportServer_Kicker_Catalog"]</p>
+                <h2>@Loc["ReportServer_Reports_Heading"]</h2>
             </div>
             <div class="rs-page__stats">
-                <span>@_reportItems.Count @(_reportItems.Count == 1 ? "report" : "reports")</span>
-                <span>@_folderCount @(_folderCount == 1 ? "folder" : "folders")</span>
+                <span>@_reportItems.Count @(_reportItems.Count == 1 ? Loc["ReportServer_Unit_Report"] : Loc["ReportServer_Unit_Reports"])</span>
+                <span>@_folderCount @(_folderCount == 1 ? Loc["ReportServer_Unit_Folder"] : Loc["ReportServer_Unit_Folders"])</span>
                 @if (Session.CanAccess(PortalRole.Author))
                 {
                     <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Plus" data-testid="new-report-open" OnClick="OpenNewReport">
-                        New report
+                        @Loc["ReportServer_NewReport"]
                     </TmButton>
                 }
             </div>
