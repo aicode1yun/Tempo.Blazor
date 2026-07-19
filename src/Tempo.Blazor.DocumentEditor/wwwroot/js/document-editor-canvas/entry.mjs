@@ -1317,6 +1317,7 @@ export class CanvasDocumentEngine {
             tableId: String(blockHit?.type || '').toLowerCase() === 'table' ? blockHit.blockId : '',
             cellId: currentSelection.table?.cellId || '',
             imageBlockId: String(blockHit?.type || '').toLowerCase() === 'image' ? blockHit.blockId : '',
+            pageBreakBlockId: String(blockHit?.type || '').toLowerCase() === 'pagebreak' ? blockHit.blockId : '',
             misspelling: diagnostic ? {
                 word: diagnostic.word || '',
                 start: diagnostic.start || 0,
@@ -1963,7 +1964,35 @@ function scheduleFrame(document, callback) {
 }
 
 function blockAtPoint(selectionLayout, pageIndex, x, y) {
-    for (const block of selectionLayout?.blocks || []) {
+    const blocks = selectionLayout?.blocks || [];
+
+    // Page-break markers lay out as zero-height lines and neighbouring paragraph rects overlap
+    // them, so a plain first-match scan can never hit one. Give breaks a padded first-pass band
+    // so right-clicking the visible marker resolves the page-break block.
+    const pageBreakPad = 6;
+    for (const block of blocks) {
+        if (String(block?.type || '').toLowerCase() !== 'pagebreak') {
+            continue;
+        }
+
+        const rect = block?.rect;
+        if (!rect || Number(block?.pageIndex || 0) !== Number(pageIndex || 0)) {
+            continue;
+        }
+
+        const left = Number(rect.x || 0) || 0;
+        const top = Number(rect.y || 0) || 0;
+        const width = Math.max(1, Number(rect.width || 0) || 0);
+        const height = Math.max(1, Number(rect.height || 0) || 0);
+        if (x >= left && x <= left + width && y >= top - pageBreakPad && y <= top + height + pageBreakPad) {
+            return {
+                blockId: String(block.blockId || block.id || ''),
+                type: String(block.type || ''),
+            };
+        }
+    }
+
+    for (const block of blocks) {
         const rect = block?.rect;
         if (!rect || Number(block?.pageIndex || 0) !== Number(pageIndex || 0)) {
             continue;

@@ -3617,6 +3617,37 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task CanvasContextMenu_OnPageBreakBlock_OffersAndRoutesDeletePageBreak()
+    {
+        // Phase 6: the canvas context-menu path never set BlockType = "PageBreak" (only "Image"),
+        // so the Delete-page-break menu item could not appear in canvas mode at all. The JS payload
+        // now carries pageBreakBlockId; the menu must show the item and route deletePageBreak.
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderDocumentEditor(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+        await MarkCanvasReadyAsync(cut);
+
+        var host = FindCanvasHost(cut).Instance;
+        await cut.InvokeAsync(() => host.OnCanvasContextMenuRequested(
+            """{"x":300,"y":300,"blockId":"page-break-1","pageBreakBlockId":"page-break-1","viewportWidth":1440,"viewportHeight":1000}"""));
+
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-page-break-delete']").Should().NotBeNull(
+            "a canvas right-click on a page-break block must offer Delete page break"));
+
+        await cut.Find("[data-testid='document-page-break-delete']").ClickAsync(new MouseEventArgs());
+
+        var deleteInvocation = SetupDocumentCanvasModule().Invocations
+            .LastOrDefault(invocation => invocation.Identifier == "execCommand"
+                && invocation.Arguments.Count > 2
+                && string.Equals(invocation.Arguments[1]?.ToString(), "deletePageBreak", StringComparison.Ordinal));
+        deleteInvocation.Should().NotBeNull("the menu item must route the deletePageBreak engine command");
+        deleteInvocation!.Arguments[2]?.ToString().Should().Contain("page-break-1");
+    }
+
+    [Fact]
     public async Task CanvasTableContextMenu_NearViewportBottom_ClampsIntoViewport()
     {
         // Phase 5 finding: a right-click near the bottom of the viewport rendered the table context

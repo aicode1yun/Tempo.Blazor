@@ -339,6 +339,7 @@ export function createCanvasCommandRuntime(options = {}) {
         'insertfootnote',
         'insertendnote',
         'insertpagebreak',
+        'deletepagebreak',
         'setpagesettings',
         'setpagesetup',
         'differentfirstpage',

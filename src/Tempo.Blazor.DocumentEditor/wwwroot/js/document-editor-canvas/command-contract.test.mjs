@@ -21,7 +21,6 @@ const KNOWN_MISSING = new Set([
   // currently silent no-ops in the engine.
   'settableproperties',
   'setcellproperties',
-  'deletepagebreak',
   'setprotectionmode',
   'opentokenmenu',
   // Discovered by this contract test beyond the manual audit: ribbon registry

@@ -28,6 +28,7 @@ const FIELD_COMMAND_ALIASES = new Map([
     ['insertfootnote', 'insertNote'],
     ['insertendnote', 'insertNote'],
     ['insertpagebreak', 'insertPageBreak'],
+    ['deletepagebreak', 'deletePageBreak'],
     ['setpagesettings', 'setPageSettings'],
     ['setpagesetup', 'setPageSettings'],
     ['togglefirstpageheaderfooter', 'toggleDifferentFirstPage'],
@@ -59,6 +60,10 @@ export function applyFieldCommand(model, selection, commandId, payload = null) {
 
     if (command === 'insertPageBreak') {
         return insertPageBreak(working, selection, payload);
+    }
+
+    if (command === 'deletePageBreak') {
+        return deletePageBreak(working, selection, payload);
     }
 
     if (command === 'insertCrossReference') {
@@ -137,6 +142,7 @@ export function queryFieldCommandState(model, selection) {
             insertfootnote: commandState(hasBodySelection),
             insertendnote: commandState(hasBodySelection),
             insertpagebreak: commandState(hasBodySelection),
+            deletepagebreak: commandState(hasDocument),
             setpagesettings: commandState(hasDocument),
             setpagesetup: commandState(hasDocument),
             differentfirstpage: commandState(hasDocument, firstSectionFlag(model, 'differentFirstPage')),
@@ -279,6 +285,48 @@ function insertPageBreak(model, selection, payload) {
         operation: 'insertPageBreak',
         dirtyBlockIds,
         insertedBlockIds: [block.id],
+    };
+}
+
+function deletePageBreak(model, selection, payload) {
+    const blocks = model.body.blocks || [];
+    const isPageBreak = block => String(block?.type || block?.content?.type || '').toLowerCase() === 'pagebreak';
+    const requestedId = String(payload?.blockId ?? payload?.BlockId ?? '');
+    let index = requestedId
+        ? blocks.findIndex(block => String(block?.id || '') === requestedId && isPageBreak(block))
+        : -1;
+
+    // Fallback: the page break at the caret, or immediately next to the caret's block.
+    if (index < 0 && !requestedId) {
+        const caretId = String(selection?.focus?.blockId || selection?.anchor?.blockId || '');
+        const caretIndex = blocks.findIndex(block => String(block?.id || '') === caretId);
+        if (caretIndex >= 0) {
+            if (isPageBreak(blocks[caretIndex])) {
+                index = caretIndex;
+            } else if (blocks[caretIndex + 1] && isPageBreak(blocks[caretIndex + 1])) {
+                index = caretIndex + 1;
+            } else if (blocks[caretIndex - 1] && isPageBreak(blocks[caretIndex - 1])) {
+                index = caretIndex - 1;
+            }
+        }
+    }
+
+    if (index < 0) {
+        return unchanged(model, selection, 'deletePageBreak');
+    }
+
+    const removed = blocks.splice(index, 1)[0];
+    // Caret to the block that followed the break (the content that flows back), else the previous one.
+    const target = blocks[index] || blocks[index - 1] || null;
+    const dirtyBlockIds = syncSectionBlocks(model, new Set([removed?.id, target?.id].filter(Boolean).map(String)));
+    model.version = Number(model.version || 0) + 1;
+    return {
+        changed: true,
+        model,
+        selection: target ? collapsedSelection(target.id, 0) : selection,
+        operation: 'deletePageBreak',
+        dirtyBlockIds,
+        removedBlockIds: [String(removed?.id || '')].filter(Boolean),
     };
 }
 

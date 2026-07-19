@@ -7280,8 +7280,12 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
                 ViewportWidth = request.ViewportWidth,
                 ViewportHeight = request.ViewportHeight,
                 Selection = selection,
-                BlockId = request.BlockId,
-                BlockType = string.IsNullOrWhiteSpace(request.ImageBlockId) ? null : "Image",
+                // A text hit near the page-break marker can resolve BlockId to the neighbouring
+                // paragraph — the menu is about the break, so the break id must win.
+                BlockId = !string.IsNullOrWhiteSpace(request.PageBreakBlockId) ? request.PageBreakBlockId : request.BlockId,
+                BlockType = !string.IsNullOrWhiteSpace(request.PageBreakBlockId)
+                    ? "PageBreak"
+                    : string.IsNullOrWhiteSpace(request.ImageBlockId) ? null : "Image",
                 Misspelling = request.Misspelling is null
                     ? null
                     : new WysiwygMisspelling

@@ -287,6 +287,9 @@ public partial class TmDocumentCanvasEngineHost
         /// <summary>Selection snapshot to restore before running menu commands.</summary>
         public WysiwygSelectionSnapshot? Selection { get; set; }
 
+        /// <summary>Page-break block id under the pointer when available.</summary>
+        public string? PageBreakBlockId { get; set; }
+
         /// <summary>Browser viewport width in pixels; lets the menu clamp into the viewport.</summary>
         public int ViewportWidth { get; set; }
 
