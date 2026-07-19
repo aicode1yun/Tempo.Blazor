@@ -1,5 +1,61 @@
 # Changelog
 
+## 2.5.0 - 2026-07-19
+
+### Document MCP tools — semantic editing compiled to operations + visual previews
+
+`Tempo.Blazor.Mcp` now ships a complete agent-facing document tool suite
+(~19 new tools next to the existing low-level ones; catalog with the addressing
+and concurrency contract in `docs/document-mcp-tools.md`, guarded by
+`DocumentMcpToolsDocumentationDriftTests`):
+
+- **Introspection** — `document_editor_describe_document` (blocks with stable
+  semantic addresses per `docs/document-mcp-addressing.md`, truncated text,
+  tables with cell ids, tokens, content controls, headers/footers,
+  `contentDigest` SHA-256 fingerprint) and `document_template_describe`
+  (tokens, conditional chains, repeating sections).
+- **Semantic text edits** — `insert_text`/`replace_text`/`delete_text`/
+  `format_range` (17 marks)/`set_heading`/`set_paragraph_properties` with
+  plain-text offset/length addressing, compiled into canonical
+  insertText/deleteText/mark/setBlockAttribute operations and applied through
+  the same convergence-tested pipeline as `document_editor_apply_operations`.
+- **Blocks & tables** — `insert_block` (body order-value / cell index),
+  `delete_block`, `move_block`, `update_block`, `set_table_cell_text`.
+- **Authoring** — `document_editor_create`, `document_editor_import`
+  (markdown/HTML text, DOCX/ODT base64; content replacement under the
+  concurrency token) and `document_editor_export` (markdown/HTML verification
+  channel, DOCX/ODT packages). `Tempo.Blazor.DocumentFormats` now multi-targets
+  net8.0/net9.0/net10.0 (additive) so the MCP package can reference it.
+- **Templates & assembly** — `insert_token` (incl. computed expressions and
+  optional token-provider key validation), `wrap_conditional` (IF/ELSEIF/ELSE
+  content-control chains + branch/expression updates),
+  `insert_repeating_section` and `document_assemble_render` (token values with
+  rows → PNG/PDF with IF/ELSE evaluation, repeat expansion and computed
+  expressions). The JS collaboration applier now normalizes content-control
+  persistence payloads (previously degraded to paragraphs) and the C#↔JS
+  convergence fixture covers conditional/repeat authoring operations incl.
+  `tmAssembly` metadata.
+- **Visual feedback** — `document_render_preview` (per-page base64 PNGs, page
+  selection, dpi, caps) and `document_render_pdf` (DocumentPdfExportOptions
+  passthrough incl. forensic watermark) over the headless runtime with a
+  configurable font catalog (`AddTempoDocumentEditorMcpRendering`: explicit
+  faces, aliases, system Arial/DejaVu fallback, ImageResolver seam) — fail
+  closed with agent-friendly font diagnostics.
+- **Diff & redline** — `document_editor_diff_versions` (structured diff with
+  word-level segments) and `document_editor_export_redline` (DOCX with real
+  `w:ins`/`w:del` tracked changes or PDF with review markup).
+- **Live co-editing bridge (opt-in)** —
+  `AddTempoDocumentEditorMcpCollaboration`: semantic writes publish their
+  operation batches to the host collaboration stream (named agent participant
+  with presence color, backplane envelopes with `SourceInstanceId`); fail-open.
+  The demo Api forwards publishes to the SignalR document groups, so open
+  TmDocumentEditor sessions see agent edits live
+  (`scripts/e2e-document-mcp-live-coedit.mjs`).
+- Demo Api: `/mcp` endpoint now really serves the document tools
+  (`IDocumentEditorProvider` registration), `/api/document-editor/mcp-agent-demo`
+  runs a one-shot agent orchestration (create → edits → preview), and the
+  contract-demo seed page breaks carry proper `PageBreakBlockContent`.
+
 ## 2.4.0 - 2026-07-19
 
 ### Headless document runtime — Phase 0: embedded headless layout bundle

@@ -6624,6 +6624,24 @@ Všechny integrační body editoru jsou volitelné parametry; bez nich editor b�
 | `ImageProvider` / `ImageUrlResolver` (`IDocumentImageProvider`, `IDocumentImageUrlResolver`) | Upload obrázků z clipboardu a resolvování asset URL. |
 | `MentionProvider` (`ITmPeopleProvider`) | Zmínky v komentářích. |
 
+### Document MCP tools (`Tempo.Blazor.Mcp`, agentí editace dokumentů)
+
+Balíček `Tempo.Blazor.Mcp` vystavuje kompletní sadu MCP toolů pro agentí práci s dokumenty
+(`TempoDocumentEditorMcp.ToolTypes`, ~28 toolů): introspekce (`document_editor_describe_document`,
+`document_template_describe`), sémantické textové edity s plain-text adresací
+(`insert_text`/`replace_text`/`delete_text`/`format_range`/`set_heading`/`set_paragraph_properties`),
+blokové operace (`insert_block`/`delete_block`/`move_block`/`update_block`/`set_table_cell_text`),
+autoring (`create`/`import`/`export` — markdown/HTML/DOCX/ODT), šablony a assembly
+(`insert_token`, `wrap_conditional`, `insert_repeating_section`, `document_assemble_render`),
+vizuální zpětná vazba (`document_render_preview` PNG / `document_render_pdf` přes headless
+runtime s konfigurovatelným font katalogem `AddTempoDocumentEditorMcpRendering`), diff/redline
+(`diff_versions`, `export_redline` s reálnými w:ins/w:del) a opt-in live co-editing bridge
+(`AddTempoDocumentEditorMcpCollaboration` — agentí edity se objevují živě v otevřených
+editorech). Sémantické tooly kompilují do kanonických operací aplikovaných stejnou
+konvergenčně testovanou cestou jako `document_editor_apply_operations`. Kompletní katalog s
+adresací a concurrency kontraktem: `docs/document-mcp-tools.md` (hlídané drift guardem
+`DocumentMcpToolsDocumentationDriftTests`).
+
 ## Chat
 
 ### TmChat

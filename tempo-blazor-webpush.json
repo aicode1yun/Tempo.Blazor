@@ -23,6 +23,10 @@
         "version": "1.0.12"
       },
       {
+        "name": "Newtonsoft.Json",
+        "version": "13.0.4"
+      },
+      {
         "name": "Microsoft.Extensions.Options",
         "version": "8.0.2"
       },
@@ -55,6 +59,10 @@
       {
         "name": "WebPush",
         "version": "1.0.12"
+      },
+      {
+        "name": "Newtonsoft.Json",
+        "version": "13.0.4"
       },
       {
         "name": "Microsoft.Extensions.Options",

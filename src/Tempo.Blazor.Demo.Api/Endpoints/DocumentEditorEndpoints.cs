@@ -16,6 +16,81 @@ public static class DocumentEditorEndpoints
     {
         var group = app.MapGroup("/api/document-editor").WithTags("Document Editor");
 
+        // One-shot demonstration of the agent orchestration over the document MCP tools:
+        // create → semantic edits (heading, text, list, bold, token) → PNG preview. Every step
+        // logs the tool it used; the response carries the first preview page for inspection.
+        group.MapPost("/mcp-agent-demo", async (
+            Tempo.Blazor.DocumentEditor.Interfaces.IDocumentEditorProvider documents,
+            ITempoDocumentService renderer,
+            Tempo.Blazor.Mcp.DocumentEditor.ITempoDocumentMcpFontCatalog fontCatalog,
+            Tempo.Blazor.Mcp.DocumentEditor.TempoDocumentMcpRenderOptions renderOptions,
+            Tempo.Blazor.Mcp.DocumentEditor.IDocumentEditorMcpCollaborationBridge bridge) =>
+        {
+            var steps = new List<object>();
+            System.Text.Json.JsonElement Track(string tool, string result)
+            {
+                using var parsed = System.Text.Json.JsonDocument.Parse(result);
+                var root = parsed.RootElement.Clone();
+                steps.Add(new { tool, success = root.GetProperty("success").GetBoolean() });
+                if (!root.GetProperty("success").GetBoolean())
+                {
+                    throw new InvalidOperationException($"{tool}: {result}");
+                }
+
+                return root;
+            }
+
+            var created = Track("document_editor_create", await Tempo.Blazor.Mcp.DocumentEditor.DocumentEditorAuthoringTools.Create(
+                documents, title: "MCP agent demo"));
+            var documentId = created.GetProperty("id").GetString()!;
+            var firstBlockId = created.GetProperty("firstBlockId").GetString()!;
+            var token = created.GetProperty("concurrencyToken").GetString();
+
+            var heading = Track("document_editor_insert_block", await Tempo.Blazor.Mcp.DocumentEditor.DocumentEditorBlockTools.InsertBlock(
+                documents, documentId, "heading", "Nájemní smlouva", order: -1, headingLevel: 1,
+                expectedConcurrencyToken: token, collaborationBridge: bridge));
+            token = heading.GetProperty("concurrencyToken").GetString();
+
+            var intro = Track("document_editor_insert_text", await Tempo.Blazor.Mcp.DocumentEditor.DocumentEditorSemanticTextTools.InsertText(
+                documents, documentId, firstBlockId, 0,
+                "Pronajímatel a nájemce uzavírají smlouvu o nájmu bytu.",
+                expectedConcurrencyToken: token, collaborationBridge: bridge));
+            token = intro.GetProperty("concurrencyToken").GetString();
+
+            var rent = Track("document_editor_insert_block", await Tempo.Blazor.Mcp.DocumentEditor.DocumentEditorBlockTools.InsertBlock(
+                documents, documentId, "list", "Nájemné: 18 500 Kč měsíčně",
+                expectedConcurrencyToken: token, collaborationBridge: bridge));
+            token = rent.GetProperty("concurrencyToken").GetString();
+
+            var bold = Track("document_editor_format_range", await Tempo.Blazor.Mcp.DocumentEditor.DocumentEditorSemanticTextTools.FormatRange(
+                documents, documentId, rent.GetProperty("blockId").GetString()!, 0, 8, "bold",
+                expectedConcurrencyToken: token, collaborationBridge: bridge));
+            token = bold.GetProperty("concurrencyToken").GetString();
+
+            Track("document_editor_insert_token", await Tempo.Blazor.Mcp.DocumentEditor.DocumentEditorTemplateTools.InsertToken(
+                documents, documentId, firstBlockId, 0, "tenant.name",
+                displayName: "Jméno nájemce", fallbackText: "nájemce",
+                expectedConcurrencyToken: token, collaborationBridge: bridge));
+
+            var preview = Track("document_render_preview", await Tempo.Blazor.Mcp.DocumentEditor.DocumentEditorRenderTools.RenderPreview(
+                documents, renderer, fontCatalog, renderOptions, documentId: documentId, dpi: 144));
+            var firstPage = preview.GetProperty("renderedPages")[0];
+
+            return Results.Ok(new
+            {
+                documentId,
+                steps,
+                pageCount = preview.GetProperty("pageCount").GetInt32(),
+                preview = new
+                {
+                    width = firstPage.GetProperty("width").GetInt32(),
+                    height = firstPage.GetProperty("height").GetInt32(),
+                    contentType = "image/png",
+                    base64 = firstPage.GetProperty("base64").GetString()
+                }
+            });
+        });
+
         group.MapPost("/reset", (
             DemoDocumentEditorStore store,
             InMemoryDocumentCollaborationProvider collaborationProvider,

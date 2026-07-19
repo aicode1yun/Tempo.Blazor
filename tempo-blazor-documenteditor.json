@@ -20,7 +20,7 @@
     "dependencies": [
       {
         "name": "AngleSharp",
-        "version": "1.1.2"
+        "version": "1.5.2"
       },
       {
         "name": "Microsoft.AspNetCore.Components.Web",
@@ -64,7 +64,7 @@
     "dependencies": [
       {
         "name": "AngleSharp",
-        "version": "1.1.2"
+        "version": "1.5.2"
       },
       {
         "name": "Microsoft.AspNetCore.Components.Web",
@@ -7750,6 +7750,10 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/annotations/__tests__/protection-mode.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/annotations/__tests__/revisions.test.mjs",
       "kind": "JavaScript"
     },
@@ -7810,6 +7814,10 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/command-contract.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/commands/advanced-char.mjs",
       "kind": "JavaScript"
     },
@@ -7858,6 +7866,10 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/commands/__tests__/delete-page-break.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/commands/__tests__/dispatcher.test.mjs",
       "kind": "JavaScript"
     },
@@ -7874,7 +7886,15 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/commands/__tests__/insert-field-note-cow.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/commands/__tests__/insert-symbol.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/commands/__tests__/insert-token.test.mjs",
       "kind": "JavaScript"
     },
     {
@@ -7999,6 +8019,14 @@
     },
     {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/format-state.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/headless-layout-entry.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/headless-layout-runtime.mjs",
       "kind": "JavaScript"
     },
     {
@@ -8562,11 +8590,23 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/tables/__tests__/delete-table.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/tables/__tests__/insert-table.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/tables/__tests__/table-layout.test.mjs",
       "kind": "JavaScript"
     },
     {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/tables/__tests__/table-ops.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/tables/__tests__/table-properties.test.mjs",
       "kind": "JavaScript"
     },
     {
@@ -8591,6 +8631,10 @@
     },
     {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/view/__tests__/zoom.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas/__tests__/headless-layout-runtime.test.mjs",
       "kind": "JavaScript"
     },
     {
@@ -9178,6 +9222,10 @@
       "kind": "JavaScript"
     },
     {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/layout/font-advance-metrics.mjs",
+      "kind": "JavaScript"
+    },
+    {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/layout/font-metrics.mjs",
       "kind": "JavaScript"
     },
@@ -9299,6 +9347,10 @@
     },
     {
       "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/layout/__tests__/caret-advances.test.mjs",
+      "kind": "JavaScript"
+    },
+    {
+      "path": "src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/layout/__tests__/font-advance-metrics.test.mjs",
       "kind": "JavaScript"
     },
     {
