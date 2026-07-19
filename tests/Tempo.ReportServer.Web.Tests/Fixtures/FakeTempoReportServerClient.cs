@@ -128,6 +128,22 @@ public sealed class FakeTempoReportServerClient : ITempoReportServerClient
         },
     ];
 
+    // Fáze 12 pass 2 in-memory state + call capture so the portal UI tests exercise a real client path.
+    private readonly List<ReportFavoriteDto> _favorites = [];
+    private readonly List<RenderRunDto> _renderRuns = [];
+
+    /// <summary>Report ids passed to <see cref="AddFavoriteAsync"/>, in call order.</summary>
+    public List<string> AddedFavoriteReportIds { get; } = [];
+
+    /// <summary>Report ids passed to <see cref="RemoveFavoriteAsync"/>, in call order.</summary>
+    public List<string> RemovedFavoriteReportIds { get; } = [];
+
+    /// <summary>Render requests passed to <see cref="RenderAsync"/>, in call order.</summary>
+    public List<RenderReportRequestDto> RenderRequests { get; } = [];
+
+    /// <summary>The most recent request captured by <see cref="CreateReportAsync"/>.</summary>
+    public CreateReportRequestDto? LastCreateReportRequest { get; private set; }
+
     private int _idCounter;
 
     /// <inheritdoc />
@@ -271,7 +287,32 @@ public sealed class FakeTempoReportServerClient : ITempoReportServerClient
         => throw new NotSupportedException();
 
     public Task<ReportDetailDto> CreateReportAsync(CreateReportRequestDto request, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+    {
+        LastCreateReportRequest = request;
+        var reportId = $"{Slug(request.Name)}-{++_idCounter}";
+        _reports.Add(new ReportSummaryDto
+        {
+            TenantId = request.TenantId,
+            ReportId = reportId,
+            FolderId = request.FolderId,
+            Name = request.Name.Trim(),
+            Description = request.Description,
+            LatestRevisionId = $"rev-{reportId}-1",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        });
+
+        return Task.FromResult(new ReportDetailDto
+        {
+            TenantId = request.TenantId,
+            ReportId = reportId,
+            FolderId = request.FolderId,
+            Name = request.Name.Trim(),
+            Description = request.Description,
+            LatestRevisionId = $"rev-{reportId}-1",
+            DefinitionJson = request.DefinitionJson,
+        });
+    }
 
     public Task DeleteReportAsync(string reportId, string tenantId, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
@@ -283,10 +324,62 @@ public sealed class FakeTempoReportServerClient : ITempoReportServerClient
         => throw new NotSupportedException();
 
     public Task<IReadOnlyList<ReportParameterMetadataDto>> GetParametersAsync(string reportId, string tenantId, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+        => Task.FromResult<IReadOnlyList<ReportParameterMetadataDto>>(
+        [
+            new ReportParameterMetadataDto
+            {
+                Name = "region",
+                Label = "Region",
+                Kind = ReportParameterMetadataKind.String,
+                IsRequired = false,
+                DefaultValues = ["All"],
+            },
+            new ReportParameterMetadataDto
+            {
+                Name = "period",
+                Label = "Period",
+                Kind = ReportParameterMetadataKind.Select,
+                IsRequired = true,
+                DefaultValues = ["Q1"],
+                Options =
+                [
+                    new ReportParameterOptionDto { Value = "Q1", Label = "Quarter 1" },
+                    new ReportParameterOptionDto { Value = "Q2", Label = "Quarter 2" },
+                ],
+            },
+        ]);
 
     public Task<RenderReportResultDto> RenderAsync(RenderReportRequestDto request, CancellationToken cancellationToken = default)
-        => throw new NotSupportedException();
+    {
+        // Mirror the API /render contract: rendering also PERSISTS a portal-facing render-run history
+        // record, so ListRenderRunsAsync surfaces it afterwards (the same call path the real host uses).
+        RenderRequests.Add(request);
+        var result = new RenderReportResultDto
+        {
+            TenantId = request.TenantId,
+            ReportId = request.ReportId,
+            Format = request.Format,
+            ContentType = "application/json",
+            FileName = $"{request.ReportId}.{request.Format.ToString().ToLowerInvariant()}",
+            Bytes = [1, 2, 3, 4],
+            SnapshotJson = request.Format == ReportRenderFormat.Snapshot ? "{}" : null,
+            PageCount = 1,
+        };
+        _renderRuns.Insert(0, new RenderRunDto
+        {
+            TenantId = request.TenantId,
+            ActorId = "Pavel Author",
+            ReportId = request.ReportId,
+            Format = request.Format.ToString(),
+            Outcome = "Succeeded",
+            PageCount = result.PageCount,
+            ByteSize = result.Bytes.LongLength,
+            DurationMs = 12,
+            CreatedAt = DateTimeOffset.UtcNow,
+            ParametersJson = "{}",
+        });
+        return Task.FromResult(result);
+    }
 
     public Task<RenderJobDto> QueueRenderAsync(RenderReportRequestDto request, CancellationToken cancellationToken = default)
         => throw new NotSupportedException();
@@ -515,15 +608,29 @@ public sealed class FakeTempoReportServerClient : ITempoReportServerClient
 
     public Task<ReportResolveResultDto> ResolveReportAsync(string tenantId, string? reportId = null, string? path = null, CancellationToken cancellationToken = default)
     {
-        var id = reportId;
-        if (string.IsNullOrWhiteSpace(id) && !string.IsNullOrWhiteSpace(path))
+        // Mirror the REAL server (ReportServerApiExtensions.ResolveByPathAsync): resolution by id matches
+        // ReportId; resolution by path is FOLDER-QUALIFIED, where the LAST segment matches the report NAME
+        // (not the id) within the folder whose Path equals "/" + the leading segments. Kept faithful so the
+        // portal tests exercise the real /resolve contract instead of a divergent bare-id fake.
+        ReportSummaryDto? report;
+        if (!string.IsNullOrWhiteSpace(reportId))
         {
-            var segments = path.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
-            id = segments.Length > 0 ? segments[^1] : null;
+            report = _reports.FirstOrDefault(item => item.ReportId == reportId);
+        }
+        else if (!string.IsNullOrWhiteSpace(path))
+        {
+            report = ResolveByPath(path);
+        }
+        else
+        {
+            throw new KeyNotFoundException("Either reportId or path must be supplied.");
         }
 
-        var report = _reports.FirstOrDefault(item => item.ReportId == id)
-            ?? throw new KeyNotFoundException($"Unknown report {id}.");
+        if (report is null)
+        {
+            throw new KeyNotFoundException($"Unknown report for reportId='{reportId}' path='{path}'.");
+        }
+
         return Task.FromResult(new ReportResolveResultDto
         {
             TenantId = tenantId,
@@ -539,24 +646,104 @@ public sealed class FakeTempoReportServerClient : ITempoReportServerClient
         });
     }
 
-    // Fáze 12 favorites / render-run history members: not exercised by the current catalog page tests,
-    // so they return empty lists / stub DTOs. Add real behavior here if a page test needs it.
+    private ReportSummaryDto? ResolveByPath(string path)
+    {
+        var trimmed = path.Trim().Trim('/');
+        var separator = trimmed.LastIndexOf('/');
+        if (separator < 0)
+        {
+            // A folderless path never resolves on the real server (needs a folder segment + report name).
+            return null;
+        }
+
+        var folderPath = "/" + trimmed[..separator];
+        var lastSegment = trimmed[(separator + 1)..];
+        var folder = _folders.FirstOrDefault(candidate =>
+            string.Equals(candidate.Path, folderPath, StringComparison.OrdinalIgnoreCase));
+        if (folder is null)
+        {
+            return null;
+        }
+
+        // Match the last segment against the report's ReportId OR Name (same additive semantics as the
+        // real server's ResolveByPathAsync), so both id-based (BuildDeepLink/favorite) and name-based
+        // deep links round-trip.
+        return _reports.FirstOrDefault(candidate =>
+            candidate.FolderId == folder.FolderId
+            && (string.Equals(candidate.ReportId, lastSegment, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(candidate.Name, lastSegment, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    // Fáze 12 pass 2 favorites / render-run history: real in-memory behavior + call capture so the
+    // portal favorites/run-history/viewer tests exercise the client path meaningfully (not stubs).
     public Task<IReadOnlyList<ReportFavoriteDto>> ListFavoritesAsync(string tenantId, CancellationToken cancellationToken = default)
-        => Task.FromResult<IReadOnlyList<ReportFavoriteDto>>([]);
+        => Task.FromResult<IReadOnlyList<ReportFavoriteDto>>(
+            [.. _favorites.Where(favorite => favorite.TenantId == tenantId).OrderByDescending(favorite => favorite.CreatedAt)]);
 
     public Task<ReportFavoriteDto> AddFavoriteAsync(AddReportFavoriteRequestDto request, CancellationToken cancellationToken = default)
-        => Task.FromResult(new ReportFavoriteDto
+    {
+        AddedFavoriteReportIds.Add(request.ReportId);
+        var report = _reports.FirstOrDefault(item => item.ReportId == request.ReportId);
+        var favorite = new ReportFavoriteDto
         {
             TenantId = request.TenantId,
             ReportId = request.ReportId,
+            ReportName = report?.Name,
+            FolderId = report?.FolderId,
             CreatedAt = DateTimeOffset.UtcNow,
-        });
+        };
+        _favorites.RemoveAll(item => item.TenantId == request.TenantId && item.ReportId == request.ReportId);
+        _favorites.Add(favorite);
+        return Task.FromResult(favorite);
+    }
 
     public Task RemoveFavoriteAsync(string tenantId, string reportId, CancellationToken cancellationToken = default)
-        => Task.CompletedTask;
+    {
+        RemovedFavoriteReportIds.Add(reportId);
+        _favorites.RemoveAll(item => item.TenantId == tenantId && item.ReportId == reportId);
+        return Task.CompletedTask;
+    }
 
     public Task<IReadOnlyList<RenderRunDto>> ListRenderRunsAsync(string tenantId, string? reportId = null, int? max = null, CancellationToken cancellationToken = default)
-        => Task.FromResult<IReadOnlyList<RenderRunDto>>([]);
+    {
+        var runs = _renderRuns.Where(run => run.TenantId == tenantId);
+        if (!string.IsNullOrWhiteSpace(reportId))
+        {
+            runs = runs.Where(run => run.ReportId == reportId);
+        }
+
+        return Task.FromResult<IReadOnlyList<RenderRunDto>>([.. runs.Take(max ?? int.MaxValue)]);
+    }
+
+    /// <summary>Seeds a favorite directly (for list/empty-state tests).</summary>
+    public void SeedFavorite(string reportId)
+    {
+        var report = _reports.FirstOrDefault(item => item.ReportId == reportId);
+        _favorites.Add(new ReportFavoriteDto
+        {
+            TenantId = Tenant,
+            ReportId = reportId,
+            ReportName = report?.Name,
+            FolderId = report?.FolderId,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+    }
+
+    /// <summary>Seeds a render-run directly (for history list tests).</summary>
+    public void SeedRenderRun(string reportId, string format = "Pdf", string outcome = "Succeeded")
+        => _renderRuns.Insert(0, new RenderRunDto
+        {
+            TenantId = Tenant,
+            ActorId = "Pavel Author",
+            ReportId = reportId,
+            Format = format,
+            Outcome = outcome,
+            PageCount = 3,
+            ByteSize = 4096,
+            DurationMs = 42,
+            CreatedAt = DateTimeOffset.UtcNow,
+            ParametersJson = "{}",
+        });
 
     private void RecordKeyAudit(string tenantId, string keyId, string operation)
         => _audit.Add(new ReportAuditEventDto

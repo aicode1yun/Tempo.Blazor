@@ -1,0 +1,84 @@
+@namespace Tempo.ReportServer.Web.Pages
+@page "/favorites"
+@inject IPortalIdentity Session
+@inject ITempoReportServerClient Client
+
+<ReportServerShell Title="Favorites" ActiveSection="favorites">
+    <div class="rs-page" data-testid="f12-favorites-page">
+        <div class="rs-page__heading">
+            <div>
+                <p class="rs-kicker">Catalog</p>
+                <h2>Favorites</h2>
+            </div>
+            <div class="rs-page__stats">
+                <span>@_favorites.Count favorites</span>
+            </div>
+        </div>
+
+        @if (_favorites.Count == 0)
+        {
+            <div class="rs-empty" data-testid="favorites-empty">
+                <TmIcon Name="@IconNames.Star" Size="IconSize.Md" />
+                <strong>No favorites yet</strong>
+                <span>Open a report and use the star to add it here.</span>
+            </div>
+        }
+        else
+        {
+            <section class="rs-panel rs-table-panel">
+                <div class="rs-favorites" data-testid="favorites-list">
+                    @foreach (var favorite in _favorites)
+                    {
+                        <a class="rs-favorite" href="@ReportHref(favorite)" data-testid="favorite-item">
+                            <TmIcon Name="@IconNames.Star" Size="IconSize.Sm" />
+                            <div>
+                                <strong>@(favorite.ReportName ?? favorite.ReportId)</strong>
+                                <span>@FolderPath(favorite)</span>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </section>
+        }
+    </div>
+</ReportServerShell>
+
+@code {
+    // Prerendered snapshots handed to the interactive (WASM) leg so it does not re-fetch.
+    [PersistentState] public List<ReportFavoriteDto>? Favorites { get; set; }
+    [PersistentState] public List<ReportFolderDto>? Folders { get; set; }
+
+    private IReadOnlyList<ReportFavoriteDto> _favorites = [];
+    private IReadOnlyDictionary<string, string> _folderPathById =
+        new Dictionary<string, string>(StringComparer.Ordinal);
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        Favorites ??= [.. await Client.ListFavoritesAsync(Session.CurrentTenantId)];
+        Folders ??= [.. await Client.GetFoldersAsync(Session.CurrentTenantId)];
+        _favorites = Favorites;
+        _folderPathById = ReportServerCatalogMapper.FolderPathsById(Folders);
+    }
+
+    // Build the deep link with the exact same logic the explorer uses (ReportServerCatalogMapper places
+    // each report under its folder path), so a favorite link behaves identically to clicking that report
+    // in the explorer. NOTE: the explorer's deep link currently carries the report id in the last segment
+    // while the server's /resolve matches by report NAME — a pre-existing app-wide round-trip mismatch
+    // (flagged in the review report). Favorites deliberately share that behavior rather than diverge.
+    private string ReportHref(ReportFavoriteDto favorite)
+        => ReportServerCatalogMapper.ToReportItem(
+            new ReportSummaryDto
+            {
+                TenantId = favorite.TenantId,
+                ReportId = favorite.ReportId,
+                FolderId = favorite.FolderId ?? string.Empty,
+                Name = favorite.ReportName ?? favorite.ReportId,
+            },
+            _folderPathById).Path;
+
+    private string FolderPath(ReportFavoriteDto favorite)
+        => favorite.FolderId is { } folderId && _folderPathById.TryGetValue(folderId, out var path)
+            ? path
+            : ReportServerCatalogMapper.RootFolderPath;
+}

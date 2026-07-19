@@ -1,0 +1,211 @@
+@namespace Tempo.ReportServer.Web.Components
+@using System.Text.Json
+@using Tempo.Reporting.Abstractions.Definitions
+@using Tempo.Reporting.Abstractions.Validation
+
+<div class="rs-newreport" data-testid="new-report-form" role="dialog" aria-label="New report">
+    <div class="rs-newreport__header">
+        <h3>New report</h3>
+        <button type="button" class="rs-icon-button" aria-label="Cancel" data-testid="new-report-cancel" @onclick="CancelAsync">
+            <TmIcon Name="@IconNames.X" Size="IconSize.Sm" />
+        </button>
+    </div>
+
+    <label class="rs-field">
+        <span>Name</span>
+        <input data-testid="new-report-name" value="@_name" @oninput="HandleNameInput" />
+    </label>
+    @if (_errors.TryGetValue("Name", out var nameError))
+    {
+        <p class="rs-error" data-testid="new-report-name-error">@nameError</p>
+    }
+
+    <label class="rs-field">
+        <span>Target folder</span>
+        <select data-testid="new-report-folder" value="@_folderId" @onchange="HandleFolderChange">
+            <option value="">Select a folder…</option>
+            @foreach (var folder in Folders)
+            {
+                <option value="@folder.FolderId">@folder.Path</option>
+            }
+        </select>
+    </label>
+    @if (_errors.TryGetValue("FolderId", out var folderError))
+    {
+        <p class="rs-error" data-testid="new-report-folder-error">@folderError</p>
+    }
+
+    <fieldset class="rs-field rs-newreport__source">
+        <span>Definition source</span>
+        <label>
+            <input type="radio" name="new-report-source" data-testid="new-report-source-blank"
+                   checked="@(_source == DefinitionSource.Blank)" @onchange="() => SetSource(DefinitionSource.Blank)" />
+            Blank
+        </label>
+        <label>
+            <input type="radio" name="new-report-source" data-testid="new-report-source-upload"
+                   checked="@(_source == DefinitionSource.Upload)" @onchange="() => SetSource(DefinitionSource.Upload)" />
+            Upload JSON
+        </label>
+    </fieldset>
+
+    @if (_source == DefinitionSource.Upload)
+    {
+        <label class="rs-field">
+            <span>Definition file (.json)</span>
+            <InputFile OnChange="HandleFileSelectedAsync" accept=".json" data-testid="new-report-file" />
+        </label>
+        @if (_uploadedJson is not null && _fileError is null)
+        {
+            <p class="rs-hint" data-testid="new-report-file-ok">Loaded @_uploadedFileName.</p>
+        }
+    }
+    @if (_fileError is not null)
+    {
+        <p class="rs-error" data-testid="new-report-file-error">@_fileError</p>
+    }
+
+    @if (_errors.TryGetValue("DefinitionJson", out var definitionError))
+    {
+        <p class="rs-error" data-testid="new-report-definition-error">@definitionError</p>
+    }
+    @if (_errors.TryGetValue("TenantId", out var tenantError))
+    {
+        <p class="rs-error" data-testid="new-report-tenant-error">@tenantError</p>
+    }
+
+    <div class="rs-newreport__actions">
+        <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Check" data-testid="new-report-submit" OnClick="SubmitAsync">
+            Create report
+        </TmButton>
+    </div>
+</div>
+
+@code {
+    /// <summary>Folders the report can be created in.</summary>
+    [Parameter] public IReadOnlyList<ReportFolderDto> Folders { get; set; } = [];
+
+    /// <summary>Tenant the report belongs to.</summary>
+    [Parameter] public string TenantId { get; set; } = string.Empty;
+
+    /// <summary>Raised with a valid create request when the form is submitted.</summary>
+    [Parameter] public EventCallback<CreateReportRequestDto> OnSubmit { get; set; }
+
+    /// <summary>Raised when the user cancels.</summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    private enum DefinitionSource
+    {
+        Blank,
+        Upload,
+    }
+
+    private string _name = string.Empty;
+    private string _folderId = string.Empty;
+    private DefinitionSource _source = DefinitionSource.Blank;
+    private string? _uploadedJson;
+    private string? _uploadedFileName;
+    private string? _fileError;
+    private readonly Dictionary<string, string> _errors = new(StringComparer.Ordinal);
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (string.IsNullOrEmpty(_folderId) && Folders.Count > 0)
+        {
+            _folderId = Folders[0].FolderId;
+        }
+    }
+
+    private void HandleNameInput(ChangeEventArgs args)
+        => _name = args.Value?.ToString() ?? string.Empty;
+
+    private void HandleFolderChange(ChangeEventArgs args)
+        => _folderId = args.Value?.ToString() ?? string.Empty;
+
+    private void SetSource(DefinitionSource source)
+    {
+        _source = source;
+        if (source == DefinitionSource.Blank)
+        {
+            _fileError = null;
+        }
+    }
+
+    private async Task HandleFileSelectedAsync(InputFileChangeEventArgs args)
+    {
+        _fileError = null;
+        _uploadedJson = null;
+        _uploadedFileName = null;
+        var file = args.File;
+        try
+        {
+            using var stream = file.OpenReadStream(2 * 1024 * 1024);
+            using var reader = new StreamReader(stream);
+            var text = await reader.ReadToEndAsync();
+
+            // The uploaded file must parse to a ReportDefinition; a parse failure is an inline error.
+            var definition = JsonSerializer.Deserialize<ReportDefinition>(text, JsonOptions);
+            if (definition is null)
+            {
+                _fileError = "The uploaded file is not a valid report definition.";
+                return;
+            }
+
+            _uploadedJson = text;
+            _uploadedFileName = file.Name;
+        }
+        catch (JsonException)
+        {
+            _fileError = "The uploaded file is not valid JSON for a report definition.";
+        }
+    }
+
+    private async Task CancelAsync()
+        => await OnCancel.InvokeAsync();
+
+    private async Task SubmitAsync()
+    {
+        _errors.Clear();
+
+        string definitionJson;
+        if (_source == DefinitionSource.Upload)
+        {
+            if (_uploadedJson is null || _fileError is not null)
+            {
+                _fileError ??= "Upload a JSON report definition to continue.";
+                return;
+            }
+
+            definitionJson = _uploadedJson;
+        }
+        else
+        {
+            // A blank report is a minimal, schema-valid ReportDefinition carrying the chosen name.
+            definitionJson = JsonSerializer.Serialize(new ReportDefinition { Name = _name.Trim() }, JsonOptions);
+        }
+
+        var request = new CreateReportRequestDto
+        {
+            TenantId = TenantId,
+            FolderId = _folderId,
+            Name = _name.Trim(),
+            DefinitionJson = definitionJson,
+        };
+
+        var validation = new CreateReportRequestValidator().Validate(request);
+        if (!validation.IsValid)
+        {
+            foreach (var failure in validation.Errors)
+            {
+                _errors[failure.PropertyName] = failure.ErrorMessage;
+            }
+
+            return;
+        }
+
+        await OnSubmit.InvokeAsync(request);
+    }
+}

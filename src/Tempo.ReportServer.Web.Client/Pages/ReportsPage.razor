@@ -14,8 +14,22 @@
             <div class="rs-page__stats">
                 <span>@_reportItems.Count reports</span>
                 <span>@_folderCount folders</span>
+                @if (Session.CanAccess(PortalRole.Author))
+                {
+                    <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Plus" data-testid="new-report-open" OnClick="OpenNewReport">
+                        New report
+                    </TmButton>
+                }
             </div>
         </div>
+
+        @if (_showNewReport)
+        {
+            <NewReportForm Folders="@(Folders ?? [])"
+                           TenantId="@Session.CurrentTenantId"
+                           OnSubmit="CreateReportAsync"
+                           OnCancel="CloseNewReport" />
+        }
 
         <TmReportExplorer RootFolder="@_rootFolder"
                           Reports="@_reportItems"
@@ -42,6 +56,7 @@
     private int _folderCount;
     private string _currentFolderPath = ReportServerCatalogMapper.RootFolderPath;
     private ReportExplorerViewMode _viewMode = ReportExplorerViewMode.Grid;
+    private bool _showNewReport;
 
     /// <inheritdoc />
     protected override async Task OnInitializedAsync()
@@ -84,6 +99,21 @@
 
     private void OpenReport(ReportExplorerReportItem report)
         => Navigation.NavigateTo(report.Path);
+
+    private void OpenNewReport()
+        => _showNewReport = true;
+
+    private void CloseNewReport()
+        => _showNewReport = false;
+
+    // The write endpoint (/reports) enforces the Author role; the create action is only shown to
+    // authors, and on success we hand off to the designer for the freshly created report.
+    private async Task CreateReportAsync(CreateReportRequestDto request)
+    {
+        var created = await Client.CreateReportAsync(request);
+        _showNewReport = false;
+        Navigation.NavigateTo($"/designer/{created.ReportId}");
+    }
 
     private async Task CreateFolderAsync(ReportExplorerCreateFolderRequest request)
     {

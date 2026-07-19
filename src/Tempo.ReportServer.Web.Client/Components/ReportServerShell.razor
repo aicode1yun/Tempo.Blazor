@@ -18,6 +18,20 @@
                     <span>Reports</span>
                 </a>
             }
+            @if (Session.CanAccess(PortalRole.Viewer))
+            {
+                <a class="@NavClass("favorites")" href="/favorites" data-testid="nav-favorites">
+                    <TmIcon Name="@IconNames.Star" Size="IconSize.Sm" />
+                    <span>Favorites</span>
+                </a>
+            }
+            @if (Session.CanAccess(PortalRole.Viewer))
+            {
+                <a class="@NavClass("history")" href="/history" data-testid="nav-history">
+                    <TmIcon Name="@IconNames.Clock" Size="IconSize.Sm" />
+                    <span>History</span>
+                </a>
+            }
             @if (Session.CanAccess(PortalRole.Author))
             {
                 <a class="@NavClass("designer")" href="/designer/sales-register" data-testid="nav-designer">

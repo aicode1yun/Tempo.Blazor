@@ -24,12 +24,105 @@
                     <h2>@_resolved.Name</h2>
                     <p>@_resolved.Description</p>
                 </div>
-                <div class="rs-param-chips" data-testid="viewer-deep-link-params">
-                    @foreach (var parameter in _parameterValues)
+                <div class="rs-viewer-actions">
+                    <button type="button"
+                            class="@(_isFavorite ? "rs-fav rs-fav--on" : "rs-fav")"
+                            data-testid="favorite-toggle"
+                            aria-pressed="@(_isFavorite ? "true" : "false")"
+                            aria-label="@(_isFavorite ? "Remove from favorites" : "Add to favorites")"
+                            disabled="@_isToggling"
+                            @onclick="ToggleFavoriteAsync">
+                        <TmIcon Name="@IconNames.Star" Size="IconSize.Sm" />
+                        <span>@(_isFavorite ? "Favorited" : "Favorite")</span>
+                    </button>
+                    @* Read-only summary of the CURRENT parameter values (the single source of truth in
+                       _paramValues). Not an input — the editable form below is the only input surface. *@
+                    <div class="rs-param-chips" data-testid="viewer-deep-link-params">
+                        @foreach (var parameter in _parameterValues)
+                        {
+                            <span>@parameter.Key: @parameter.Value.ScalarValue</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @* Page-local parameter form: the SINGLE source of truth. Its values feed BOTH the in-process
+               TmReportViewer preview (ParameterValues) and the API /render "Run" that persists a RenderRun.
+               Initial values are seeded from the deep-link query so shared links keep working. *@
+            @if (_parameters.Count > 0)
+            {
+                <div class="rs-param-form" data-testid="viewer-param-form">
+                    @foreach (var meta in _parameters)
                     {
-                        <span>@parameter.Key: @parameter.Value.ScalarValue</span>
+                        <label class="rs-field">
+                            <span>@meta.Label@(meta.IsRequired ? " *" : string.Empty)</span>
+                            @switch (meta.Kind)
+                            {
+                                case ReportParameterMetadataKind.Boolean:
+                                    <input type="checkbox"
+                                           data-testid="@($"param-input-{meta.Name}")"
+                                           checked="@(string.Equals(GetParam(meta.Name), "true", StringComparison.OrdinalIgnoreCase))"
+                                           @onchange="args => HandleParamChange(meta, args)" />
+                                    break;
+                                case ReportParameterMetadataKind.Select:
+                                case ReportParameterMetadataKind.MultiSelect:
+                                    <select data-testid="@($"param-input-{meta.Name}")"
+                                            value="@GetParam(meta.Name)"
+                                            @onchange="args => HandleParamChange(meta, args)">
+                                        @foreach (var option in meta.Options)
+                                        {
+                                            <option value="@option.Value">@option.Label</option>
+                                        }
+                                    </select>
+                                    break;
+                                case ReportParameterMetadataKind.Number:
+                                    <input type="number"
+                                           data-testid="@($"param-input-{meta.Name}")"
+                                           value="@GetParam(meta.Name)"
+                                           @onchange="args => HandleParamChange(meta, args)" />
+                                    break;
+                                case ReportParameterMetadataKind.Date:
+                                    <input type="date"
+                                           data-testid="@($"param-input-{meta.Name}")"
+                                           value="@GetParam(meta.Name)"
+                                           @onchange="args => HandleParamChange(meta, args)" />
+                                    break;
+                                default:
+                                    <input type="text"
+                                           data-testid="@($"param-input-{meta.Name}")"
+                                           value="@GetParam(meta.Name)"
+                                           @onchange="args => HandleParamChange(meta, args)" />
+                                    break;
+                            }
+                        </label>
                     }
                 </div>
+            }
+
+            <div class="rs-run-bar" data-testid="run-bar">
+                <label class="rs-field rs-field--inline">
+                    <span>Format</span>
+                    <select data-testid="run-format" value="@_runFormat" @onchange="HandleRunFormatChange">
+                        @foreach (var format in Enum.GetValues<ReportRenderFormat>())
+                        {
+                            <option value="@format">@format</option>
+                        }
+                    </select>
+                </label>
+                <TmButton Variant="ButtonVariant.Primary"
+                          Icon="@IconNames.Play"
+                          data-testid="run-report"
+                          Disabled="@_isRunning"
+                          IsLoading="@_isRunning"
+                          OnClick="RunReportAsync">
+                    Run
+                </TmButton>
+                @if (_lastRun is not null)
+                {
+                    <span class="rs-status rs-status--ok" data-testid="run-report-status">
+                        Ran @_lastRun.Format — @_lastRun.PageCount page(s), @_lastRun.Bytes.Length bytes
+                    </span>
+                }
             </div>
 
             <TmReportViewer ReportSource="@_source"
@@ -60,50 +153,174 @@
     private ReportResolveResultDto? _resolved;
     private IReportSource? _source;
     private string? _loadedPath;
+
+    // _paramValues is the SINGLE source of truth for parameters. _parameterValues is the derived
+    // read-model handed to TmReportViewer; both are rebuilt from _paramValues on every edit.
+    private readonly Dictionary<string, string> _paramValues = new(StringComparer.Ordinal);
+    private IReadOnlyList<ReportParameterMetadataDto> _parameters = [];
     private IReadOnlyDictionary<string, ReportParameterValue> _parameterValues =
         new Dictionary<string, ReportParameterValue>(StringComparer.Ordinal);
+
     private ReportViewerExportResult? _lastExport;
+    private bool _isFavorite;
+    private bool _isToggling;
+    private bool _isRunning;
+    private ReportRenderFormat _runFormat = ReportRenderFormat.Snapshot;
+    private RenderReportResultDto? _lastRun;
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
-        _parameterValues = ParseParameterValues();
         if (string.Equals(_loadedPath, Path, StringComparison.Ordinal))
         {
             return;
         }
 
         _loadedPath = Path;
+        _lastRun = null;
         try
         {
             // Resolution goes through the typed client (/resolve) instead of the retired in-memory
             // catalog; rendering stays in-process via the demo report source for the self-contained demo.
             _resolved = await Client.ResolveReportAsync(Session.CurrentTenantId, path: Path);
             _source = SourceFactory.CreateReportSource(_resolved.ReportId);
+
+            // Build the page-local parameter form from the report's declared parameters, seeding initial
+            // values from the deep-link query (so shared links keep working) then declared defaults.
+            _parameters = await Client.GetParametersAsync(_resolved.ReportId, Session.CurrentTenantId);
+            SeedParameterValues();
+
+            // Server-side, per-user favorite state for this report drives the toggle's pressed state.
+            var favorites = await Client.ListFavoritesAsync(Session.CurrentTenantId);
+            _isFavorite = favorites.Any(favorite =>
+                string.Equals(favorite.ReportId, _resolved.ReportId, StringComparison.Ordinal));
         }
         catch (KeyNotFoundException)
         {
             _resolved = null;
             _source = null;
+            _isFavorite = false;
+            _parameters = [];
+            _paramValues.Clear();
+            RebuildParameterValues();
         }
     }
 
-    private IReadOnlyDictionary<string, ReportParameterValue> ParseParameterValues()
+    private void SeedParameterValues()
     {
-        var result = new Dictionary<string, ReportParameterValue>(StringComparer.Ordinal);
-        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
-        var query = QueryHelpers.ParseQuery(uri.Query);
-        foreach (var pair in query)
-        {
-            if (string.IsNullOrWhiteSpace(pair.Key) || pair.Value.Count == 0)
-            {
-                continue;
-            }
+        _paramValues.Clear();
 
-            result[pair.Key] = ReportParameterValue.Scalar(pair.Value[0]);
+        // Deep-link query values first (they win, so a shared link's parameters are honored)...
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        foreach (var pair in QueryHelpers.ParseQuery(uri.Query))
+        {
+            if (!string.IsNullOrWhiteSpace(pair.Key) && pair.Value.Count > 0)
+            {
+                _paramValues[pair.Key] = pair.Value[0] ?? string.Empty;
+            }
         }
 
-        return result;
+        // ...then a declared default for any parameter the link did not carry.
+        foreach (var meta in _parameters)
+        {
+            if (!_paramValues.ContainsKey(meta.Name) && meta.DefaultValues.Count > 0)
+            {
+                _paramValues[meta.Name] = meta.DefaultValues[0];
+            }
+        }
+
+        RebuildParameterValues();
+    }
+
+    private void RebuildParameterValues()
+        => _parameterValues = _paramValues.ToDictionary(
+            pair => pair.Key,
+            pair => ReportParameterValue.Scalar(pair.Value),
+            StringComparer.Ordinal);
+
+    private string GetParam(string name)
+        => _paramValues.TryGetValue(name, out var value) ? value : string.Empty;
+
+    private void HandleParamChange(ReportParameterMetadataDto meta, ChangeEventArgs args)
+    {
+        var value = meta.Kind == ReportParameterMetadataKind.Boolean
+            ? (args.Value is bool flag && flag ? "true" : "false")
+            : args.Value?.ToString() ?? string.Empty;
+        _paramValues[meta.Name] = value;
+        RebuildParameterValues();
+    }
+
+    private void HandleRunFormatChange(ChangeEventArgs args)
+    {
+        if (Enum.TryParse<ReportRenderFormat>(args.Value?.ToString(), out var format))
+        {
+            _runFormat = format;
+        }
+    }
+
+    private async Task ToggleFavoriteAsync()
+    {
+        if (_resolved is null || _isToggling)
+        {
+            return;
+        }
+
+        // In-flight guard: the button is disabled while the client call is outstanding so a rapid
+        // double-click cannot interleave an Add and a Remove against the real HTTP client.
+        _isToggling = true;
+        try
+        {
+            if (_isFavorite)
+            {
+                await Client.RemoveFavoriteAsync(Session.CurrentTenantId, _resolved.ReportId);
+                _isFavorite = false;
+            }
+            else
+            {
+                await Client.AddFavoriteAsync(new AddReportFavoriteRequestDto
+                {
+                    TenantId = Session.CurrentTenantId,
+                    ReportId = _resolved.ReportId,
+                });
+                _isFavorite = true;
+            }
+        }
+        finally
+        {
+            _isToggling = false;
+        }
+    }
+
+    // The tracked run goes through the API /render path so the backend PERSISTS a RenderRun that the
+    // run-history page then lists. Parameters come from the page-local form (the single source of truth),
+    // so what the user sees in the preview is exactly what is rendered/recorded.
+    private async Task RunReportAsync()
+    {
+        if (_resolved is null || _isRunning)
+        {
+            return;
+        }
+
+        _isRunning = true;
+        try
+        {
+            _lastRun = await Client.RenderAsync(new RenderReportRequestDto
+            {
+                TenantId = Session.CurrentTenantId,
+                ReportId = _resolved.ReportId,
+                Format = _runFormat,
+                CultureName = "en-US",
+                Parameters = [.. _paramValues.Select(pair => new ReportParameterValueDto
+                {
+                    Name = pair.Key,
+                    Values = [pair.Value],
+                })],
+            });
+        }
+        finally
+        {
+            _isRunning = false;
+        }
     }
 
     private void HandleExported(ReportViewerExportResult export)

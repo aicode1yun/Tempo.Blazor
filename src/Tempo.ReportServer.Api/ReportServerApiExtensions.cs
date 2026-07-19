@@ -322,6 +322,12 @@ public static class ReportServerApiExtensions
             ReportServerRequestContext context,
             CancellationToken cancellationToken) =>
         {
+            var validation = new CreateReportRequestValidator().Validate(request);
+            if (!validation.IsValid)
+            {
+                return Results.ValidationProblem(validation.ToDictionary());
+            }
+
             SetTenant(context, request.TenantId);
             var (principal, failure) = await AuthorizeOperationAsync(
                 http, contextFactory, resolver, auditLog,
@@ -1408,11 +1414,28 @@ public static class ReportServerApiExtensions
             return null;
         }
 
-        var matches = await store.SearchReportsAsync(
+        // Match the last path segment against the report's ReportId OR Name (both case-insensitive)
+        // within the folder. This is additive: name-based deep links keep resolving, and id-based deep
+        // links (ReportServerCatalogMapper.BuildDeepLink emits the report id — e.g. explorer/favorite
+        // links, and reports created via POST /reports whose generated id differs from their name) now
+        // resolve too. The Query filter keys off name, so the id-only case is covered by an unfiltered
+        // folder scan fallback.
+        var byName = await store.SearchReportsAsync(
             new ReportSearchRequestDto { TenantId = tenantId, FolderId = folder.FolderId, Query = reportName },
             cancellationToken).ConfigureAwait(false);
-        var summary = matches.FirstOrDefault(candidate =>
-            string.Equals(candidate.Name, reportName, StringComparison.OrdinalIgnoreCase));
+        var summary = byName.FirstOrDefault(candidate =>
+            string.Equals(candidate.Name, reportName, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(candidate.ReportId, reportName, StringComparison.OrdinalIgnoreCase));
+        if (summary is null)
+        {
+            var inFolder = await store.SearchReportsAsync(
+                new ReportSearchRequestDto { TenantId = tenantId, FolderId = folder.FolderId },
+                cancellationToken).ConfigureAwait(false);
+            summary = inFolder.FirstOrDefault(candidate =>
+                string.Equals(candidate.ReportId, reportName, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(candidate.Name, reportName, StringComparison.OrdinalIgnoreCase));
+        }
+
         return summary is null
             ? null
             : await store.GetReportAsync(tenantId, summary.ReportId, cancellationToken).ConfigureAwait(false);

@@ -164,6 +164,31 @@ public sealed class ReportServerF5bAdminApiTests
     }
 
     [Fact]
+    public async Task Resolve_ByFolderQualifiedIdPath_ResolvesReportCreatedViaApi()
+    {
+        // A report created via POST /reports gets a GENERATED id that differs from its name; the
+        // explorer/favorite deep links (BuildDeepLink) put that id in the last path segment. Resolution
+        // by path must therefore accept the report id (not just the name) within the folder.
+        await using var host = await AdminTestApp.CreateAsync();
+        var api = new TempoReportServerClient(host.CreateApiKeyClient());
+        var folder = await api.CreateFolderAsync(new CreateReportFolderRequestDto { TenantId = TenantId, Name = "Finance" });
+        var report = await api.CreateReportAsync(new CreateReportRequestDto
+        {
+            TenantId = TenantId,
+            FolderId = folder.FolderId,
+            Name = "Sales Register",
+            DefinitionJson = FixtureDefinitionJson(),
+        });
+
+        // Precondition for the regression: the generated id is not the same as the name.
+        report.ReportId.Should().NotBe("Sales Register");
+
+        var byIdPath = await api.ResolveReportAsync(TenantId, path: $"{folder.Path.Trim('/')}/{report.ReportId}");
+        byIdPath.ReportId.Should().Be(report.ReportId);
+        byIdPath.FolderId.Should().Be(folder.FolderId);
+    }
+
+    [Fact]
     public async Task AdminEndpoint_WithoutCredentials_Returns401()
     {
         await using var host = await AdminTestApp.CreateAsync();
