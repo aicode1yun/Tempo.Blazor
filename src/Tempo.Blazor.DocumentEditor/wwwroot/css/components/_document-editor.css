@@ -3343,8 +3343,11 @@
     position: relative;
     display: inline-block;
     box-sizing: border-box;
-    inline-size: var(--tm-wysiwyg-inline-drawing-width);
-    block-size: var(--tm-wysiwyg-inline-drawing-height);
+    /* No source sets these tokens today; the auto fallback keeps the historical
+       computed value (guaranteed-invalid var() also resolved to auto) while
+       letting a future renderer size the element by defining them inline. */
+    inline-size: var(--tm-wysiwyg-inline-drawing-width, auto);
+    block-size: var(--tm-wysiwyg-inline-drawing-height, auto);
     max-inline-size: 100%;
     margin: 0;
     line-height: 0;

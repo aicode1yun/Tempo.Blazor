@@ -202,6 +202,50 @@
 
   --tm-radius-xs:              0.125rem; /* 2px */
 
+  /* ── Alias backfill (scripts/audit-css-tokens.mjs) ────────────
+     Tokens referenced by package stylesheets without a fallback but never
+     defined — each computed to `unset` at runtime before being aliased here.
+     Aliases reference theme-aware tokens, so dark mode needs no overrides. */
+  --tm-bg-elevated:            var(--tm-color-surface-elevated);
+  --tm-bg-primary:             var(--tm-bg-surface);
+  --tm-bg-tertiary:            var(--tm-bg-muted);
+  --tm-border-default:         var(--tm-border-color);
+  --tm-border-hover:           var(--tm-color-gray-300);
+  --tm-border-width:           1px;
+  --tm-color-bg:               var(--tm-bg-surface);
+  --tm-color-danger-soft:      var(--tm-color-danger-subtle);
+  --tm-color-error:            var(--tm-color-danger);
+  --tm-color-neutral-900:      var(--tm-color-gray-900);
+  --tm-color-on-primary:       var(--tm-color-white);
+  --tm-color-primary-bg:       var(--tm-color-primary);
+  --tm-color-primary-bg-subtle: var(--tm-color-primary-subtle);
+  --tm-color-primary-contrast: var(--tm-color-white);
+  --tm-color-primary-light:    var(--tm-color-primary-300);
+  --tm-color-primary-lighter:  var(--tm-color-primary-100);
+  --tm-color-primary-soft:     var(--tm-color-primary-subtle);
+  --tm-color-success-soft:     var(--tm-color-success-subtle);
+  --tm-color-surface-muted:    var(--tm-bg-muted);
+  --tm-color-surface-subtle:   var(--tm-color-gray-50);
+  --tm-color-text-disabled:    var(--tm-text-disabled);
+  --tm-color-text-secondary:   var(--tm-text-secondary);
+  --tm-color-text-subtle:      var(--tm-text-tertiary);
+  --tm-color-warning-bg-subtle: var(--tm-color-warning-subtle);
+  --tm-color-warning-soft:     var(--tm-color-warning-subtle);
+  --tm-font-semibold:          var(--tm-font-weight-semibold);
+  --tm-font-size-base:         var(--tm-font-size-md);
+  --tm-line-height-snug:       1.375;
+  --tm-opacity-disabled:       0.5;
+  --tm-radius-pill:            var(--tm-radius-full);
+  --tm-shadow-xs:              0 1px 1px 0 rgba(0, 0, 0, 0.04);
+  --tm-space-7:                1.75rem;
+  --tm-space-9:                2.25rem;
+  --tm-space-20:               5rem;
+  --tm-surface-100:            var(--tm-color-gray-100);
+  --tm-surface-200:            var(--tm-color-gray-200);
+  --tm-text-md:                var(--tm-font-size-md);
+  --tm-text-muted:             var(--tm-text-secondary);
+  --tm-text-placeholder:       var(--tm-text-tertiary);
+
   /* ── Component-specific ─────────────────────────────────────── */
   --tm-input-height-xs:  1.75rem;
   --tm-input-height-sm:  2rem;

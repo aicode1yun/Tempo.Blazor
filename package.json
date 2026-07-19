@@ -7,7 +7,7 @@
   "scripts": {
     "build:reporting": "node scripts/build-reporting.mjs",
     "test:reporting-modules": "node scripts/run-node-tests.mjs src/Tempo.Blazor.Reporting/wwwroot/js/reporting",
-    "test:document-editor": "node scripts/run-node-tests.mjs src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas",
+    "test:document-editor": "node scripts/run-node-tests.mjs src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor src/Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor-canvas scripts",
     "test:document-editor-modules": "npm run test:document-editor"
   },
   "devDependencies": {

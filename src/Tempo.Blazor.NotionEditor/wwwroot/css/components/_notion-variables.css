@@ -86,6 +86,19 @@
     --tm-notion-text-brown:          #784212;
     --tm-notion-text-default:        var(--tm-text-primary);
 
+    /* Aliases for the --tm-notion-color-* names used by list/todo/toggle blocks
+       (scripts/audit-css-tokens.mjs backfill — the blocks referenced these while
+       only the --tm-notion-text-* names were defined). */
+    --tm-notion-color-red:           var(--tm-notion-text-red);
+    --tm-notion-color-orange:        var(--tm-notion-text-orange);
+    --tm-notion-color-yellow:        var(--tm-notion-text-yellow);
+    --tm-notion-color-green:         var(--tm-notion-text-green);
+    --tm-notion-color-blue:          var(--tm-notion-text-blue);
+    --tm-notion-color-purple:        var(--tm-notion-text-purple);
+    --tm-notion-color-pink:          var(--tm-notion-text-pink);
+    --tm-notion-color-gray:          var(--tm-notion-text-gray);
+    --tm-notion-color-brown:         var(--tm-notion-text-brown);
+
     /* ── Borders ──────────────────────────────────────────────── */
     --tm-notion-border:              var(--tm-border-color);
     --tm-notion-border-quote:        var(--tm-color-gray-300);
