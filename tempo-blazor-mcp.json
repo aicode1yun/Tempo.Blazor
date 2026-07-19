@@ -702,6 +702,33 @@
       ]
     },
     {
+      "itemName": "DocumentEditorTemplateTools",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "MCP template/assembly tools: document_editor_insert_token (TokenRun at a plain-text offset incl. computed expressions, optional key validation against IDocumentTokenValueProvider), document_editor_wrap_conditional (IF/ELSEIF/ELSE content-control chains via DocumentAssemblyMetadata + branch/expression updates), document_editor_insert_repeating_section (row template bound to a collection token), document_template_describe (tokens, conditional chains, repeating sections overview) and document_assemble_render (template + tokenValues → PNG/PDF via TempoDocumentService with IF/ELSE evaluation, repeat expansion and computed expressions). Authoring compiles into convergence-tested insertBlock/updateBlock/deleteBlock operations.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorTemplateTools.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "BlockIds",
+          "kind": "Property",
+          "type": "List<string>"
+        },
+        {
+          "name": "Branch",
+          "kind": "Property",
+          "type": "string"
+        },
+        {
+          "name": "Expression",
+          "kind": "Property",
+          "type": "string?"
+        }
+      ]
+    },
+    {
       "itemName": "DocumentEditorValidationEngine",
       "kind": "Class",
       "category": "Document Editor",
@@ -1842,11 +1869,11 @@
     }
   ],
   "summary": {
-    "itemCount": 85,
-    "manualItemCount": 85,
-    "generatedItemCount": 85,
+    "itemCount": 86,
+    "manualItemCount": 86,
+    "generatedItemCount": 86,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 85
+    "publicApiTypeCount": 86
   }
 }

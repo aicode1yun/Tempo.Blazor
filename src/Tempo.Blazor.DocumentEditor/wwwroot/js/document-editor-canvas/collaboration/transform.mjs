@@ -254,6 +254,20 @@ function convertPersistenceBlock(block) {
         return converted;
     }
 
+    if (kind === 'contentControl') {
+        // Structured document tags (template authoring: conditional chains, repeating
+        // sections) — keep the control metadata and convert nested persistence blocks.
+        converted.type = 'contentControl';
+        converted.content = {
+            type: 'contentControl',
+            contentControl: {
+                control: content.control ?? content.Control ?? null,
+                blocks: asArray(content.blocks ?? content.Blocks).map(convertPersistenceBlock),
+            },
+        };
+        return converted;
+    }
+
     const headingLevel = kind === 'heading' ? Math.max(1, Number(content.level) || 1) : null;
     converted.type = headingLevel ? 'heading' : kind === 'quote' || kind === 'list' ? kind : 'paragraph';
     converted.content = {

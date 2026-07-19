@@ -324,6 +324,109 @@ public sealed class DocumentOperationConvergenceFixtureTests
             op.Target.Order = 0;
         }));
 
+        // Phase 2c — template authoring payloads (plan 3, Fáze 5): conditional chains and
+        // repeating sections as content-control persistence payloads (insertBlock + updateBlock).
+        Emit(NewOperation(DocumentOperationType.InsertBlock, op =>
+        {
+            op.Target.Order = 3.25;
+            op.Block = new DocumentBlock
+            {
+                Id = $"cc-if-{seed}",
+                Type = DocumentBlockType.ContentControl,
+                Content = new ContentControlBlockContent
+                {
+                    Control = DocumentAssemblyMetadata.CreateConditionalBlock("if", $"contract.amount > {seed}", $"chain-{seed}"),
+                    Blocks =
+                    [
+                        new DocumentBlock
+                        {
+                            Id = $"cc-if-{seed}-p",
+                            Type = DocumentBlockType.Paragraph,
+                            Content = new ParagraphBlockContent
+                            {
+                                Inlines = [new TextRun { Id = $"cc-if-{seed}-run", Text = $"Podmíněný obsah {seed}." }],
+                            },
+                        },
+                    ],
+                },
+            };
+        }));
+        Emit(NewOperation(DocumentOperationType.InsertBlock, op =>
+        {
+            op.Target.Order = 3.5;
+            op.Block = new DocumentBlock
+            {
+                Id = $"cc-else-{seed}",
+                Type = DocumentBlockType.ContentControl,
+                Content = new ContentControlBlockContent
+                {
+                    Control = DocumentAssemblyMetadata.CreateConditionalBlock("else", null, $"chain-{seed}"),
+                    Blocks =
+                    [
+                        new DocumentBlock
+                        {
+                            Id = $"cc-else-{seed}-p",
+                            Type = DocumentBlockType.Paragraph,
+                            Content = new ParagraphBlockContent
+                            {
+                                Inlines = [new TextRun { Id = $"cc-else-{seed}-run", Text = $"Jinak {seed}." }],
+                            },
+                        },
+                    ],
+                },
+            };
+        }));
+        Emit(NewOperation(DocumentOperationType.InsertBlock, op =>
+        {
+            op.Target.Order = 3.75;
+            op.Block = new DocumentBlock
+            {
+                Id = $"cc-repeat-{seed}",
+                Type = DocumentBlockType.ContentControl,
+                Content = new ContentControlBlockContent
+                {
+                    Control = DocumentAssemblyMetadata.CreateRepeatingSection("items"),
+                    Blocks =
+                    [
+                        new DocumentBlock
+                        {
+                            Id = $"cc-repeat-{seed}-p",
+                            Type = DocumentBlockType.Paragraph,
+                            Content = new ParagraphBlockContent
+                            {
+                                Inlines = [new TextRun { Id = $"cc-repeat-{seed}-run", Text = "Položka." }],
+                            },
+                        },
+                    ],
+                },
+            };
+        }));
+        Emit(NewOperation(DocumentOperationType.UpdateBlock, op =>
+        {
+            op.Target.BlockId = $"cc-if-{seed}";
+            op.Block = new DocumentBlock
+            {
+                Id = $"cc-if-{seed}",
+                Type = DocumentBlockType.ContentControl,
+                Content = new ContentControlBlockContent
+                {
+                    Control = DocumentAssemblyMetadata.CreateConditionalBlock("if", $"contract.amount >= {seed * 2}", $"chain-{seed}"),
+                    Blocks =
+                    [
+                        new DocumentBlock
+                        {
+                            Id = $"cc-if-{seed}-p",
+                            Type = DocumentBlockType.Paragraph,
+                            Content = new ParagraphBlockContent
+                            {
+                                Inlines = [new TextRun { Id = $"cc-if-{seed}-run2", Text = $"Aktualizovaná podmínka {seed}." }],
+                            },
+                        },
+                    ],
+                },
+            };
+        }));
+
         // Phase 3 — mark ranges last (they split runs; both appliers converge on content).
         for (var index = 0; index < 2; index++)
         {
@@ -377,19 +480,24 @@ public sealed class DocumentOperationConvergenceFixtureTests
         foreach (var block in document.Blocks)
         {
             entries.Add(SignatureEntry("body", block));
-            if (block.Content is not TableBlockContent table)
+            if (block.Content is TableBlockContent table)
             {
-                continue;
-            }
-
-            foreach (var row in table.Rows)
-            {
-                foreach (var cell in row.Cells)
+                foreach (var row in table.Rows)
                 {
-                    foreach (var nested in cell.Blocks)
+                    foreach (var cell in row.Cells)
                     {
-                        entries.Add(SignatureEntry($"cell:{cell.Id}", nested));
+                        foreach (var nested in cell.Blocks)
+                        {
+                            entries.Add(SignatureEntry($"cell:{cell.Id}", nested));
+                        }
                     }
+                }
+            }
+            else if (block.Content is ContentControlBlockContent control)
+            {
+                foreach (var nested in control.Blocks)
+                {
+                    entries.Add(SignatureEntry($"cc:{block.Id}", nested));
                 }
             }
         }
@@ -438,6 +546,30 @@ public sealed class DocumentOperationConvergenceFixtureTests
             }
         }
 
+        Dictionary<string, string>? assembly = null;
+        if (block.Content is ContentControlBlockContent controlContent)
+        {
+            assembly = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var key in new[]
+                     {
+                         DocumentAssemblyMetadata.BranchKey,
+                         DocumentAssemblyMetadata.ExpressionKey,
+                         DocumentAssemblyMetadata.GroupKey,
+                         DocumentAssemblyMetadata.BindKey,
+                     })
+            {
+                if (controlContent.Control.Metadata.TryGetValue(key, out var value) && !string.IsNullOrEmpty(value))
+                {
+                    assembly[key] = value!;
+                }
+            }
+
+            if (assembly.Count == 0)
+            {
+                assembly = null;
+            }
+        }
+
         return new
         {
             container,
@@ -449,11 +581,13 @@ public sealed class DocumentOperationConvergenceFixtureTests
                 ListBlockContent => "list",
                 QuoteBlockContent => "quote",
                 TableBlockContent => "table",
+                ContentControlBlockContent => "contentControl",
                 _ => "other",
             },
             headingLevel = block.Content is HeadingBlockContent heading2 ? heading2.Level : (int?)null,
             text,
             marks = markRanges.ToDictionary(pair => pair.Key, pair => pair.Value),
+            assembly,
         };
     }
 

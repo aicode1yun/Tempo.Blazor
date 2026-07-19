@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Document Editor",
+  "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+  "description": "MCP template/assembly tools: document_editor_insert_token (TokenRun at a plain-text offset incl. computed expressions, optional key validation against IDocumentTokenValueProvider), document_editor_wrap_conditional (IF/ELSEIF/ELSE content-control chains via DocumentAssemblyMetadata + branch/expression updates), document_editor_insert_repeating_section (row template bound to a collection token), document_template_describe (tokens, conditional chains, repeating sections overview) and document_assemble_render (template + tokenValues → PNG/PDF via TempoDocumentService with IF/ELSE evaluation, repeat expansion and computed expressions). Authoring compiles into convergence-tested insertBlock/updateBlock/deleteBlock operations.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorTemplateTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "DocumentEditorTemplateTools"
+}

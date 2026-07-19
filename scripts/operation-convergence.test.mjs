@@ -33,6 +33,10 @@ function computeSignature(model) {
                 }
             }
         }
+
+        for (const nested of block?.content?.contentControl?.blocks || []) {
+            blocks.push(signatureEntry(`cc:${block.id}`, nested));
+        }
     }
 
     return { blocks };
@@ -40,15 +44,17 @@ function computeSignature(model) {
 
 function signatureEntry(container, block) {
     const declaredType = String(block?.type || block?.content?.type || '');
-    const kind = block?.content?.headingLevel
-        ? 'heading'
-        : block?.content?.table
-            ? 'table'
-            : declaredType === 'list' || declaredType === 'quote'
-                ? declaredType
-                : Array.isArray(block?.content?.runs)
-                    ? 'paragraph'
-                    : 'other';
+    const kind = block?.content?.contentControl
+        ? 'contentControl'
+        : block?.content?.headingLevel
+            ? 'heading'
+            : block?.content?.table
+                ? 'table'
+                : declaredType === 'list' || declaredType === 'quote'
+                    ? declaredType
+                    : Array.isArray(block?.content?.runs)
+                        ? 'paragraph'
+                        : 'other';
 
     let text = '';
     const marks = {};
@@ -90,6 +96,20 @@ function signatureEntry(container, block) {
     // The C# fixture omits null values (WhenWritingNull) — mirror that exactly.
     if (kind === 'heading') {
         entry.headingLevel = Number(block.content.headingLevel);
+    }
+
+    if (kind === 'contentControl') {
+        const metadata = block?.content?.contentControl?.control?.metadata || {};
+        const assembly = {};
+        for (const key of ['tmAssembly:branch', 'tmAssembly:expression', 'tmAssembly:group', 'tmAssembly:bind']) {
+            if (metadata[key] != null && metadata[key] !== '') {
+                assembly[key] = String(metadata[key]);
+            }
+        }
+
+        if (Object.keys(assembly).length > 0) {
+            entry.assembly = assembly;
+        }
     }
 
     return entry;

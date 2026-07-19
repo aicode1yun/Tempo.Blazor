@@ -96,7 +96,8 @@ public static class TempoDocumentEditorMcp
         typeof(DocumentEditorSemanticTextTools),
         typeof(DocumentEditorBlockTools),
         typeof(DocumentEditorAuthoringTools),
-        typeof(DocumentEditorRenderTools)
+        typeof(DocumentEditorRenderTools),
+        typeof(DocumentEditorTemplateTools)
     ];
 
     /// <summary>
