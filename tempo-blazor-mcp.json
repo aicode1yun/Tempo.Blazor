@@ -633,6 +633,44 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DocumentEditorSemanticTextTools",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "Semantic MCP text/formatting tools (document_editor_insert_text/replace_text/delete_text/format_range/set_heading/set_paragraph_properties). Address blocks by blockId + optional tableCellId and text ranges as plain-text offset/length per docs/document-mcp-addressing.md; compile into canonical insertText/deleteText/addInlineMark/removeInlineMark/setBlockAttribute operations applied through DocumentOperationApplier + provider save — the same path as document_editor_apply_operations, preserving optimistic concurrency and collaboration convergence.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorSemanticTextTools.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Fail",
+          "kind": "Method",
+          "type": "Compilation",
+          "parameters": [
+            {
+              "name": "code",
+              "type": "string"
+            },
+            {
+              "name": "message",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "name": "Ok",
+          "kind": "Method",
+          "type": "Compilation",
+          "parameters": [
+            {
+              "name": "operations",
+              "type": "params DocumentOperation[]"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "itemName": "DocumentEditorValidationEngine",
       "kind": "Class",
       "category": "Document Editor",
@@ -1733,11 +1771,11 @@
     }
   ],
   "summary": {
-    "itemCount": 77,
-    "manualItemCount": 77,
-    "generatedItemCount": 77,
+    "itemCount": 78,
+    "manualItemCount": 78,
+    "generatedItemCount": 78,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 77
+    "publicApiTypeCount": 78
   }
 }

@@ -78,7 +78,17 @@ Semantic tools compile a plain-text range into low-level operation targets by wa
 inline list: skip non-text runs, subtract each text run's length from the offset until the
 target run is found — yielding the `(InlineIndex, Offset)` pair the operation envelope uses.
 A range spanning several text runs compiles into per-run operations (or a range mark
-operation, which splits runs at the boundaries itself).
+operation, which splits runs at the boundaries itself). The implementations live in
+`DocumentEditorSemanticTextTools` (`document_editor_insert_text` / `replace_text` /
+`delete_text` / `format_range` / `set_heading` / `set_paragraph_properties`). Two details of
+that compilation:
+
+- An insert offset that falls on a boundary between text runs binds to the EARLIEST run
+  (append at its end); when a non-text inline sits on that boundary, the text lands before it.
+- The applier's mark-range coordinates count token/note-reference display text
+  (`GetInlineText` space), so `format_range` converts plain-text boundaries into that space —
+  a range whose plain-text characters surround a token therefore marks the token as well,
+  while tokens sitting exactly on a range boundary stay unmarked.
 
 Blocks without inline text (`image`, `pageBreak`, `table`, `contentControl` wrappers) have
 plain text `""`. `code` blocks expose their verbatim `Code` string as plain text.
