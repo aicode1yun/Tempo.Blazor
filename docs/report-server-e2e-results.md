@@ -261,3 +261,89 @@ Marker `#render-mode-marker` (`data-mode` = Static|Server|WebAssembly, `data-int
 **už existoval** v `src/Tempo.ReportServer.Web.Client/Components/RenderModeMarker.razor` a je zapojen
 v `MainLayout`. PASS A: přidán `id="render-mode-marker"` a `data-interactive` znormalizován na
 lowercase (`true`/`false`) pro kontrakt skillu. bUnit guard: `RenderModeMarkerTests` (Web.Tests, 3/3).
+
+---
+
+# Fáze 13 (PASS B) — NIGHTLY full-stack C# E2E lane (Keycloak + smtp4dev)
+
+PASS A commitl CI DEMO dráhu (bez Keycloacku). **PASS B** přidává plnou dráhu proti **živému stacku**:
+reálný **Keycloak** (OIDC login + JWT bearer), **Api na SQL Serveru** s EF security store a zapnutým
+scheduling workerem, **Web s OIDC ON** a **smtp4dev** pro doručení scheduled reportů. Scénáře jsou
+převodem ad-hoc Fáze 5b/10/12 driverů (`f10/f12-*.mjs`) do commitnutého .NET Playwright suite.
+
+## Gating a spuštění
+
+Všechny testy nesou `[TestCategory("ReportServerFullStack")]` a jsou **gate-ované za `TM_RS_FULLSTACK`**
+(jako PASS A gate-uje na `TM_RS_E2E`). Bez flagu jsou **Inconclusive/Skipped** a **nespustí žádné
+Keycloak-závislé hosty** → normální `dotnet test` / **CI je nedotčené** (CI běží jen `ReportServerE2E`).
+
+```
+# Prerekvizity: běžící Keycloak service (realm tempo-reports, users admin1/author1/viewer1 / Pass123!),
+# dosažitelný SQL Server (localhost\SQLEXPRESS). smtp4dev dráha spustí sama (nebo reuse, pokud běží).
+set TM_RS_FULLSTACK=1
+set TM_E2E_SELF_HOST=false          # přeskočí nesouvisející demo hosty
+set TM_E2E_TRACE_ON_FAILURE=false   # při málu místa na disku
+set NUGET_PACKAGES=Z:\nuget-rs      # rozbitá výchozí NuGet cache
+dotnet test tests/Tempo.Blazor.E2E --filter TestCategory=ReportServerFullStack
+```
+
+Volitelné env: `TM_RS_KC_WEB_SECRET` (jinak se secret klienta `tempo-report-web` **stáhne za běhu**
+z Keycloak admin REST — necommitnuto), `TM_RS_KC_ADMIN_USER`/`_PASS` (default admin/admin),
+`TM_SMTP4DEV_DIR` (default `C:\work\smtp4dev-master\Rnwood.Smtp4dev`). Nightly wrapper:
+`scripts/run-report-server-e2e.ps1 -FullStack`.
+
+## Jak dráha běží (hosty startuje `ReportServerFullStackE2ETestBase`)
+
+| Složka | Endpoint | Konfigurace (přes env při `dotnet run`) |
+| --- | --- | --- |
+| Keycloak | `http://localhost:8080` realm `tempo-reports` | **musí běžet** (jinak jasná chyba); secret klienta stažen za běhu |
+| smtp4dev | SMTP `:2525`, REST/web `:5050` | spuštěn s WorkingDirectory = projektový dir (jinak „Unable to find wwwroot") |
+| Api | `https://localhost:7011` | `Database__Provider=SqlServer` (DB `TempoReportServerFullStackE2E`), `Security__Persistence=Ef`, `Authentication__Jwt__Authority=<KC realm>`, `Authentication__Dev__Enabled=false`, `Scheduling__Enabled=true`, `Scheduling__PollInterval=00:00:05`, `Scheduling__Smtp__Host=localhost` `Port=2525` |
+| Web | `https://localhost:7150` | OIDC **ON** (`Authentication__Oidc__Authority=<KC realm>`, `ClientId=tempo-report-web`, `ClientSecret=<za běhu>`, `RequireHttpsMetadata=false`), `Api__BaseUrl=https://localhost:7011` |
+
+Web běží na **7150**, protože to je jediná redirect URI registrovaná na KC klientu `tempo-report-web`
+(login redirect jinam selže). Api je na **7011** (odlišné od PASS A `7001`), HTTPS, aby browser/WASM leg
+uměl volat Api přes TLS bez mixed-contentu. HTTP-level scénáře získávají **reálný admin/author/viewer
+bearer** přes direct-grant (`aud=tempo-report-api`). Hosty se killnou na ProcessExit; Keycloak service
+zůstává. `[DoNotParallelize]`.
+
+## Scénáře — výsledky živého běhu (9/9 PASS)
+
+`TM_RS_FULLSTACK=1 dotnet test --filter TestCategory=ReportServerFullStack` — **Passed: 9, Failed: 0**
+(2 m 42 s, jeden proces, hosty nastartované jednou). Efektivní data-tenant Keycloak uživatelů je
+`default` (bez `tenant_id` claimu).
+
+| Třída / test | Leg | Výsledek | Důkaz |
+| --- | --- | --- | --- |
+| `ReportServerApiKeyE2ETests` — `ApiKey_Render_Audits_ThenRevoke_Yields401` | HTTP | **PASS** | admin vytvoří klíč (`tmr_…`), render přes `X-Api-Key` **200**, `/api/audit` má `RenderReport` řádek (actor `api:{app}`, Allowed), revoke **204**, `/api/apikeys` má `RevokedAt`+`IsActive=false`, render revokovaným klíčem **401** |
+| `ReportServerSchedulingE2ETests` — `Schedule_FiresSoon_DeliversEmailWithPdf_AndRecordsDeliveredRun` | HTTP + worker | **PASS** | cron `* * * * *`, worker (5s poll) doručí; **reálný e-mail v smtp4dev** (subject = report name), MIME příloha `application/pdf` (1 355 B), `/api/schedules/{id}/runs` má `Status=Delivered` |
+| `ReportServerAuthRoleE2ETests` — `Author1_SeesAuthorNav_NotAdminNav` | server | **PASS** | nav reports/favorites/history/**designer/schedules/revisions** viditelné, **datasources/permissions/apikeys ABSENT**; žádný `eyJ` ve web storage |
+| `ReportServerAuthRoleE2ETests` — `Viewer1_SeesOnlyViewerNav` | server | **PASS** | **jen** reports/favorites/history; vše ostatní ABSENT; žádný `eyJ` ve storage |
+| `ReportServerAuthRoleE2ETests` — `BearerLeg_ApiRequiresToken_AndBrowserHoldsNoToken` | server | **PASS** | anonymní `/api/folders` **401**; `/auth/token` (BFF) vydá JWT, který chráněné Api přijme **200**; ve storage žádný token |
+| `ReportServerAuthRoleE2ETests` — `Logout_ClearsSession_AndProtectedPagesRequireLogin` | server | **PASS** | před loginem `/auth/token` vydá JWT; po `/account/logout` už **nevydá** (BFF session zrušena); fresh cookies → protected page → **Keycloak login** |
+| `ReportServerHandoffE2ETests` — `ServerToWasm_Handoff_StaysAuthenticated_AndBearerSurvives` | server→wasm | **PASS** | `data-mode` Server → **WebAssembly**; **bez KC re-loginu** (`#username` absent); `/auth/token` na WASM legu stále vydá **author1** JWT (`preferred_username`), chráněné Api **200** + seedovaná folder — **bearer leg přežil handoff** (reálné WASM catalog pokrytí odložené z PASS A) |
+| `ReportServerPrerenderE2ETests` — `Reports_PrerenderedHtml_ContainsRealPortalContent` | server | **PASS** | autentizovaný **raw HTML** `/reports` (200, ne login-redirect) obsahuje `report-server-shell` + `nav-reports` + `author1` — reálný SSR obsah, ne prázdný shell |
+| `ReportServerPrerenderE2ETests` — `Reports_ServerCircuit_EmitsNoBrowserSideCatalogFetch` | server | **PASS** | na interaktivním Server circuitu **0** browser-side katalogových requestů (`/api/folders|reports|catalog`) — potvrzuje, že katalog běží server-to-server přes circuit; **není to** sám o sobě důkaz reuse prerendered stavu (reálný double-fetch by šel pozorovat jen na WASM legu, který má doloženou auth-rehydratační mezeru) |
+
+## Reálný nález odhalený živým handoffem (ne selhání testu)
+
+**WASM klient nerehydratuje in-browser auth-state → SPA po handoffu routuje na vlastní `/login`.** BFF
+**session (cookie) handoff přežije** — doloženo tím, že `/auth/token` na WASM legu **stále vydá platný
+author1 bearer** a chráněné Api ho **přijme (200)** — ale WASM klient nerozezná přihlášení a naviguje na
+portálový login (žádný KC re-login; server-side bearer leg je nedotčen). Navazuje na Fáze 5b nález #4/#5
+(browser-bearer/handoff). Handoff test proto asertuje **load-bearing fakta** (Server→WASM, žádný KC
+re-login, přežití bearer legu přes reálné autorizované Api volání), nikoli WASM UI nav.
+
+## DB asserty
+
+Proti **reálné SqlServer DB** (`TempoReportServerFullStackE2E`) přes **admin-autentizované Api endpointy**,
+které čtou tytéž EF tabulky, do nichž render/scheduling zapisují: `RenderReport` audit řádek
+(`/api/audit`), `RevokedAt` (`/api/apikeys`), `ScheduleRuns Status=Delivered` (`/api/schedules/{id}/runs`).
+Bez závislosti na SqlServer EF provideru v testovém projektu.
+
+## Deliverables PASS B
+
+Přidáno aditivně (nic z PASS A / CI DEMO dráhy se nezměnilo): `ReportServerFullStackE2ETestBase` +
+5 tříd (`ReportServerApiKeyE2ETests`, `ReportServerSchedulingE2ETests`, `ReportServerAuthRoleE2ETests`,
+`ReportServerHandoffE2ETests`, `ReportServerPrerenderE2ETests`), nightly wrapper
+`scripts/run-report-server-e2e.ps1`. Žádné secrets v repu (secret klienta stažen za běhu).
