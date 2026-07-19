@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;
 using Tempo.Blazor.Components.DocumentEditor;
 using Tempo.Blazor.Components.Inputs;
@@ -3613,6 +3614,89 @@ public class TmDocumentEditorTests : LocalizationTestBase
                 && invocation.Arguments.Count > 0
                 && Equals(invocation.Arguments[0], false),
                 "exiting fullscreen must invoke the browser global with false"));
+    }
+
+    [Fact]
+    public async Task CanvasCommand_UnhandledByEngine_ReturnsFalseAndLogsWarningOncePerCommand()
+    {
+        // Systemic regression guard: RouteToCanvasEngineAsync used to return true whenever the canvas
+        // engine was mounted without reading result.Handled, so an unknown command id looked like a
+        // success, optimistic local state was applied, and nothing warned about the dead command.
+        var logSink = new CapturingLoggerProvider();
+        Services.AddSingleton<Microsoft.Extensions.Logging.ILoggerFactory>(
+            new Microsoft.Extensions.Logging.LoggerFactory([logSink]));
+
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderDocumentEditor(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+        await MarkCanvasReadyAsync(cut);
+
+        SetDocumentCanvasExecCommandResult("""{"handled":false}""");
+
+        // Unhandled command: the optimistic paragraph-alignment state must NOT be applied.
+        await cut.Find("[data-testid='document-align-right']").ClickAsync(new MouseEventArgs());
+        cut.Find("[data-testid='document-align-right']").GetAttribute("aria-pressed").Should().Be("false",
+            "an engine-unhandled command must not flip the optimistic toolbar state");
+
+        // The warning is logged once per command id per session, not per invocation.
+        await cut.Find("[data-testid='document-align-right']").ClickAsync(new MouseEventArgs());
+        logSink.Warnings.Count(message => message.Contains("align", StringComparison.OrdinalIgnoreCase))
+            .Should().Be(1, "repeated unhandled invocations of one command must warn only once");
+
+        // A different unhandled command id gets its own single warning.
+        await cut.Find("[data-testid='document-bold']").ClickAsync(new MouseEventArgs());
+        logSink.Warnings.Count(message => message.Contains("bold", StringComparison.OrdinalIgnoreCase))
+            .Should().Be(1);
+
+        // Control: a handled command applies the optimistic state and warns nothing.
+        SetDocumentCanvasExecCommandResult("""{"handled":true}""");
+        await cut.Find("[data-testid='document-align-right']").ClickAsync(new MouseEventArgs());
+        cut.WaitForAssertion(() =>
+            cut.Find("[data-testid='document-align-right']").GetAttribute("aria-pressed").Should().Be("true"));
+        logSink.Warnings.Count(message => message.Contains("align", StringComparison.OrdinalIgnoreCase))
+            .Should().Be(1, "handled commands must not add warnings");
+    }
+
+    private sealed class CapturingLoggerProvider : Microsoft.Extensions.Logging.ILoggerProvider
+    {
+        private readonly List<string> _warnings = [];
+
+        public IReadOnlyList<string> Warnings
+        {
+            get { lock (_warnings) { return _warnings.ToArray(); } }
+        }
+
+        public Microsoft.Extensions.Logging.ILogger CreateLogger(string categoryName) => new CapturingLogger(this);
+
+        public void Dispose()
+        {
+        }
+
+        private sealed class CapturingLogger(CapturingLoggerProvider owner) : Microsoft.Extensions.Logging.ILogger
+        {
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+            public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => true;
+
+            public void Log<TState>(
+                Microsoft.Extensions.Logging.LogLevel logLevel,
+                Microsoft.Extensions.Logging.EventId eventId,
+                TState state,
+                Exception? exception,
+                Func<TState, Exception?, string> formatter)
+            {
+                if (logLevel == Microsoft.Extensions.Logging.LogLevel.Warning)
+                {
+                    lock (owner._warnings)
+                    {
+                        owner._warnings.Add(formatter(state, exception));
+                    }
+                }
+            }
+        }
     }
 
     [Fact]

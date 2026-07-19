@@ -233,6 +233,18 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
     /// <summary>JavaScript runtime used by provider-backed download bridges.</summary>
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
+    /// <summary>Service provider used to resolve optional infrastructure (logging) without hard DI requirements.</summary>
+    [Inject] private IServiceProvider ServiceProvider { get; set; } = default!;
+
+    private Microsoft.Extensions.Logging.ILogger? _logger;
+
+    // Optional resolution keeps 2.0.x consumers without logging registered compiling and working unchanged.
+    private Microsoft.Extensions.Logging.ILogger Logger
+        => _logger ??= (ServiceProvider.GetService(typeof(Microsoft.Extensions.Logging.ILoggerFactory))
+                as Microsoft.Extensions.Logging.ILoggerFactory
+            ?? Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance)
+            .CreateLogger(typeof(TmDocumentEditor).FullName!);
+
     private DocumentEditorDocument? _document;
     private DocumentProofingOptions? _providerProofingOptions;
     private CancellationTokenSource? _proofingCts;
@@ -7208,6 +7220,23 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
         await ApplyCanvasUiStateFastAsync(result.UiState);
         _routeApplyMs = sw.Elapsed.TotalMilliseconds;
         sw.Restart();
+        if (!result.Handled)
+        {
+            // An unregistered command id must not masquerade as success: callers gate their optimistic
+            // state updates (and legacy fallbacks) on this result. Warn once per command id per component
+            // lifetime so a wired-but-missing engine command is visible without spamming per keystroke.
+            if (_warnedUnhandledCanvasCommands.Add(command))
+            {
+                Microsoft.Extensions.Logging.LoggerExtensions.LogWarning(
+                    Logger,
+                    "Canvas engine did not handle command '{CommandId}'. The command id is not registered in the canvas command runtime; the invoking UI is a no-op.",
+                    command);
+            }
+
+            _routeFocusMs = 0;
+            return false;
+        }
+
         if (focus)
         {
             await _canvasHost.FocusAsync();
@@ -7216,6 +7245,8 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
         _routeFocusMs = sw.Elapsed.TotalMilliseconds;
         return true;
     }
+
+    private readonly HashSet<string> _warnedUnhandledCanvasCommands = new(StringComparer.OrdinalIgnoreCase);
 
     private async Task HandleCanvasMiniToolbarChangedAsync(WysiwygMiniToolbarRequest? request)
     {
