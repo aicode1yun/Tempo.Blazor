@@ -186,6 +186,7 @@
   --tm-surface:                var(--tm-bg-surface);
   --tm-surface-secondary:      var(--tm-bg-surface-secondary);
   --tm-color-surface:          var(--tm-bg-surface);
+  --tm-color-surface-secondary: var(--tm-bg-surface-secondary);
   --tm-color-surface-elevated: var(--tm-color-white);
   --tm-color-surface-hover:    var(--tm-color-gray-100);
   --tm-color-border:           var(--tm-border-color);

@@ -7,6 +7,7 @@
 // foreign members.
 
 const GUARD_HANDLER = Symbol.for('tmDocumentEditor.beforeUnloadHandler');
+const FULLSCREEN_CLASS = 'tm-document-editor--fullscreen';
 
 export function installDocumentEditorBrowserGlobals(win = globalThis.window ?? globalThis) {
   const target = win.tmDocumentEditor ?? (win.tmDocumentEditor = {});
@@ -100,6 +101,24 @@ export function installDocumentEditorBrowserGlobals(win = globalThis.window ?? g
         .filter(item => item && item.state !== 2)
         .filter(item => !documentId || item.documentId === documentId)
         .sort((left, right) => String(right.updatedAt || '').localeCompare(String(left.updatedAt || '')))));
+    }
+  };
+
+  // The fullscreen CSS (body.tm-document-editor--fullscreen .tm-document-editor) keys off a BODY
+  // class because the editor elevates itself with position:fixed above the host layout; the body
+  // overflow lock stops the page behind it from scrolling.
+  target.setFullscreen = function setFullscreen(fullscreen) {
+    const body = win.document?.body;
+    if (!body) {
+      return;
+    }
+
+    if (fullscreen) {
+      body.classList.add(FULLSCREEN_CLASS);
+      body.style.overflow = 'hidden';
+    } else {
+      body.classList.remove(FULLSCREEN_CLASS);
+      body.style.overflow = '';
     }
   };
 

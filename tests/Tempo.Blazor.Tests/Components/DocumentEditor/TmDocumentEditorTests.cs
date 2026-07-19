@@ -3581,6 +3581,41 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
+    public void FullscreenToggle_InvokesBrowserGlobalSetFullscreen()
+    {
+        // Regression: fullscreen was routed to a canvas-engine command ("setFullscreen") that the engine
+        // never implemented, so the toggle flipped C# state without any visual effect. The component must
+        // apply the body class through the window.tmDocumentEditor browser global instead.
+        JSInterop.SetupVoid("tmDocumentEditor.setFullscreen", _ => true).SetVoidResult();
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderDocumentEditor(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-ribbon-tab-view']").Should().NotBeNull());
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+        cut.Find("[data-testid='document-fullscreen']").Click();
+
+        cut.WaitForAssertion(() =>
+            JSInterop.Invocations.Should().Contain(invocation =>
+                invocation.Identifier == "tmDocumentEditor.setFullscreen"
+                && invocation.Arguments.Count > 0
+                && Equals(invocation.Arguments[0], true),
+                "entering fullscreen must invoke the browser global with true"));
+
+        cut.Find("[data-testid='document-fullscreen']").Click();
+
+        cut.WaitForAssertion(() =>
+            JSInterop.Invocations.Should().Contain(invocation =>
+                invocation.Identifier == "tmDocumentEditor.setFullscreen"
+                && invocation.Arguments.Count > 0
+                && Equals(invocation.Arguments[0], false),
+                "exiting fullscreen must invoke the browser global with false"));
+    }
+
+    [Fact]
     public void ViewTab_FullscreenButton_IsPresent()
     {
         var cut = Render<TmDocumentEditorToolbar>();

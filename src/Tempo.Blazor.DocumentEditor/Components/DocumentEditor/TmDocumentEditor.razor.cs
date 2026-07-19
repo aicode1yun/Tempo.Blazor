@@ -4945,8 +4945,24 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
     private async Task ToggleFullscreenAsync()
     {
         _isFullscreen = !_isFullscreen;
-        await RouteToCanvasEngineAsync("setFullscreen", _isFullscreen);
+        await ApplyFullscreenAsync(_isFullscreen);
         await RefreshCommandRegistryAsync();
+    }
+
+    // Fullscreen is a DOM concern (body class + scroll lock), not a canvas-engine command: the engine
+    // only repaints via its ResizeObserver once the CSS elevates the editor to position:fixed.
+    private async Task ApplyFullscreenAsync(bool fullscreen)
+    {
+        try
+        {
+            await EnsureBrowserGlobalsAsync();
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditor.setFullscreen", fullscreen);
+        }
+        catch
+        {
+            // JS interop may fail during prerender or dispose — the reset lets the next toggle retry the import.
+            _browserGlobalsModule = null;
+        }
     }
 
     private async Task NavigateToBlockAsync(string blockId)
@@ -11597,6 +11613,7 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
         }
 
         _ = DisableBeforeUnloadGuardAsync();
+        _ = ExitFullscreenOnDisposeAsync();
         if (collaborationSync is not null)
         {
             _ = collaborationSync.LeaveAsync();
@@ -11612,6 +11629,7 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
         }
 
         await DisableBeforeUnloadGuardAsync();
+        await ExitFullscreenOnDisposeAsync();
         if (collaborationSync is not null)
         {
             await collaborationSync.LeaveAsync();
@@ -11651,6 +11669,30 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
         collaborationSync = _collaborationSync;
         _collaborationSync = null;
         return true;
+    }
+
+    private async Task ExitFullscreenOnDisposeAsync()
+    {
+        if (!_isFullscreen)
+        {
+            return;
+        }
+
+        try
+        {
+            if (_browserGlobalsModule is not null)
+            {
+                // Fullscreen can only be active when the interop module was imported; without it the
+                // body class was never applied, so there is nothing to clean up.
+                await _browserGlobalsModule;
+            }
+
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditor.setFullscreen", false);
+        }
+        catch
+        {
+            // JS interop may already be unavailable during disposal.
+        }
     }
 
     private async Task DisableBeforeUnloadGuardAsync()

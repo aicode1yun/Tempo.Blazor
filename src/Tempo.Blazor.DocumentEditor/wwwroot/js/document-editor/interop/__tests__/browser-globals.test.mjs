@@ -38,7 +38,14 @@ function createFakeWindow() {
       },
       body: {
         appendChild() {},
-        removeChild() {}
+        removeChild() {},
+        classList: {
+          entries: new Set(),
+          add(name) { this.entries.add(name); },
+          remove(name) { this.entries.delete(name); },
+          contains(name) { return this.entries.has(name); }
+        },
+        style: { overflow: '' }
       }
     },
     scheduledDelays: [],
@@ -52,9 +59,31 @@ test('install creates window.tmDocumentEditor with the interop surface', () => {
   installDocumentEditorBrowserGlobals(win);
 
   assert.ok(win.tmDocumentEditor, 'global must be created');
-  for (const fn of ['enableBeforeUnloadGuard', 'disableBeforeUnloadGuard', 'getBeforeUnloadGuardState', 'downloadFile']) {
+  for (const fn of ['enableBeforeUnloadGuard', 'disableBeforeUnloadGuard', 'getBeforeUnloadGuardState', 'downloadFile', 'setFullscreen']) {
     assert.equal(typeof win.tmDocumentEditor[fn], 'function', `${fn} must be a function`);
   }
+});
+
+test('setFullscreen toggles the body class and scroll lock', () => {
+  const { win } = createFakeWindow();
+  installDocumentEditorBrowserGlobals(win);
+  const body = win.document.body;
+
+  win.tmDocumentEditor.setFullscreen(true);
+  assert.equal(body.classList.contains('tm-document-editor--fullscreen'), true, 'entering fullscreen must add the body class the CSS keys off');
+  assert.equal(body.style.overflow, 'hidden', 'entering fullscreen must lock body scrolling');
+
+  // Idempotent: re-entering keeps a single class and the lock.
+  win.tmDocumentEditor.setFullscreen(true);
+  assert.equal(body.classList.contains('tm-document-editor--fullscreen'), true);
+
+  win.tmDocumentEditor.setFullscreen(false);
+  assert.equal(body.classList.contains('tm-document-editor--fullscreen'), false, 'exiting fullscreen must remove the body class');
+  assert.equal(body.style.overflow, '', 'exiting fullscreen must restore body scrolling');
+
+  // Exiting when not fullscreen is a no-op.
+  win.tmDocumentEditor.setFullscreen(false);
+  assert.equal(body.classList.contains('tm-document-editor--fullscreen'), false);
 });
 
 test('before-unload guard toggles state and window listeners', () => {
