@@ -411,3 +411,76 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719063908_ReportFavoritesAndRenderRuns'
+)
+BEGIN
+    CREATE TABLE [Favorites] (
+        [Id] bigint NOT NULL IDENTITY,
+        [TenantId] nvarchar(128) NOT NULL,
+        [UserId] nvarchar(256) NOT NULL,
+        [ReportId] nvarchar(128) NOT NULL,
+        [CreatedAt] datetimeoffset NOT NULL,
+        CONSTRAINT [PK_Favorites] PRIMARY KEY ([Id])
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719063908_ReportFavoritesAndRenderRuns'
+)
+BEGIN
+    CREATE TABLE [RenderRuns] (
+        [Id] bigint NOT NULL IDENTITY,
+        [TenantId] nvarchar(128) NOT NULL,
+        [ActorId] nvarchar(256) NOT NULL,
+        [ReportId] nvarchar(128) NOT NULL,
+        [ParametersJson] nvarchar(max) NOT NULL,
+        [Format] nvarchar(16) NOT NULL,
+        [Outcome] nvarchar(32) NOT NULL,
+        [PageCount] int NULL,
+        [ByteSize] bigint NULL,
+        [DurationMs] int NULL,
+        [CreatedAt] datetimeoffset NOT NULL,
+        CONSTRAINT [PK_RenderRuns] PRIMARY KEY ([Id])
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719063908_ReportFavoritesAndRenderRuns'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_Favorites_TenantId_UserId_ReportId] ON [Favorites] ([TenantId], [UserId], [ReportId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719063908_ReportFavoritesAndRenderRuns'
+)
+BEGIN
+    CREATE INDEX [IX_RenderRuns_TenantId_ActorId_CreatedAt] ON [RenderRuns] ([TenantId], [ActorId], [CreatedAt] DESC);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719063908_ReportFavoritesAndRenderRuns'
+)
+BEGIN
+    CREATE INDEX [IX_RenderRuns_TenantId_ReportId] ON [RenderRuns] ([TenantId], [ReportId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719063908_ReportFavoritesAndRenderRuns'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260719063908_ReportFavoritesAndRenderRuns', N'10.0.9');
+END;
+
+COMMIT;
+GO
+

@@ -52,6 +52,12 @@ public sealed class ReportServerDbContext : DbContext
     /// <summary>Scheduled report run history table.</summary>
     public DbSet<ReportScheduleRunEntity> ScheduleRuns => Set<ReportScheduleRunEntity>();
 
+    /// <summary>Per-user report favorite table.</summary>
+    public DbSet<ReportFavoriteEntity> Favorites => Set<ReportFavoriteEntity>();
+
+    /// <summary>Ad-hoc render run history table.</summary>
+    public DbSet<RenderRunEntity> RenderRuns => Set<RenderRunEntity>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -208,6 +214,31 @@ public sealed class ReportServerDbContext : DbContext
             entity.Property(run => run.ArtifactContentType).HasMaxLength(128);
             entity.Property(run => run.ErrorMessage).HasMaxLength(1024);
             entity.HasIndex(run => new { run.TenantId, run.ScheduleId, run.OccurrenceUtc });
+        });
+
+        // Favorites and render runs are not tenant-query-filtered: they are read through the
+        // tenant-scoped store methods that constrain by TenantId and the owning user explicitly.
+        modelBuilder.Entity<ReportFavoriteEntity>(entity =>
+        {
+            entity.HasKey(favorite => favorite.Id);
+            entity.Property(favorite => favorite.Id).ValueGeneratedOnAdd();
+            entity.Property(favorite => favorite.TenantId).HasMaxLength(TenantIdMaxLength);
+            entity.Property(favorite => favorite.UserId).HasMaxLength(ActorIdMaxLength);
+            entity.Property(favorite => favorite.ReportId).HasMaxLength(IdMaxLength);
+            entity.HasIndex(favorite => new { favorite.TenantId, favorite.UserId, favorite.ReportId }).IsUnique();
+        });
+
+        modelBuilder.Entity<RenderRunEntity>(entity =>
+        {
+            entity.HasKey(run => run.Id);
+            entity.Property(run => run.Id).ValueGeneratedOnAdd();
+            entity.Property(run => run.TenantId).HasMaxLength(TenantIdMaxLength);
+            entity.Property(run => run.ActorId).HasMaxLength(ActorIdMaxLength);
+            entity.Property(run => run.ReportId).HasMaxLength(IdMaxLength);
+            entity.Property(run => run.Format).HasMaxLength(16);
+            entity.Property(run => run.Outcome).HasMaxLength(32);
+            entity.HasIndex(run => new { run.TenantId, run.ActorId, run.CreatedAt }).IsDescending(false, false, true);
+            entity.HasIndex(run => new { run.TenantId, run.ReportId });
         });
     }
 }

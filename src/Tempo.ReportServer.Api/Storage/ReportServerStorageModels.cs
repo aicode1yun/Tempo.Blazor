@@ -60,6 +60,74 @@ public interface IReportServerStore
     Task<bool> DeleteDataSourceAsync(string tenantId, string dataSourceId, CancellationToken cancellationToken = default);
 }
 
+/// <summary>
+/// Per-user report favorite. Owned by a tenant and scoped to a single user (the OIDC subject / actor
+/// id). Not covered by the ambient tenant query filter: favorites are read through the tenant-scoped
+/// store methods which constrain by <see cref="TenantId"/> and <see cref="UserId"/> explicitly.
+/// </summary>
+public sealed class ReportFavoriteEntity
+{
+    /// <summary>Surrogate identifier.</summary>
+    public long Id { get; set; }
+
+    /// <summary>Tenant identifier.</summary>
+    public string TenantId { get; set; } = string.Empty;
+
+    /// <summary>User identifier (the OIDC subject / actor id) that owns the favorite.</summary>
+    public string UserId { get; set; } = string.Empty;
+
+    /// <summary>Favorited report identifier.</summary>
+    public string ReportId { get; set; } = string.Empty;
+
+    /// <summary>When the favorite was created.</summary>
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+/// <summary>
+/// Immutable record of a single ad-hoc (synchronous) report render run. Persisted for both success and
+/// failure so the portal can show a per-user render history that is richer than the audit trail. Not
+/// covered by the ambient tenant query filter: runs are read through the tenant-scoped store methods
+/// which constrain by <see cref="TenantId"/> and <see cref="ActorId"/> explicitly.
+/// </summary>
+public sealed class RenderRunEntity
+{
+    /// <summary>Surrogate identifier.</summary>
+    public long Id { get; set; }
+
+    /// <summary>Tenant identifier.</summary>
+    public string TenantId { get; set; } = string.Empty;
+
+    /// <summary>Actor that requested the render (the OIDC subject / actor id).</summary>
+    public string ActorId { get; set; } = string.Empty;
+
+    /// <summary>Rendered report identifier.</summary>
+    public string ReportId { get; set; } = string.Empty;
+
+    /// <summary>Serialized render parameter values.</summary>
+    public string ParametersJson { get; set; } = "{}";
+
+    /// <summary>Requested output format token (Snapshot, Pdf, Csv, Xlsx, Png).</summary>
+    public string Format { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Outcome token mapped from the render execution
+    /// (Succeeded/PageQuotaExceeded/OutputTooLarge/TimedOut/Overloaded/Failed).
+    /// </summary>
+    public string Outcome { get; set; } = string.Empty;
+
+    /// <summary>Number of rendered pages, when the render produced output.</summary>
+    public int? PageCount { get; set; }
+
+    /// <summary>Rendered payload size in bytes, when the render produced output.</summary>
+    public long? ByteSize { get; set; }
+
+    /// <summary>Wall-clock render duration in milliseconds.</summary>
+    public int? DurationMs { get; set; }
+
+    /// <summary>When the run was recorded.</summary>
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
 /// <summary>Report server quota, concurrency, and timeout limits, bound from the <c>Rendering</c> section.</summary>
 public sealed record ReportServerQuotaOptions
 {

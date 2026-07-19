@@ -1,4 +1,6 @@
 using System.Reflection;
+using System.Text.Json;
+using FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -12,12 +14,15 @@ using Tempo.ReportServer.Api.Storage;
 using Tempo.Reporting.Abstractions;
 using Tempo.Reporting.Abstractions.Data;
 using Tempo.Reporting.Abstractions.Dtos;
+using Tempo.Reporting.Abstractions.Validation;
 
 namespace Tempo.ReportServer.Api;
 
 /// <summary>Service and endpoint extensions for Tempo Report Server API.</summary>
 public static class ReportServerApiExtensions
 {
+    private static readonly JsonSerializerOptions RenderRunJsonOptions = new(JsonSerializerDefaults.Web);
+
     /// <summary>Adds the report server API using a SQLite development store by default.</summary>
     public static IServiceCollection AddTempoReportServerApi(
         this IServiceCollection services,
@@ -39,6 +44,8 @@ public static class ReportServerApiExtensions
         // AddTempoReportServerScheduling so lightweight hosts and contract tests do not start a poller.
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddScoped<Scheduling.IReportScheduleStore, Storage.EfReportScheduleStore>();
+        services.TryAddScoped<IReportFavoriteStore, EfReportFavoriteStore>();
+        services.TryAddScoped<IReportRenderRunStore, EfReportRenderRunStore>();
         services.Configure<ReportServerQuotaOptions>(_ => { });
         services.AddOptions<ReportServerApiOptions>();
         services.AddReportServerSecurity();
@@ -103,6 +110,8 @@ public static class ReportServerApiExtensions
         MapAudit(group);
         MapPermissions(group);
         MapResolve(group);
+        MapFavorites(group);
+        MapRenderRuns(group);
         return group;
     }
 
@@ -555,6 +564,8 @@ public static class ReportServerApiExtensions
             IReportServerStore store,
             IReportServerRenderer renderer,
             IReportRenderExecutor executor,
+            IReportRenderRunStore renderRunStore,
+            TimeProvider timeProvider,
             ReportServerRequestContext context,
             CancellationToken cancellationToken) =>
         {
@@ -569,9 +580,11 @@ public static class ReportServerApiExtensions
                 return failure;
             }
 
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             var execution = await executor
                 .ExecuteAsync(renderer, report!, request, context.ExecutionContext, cancellationToken)
                 .ConfigureAwait(false);
+            stopwatch.Stop();
             if (execution.Outcome == ReportRenderOutcome.Succeeded)
             {
                 await WriteAllowedAuditAsync(
@@ -579,6 +592,13 @@ public static class ReportServerApiExtensions
                     ReportAuditAction.RenderReport, ReportResourceKind.Render, request.ReportId,
                     cancellationToken).ConfigureAwait(false);
             }
+
+            // Persist the richer, portal-facing render-run history record for BOTH success and failure.
+            // This is in addition to the audit event above; a recording failure must never break the
+            // render response, so it is wrapped defensively.
+            await RecordRenderRunAsync(
+                renderRunStore, principal, request, execution, (int)stopwatch.ElapsedMilliseconds, timeProvider, context, cancellationToken)
+                .ConfigureAwait(false);
 
             return execution.Outcome switch
             {
@@ -1158,6 +1178,212 @@ public static class ReportServerApiExtensions
             });
         });
     }
+
+    private static void MapFavorites(RouteGroupBuilder group)
+    {
+        group.MapGet("/favorites", async (
+            string tenantId,
+            HttpContext http,
+            IReportHttpSecurityContextFactory contextFactory,
+            IReportFavoriteStore favoriteStore,
+            IReportServerStore store,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            var (principal, failure) = await AuthenticateInTenantAsync(http, contextFactory, tenantId, cancellationToken)
+                .ConfigureAwait(false);
+            if (failure is not null || principal is null)
+            {
+                return failure!;
+            }
+
+            SetTenant(context, tenantId);
+            var favorites = await favoriteStore.ListAsync(tenantId, principal.ActorId, cancellationToken).ConfigureAwait(false);
+
+            // Best-effort catalog enrichment: skip a favorite whose report no longer resolves.
+            var results = new List<ReportFavoriteDto>(favorites.Count);
+            foreach (var favorite in favorites)
+            {
+                var report = await store.GetReportAsync(tenantId, favorite.ReportId, cancellationToken).ConfigureAwait(false);
+                results.Add(ToFavoriteDto(favorite, report));
+            }
+
+            return Results.Ok(results);
+        });
+
+        group.MapPost("/favorites", async (
+            AddReportFavoriteRequestDto request,
+            HttpContext http,
+            IReportHttpSecurityContextFactory contextFactory,
+            IReportFavoriteStore favoriteStore,
+            IReportServerStore store,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            var validation = new AddReportFavoriteRequestValidator().Validate(request);
+            if (!validation.IsValid)
+            {
+                return Results.ValidationProblem(validation.ToDictionary());
+            }
+
+            var (principal, failure) = await AuthenticateInTenantAsync(http, contextFactory, request.TenantId, cancellationToken)
+                .ConfigureAwait(false);
+            if (failure is not null || principal is null)
+            {
+                return failure!;
+            }
+
+            SetTenant(context, request.TenantId);
+            var favorite = await favoriteStore
+                .AddAsync(request.TenantId, principal.ActorId, request.ReportId, cancellationToken)
+                .ConfigureAwait(false);
+            var report = await store.GetReportAsync(request.TenantId, favorite.ReportId, cancellationToken).ConfigureAwait(false);
+            return Results.Created("/api/favorites", ToFavoriteDto(favorite, report));
+        });
+
+        group.MapDelete("/favorites/{reportId}", async (
+            string reportId,
+            string tenantId,
+            HttpContext http,
+            IReportHttpSecurityContextFactory contextFactory,
+            IReportFavoriteStore favoriteStore,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            var (principal, failure) = await AuthenticateInTenantAsync(http, contextFactory, tenantId, cancellationToken)
+                .ConfigureAwait(false);
+            if (failure is not null || principal is null)
+            {
+                return failure!;
+            }
+
+            SetTenant(context, tenantId);
+            return await favoriteStore.RemoveAsync(tenantId, principal.ActorId, reportId, cancellationToken).ConfigureAwait(false)
+                ? Results.NoContent()
+                : Results.NotFound();
+        });
+    }
+
+    private static void MapRenderRuns(RouteGroupBuilder group)
+    {
+        group.MapGet("/render/runs", async (
+            string tenantId,
+            string? reportId,
+            int? max,
+            HttpContext http,
+            IReportHttpSecurityContextFactory contextFactory,
+            IReportRenderRunStore renderRunStore,
+            ReportServerRequestContext context,
+            CancellationToken cancellationToken) =>
+        {
+            var (principal, failure) = await AuthenticateInTenantAsync(http, contextFactory, tenantId, cancellationToken)
+                .ConfigureAwait(false);
+            if (failure is not null || principal is null)
+            {
+                return failure!;
+            }
+
+            SetTenant(context, tenantId);
+            var runs = await renderRunStore
+                .ListAsync(tenantId, principal.ActorId, reportId, max ?? 50, cancellationToken)
+                .ConfigureAwait(false);
+            return Results.Ok(runs.Select(ToRenderRunDto).ToArray());
+        });
+    }
+
+    /// <summary>
+    /// Records an ad-hoc render run for the portal-facing history. Wrapped defensively: a persistence
+    /// failure is swallowed so it can never break the render response the caller is waiting on.
+    /// </summary>
+    private static async Task RecordRenderRunAsync(
+        IReportRenderRunStore renderRunStore,
+        ReportSecurityContext? principal,
+        RenderReportRequestDto request,
+        ReportRenderExecutionResult execution,
+        int durationMs,
+        TimeProvider timeProvider,
+        ReportServerRequestContext context,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var actorId = principal?.ActorId;
+            if (string.IsNullOrWhiteSpace(actorId))
+            {
+                actorId = context.ExecutionContext.UserId;
+            }
+
+            var run = new RenderRunEntity
+            {
+                TenantId = request.TenantId,
+                ActorId = actorId ?? string.Empty,
+                ReportId = request.ReportId,
+                ParametersJson = JsonSerializer.Serialize(request.Parameters, RenderRunJsonOptions),
+                Format = request.Format.ToString(),
+                Outcome = execution.Outcome.ToString(),
+                PageCount = execution.Result?.PageCount,
+                ByteSize = execution.Result?.Bytes?.LongLength,
+                DurationMs = durationMs,
+                CreatedAt = timeProvider.GetUtcNow(),
+            };
+            await renderRunStore.RecordAsync(run, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // Intentionally swallowed: render-run history is best-effort and must not fail the render.
+        }
+    }
+
+    /// <summary>
+    /// Resolves an authenticated report principal and enforces that it is scoped to the requested tenant,
+    /// without any additional permission requirement. Used by the per-user favorites and render-run
+    /// history endpoints, where any authenticated user acts within their own tenant. Mirrors the tenant
+    /// gate of the <c>/resolve</c> endpoint: 401 when no principal, 403 on a tenant mismatch.
+    /// </summary>
+    private static async Task<(ReportSecurityContext? Principal, IResult? Failure)> AuthenticateInTenantAsync(
+        HttpContext http,
+        IReportHttpSecurityContextFactory contextFactory,
+        string tenantId,
+        CancellationToken cancellationToken)
+    {
+        var principal = await contextFactory.CreateAsync(http, cancellationToken).ConfigureAwait(false);
+        if (principal is null)
+        {
+            return (null, Results.Unauthorized());
+        }
+
+        if (!string.Equals(principal.TenantId, tenantId, StringComparison.Ordinal))
+        {
+            return (null, Results.StatusCode(StatusCodes.Status403Forbidden));
+        }
+
+        return (principal, null);
+    }
+
+    private static ReportFavoriteDto ToFavoriteDto(ReportFavoriteEntity favorite, ReportDetailDto? report)
+        => new()
+        {
+            TenantId = favorite.TenantId,
+            ReportId = favorite.ReportId,
+            ReportName = report?.Name,
+            FolderId = report?.FolderId,
+            CreatedAt = favorite.CreatedAt,
+        };
+
+    private static RenderRunDto ToRenderRunDto(RenderRunEntity run)
+        => new()
+        {
+            TenantId = run.TenantId,
+            ActorId = run.ActorId,
+            ReportId = run.ReportId,
+            Format = run.Format,
+            Outcome = run.Outcome,
+            PageCount = run.PageCount,
+            ByteSize = run.ByteSize,
+            DurationMs = run.DurationMs,
+            CreatedAt = run.CreatedAt,
+            ParametersJson = run.ParametersJson,
+        };
 
     private static async Task<ReportDetailDto?> ResolveByPathAsync(
         IReportServerStore store,

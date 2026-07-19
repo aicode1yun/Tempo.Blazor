@@ -448,6 +448,55 @@ public sealed class TempoReportServerClient : ApiClientBase, ITempoReportServerC
             cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException("Resolve response was empty.");
     }
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ReportFavoriteDto>> ListFavoritesAsync(
+        string tenantId,
+        CancellationToken cancellationToken = default)
+        => await GetAsync<List<ReportFavoriteDto>>(
+            $"{_basePath}/favorites?tenantId={Uri.EscapeDataString(tenantId)}",
+            cancellationToken).ConfigureAwait(false) ?? [];
+
+    /// <inheritdoc />
+    public async Task<ReportFavoriteDto> AddFavoriteAsync(
+        AddReportFavoriteRequestDto request,
+        CancellationToken cancellationToken = default)
+        => await PostAsync<AddReportFavoriteRequestDto, ReportFavoriteDto>(
+            $"{_basePath}/favorites",
+            request,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task RemoveFavoriteAsync(
+        string tenantId,
+        string reportId,
+        CancellationToken cancellationToken = default)
+        => await DeleteAsync(
+            $"{_basePath}/favorites/{Uri.EscapeDataString(reportId)}?tenantId={Uri.EscapeDataString(tenantId)}",
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<RenderRunDto>> ListRenderRunsAsync(
+        string tenantId,
+        string? reportId = null,
+        int? max = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = $"tenantId={Uri.EscapeDataString(tenantId)}";
+        if (!string.IsNullOrWhiteSpace(reportId))
+        {
+            query += $"&reportId={Uri.EscapeDataString(reportId)}";
+        }
+
+        if (max is { } m)
+        {
+            query += $"&max={m}";
+        }
+
+        return await GetAsync<List<RenderRunDto>>(
+            $"{_basePath}/render/runs?{query}",
+            cancellationToken).ConfigureAwait(false) ?? [];
+    }
+
     private async Task PostNoResponseAsync<TRequest>(
         string uri,
         TRequest request,

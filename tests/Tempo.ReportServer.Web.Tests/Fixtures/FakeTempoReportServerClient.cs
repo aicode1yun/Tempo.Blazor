@@ -539,6 +539,25 @@ public sealed class FakeTempoReportServerClient : ITempoReportServerClient
         });
     }
 
+    // Fáze 12 favorites / render-run history members: not exercised by the current catalog page tests,
+    // so they return empty lists / stub DTOs. Add real behavior here if a page test needs it.
+    public Task<IReadOnlyList<ReportFavoriteDto>> ListFavoritesAsync(string tenantId, CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<ReportFavoriteDto>>([]);
+
+    public Task<ReportFavoriteDto> AddFavoriteAsync(AddReportFavoriteRequestDto request, CancellationToken cancellationToken = default)
+        => Task.FromResult(new ReportFavoriteDto
+        {
+            TenantId = request.TenantId,
+            ReportId = request.ReportId,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+
+    public Task RemoveFavoriteAsync(string tenantId, string reportId, CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
+    public Task<IReadOnlyList<RenderRunDto>> ListRenderRunsAsync(string tenantId, string? reportId = null, int? max = null, CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<RenderRunDto>>([]);
+
     private void RecordKeyAudit(string tenantId, string keyId, string operation)
         => _audit.Add(new ReportAuditEventDto
         {

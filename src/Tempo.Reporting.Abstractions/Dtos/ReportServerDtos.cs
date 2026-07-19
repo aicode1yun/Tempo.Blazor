@@ -399,6 +399,69 @@ public sealed record RenderReportResultDto
     public int PageCount { get; init; }
 }
 
+/// <summary>A single user's report favorite, enriched with catalog metadata when available.</summary>
+public sealed record ReportFavoriteDto
+{
+    /// <summary>Tenant identifier.</summary>
+    public string TenantId { get; init; } = string.Empty;
+
+    /// <summary>Favorited report identifier.</summary>
+    public string ReportId { get; init; } = string.Empty;
+
+    /// <summary>Report name, resolved from the catalog when available.</summary>
+    public string? ReportName { get; init; }
+
+    /// <summary>Folder identifier of the report, resolved from the catalog when available.</summary>
+    public string? FolderId { get; init; }
+
+    /// <summary>When the favorite was created.</summary>
+    public DateTimeOffset CreatedAt { get; init; }
+}
+
+/// <summary>Request to add a report to the caller's favorites.</summary>
+public sealed record AddReportFavoriteRequestDto
+{
+    /// <summary>Tenant identifier.</summary>
+    public string TenantId { get; init; } = string.Empty;
+
+    /// <summary>Report identifier to favorite.</summary>
+    public string ReportId { get; init; } = string.Empty;
+}
+
+/// <summary>An ad-hoc (synchronous) render run history record scoped to the requesting actor.</summary>
+public sealed record RenderRunDto
+{
+    /// <summary>Tenant identifier.</summary>
+    public string TenantId { get; init; } = string.Empty;
+
+    /// <summary>Actor that requested the render.</summary>
+    public string ActorId { get; init; } = string.Empty;
+
+    /// <summary>Rendered report identifier.</summary>
+    public string ReportId { get; init; } = string.Empty;
+
+    /// <summary>Requested output format token.</summary>
+    public string Format { get; init; } = string.Empty;
+
+    /// <summary>Render outcome token.</summary>
+    public string Outcome { get; init; } = string.Empty;
+
+    /// <summary>Number of rendered pages, when available.</summary>
+    public int? PageCount { get; init; }
+
+    /// <summary>Rendered payload size in bytes, when available.</summary>
+    public long? ByteSize { get; init; }
+
+    /// <summary>Wall-clock render duration in milliseconds, when available.</summary>
+    public int? DurationMs { get; init; }
+
+    /// <summary>When the run was recorded.</summary>
+    public DateTimeOffset CreatedAt { get; init; }
+
+    /// <summary>Serialized render parameter values.</summary>
+    public string ParametersJson { get; init; } = "{}";
+}
+
 /// <summary>Host version metadata returned by the anonymous <c>GET /version</c> endpoint.</summary>
 public sealed record ReportServerVersionDto
 {
@@ -613,6 +676,18 @@ public interface ITempoReportServerClient
 
     /// <summary>Resolves a catalog report (by id or by path) for the viewer, with its current revision.</summary>
     Task<ReportResolveResultDto> ResolveReportAsync(string tenantId, string? reportId = null, string? path = null, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists the calling user's own report favorites within a tenant.</summary>
+    Task<IReadOnlyList<ReportFavoriteDto>> ListFavoritesAsync(string tenantId, CancellationToken cancellationToken = default);
+
+    /// <summary>Adds a report to the calling user's favorites (idempotent).</summary>
+    Task<ReportFavoriteDto> AddFavoriteAsync(AddReportFavoriteRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Removes a report from the calling user's favorites.</summary>
+    Task RemoveFavoriteAsync(string tenantId, string reportId, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists the calling user's own ad-hoc render run history, newest first.</summary>
+    Task<IReadOnlyList<RenderRunDto>> ListRenderRunsAsync(string tenantId, string? reportId = null, int? max = null, CancellationToken cancellationToken = default);
 }
 
 #pragma warning restore MA0016, MA0048
