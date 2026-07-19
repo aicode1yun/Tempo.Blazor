@@ -19,6 +19,14 @@ public abstract class PlaywrightTestBase
     private static readonly List<DemoHostProcess> DemoHostProcesses = [];
     private static bool _demoHostsInitialized;
 
+    /// <summary>
+    /// Additional teardown callbacks run by the single assembly cleanup. Derived lanes that self-host
+    /// extra processes (e.g. the report-server Api/Web in <see cref="ReportServerE2ETestBase"/>) register
+    /// a killer here so a normal test run tears them down deterministically — MSTest permits only one
+    /// <c>[AssemblyCleanup]</c> per assembly, so this is how other bases hook into it.
+    /// </summary>
+    internal static readonly List<Action> AdditionalAssemblyCleanups = [];
+
     // Per-test list of contexts created via CreatePageAsync / CreateContextAsync.
     // They MUST be disposed after each test, otherwise the shared static browser
     // process accumulates WebSocket/SignalR connections, service workers, and
@@ -86,6 +94,14 @@ public abstract class PlaywrightTestBase
 
             DemoHostProcesses.Clear();
             _demoHostsInitialized = false;
+
+            foreach (var cleanup in AdditionalAssemblyCleanups)
+            {
+                try { cleanup(); }
+                catch { /* best-effort teardown of extra self-hosted processes */ }
+            }
+
+            AdditionalAssemblyCleanups.Clear();
         }
         finally
         {

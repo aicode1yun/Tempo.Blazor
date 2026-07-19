@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -20,6 +21,12 @@ public static class ReportServerAuthenticationDefaults
 
     /// <summary>Custom API key authentication scheme name.</summary>
     public const string ApiKeyScheme = "ReportServerApiKey";
+
+    /// <summary>
+    /// Development-only authentication scheme name. Active only when <c>Authentication:Dev:Enabled=true</c>;
+    /// used by the Keycloak-free CI/E2E lane. Never enabled in production.
+    /// </summary>
+    public const string DevScheme = "ReportServerDev";
 
     /// <summary>Authorization policy that accepts any supported authentication scheme.</summary>
     public const string ApiPolicy = "ReportServerApi";
@@ -89,9 +96,16 @@ public static class ReportServerAuthenticationExtensions
     /// and an authorization policy (<see cref="ReportServerAuthenticationDefaults.ApiPolicy"/>) that
     /// accepts any authenticated scheme.
     /// </summary>
+    /// <param name="environment">
+    /// The host environment. When it is Production, the development authentication bypass is forced OFF
+    /// even if <c>Authentication:Dev:Enabled=true</c> — one stray env var must never disable real auth in
+    /// production. Pass <see langword="null"/> (the default, used by in-process tests) to skip the
+    /// production guard.
+    /// </param>
     public static IServiceCollection AddReportServerAuthentication(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment? environment = null)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
@@ -101,12 +115,46 @@ public static class ReportServerAuthenticationExtensions
         var audience = jwtSection["Audience"];
         var requireHttpsMetadata = jwtSection.GetValue("RequireHttpsMetadata", defaultValue: true);
 
-        services
+        // Development-only: a Keycloak-free scheme that authenticates every request as a fixed dev
+        // principal so the OIDC-off portal can exercise the real Api in CI/E2E. Strictly opt-in; when
+        // disabled the schemes and policy below are exactly the production (JWT + API key) configuration.
+        var devEnabled = configuration.IsDevAuthenticationEnabled();
+
+        // Defense in depth: the dev bypass must never activate in Production, regardless of config. If the
+        // flag was set but suppressed here, log a WARNING (do not throw — the host stays up on real auth).
+        if (devEnabled && environment is not null && environment.IsProduction())
+        {
+            devEnabled = false;
+            using var bootstrapLoggerFactory = LoggerFactory.Create(logging => logging.AddConsole());
+            bootstrapLoggerFactory
+                .CreateLogger("Tempo.ReportServer.Api.Security.ReportServerDevAuthentication")
+                .LogWarning(
+                    "Authentication:Dev:Enabled is set but was SUPPRESSED because the host environment is " +
+                    "Production. The report server API is using real authentication (JWT bearer + API key). " +
+                    "The development authentication bypass must never run in Production.");
+        }
+
+        var authenticationBuilder = services
             .AddAuthentication(options =>
             {
-                options.DefaultScheme = ReportServerAuthenticationDefaults.CombinedScheme;
-                options.DefaultChallengeScheme = ReportServerAuthenticationDefaults.CombinedScheme;
-            })
+                var defaultScheme = devEnabled
+                    ? ReportServerAuthenticationDefaults.DevScheme
+                    : ReportServerAuthenticationDefaults.CombinedScheme;
+                options.DefaultScheme = defaultScheme;
+                options.DefaultChallengeScheme = defaultScheme;
+            });
+
+        if (devEnabled)
+        {
+            // Bind the options for THIS scheme name — the handler resolves its options via
+            // IOptionsMonitor.Get(DevScheme), so an unnamed services.Configure would not reach it and the
+            // tenant/roles would silently fall back to the class defaults.
+            authenticationBuilder.AddScheme<ReportServerDevAuthenticationOptions, ReportServerDevAuthenticationHandler>(
+                ReportServerAuthenticationDefaults.DevScheme,
+                options => configuration.GetSection(ReportServerDevAuthenticationOptions.SectionName).Bind(options));
+        }
+
+        authenticationBuilder
             .AddPolicyScheme(
                 ReportServerAuthenticationDefaults.CombinedScheme,
                 ReportServerAuthenticationDefaults.CombinedScheme,
@@ -182,12 +230,13 @@ public static class ReportServerAuthenticationExtensions
 
         services.AddAuthorization(options =>
         {
+            string[] policySchemes = devEnabled
+                ? [ReportServerAuthenticationDefaults.DevScheme]
+                : [ReportServerAuthenticationDefaults.ApiKeyScheme, JwtBearerDefaults.AuthenticationScheme];
             options.AddPolicy(
                 ReportServerAuthenticationDefaults.ApiPolicy,
                 policy => policy
-                    .AddAuthenticationSchemes(
-                        ReportServerAuthenticationDefaults.ApiKeyScheme,
-                        JwtBearerDefaults.AuthenticationScheme)
+                    .AddAuthenticationSchemes(policySchemes)
                     .RequireAuthenticatedUser());
         });
 

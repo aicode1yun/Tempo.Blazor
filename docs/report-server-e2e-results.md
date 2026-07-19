@@ -154,3 +154,110 @@ Drivery: `f12-e2e-author.mjs`, `f12-e2e-viewer.mjs` (block `**/*.wasm` → Serve
   `/render`). Data preview zůstává jen pro demo seedy.
 - Portál-wide lokalizace (portál chrome je hardcoded EN; předchází této fázi).
 - `Outcome="Failed"` RenderRun při neočekávané výjimce executoru (dnes rezervováno).
+
+---
+
+# Fáze 13 (PASS A) — commitnutý C# E2E lane pro report server (CI)
+
+Převod ad-hoc Node driverů (`f10-e2e.mjs`, `f12-e2e-*.mjs`) do **commitnutého .NET Playwright**
+suite v `tests/Tempo.Blazor.E2E`. Aplikuje koncepty E2E skillu (functional-server / functional-wasm
+render-mode split) v C#. Dvě dráhy: **PASS A** = CI DEMO lane (bez Keycloacku), **PASS B** (později)
+= plný Keycloak-login + scheduling→smtp4dev.
+
+## Architektonický nález, který určil návrh dráhy
+
+Portálové stránky (explorer / favorites / historie / nový report) jsou **čistí HTTP konzumenti**
+typového `ITempoReportServerClient` proti `Api:BaseUrl`. Self-contained demo Web **nemapuje**
+katalogové/favorites/render-run endpointy (mapuje jen render/metadata/export) a v OIDC-off režimu
+volá Api **anonymně** — po loginu je katalog prázdný (viz nález #3 Fáze 5b). Katalogové scénáře
+proto **nelze** provést proti samotnému demo Webu; potřebují běžící Api (EF/`ReportServerDbContext`)
+a autentizovaný principal. Keycloak-free cesta = **aditivní, konfiguračně gate-ované dev-auth schéma
+na Api** (`Authentication:Dev:Enabled=true`), které autentizuje anonymní portálová volání jako pevný
+dev principal (tenant `northwind`, role `report-admin` → TenantAdmin). Mimo tuto konfiguraci je
+chování Api beze změny (JWT bearer + API key). DB asserty čtou **přímo SQLite databázi, kterou Api
+zapisuje**.
+
+## Jak lane běží
+
+| Složka | Endpoint | Konfigurace (přes env při `dotnet run`) |
+| --- | --- | --- |
+| Api | `http://localhost:7001` | `Database__Provider=Sqlite`, `ConnectionStrings__ReportServer=Data Source=<Z:\rs-e2e\reportserver-e2e.db>`, `Authentication__Dev__Enabled=true`, `Authentication__Dev__TenantId=northwind`, `Authentication__Dev__Roles=report-admin` |
+| Web | `https://localhost:7150` | OIDC **off** (Authority prázdné), `Api__BaseUrl=http://localhost:7001` |
+
+Oba hosty startují přes `dotnet run --project … --urls …` z `ReportServerE2ETestBase`
+(EnsureHostAsync pattern, readiness přes `/health` resp. root, kill na ProcessExit). Web běží na
+**HTTPS 7150** (shoduje se s baked `Api:BaseUrl` WASM legu — browser-side klient resolvuje proti
+tomuto originu), Web→Api hop je server-side **HTTP** (žádný dev-cert trust). DB soubor jde na `Z:`
+(šetří C:), před čerstvým startem Api se smaže.
+
+## Spuštění (CI DEMO lane)
+
+```
+set TM_RS_E2E=1
+set TM_E2E_SELF_HOST=false          # přeskočí nesouvisející demo hosty
+set TM_E2E_TRACE_ON_FAILURE=false   # při málu místa na disku
+set NUGET_PACKAGES=Z:\nuget-rs      # rozbitá výchozí NuGet cache
+dotnet test tests/Tempo.Blazor.E2E --filter TestCategory=ReportServerE2E
+```
+
+Bez `TM_RS_E2E` jsou testy **Inconclusive** (hosty nestartují) — výchozí demo E2E běh je nedotčen.
+
+## Třídy a scénáře
+
+- `ReportServerCatalogServerE2ETests` (`[TestCategory("ReportServerE2E")]`, functional-**server**;
+  blokuje `**/*.wasm` — `dotnet.js` loader se ponechá, aby blazor.web.js vyjednal Server fallback;
+  app zůstává na Server circuitu). Plné scénáře s **přímým DB důkazem**:
+  1. Katalog: portál loads, explorer renders; create folder přes UI → assert `Folders` řádek.
+  2. Nový report: New Report form → blank report → `/designer/{id}`, designer ukazuje **reálný**
+     report (ne demo Sales Register) → assert `Reports` řádek.
+  3. Favorites: toggle → assert `Favorites` řádek; `/favorites` list → klik round-trip (bez
+     report-not-found); un-favorite → řádek pryč + empty state.
+  4. Render → historie: parametrický report, zadání `AsOfDate`, Run → assert `RenderRuns` řádek
+     s parametrem; `/history` ukazuje běh.
+  5. Edge cases: nevalidní JSON upload → inline chyba + blokovaný submit; not-found path → graceful
+     degradace (v OIDC-off demu full-nav založí nový neautentizovaný circuit → shell přesměruje na
+     login, **ne** exception page). Autentizovaný `report-not-found` panel kryje Web.Tests bUnit
+     `ReportViewerPageTests`.
+
+Viewery se otevírají přes **SPA navigaci** (login → klik na složku ve stromu → klik na report):
+demo session je per-circuit in-memory, takže přímý full-nav na `/reports/{id}` by založil nový
+neautentizovaný circuit a byl by přesměrován na login.
+- `ReportServerCatalogWasmE2ETests` (`[TestCategory("ReportServerE2E")]`, functional-**wasm**; naprimuje
+  WASM cache a reloaduje, než InteractiveAuto přejde na WebAssembly leg): ověří render-mode
+  (`data-mode=WebAssembly`) a **čistý běh** portálu na WASM legu (login shell interaktivní, žádný
+  `#blazor-error-ui`). Katalogové write-flows i graceful not-found se ověřují na **Server legu**: na
+  WASM legu čte klient z prohlížeče **baked** `Api:BaseUrl` (Web origin), který katalog/resolve
+  nehostí — stejný důvod, proč projektové f12 drivery pro tyto flow blokují WASM.
+
+Render-mode se asertuje v každé třídě (`#render-mode-marker[data-interactive=true]` → `data-mode`).
+`[TestCategory("ReportServerFullStack")]` je **rezervována pro PASS B** (Keycloak + scheduling→smtp4dev).
+
+## DB asserty
+
+`ReportServerE2ETestBase.CreateDbContext()` otevře `ReportServerDbContext` nad tím samým SQLite
+souborem, do kterého Api zapisuje. `Folders`/`Reports` mají tenant global query filter → čteno přes
+`IgnoreQueryFilters()`; `Favorites`/`RenderRuns` filter nemají. Čtení má krátký retry na přechodné
+„database is locked" (Api drží tentýž soubor).
+
+## Výsledek živého běhu (7/7 PASS)
+
+`TM_RS_E2E=1 dotnet test --filter TestCategory=ReportServerE2E` — **Passed: 7, Failed: 0** (Api SQLite
+na Z:, dev-auth, Web HTTPS 7150). Přímé DB důkazy ověřeny (folder/report/favorite/render-run řádky
+čteny z `ReportServerDbContext` nad běžícím souborem).
+
+| Test | Leg | Výsledek |
+| --- | --- | --- |
+| `Catalog_PortalLoads_CreateFolder_PersistsRow` | server | PASS (`Folders` řádek) |
+| `NewReport_CreatesRealReport_ShownInDesigner_AndPersisted` | server | PASS (`Reports` řádek, designer = reálný report) |
+| `Favorites_ToggleRoundTrips_AndPersists` | server | PASS (`Favorites` řádek, round-trip, un-favorite → 0) |
+| `Render_WithParameter_RecordsRunInHistory` | server | PASS (`RenderRuns` řádek s `AsOfDate`, /history) |
+| `EdgeCases_InvalidUploadBlocks_AndDirectReportHitBouncesToLogin` | server | PASS (upload chyba blokuje submit; přímý hit → graceful login-redirect) |
+| `LoginPage_BootsTo_WebAssembly` | wasm | PASS (`data-mode=WebAssembly`) |
+| `Portal_RunsCleanly_OnWasm` | wasm | PASS (WASM leg, žádný `#blazor-error-ui`) |
+
+## Deliverable 1 — RenderModeMarker
+
+Marker `#render-mode-marker` (`data-mode` = Static|Server|WebAssembly, `data-interactive` = true|false)
+**už existoval** v `src/Tempo.ReportServer.Web.Client/Components/RenderModeMarker.razor` a je zapojen
+v `MainLayout`. PASS A: přidán `id="render-mode-marker"` a `data-interactive` znormalizován na
+lowercase (`true`/`false`) pro kontrakt skillu. bUnit guard: `RenderModeMarkerTests` (Web.Tests, 3/3).

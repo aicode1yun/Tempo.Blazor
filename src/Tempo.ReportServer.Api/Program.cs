@@ -32,7 +32,7 @@ public sealed class Program
         // Render concurrency, timeout, output-size and page quotas are deployment-tunable.
         builder.Services.Configure<Storage.ReportServerQuotaOptions>(builder.Configuration.GetSection("Rendering"));
 
-        builder.Services.AddReportServerAuthentication(builder.Configuration);
+        builder.Services.AddReportServerAuthentication(builder.Configuration, builder.Environment);
 
         // Fáze 6: the scheduling worker (background service), delivery channels and persistent
         // schedule store live in the API/worker tier.
