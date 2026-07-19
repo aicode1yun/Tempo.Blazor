@@ -204,6 +204,9 @@ export function createCanvasCommandRuntime(options = {}) {
     }
     for (const command of [
         'inserttable',
+        'deletetable',
+        'toggletableheaderrow',
+        'toggleheaderrow',
         'addtablerow',
         'inserttablerow',
         'inserttablerowafter',

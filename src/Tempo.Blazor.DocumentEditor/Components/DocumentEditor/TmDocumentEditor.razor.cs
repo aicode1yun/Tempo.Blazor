@@ -7277,8 +7277,8 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
                 Height = request.Misspelling is null ? 280 : 420,
                 ClientX = request.X,
                 ClientY = request.Y,
-                ViewportWidth = 0,
-                ViewportHeight = 0,
+                ViewportWidth = request.ViewportWidth,
+                ViewportHeight = request.ViewportHeight,
                 Selection = selection,
                 BlockId = request.BlockId,
                 BlockType = string.IsNullOrWhiteSpace(request.ImageBlockId) ? null : "Image",
@@ -7304,6 +7304,8 @@ public partial class TmDocumentEditor : TmComponentBase, IDisposable, IAsyncDisp
             Height = 360,
             ClientX = request.X,
             ClientY = request.Y,
+            ViewportWidth = request.ViewportWidth,
+            ViewportHeight = request.ViewportHeight,
             Selection = selection,
             CellId = string.IsNullOrWhiteSpace(request.CellId) ? selection?.ActiveTableCellId ?? string.Empty : request.CellId
         });

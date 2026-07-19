@@ -1301,9 +1301,14 @@ export class CanvasDocumentEngine {
         }
 
         const currentSelection = this.selectionController.getState();
+        const win = this.document?.defaultView;
         this.onContextMenu?.({
             x: Math.round(Number(event.clientX || 0) || 0),
             y: Math.round(Number(event.clientY || 0) || 0),
+            // Viewport size lets the Blazor side clamp the menu into view — without it a
+            // right-click near the bottom edge pushes the lower menu items off-screen.
+            viewportWidth: Math.round(Number(win?.innerWidth || 0) || 0),
+            viewportHeight: Math.round(Number(win?.innerHeight || 0) || 0),
             pageIndex: point.pageIndex,
             blockId: diagnostic?.blockId || hit?.blockId || blockHit?.blockId || '',
             offset: diagnostic?.start ?? hit?.offset ?? 0,

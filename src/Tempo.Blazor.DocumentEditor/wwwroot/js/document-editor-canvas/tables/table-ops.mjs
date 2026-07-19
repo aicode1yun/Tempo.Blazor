@@ -7,6 +7,9 @@ import {
 
 const TABLE_COMMAND_ALIASES = new Map([
     ['inserttable', 'insertTable'],
+    ['deletetable', 'deleteTable'],
+    ['toggletableheaderrow', 'toggleHeaderRow'],
+    ['toggleheaderrow', 'toggleHeaderRow'],
     ['addtablerow', 'insertRowAfter'],
     ['inserttablerow', 'insertRowAfter'],
     ['inserttablerowafter', 'insertRowAfter'],
@@ -77,6 +80,28 @@ export function applyTableCommand(model, selection, commandId, payload = null) {
             dirtyBlockIds: result.dirtyBlockIds || [],
             insertedBlockIds: result.insertedBlockIds || [],
             removedBlockIds: [],
+            table: result.table || null,
+        };
+    }
+
+    if (command === 'deleteTable' || command === 'toggleHeaderRow') {
+        const result = command === 'deleteTable'
+            ? deleteTable(working, selection, payload)
+            : toggleHeaderRow(working, selection, payload);
+        if (!result.changed) {
+            return unchanged(working, selection, command);
+        }
+
+        working.version = Number(working.version || 0) + 1;
+        synchronizeSectionsWithBody(working);
+        return {
+            changed: true,
+            model: working,
+            selection: result.selection || selection,
+            operation: command,
+            dirtyBlockIds: result.dirtyBlockIds || [],
+            insertedBlockIds: result.insertedBlockIds || [],
+            removedBlockIds: result.removedBlockIds || [],
             table: result.table || null,
         };
     }
@@ -184,6 +209,8 @@ export function queryTableCommandState(model, selection) {
         commands: {
             // insertTable creates a NEW table wherever the caret is — it never needs an existing cell.
             inserttable: commandState(true),
+            deletetable: commandState(enabled),
+            toggletableheaderrow: commandState(enabled, enabled && cell.tableBlock.content?.table?.layout?.headerRow === true),
             addtablerow: commandState(enabled),
             addtablecolumn: commandState(enabled),
             insertrowbefore: commandState(enabled),
@@ -506,6 +533,88 @@ function convertTableToText(model, selectedCell, payload) {
         insertedBlockIds: [blockId],
         removedBlockIds: [selectedCell.tableBlock.id || ''],
     };
+}
+
+/** Table entry resolved from an explicit {tableId}, an explicit {cellId}, or the selection. */
+function resolveTableEntry(model, selection, payload) {
+    const tableId = String(payload?.tableId ?? payload?.TableId ?? '');
+    if (tableId) {
+        const entry = tableEntries(model).find(item => String(item.tableBlock.id || '') === tableId);
+        if (entry) {
+            return entry;
+        }
+    }
+
+    const cell = findSelectedCell(model, selection, payload);
+    return cell ? { tableBlock: cell.tableBlock, table: cell.tableBlock.content.table, rows: cell.rows } : null;
+}
+
+function deleteTable(model, selection, payload) {
+    const entry = resolveTableEntry(model, selection, payload);
+    if (!entry) {
+        return { changed: false };
+    }
+
+    const blocks = model.body.blocks;
+    const index = blocks.findIndex(block => String(block?.id || '') === String(entry.tableBlock.id || ''));
+    if (index < 0) {
+        return { changed: false };
+    }
+
+    const removedBlockIds = collectAllBlockIds([blocks[index]]);
+    blocks.splice(index, 1);
+
+    // Caret Word-style: the block that followed the table, else the previous one; an orphaned
+    // body gets a fresh empty paragraph so the document never ends up caret-less.
+    let caretTarget = blocks[index] || blocks[index - 1] || null;
+    if (!caretTarget) {
+        const paragraph = createParagraph(uniqueId('empty-body-paragraph', collectAllBlockIds(blocks)), '');
+        paragraph.sectionId = entry.tableBlock.sectionId || model.sections?.[0]?.id || '';
+        paragraph.order = Number(entry.tableBlock.order || 10) || 10;
+        blocks.push(paragraph);
+        caretTarget = paragraph;
+    }
+
+    return {
+        changed: true,
+        selection: collapsedSelection(firstEditablePositionInBlock(caretTarget)),
+        dirtyBlockIds: [String(caretTarget.id || '')].filter(Boolean),
+        removedBlockIds,
+        table: null,
+    };
+}
+
+function toggleHeaderRow(model, selection, payload) {
+    // Pure layout-flag toggle: resolveTableCellStyle styles row 0 and tableRepeatsHeaderRows
+    // repeats it across page breaks from layout.headerRow. Cell-level isHeader/backgroundColor
+    // overrides intentionally win, and a double toggle is exactly the identity.
+    const entry = resolveTableEntry(model, selection, payload);
+    if (!entry?.table) {
+        return { changed: false };
+    }
+
+    entry.table.layout = entry.table.layout || {};
+    entry.table.layout.headerRow = entry.table.layout.headerRow !== true;
+    return {
+        changed: true,
+        selection: null,
+        dirtyBlockIds: [String(entry.tableBlock.id || '')],
+        table: {
+            tableId: entry.tableBlock.id || '',
+            rowCount: entry.rows.length,
+            columnCount: maxColumnCount(entry.rows),
+            activeCellId: '',
+        },
+    };
+}
+
+function firstEditablePositionInBlock(block) {
+    const firstCell = block?.content?.table?.rows?.[0]?.cells?.[0];
+    if (firstCell) {
+        return firstEditablePositionInCell(firstCell);
+    }
+
+    return { blockId: String(block?.id || ''), offset: 0 };
 }
 
 // Cap mirrors the toolbar grid picker (TmDocumentTableGridPicker MaxRows/MaxCols = 10×10);

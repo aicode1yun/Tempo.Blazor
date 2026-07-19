@@ -319,6 +319,184 @@ public sealed class DocumentEditorCanvasTableE2ETests : WasmTestBase
         TestContext.AddResultFile(manifestPath);
     }
 
+    [TestMethod]
+    public async Task Phase5_TableContextMenu_DeleteAndHeaderRowToggle_WorkAndPersist()
+    {
+        // Command-layer plan phase 5: the table context menu's Delete table and Header row entries
+        // routed deleteTable / toggleTableHeaderRow — ids the engine never registered (silent
+        // no-ops). Runs on a FRESHLY INSERTED table (plain cells without explicit backgrounds) so
+        // the header-row styling change is pixel-visible; seed tables carry explicit cell colors
+        // which by design override the header style.
+        await DocumentEditorE2EReset.ResetAsync();
+        var context = await CreateContextAsync();
+        var page = await context.NewPageAsync();
+        await page.SetViewportSizeAsync(1440, 1000);
+        await page.GotoAsync($"{BaseUrl}/canvas-engine-host?documentId=phase-12-canvas-history-save&showToolbar=true", new PageGotoOptions
+        {
+            WaitUntil = WaitUntilState.DOMContentLoaded,
+            Timeout = 60_000
+        });
+        await page.WaitForFunctionAsync(
+            """
+            () => document.querySelector('[data-testid="document-canvas-engine-host"][data-canvas-engine-ready="true"]')
+                && document.querySelector('[data-testid="document-ribbon-tab-insert"]')
+            """,
+            new PageWaitForFunctionOptions { Timeout = 30_000 });
+
+        var output = CreateOutputDirectory("phase5-delete-header-toggle");
+        var headerOnPath = Path.Combine(output, "00-header-row-on.png");
+        var afterDeleteUndoPath = Path.Combine(output, "01-after-delete-undo.png");
+        var reloadPath = Path.Combine(output, "02-after-reload.png");
+
+        var baselineTableBlocks = await page.EvaluateAsync<int>(
+            "() => Number(document.querySelector('[data-testid=\"document-canvas-page\"]')?.getAttribute('data-canvas-model-table-block-count') || '0')");
+
+        await page.GetByTestId("document-ribbon-tab-insert").ClickAsync();
+        await page.GetByTestId("document-toolbar-table").ClickAsync();
+        await page.GetByTestId("document-table-grid-cell-1-2").WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10_000 });
+        await page.GetByTestId("document-table-grid-cell-1-2").ClickAsync();
+        await page.WaitForFunctionAsync(
+            "() => document.querySelector('[data-canvas-table-cell][data-cell-id=\"inserted-table-r1c1\"]')",
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+
+        var backgroundBefore = await SampleCellBackgroundAsync(page, "inserted-table-r1c2");
+        Assert.IsTrue(backgroundBefore[0] > 245 && backgroundBefore[2] > 245,
+            $"A plain inserted cell must start near-white. Sampled: {string.Join(",", backgroundBefore)}");
+
+        // Context menu → Header row: layout.headerRow flips and row 0 repaints with the header tint.
+        await RightClickCellAsync(page, "inserted-table-r1c1");
+        await page.GetByTestId("document-table-toggle-header").ClickAsync();
+        await page.WaitForFunctionAsync(
+            """
+            async () => {
+                const host = document.querySelector('[data-testid="document-canvas-engine-host"]');
+                const handle = host?.getAttribute('data-canvas-engine-handle') || '';
+                const module = await import('/_content/Tempo.Blazor.DocumentEditor/js/document-editor-canvas/interop.mjs');
+                const model = JSON.parse(module.getModelJson(handle) || '{}');
+                const table = (model.body?.blocks || []).find(block => String(block?.id || '') === 'inserted-table');
+                return table?.content?.table?.layout?.headerRow === true;
+            }
+            """,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+        await page.WaitForFunctionAsync(
+            """
+            () => {
+                const cell = document.querySelector('[data-canvas-table-cell][data-cell-id="inserted-table-r1c2"]');
+                return !!cell;
+            }
+            """,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+
+        var backgroundAfter = await SampleCellBackgroundAsync(page, "inserted-table-r1c2");
+        Assert.IsTrue(backgroundBefore[0] - backgroundAfter[0] > 10,
+            $"Enabling the header row must visibly tint row 0. Before: {string.Join(",", backgroundBefore)}, after: {string.Join(",", backgroundAfter)}");
+        await page.GetByTestId("document-editor-demo").ScreenshotAsync(new LocatorScreenshotOptions { Path = headerOnPath, Type = ScreenshotType.Png });
+
+        // Context menu → Delete table: the whole table disappears; undo brings it back with the flag.
+        await RightClickCellAsync(page, "inserted-table-r1c1");
+        await page.GetByTestId("document-table-delete-table").ClickAsync();
+        await page.WaitForFunctionAsync(
+            """
+            baseline => Number(document.querySelector('[data-testid="document-canvas-page"]')?.getAttribute('data-canvas-model-table-block-count') || '0') === baseline
+                && !document.querySelector('[data-canvas-table-cell][data-cell-id="inserted-table-r1c1"]')
+            """,
+            baselineTableBlocks,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+
+        await page.GetByTestId("document-undo").ClickAsync();
+        await page.WaitForFunctionAsync(
+            """
+            baseline => Number(document.querySelector('[data-testid="document-canvas-page"]')?.getAttribute('data-canvas-model-table-block-count') || '0') === baseline + 1
+                && document.querySelector('[data-canvas-table-cell][data-cell-id="inserted-table-r1c1"]')
+            """,
+            baselineTableBlocks,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
+        await page.GetByTestId("document-editor-demo").ScreenshotAsync(new LocatorScreenshotOptions { Path = afterDeleteUndoPath, Type = ScreenshotType.Png });
+
+        await page.GetByTestId("document-save").ClickAsync();
+        await WaitForSaveBoundaryAsync(page);
+        await NavigateWithinBlazorAsync(page, "/canvas-engine-host?documentId=phase-5-canvas-render");
+        await page.WaitForFunctionAsync(
+            """
+            () => document.querySelector('[data-testid="document-canvas-page"]')?.getAttribute('data-canvas-model-document-id') === 'phase-5-canvas-render'
+            """,
+            new PageWaitForFunctionOptions { Timeout = 20_000 });
+        await NavigateWithinBlazorAsync(page, "/canvas-engine-host?documentId=phase-12-canvas-history-save&showToolbar=true");
+        await page.WaitForFunctionAsync(
+            """
+            baseline => document.querySelector('[data-testid="document-canvas-engine-host"][data-canvas-engine-ready="true"]')
+                && Number(document.querySelector('[data-testid="document-canvas-page"]')?.getAttribute('data-canvas-model-table-block-count') || '0') === baseline + 1
+                && document.querySelector('[data-canvas-table-cell][data-cell-id="inserted-table-r1c2"]')
+            """,
+            baselineTableBlocks,
+            new PageWaitForFunctionOptions { Timeout = 30_000 });
+
+        // The headerRow flag survives the canvas↔C# round-trip (TableLayoutContent.HeaderRow) and
+        // the reloaded row 0 still paints with the header tint.
+        var backgroundReloaded = await SampleCellBackgroundAsync(page, "inserted-table-r1c2");
+        Assert.IsTrue(backgroundBefore[0] - backgroundReloaded[0] > 10,
+            $"The header tint must survive save/reload. Before-insert: {string.Join(",", backgroundBefore)}, reloaded: {string.Join(",", backgroundReloaded)}");
+
+        await DocumentEditorCanvasVisualAssert.AssertNoTextOverlapAsync(page);
+        await page.GetByTestId("document-editor-demo").ScreenshotAsync(new LocatorScreenshotOptions { Path = reloadPath, Type = ScreenshotType.Png });
+
+        var manifestPath = Path.Combine(output, "manifest.json");
+        await File.WriteAllTextAsync(manifestPath, JsonSerializer.Serialize(new
+        {
+            testName = nameof(Phase5_TableContextMenu_DeleteAndHeaderRowToggle_WorkAndPersist),
+            seedDocumentId = "phase-12-canvas-history-save",
+            userActions = new[]
+            {
+                "Insert a fresh 3×2 table from the toolbar grid (plain cells).",
+                "Right-click a cell and toggle Header row — row 0 repaints with the header tint (pixel-sampled).",
+                "Right-click and Delete table — the whole table disappears; undo restores it including the header flag.",
+                "Save, navigate away and back — the table and its header styling persist."
+            },
+            expectedVisibleChanges = "Header row toggle visibly tints the first row of a plain table; Delete table removes the whole table and undo restores it; both survive save/reload.",
+            screenshotPaths = new[] { headerOnPath, afterDeleteUndoPath, reloadPath },
+            backgroundBefore,
+            backgroundAfter,
+            backgroundReloaded
+        }, new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true }));
+
+        TestContext.AddResultFile(headerOnPath);
+        TestContext.AddResultFile(afterDeleteUndoPath);
+        TestContext.AddResultFile(reloadPath);
+        TestContext.AddResultFile(manifestPath);
+    }
+
+    private static async Task RightClickCellAsync(IPage page, string cellId)
+    {
+        var cell = await ReadCellRectAsync(page, cellId);
+        await page.Mouse.ClickAsync((float)cell.CenterX, (float)cell.CenterY, new MouseClickOptions { Button = MouseButton.Right });
+        await Assertions.Expect(page.GetByTestId("document-table-context-menu")).ToBeVisibleAsync(new() { Timeout = 10_000 });
+    }
+
+    /// <summary>Samples the painted background [r,g,b] near the top edge of an (empty) table cell
+    /// from the content-layer canvas of the page that contains it.</summary>
+    private static Task<int[]> SampleCellBackgroundAsync(IPage page, string cellId)
+        => page.EvaluateAsync<int[]>(
+            """
+            cellId => {
+                const cell = document.querySelector(`[data-canvas-table-cell][data-cell-id="${cellId}"]`);
+                if (!cell) throw new Error(`cell ${cellId} not found`);
+                const cellRect = cell.getBoundingClientRect();
+                const centerX = cellRect.left + cellRect.width / 2;
+                const probeY = cellRect.top + Math.min(6, cellRect.height / 4);
+                const canvas = Array.from(document.querySelectorAll('[data-canvas-layer="content"]')).find(candidate => {
+                    const rect = candidate.getBoundingClientRect();
+                    return centerX >= rect.left && centerX <= rect.right && probeY >= rect.top && probeY <= rect.bottom;
+                });
+                if (!canvas) throw new Error(`no content canvas under cell ${cellId}`);
+                const canvasRect = canvas.getBoundingClientRect();
+                const x = Math.round((centerX - canvasRect.left) * (canvas.width / canvasRect.width));
+                const y = Math.round((probeY - canvasRect.top) * (canvas.height / canvasRect.height));
+                const data = canvas.getContext('2d').getImageData(x, y, 1, 1).data;
+                return [data[0], data[1], data[2]];
+            }
+            """,
+            cellId);
+
     private async Task OpenPhase14DocumentAsync(IPage page)
     {
         await page.GotoAsync($"{BaseUrl}/canvas-engine-host?documentId={Phase14DocumentId}&showToolbar=true", new PageGotoOptions

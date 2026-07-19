@@ -286,6 +286,12 @@ public partial class TmDocumentCanvasEngineHost
 
         /// <summary>Selection snapshot to restore before running menu commands.</summary>
         public WysiwygSelectionSnapshot? Selection { get; set; }
+
+        /// <summary>Browser viewport width in pixels; lets the menu clamp into the viewport.</summary>
+        public int ViewportWidth { get; set; }
+
+        /// <summary>Browser viewport height in pixels; lets the menu clamp into the viewport.</summary>
+        public int ViewportHeight { get; set; }
     }
 
     /// <summary>Canvas misspelling diagnostic exposed to Blazor context menu handlers.</summary>

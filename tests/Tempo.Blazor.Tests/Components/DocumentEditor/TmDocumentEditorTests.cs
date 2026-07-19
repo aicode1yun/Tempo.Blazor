@@ -3617,6 +3617,34 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task CanvasTableContextMenu_NearViewportBottom_ClampsIntoViewport()
+    {
+        // Phase 5 finding: a right-click near the bottom of the viewport rendered the table context
+        // menu at the raw pointer position — its lower items (Header row, Delete table) landed
+        // off-screen and were unreachable. The canvas context-menu payload must carry the viewport
+        // size so FloatingStyle clamps the menu and caps it with max-block-size (the CSS scrolls).
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderDocumentEditor(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+        await MarkCanvasReadyAsync(cut);
+
+        var host = FindCanvasHost(cut).Instance;
+        await cut.InvokeAsync(() => host.OnCanvasContextMenuRequested(
+            """{"x":900,"y":950,"inTable":true,"tableId":"table-1","cellId":"cell-1","viewportWidth":1440,"viewportHeight":1000}"""));
+
+        cut.WaitForAssertion(() =>
+        {
+            var style = cut.Find("[data-testid='document-table-context-menu']").GetAttribute("style") ?? string.Empty;
+            // clamp(950, 8, 1000 - 360 - 8) → 632, plus the scroll cap.
+            style.Should().Contain("top: 632px", "the menu must be clamped into the viewport");
+            style.Should().Contain("max-block-size");
+        });
+    }
+
+    [Fact]
     public async Task InsertTableGridPicker_RoutesInsertTableCommandWithDimensions()
     {
         // Phase 4 contract: the toolbar "Insert table" grid must route execCommand('insertTable',
