@@ -77,6 +77,21 @@ public interface IReportScheduleStore
     /// <summary>Gets all enabled schedules that are due (next run or retry at or before now), across tenants.</summary>
     Task<IReadOnlyList<ReportScheduleDto>> GetDueSchedulesAsync(DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Atomically claims a due schedule for exclusive processing by <paramref name="leaseOwner"/> until
+    /// <paramref name="leaseUntilUtc"/>. Implemented as a single conditional UPDATE that only succeeds when
+    /// the schedule is currently unleased or its lease has expired at <paramref name="nowUtc"/>, so that with
+    /// more than one worker exactly one wins the claim for a given occurrence and a crashed worker's lease
+    /// becomes re-claimable once it elapses. Returns <see langword="true"/> when this caller won the claim.
+    /// </summary>
+    Task<bool> TryClaimScheduleAsync(
+        string tenantId,
+        string scheduleId,
+        string leaseOwner,
+        DateTimeOffset leaseUntilUtc,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Atomically updates the schedule row and appends the run records in one transaction.</summary>
     Task ApplyRunOutcomeAsync(
         string tenantId,

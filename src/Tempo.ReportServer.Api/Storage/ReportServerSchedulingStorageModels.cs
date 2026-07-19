@@ -81,6 +81,20 @@ public sealed class ReportScheduleEntity
     /// </summary>
     public string? PendingOccurrencesJson { get; set; }
 
+    /// <summary>
+    /// Instance identifier of the worker that currently holds the processing lease for this schedule,
+    /// or <see langword="null"/> when unleased. Set by the atomic claim so that, with more than one
+    /// worker running, only the claiming worker delivers a given due occurrence.
+    /// </summary>
+    public string? LeaseOwner { get; set; }
+
+    /// <summary>
+    /// UTC instant at which the current processing lease expires. A claim only succeeds when this is
+    /// <see langword="null"/> or in the past, so a crashed worker's lease becomes re-claimable once it
+    /// elapses. Cleared when the run outcome is applied.
+    /// </summary>
+    public DateTimeOffset? LeasedUntil { get; set; }
+
     /// <summary>Optimistic-concurrency token.</summary>
     public byte[]? RowVersion { get; set; }
 }

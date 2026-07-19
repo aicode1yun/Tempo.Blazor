@@ -21,8 +21,25 @@ public sealed record ReportSchedulingOptions
     /// <summary>Maximum missed occurrences backfilled under the catch-up policy in a single pass.</summary>
     public int MaxCatchUpRuns { get; init; } = 1000;
 
+    /// <summary>
+    /// How long a worker's processing lease on a claimed schedule is held. Must comfortably exceed the
+    /// worst-case render-and-deliver time so a slow (but live) worker's lease does not expire mid-run and
+    /// let a second worker re-claim and double-deliver. Defaults to five minutes.
+    /// </summary>
+    public TimeSpan LeaseDuration { get; init; } = TimeSpan.FromMinutes(5);
+
     /// <summary>Whether the hosted background worker is enabled.</summary>
     public bool Enabled { get; init; } = true;
+}
+
+/// <summary>
+/// Stable identity of a single running worker process, used as the lease owner when claiming a due
+/// schedule. Registered as a singleton so every scoped processor in the process shares one owner id.
+/// </summary>
+public sealed class ReportSchedulingInstanceIdentity
+{
+    /// <summary>The lease-owner identifier for this worker process.</summary>
+    public string InstanceId { get; init; } = $"{Environment.MachineName}:{Guid.NewGuid():N}";
 }
 
 /// <summary>
@@ -44,6 +61,7 @@ public sealed class ReportScheduleProcessor : IReportScheduleProcessor
     private readonly ScheduledReportDeliveryRouter _router;
     private readonly ReportSchedulingOptions _options;
     private readonly ILogger<ReportScheduleProcessor> _logger;
+    private readonly string _leaseOwner;
 
     /// <summary>Creates the processor.</summary>
     public ReportScheduleProcessor(
@@ -51,13 +69,15 @@ public sealed class ReportScheduleProcessor : IReportScheduleProcessor
         IScheduledReportRenderer renderer,
         ScheduledReportDeliveryRouter router,
         IOptions<ReportSchedulingOptions> options,
-        ILogger<ReportScheduleProcessor> logger)
+        ILogger<ReportScheduleProcessor> logger,
+        ReportSchedulingInstanceIdentity? instanceIdentity = null)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _renderer = renderer ?? throw new ArgumentNullException(nameof(renderer));
         _router = router ?? throw new ArgumentNullException(nameof(router));
         _options = (options ?? throw new ArgumentNullException(nameof(options))).Value;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _leaseOwner = (instanceIdentity ?? new ReportSchedulingInstanceIdentity()).InstanceId;
     }
 
     /// <inheritdoc />
@@ -80,6 +100,26 @@ public sealed class ReportScheduleProcessor : IReportScheduleProcessor
         var occurrences = ResolveOccurrences(schedule, nowUtc);
         if (occurrences.Count == 0)
         {
+            return;
+        }
+
+        // Atomically claim the schedule before doing any delivery work. With more than one worker, only
+        // the claimant proceeds; a losing worker skips this schedule for the pass. A crashed claimant's
+        // lease expires (LeaseDuration) and the schedule becomes re-claimable. The lease is released when
+        // the run outcome is applied (see EfReportScheduleStore.ApplyRunOutcomeAsync).
+        var claimed = await _store.TryClaimScheduleAsync(
+            schedule.TenantId,
+            schedule.ScheduleId,
+            _leaseOwner,
+            nowUtc + _options.LeaseDuration,
+            nowUtc,
+            cancellationToken).ConfigureAwait(false);
+        if (!claimed)
+        {
+            _logger.LogDebug(
+                "Scheduled report {ScheduleId} (tenant {TenantId}) is held by another worker's lease; skipping this pass.",
+                schedule.ScheduleId,
+                schedule.TenantId);
             return;
         }
 

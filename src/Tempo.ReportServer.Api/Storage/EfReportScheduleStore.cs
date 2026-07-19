@@ -147,11 +147,46 @@ public sealed class EfReportScheduleStore : IReportScheduleStore
         var rows = await _dbContext.Schedules
             .AsNoTracking()
             .Where(schedule => schedule.IsEnabled
-                && (schedule.NextRunUtc <= nowUtc || (schedule.RetryAfterUtc != null && schedule.RetryAfterUtc <= nowUtc)))
+                && (schedule.NextRunUtc <= nowUtc || (schedule.RetryAfterUtc != null && schedule.RetryAfterUtc <= nowUtc))
+                // Skip schedules another worker currently holds an unexpired lease on. The atomic claim in
+                // TryClaimScheduleAsync is authoritative; this filter merely avoids fruitless claim attempts.
+                && (schedule.LeasedUntil == null || schedule.LeasedUntil <= nowUtc))
             .OrderBy(schedule => schedule.NextRunUtc)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
         return rows.Select(ToDto).ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> TryClaimScheduleAsync(
+        string tenantId,
+        string scheduleId,
+        string leaseOwner,
+        DateTimeOffset leaseUntilUtc,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(leaseOwner);
+
+        // A single conditional UPDATE: the WHERE only matches an enabled row that is still due (matching
+        // GetDueSchedulesAsync) and is unleased or whose lease has expired. SQL Server serialises the two
+        // concurrent UPDATEs on the row's lock, so the loser re-evaluates the predicate against the
+        // winner's freshly-written lease and updates 0 rows. The due predicate additionally prevents a
+        // worker holding a stale due-list from re-claiming a schedule another worker already advanced
+        // past its due instant (its NextRunUtc/RetryAfterUtc have moved into the future).
+        var affected = await _dbContext.Schedules
+            .Where(schedule => schedule.TenantId == tenantId
+                && schedule.ScheduleId == scheduleId
+                && schedule.IsEnabled
+                && (schedule.NextRunUtc <= nowUtc || (schedule.RetryAfterUtc != null && schedule.RetryAfterUtc <= nowUtc))
+                && (schedule.LeasedUntil == null || schedule.LeasedUntil <= nowUtc))
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(schedule => schedule.LeaseOwner, leaseOwner)
+                    .SetProperty(schedule => schedule.LeasedUntil, leaseUntilUtc),
+                cancellationToken)
+            .ConfigureAwait(false);
+        return affected == 1;
     }
 
     /// <inheritdoc />
@@ -180,6 +215,10 @@ public sealed class EfReportScheduleStore : IReportScheduleStore
         row.PendingOccurrencesJson = update.PendingOccurrences.Count == 0
             ? null
             : JsonSerializer.Serialize(update.PendingOccurrences, JsonOptions);
+        // Release the processing lease as part of the same atomic outcome so the schedule is immediately
+        // re-claimable at its next due/retry instant.
+        row.LeaseOwner = null;
+        row.LeasedUntil = null;
 
         foreach (var run in runs)
         {

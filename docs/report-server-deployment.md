@@ -182,10 +182,17 @@ Zátěžový běh (in-process TestServer, `MaxConcurrentRenders=4`, tento stroj)
 ### Webhook delivery — SSRF ochrana
 
 Webhook doručení scheduled reportů (`Scheduling:Webhook`) validuje cílovou URL před odesláním
-(`ScheduledReportWebhookGuard`): povolená schémata (default jen `https`) a odmítnutí neveřejných cílů
-(loopback, link-local včetně `169.254.169.254`, RFC 1918 `10/8`/`172.16/12`/`192.168/16`, IPv6
-unique-local). DNS jména se resolvují a kontrolují všechny výsledné adresy. HttpClient má vynucený
-`Timeout`.
+(`ScheduledReportWebhookGuard`): povolená schémata (default jen `https`) a odmítnutí neveřejných cílů —
+loopback, link-local včetně `169.254.169.254`, RFC 1918 `10/8`/`172.16/12`/`192.168/16`, CGNAT
+`100.64/10`, `0/8`, multicast `224/4`, reserved `240/4`, IPv6 unique-local/link-local/multicast a NAT64
+`64:ff9b::/96` (aby vnořená IPv4 neprošla). DNS jména se resolvují a kontrolují **všechny** výsledné
+adresy. HttpClient má vynucený `Timeout`.
+
+**DNS-rebinding (TOCTOU) je uzavřen:** primární handler webhook klienta (`SocketsHttpHandler`
+`ConnectCallback` → `ScheduledReportWebhookConnector`) resolvuje host **jednou**, zvaliduje všechny
+adresy a socket **připne na již zvalidovanou adresu** — místo aby handler při connectu dělal nový
+(rebindovatelný) DNS lookup. TLS/SNI/cert validace proti hostname zůstává. Útočník tak nemůže odpovědět
+guardu veřejnou a connectu privátní adresou.
 
 | Klíč | Default | Význam |
 | --- | --- | --- |
@@ -195,12 +202,36 @@ unique-local). DNS jména se resolvují a kontrolují všechny výsledné adresy
 
 ### Scheduling scale-out
 
-Řádek schedule nese `RowVersion` (optimistic-concurrency token). Když dva workeři zpracují stejný
-schedule současně, `ApplyRunOutcomeAsync` prohrávajícího vyhodí `ReportScheduleConcurrencyException`;
-processor pass přeskočí (log `Information`), takže se **nezduplikuje run historie ani neporuší stav**.
-To ale **nebrání duplicitnímu doručení** (render+deliver proběhne u obou před zápisem). Pro produkci
-platí předpoklad **single-instance scheduling workeru** (ostatní hosty spouštěj se `Scheduling:Enabled=false`);
-plný multi-instance bez duplicit vyžaduje lease/claim na schedule (budoucí rozšíření).
+Scheduling worker je bezpečné provozovat **na více instancích současně**. Před jakýmkoli
+render+deliver si worker schedule **atomicky nárokuje (lease/claim)**:
+
+- Schedule řádek nese aditivní sloupce `LeaseOwner` (identita worker procesu) a `LeasedUntil`
+  (UTC expirace lease). Každý host má stabilní `LeaseOwner` (viz `ReportSchedulingInstanceIdentity`).
+- `IReportScheduleStore.TryClaimScheduleAsync` provede **jeden podmíněný `UPDATE`**
+  (`ExecuteUpdateAsync`), který uspěje jen když je řádek stále due (`NextRunUtc<=now` nebo
+  `RetryAfterUtc<=now`) a **nenárokovaný nebo s expirovanou lease** (`LeasedUntil IS NULL OR
+  LeasedUntil<=now`). SQL Server serializuje souběžné `UPDATE`y na zámku řádku, takže z N workerů
+  claim vyhraje **právě jeden**; ostatní pass pro daný schedule přeskočí.
+- Lease se uvolní (`LeaseOwner=NULL`, `LeasedUntil=NULL`) při zápisu výsledku běhu
+  (`ApplyRunOutcomeAsync`), takže je schedule ihned znovu-nárokovatelný ve svém dalším due/retry čase.
+- Spadlý worker: jeho lease vyprší po `Scheduling:LeaseDuration` (default 5 min) a schedule je opět
+  nárokovatelný — žádné ruční odemykání.
+- `RowVersion` (optimistic-concurrency token) je druhá pojistka: kdyby dva workeři přesto zapisovali
+  výsledek stejného schedule, prohrávající dostane `ReportScheduleConcurrencyException` a pass
+  přeskočí, takže se **nezduplikuje run historie ani neporuší stav**.
+
+**Reálná záruka doručení je AT-LEAST-ONCE, ne exactly-once.** Zbytkový (úzký) případ duplicitního
+doručení: když render+deliver **živého** workeru přesáhne `LeaseDuration`, jeho lease mezitím vyprší,
+druhý worker schedule znovu nárokuje a report **doručí znovu** (např. odešle druhý e-mail). `RowVersion`
+tomu **nezabrání** — doručení proběhne *před* zápisem výsledku u obou. Proto nastav
+`Scheduling:LeaseDuration` **komfortně nad worst-case dobu render+deliver** daného reportu.
+
+| Klíč | Default | Význam |
+| --- | --- | --- |
+| `Scheduling:LeaseDuration` | `00:05:00` | Doba držení lease na nárokovaném schedule. Nastav nad worst-case render+deliver. |
+
+Konzumenti downstreamu, pro které je duplicita nepřijatelná (webhook / storage), by měli být
+idempotentní vůči `X-Tempo-Schedule-Id` + occurrence.
 
 ### Token store scale-out (Web/BFF host)
 
@@ -215,4 +246,3 @@ dev-only in-memory distributed cache jako fallback.
 - Reálný Keycloak OIDC flow — Fáze 4 (hotovo); JIT provisioning je fail-open (transientní výpadek DB
   neshodí autentizovaný request).
 - Dockerfile — Fáze 9.
-- Multi-instance scheduling bez duplicitního doručení (lease/claim) — viz výše.

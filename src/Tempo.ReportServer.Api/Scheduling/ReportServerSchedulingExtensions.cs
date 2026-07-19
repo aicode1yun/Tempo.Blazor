@@ -22,6 +22,10 @@ public static class ReportServerSchedulingExtensions
 
         services.TryAddSingleton(TimeProvider.System);
 
+        // One stable lease-owner identity per worker process, shared by every scoped processor so the
+        // atomic schedule claim attributes ownership consistently across polls.
+        services.TryAddSingleton<ReportSchedulingInstanceIdentity>();
+
         if (configuration is not null)
         {
             services.Configure<ReportSchedulingOptions>(configuration.GetSection("Scheduling"));
@@ -41,8 +45,19 @@ public static class ReportServerSchedulingExtensions
         services.TryAddScoped<IScheduledReportRenderer, ScheduledReportRenderer>();
         services.TryAddScoped<IReportScheduleProcessor, ReportScheduleProcessor>();
 
-        // Delivery channels + router.
-        services.TryAddSingleton<IScheduledReportEmailSender, SmtpScheduledReportEmailSender>();
+        // Email transport. MailKit is the default production sender (System.Net.Mail.SmtpClient is
+        // SYSLIB0014-obsolete and kept only for the opt-in "SystemNetMail" provider). Both bind the same
+        // Scheduling:Smtp options and deliver to a plain-SMTP smtp4dev in dev as well as a relay in prod.
+        var emailProvider = configuration?["Scheduling:Email:Provider"];
+        if (string.Equals(emailProvider, "SystemNetMail", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(emailProvider, "Smtp", StringComparison.OrdinalIgnoreCase))
+        {
+            services.TryAddSingleton<IScheduledReportEmailSender, SmtpScheduledReportEmailSender>();
+        }
+        else
+        {
+            services.TryAddSingleton<IScheduledReportEmailSender, MailKitScheduledReportEmailSender>();
+        }
         services.AddScoped<IScheduledReportDeliveryChannel, EmailScheduledReportDeliveryChannel>();
         services.AddScoped<IScheduledReportDeliveryChannel, StorageScheduledReportDeliveryChannel>();
         services.AddScoped<IScheduledReportDeliveryChannel, WebhookScheduledReportDeliveryChannel>();
@@ -51,7 +66,26 @@ public static class ReportServerSchedulingExtensions
             .ConfigureHttpClient((provider, client) =>
                 client.Timeout = provider
                     .GetRequiredService<Microsoft.Extensions.Options.IOptions<ScheduledReportWebhookOptions>>()
-                    .Value.Timeout);
+                    .Value.Timeout)
+            // Close the DNS-rebinding TOCTOU: the primary handler resolves the target once, validates
+            // every returned address, and pins the socket to a validated address instead of letting the
+            // handler perform a fresh (rebindable) DNS lookup at connect time. See ScheduledReportWebhookConnector.
+            .ConfigurePrimaryHttpMessageHandler(provider =>
+            {
+                var options = provider
+                    .GetRequiredService<Microsoft.Extensions.Options.IOptions<ScheduledReportWebhookOptions>>()
+                    .Value;
+                return new System.Net.Http.SocketsHttpHandler
+                {
+                    ConnectCallback = (context, cancellationToken) => ScheduledReportWebhookConnector.ConnectValidatedAsync(
+                        context.DnsEndPoint.Host,
+                        context.DnsEndPoint.Port,
+                        options,
+                        host => System.Net.Dns.GetHostAddresses(host),
+                        ScheduledReportWebhookConnector.ConnectSocketAsync,
+                        cancellationToken),
+                };
+            });
 
         services.AddHostedService<ReportSchedulingWorker>();
         return services;

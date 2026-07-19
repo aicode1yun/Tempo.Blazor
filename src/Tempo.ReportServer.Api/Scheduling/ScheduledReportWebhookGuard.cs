@@ -118,6 +118,12 @@ public static class ScheduledReportWebhookGuard
 
     private static bool IsBlockedIPv4(byte[] bytes)
     {
+        // 0.0.0.0/8 "this host" / unspecified (0.0.0.0 also caught by IsBlockedAddress).
+        if (bytes[0] == 0)
+        {
+            return true;
+        }
+
         // 10.0.0.0/8
         if (bytes[0] == 10)
         {
@@ -148,18 +154,33 @@ public static class ScheduledReportWebhookGuard
             return true;
         }
 
+        // 224.0.0.0/4 multicast and 240.0.0.0/4 reserved/experimental (covers 255.255.255.255 broadcast).
+        if (bytes[0] >= 224)
+        {
+            return true;
+        }
+
         return bytes[0] == 100 && bytes[1] >= 64 && bytes[1] <= 127;
     }
 
     private static bool IsBlockedIPv6(IPAddress address)
     {
-        if (address.IsIPv6LinkLocal || address.IsIPv6SiteLocal || address.IsIPv6UniqueLocal)
+        if (address.IsIPv6LinkLocal || address.IsIPv6SiteLocal || address.IsIPv6UniqueLocal || address.IsIPv6Multicast)
         {
             return true;
         }
 
-        // fc00::/7 unique local (IsIPv6UniqueLocal already covers this on modern runtimes; kept explicit).
         var bytes = address.GetAddressBytes();
-        return (bytes[0] & 0xFE) == 0xFC;
+
+        // fc00::/7 unique local (IsIPv6UniqueLocal already covers this on modern runtimes; kept explicit).
+        if ((bytes[0] & 0xFE) == 0xFC)
+        {
+            return true;
+        }
+
+        // 64:ff9b::/96 NAT64 well-known prefix: an embedded IPv4 (bytes 12..15) can smuggle a private
+        // or metadata target past an IPv4-only check, so block the whole prefix.
+        ReadOnlySpan<byte> nat64Prefix = [0x00, 0x64, 0xFF, 0x9B, 0, 0, 0, 0, 0, 0, 0, 0];
+        return bytes.AsSpan(0, 12).SequenceEqual(nat64Prefix);
     }
 }

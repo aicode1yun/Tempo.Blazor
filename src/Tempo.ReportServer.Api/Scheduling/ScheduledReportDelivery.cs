@@ -91,6 +91,12 @@ public sealed record ScheduledReportSmtpOptions
 
     /// <summary>From display name.</summary>
     public string FromName { get; init; } = "Tempo Report Server";
+
+    /// <summary>Optional SMTP AUTH user name. When empty, delivery connects without authentication (e.g. smtp4dev).</summary>
+    public string? Username { get; init; }
+
+    /// <summary>Optional SMTP AUTH password, paired with <see cref="Username"/>.</summary>
+    public string? Password { get; init; }
 }
 
 /// <summary>

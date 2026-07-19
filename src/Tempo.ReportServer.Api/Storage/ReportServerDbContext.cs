@@ -196,6 +196,7 @@ public sealed class ReportServerDbContext : DbContext
             entity.Property(schedule => schedule.LastStatus).HasMaxLength(32);
             entity.Property(schedule => schedule.LastStatusMessage).HasMaxLength(400);
             entity.Property(schedule => schedule.PendingOccurrencesJson).HasMaxLength(4000);
+            entity.Property(schedule => schedule.LeaseOwner).HasMaxLength(ActorIdMaxLength);
             entity.Property(schedule => schedule.RowVersion).IsRowVersion();
             entity.HasIndex(schedule => new { schedule.TenantId, schedule.ScheduleId }).IsUnique();
             entity.HasIndex(schedule => new { schedule.IsEnabled, schedule.NextRunUtc });

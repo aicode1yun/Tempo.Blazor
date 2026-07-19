@@ -484,3 +484,32 @@ END;
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719121542_SchedulingLease'
+)
+BEGIN
+    ALTER TABLE [Schedules] ADD [LeaseOwner] nvarchar(256) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719121542_SchedulingLease'
+)
+BEGIN
+    ALTER TABLE [Schedules] ADD [LeasedUntil] datetimeoffset NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260719121542_SchedulingLease'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260719121542_SchedulingLease', N'10.0.9');
+END;
+
+COMMIT;
+GO
+
