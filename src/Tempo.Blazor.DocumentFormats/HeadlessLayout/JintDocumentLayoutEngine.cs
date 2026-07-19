@@ -78,12 +78,20 @@ public sealed class JintDocumentLayoutEngine : ITempoDocumentLayoutService, IDis
         return UnwrapSnapshot(resultJson);
     }
 
-    private string BuildRequestJson(
+    /// <summary>
+    /// Builds the exact JSON request the JS layout seam (<c>generateHeadlessLayoutSnapshotJson</c>)
+    /// receives — the serialized canvas model, the font advance tables and the review display
+    /// mode. Exposed for diagnostics and cross-runtime parity tooling (the same payload replayed
+    /// through Node must produce the same snapshot the Jint host produces).
+    /// </summary>
+    public string BuildRequestJson(
         DocumentEditorDocument document,
         DocumentPdfPageSetupOptions? pageSetup,
         IReadOnlyList<ReportPdfFontFace> fonts,
-        DocumentReviewDisplayMode reviewDisplayMode)
+        DocumentReviewDisplayMode reviewDisplayMode = DocumentReviewDisplayMode.AllMarkup)
     {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(fonts);
         var canvasModel = CanvasDocumentModelConverter.ToCanvasModel(document);
         if (pageSetup is not null)
         {

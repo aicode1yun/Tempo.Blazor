@@ -6,6 +6,7 @@ using Tempo.Blazor.Demo.Api.Endpoints;
 using Tempo.Blazor.Demo.Api.Hubs;
 using Tempo.Blazor.Demo.Api.Services;
 using Tempo.Blazor.DocumentEditor.Services;
+using Tempo.Blazor.DocumentFormats.HeadlessLayout;
 using Tempo.Blazor.EmailTemplates.Abstractions;
 using Tempo.Blazor.Mcp;
 using Tempo.Blazor.Models;
@@ -110,6 +111,8 @@ builder.Services.AddMcpServer()
 builder.Services.AddSingleton<MockNotionDatabaseStore>();
 builder.Services.AddSingleton<DemoDocumentEditorStore>();
 builder.Services.AddSingleton<DemoDocumentFormatProvider>();
+builder.Services.AddTempoDocumentLayout();
+builder.Services.AddSingleton<DemoDocumentExportFontCatalog>();
 builder.Services.AddSingleton<DemoDocumentPdfExportProvider>();
 builder.Services.AddSingleton<DemoDocumentPdfExportCache>();
 builder.Services.AddSingleton<DemoDocumentComparisonProvider>();

@@ -2,20 +2,26 @@ using System.Text;
 using FluentAssertions;
 using Tempo.Blazor.Demo.Api.Services;
 using Tempo.Blazor.DocumentEditor.Models;
+using Tempo.Blazor.DocumentFormats.HeadlessLayout;
 
 namespace Tempo.Blazor.Demo.Api.Tests;
 
 /// <summary>
-/// The demo PDF export provider must use the production WYSIWYG renderer
-/// (<c>TempoDocumentPdfRenderer</c>) whenever the request carries the canvas layout snapshot,
-/// and keep the legacy text-only rendering as the fallback for snapshot-less requests.
+/// The demo PDF export provider uses the production WYSIWYG renderer for BOTH paths (phase 3 of
+/// the headless document runtime): requests carrying the canvas layout snapshot render it
+/// directly, and snapshot-less requests are laid out server-side through
+/// <c>ITempoDocumentLayoutService</c> (the same JS layout chain the editor paints with) — the
+/// legacy text-only PDF writer is gone.
 /// </summary>
 public class DemoDocumentPdfExportProviderTests
 {
+    private static DemoDocumentPdfExportProvider CreateProvider()
+        => new(new JintDocumentLayoutEngine(), new DemoDocumentExportFontCatalog());
+
     [Fact]
     public async Task ExportPdf_WithLayoutSnapshot_RendersOnePdfPagePerSnapshotPage()
     {
-        var provider = new DemoDocumentPdfExportProvider();
+        var provider = CreateProvider();
         var request = new DocumentPdfExportRequest
         {
             DocumentId = "snapshot-doc",
@@ -47,21 +53,88 @@ public class DemoDocumentPdfExportProviderTests
     }
 
     [Fact]
-    public async Task ExportPdf_WithoutLayoutSnapshot_KeepsLegacyTextOnlyFallback()
+    public async Task ExportPdf_WithoutLayoutSnapshot_LaysOutServerSideWithWysiwygParity()
     {
-        var provider = new DemoDocumentPdfExportProvider();
-        var document = DocumentEditorDocument.Empty();
-        document.DocumentId = "legacy-doc";
-        var request = new DocumentPdfExportRequest
+        var fontCatalog = new DemoDocumentExportFontCatalog();
+        if (!fontCatalog.HasFonts)
         {
-            DocumentId = "legacy-doc",
-            Document = document,
-        };
+            // Same skip pattern as the DejaVu-based renderer tests: no system fonts on this machine.
+            return;
+        }
 
-        var result = await provider.ExportPdfAsync(request);
+        var provider = CreateProvider();
+        var document = DocumentEditorDocument.Empty("headless-doc");
+        document.Metadata.Title = "Headless export";
+        document.Blocks =
+        [
+            new DocumentBlock
+            {
+                Type = DocumentBlockType.Heading,
+                Order = 0,
+                Content = new HeadingBlockContent { Level = 1, Inlines = [new TextRun { Text = "Smlouva o dílo" }] },
+            },
+            new DocumentBlock
+            {
+                Type = DocumentBlockType.Paragraph,
+                Order = 1,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines = [new TextRun { Text = "Příliš žluťoučký kůň úpěl ďábelské ódy — headless server-side layout." }],
+                },
+            },
+        ];
+
+        var result = await provider.ExportPdfAsync(new DocumentPdfExportRequest
+        {
+            DocumentId = "headless-doc",
+            Document = document,
+        });
 
         result.ContentType.Should().Be("application/pdf");
+        var text = Encoding.Latin1.GetString(result.Content);
         Encoding.ASCII.GetString(result.Content, 0, 5).Should().Be("%PDF-");
+        CountOccurrences(text, "/MediaBox").Should().BeGreaterThanOrEqualTo(1);
+        // The WYSIWYG renderer embeds and subsets real fonts — the legacy stub used base-14
+        // Helvetica only. This is the structural proof the stub is gone.
+        text.Should().Contain("/FontFile", "server-side layout must flow through the production vector renderer");
+        text.Should().NotContain("% Tempo.Blazor demo PDF export", "the legacy text-only writer must be deleted");
+    }
+
+    [Fact]
+    public async Task ExportPdf_WithoutLayoutSnapshot_EmptyDocument_YieldsOnePageWysiwygPdf()
+    {
+        var fontCatalog = new DemoDocumentExportFontCatalog();
+        if (!fontCatalog.HasFonts)
+        {
+            return;
+        }
+
+        var provider = CreateProvider();
+
+        var result = await provider.ExportPdfAsync(new DocumentPdfExportRequest
+        {
+            DocumentId = "empty-doc",
+            Document = DocumentEditorDocument.Empty("empty-doc"),
+        });
+
+        Encoding.ASCII.GetString(result.Content, 0, 5).Should().Be("%PDF-");
+        CountOccurrences(Encoding.Latin1.GetString(result.Content), "/MediaBox").Should().Be(1,
+            "an empty document lays out as a single empty page");
+    }
+
+    [Fact]
+    public void FontCatalog_RegistersSystemFacesUnderArialAndAptosAliases()
+    {
+        var catalog = new DemoDocumentExportFontCatalog();
+        if (!catalog.HasFonts)
+        {
+            return;
+        }
+
+        catalog.Fonts.Should().Contain(face => face.Family == "Arial");
+        catalog.Fonts.Should().Contain(
+            face => face.Family == "Aptos",
+            "demo documents use the 'Aptos, Arial, sans-serif' theme — the alias keeps face resolution deterministic");
     }
 
     private static int CountOccurrences(string haystack, string needle)
@@ -123,6 +196,26 @@ public class DocumentEditorPdfExportEndpointTests : Xunit.IClassFixture<Microsof
         last.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
         var lastBytes = await last.Content.ReadAsByteArrayAsync();
         lastBytes.Should().Equal(result.Content, "the last-export endpoint must serve exactly the produced PDF");
+    }
+
+    [Fact]
+    public async Task GetExport_WithoutSnapshot_ServesHeadlessWysiwygPdf()
+    {
+        var catalog = new DemoDocumentExportFontCatalog();
+        if (!catalog.HasFonts)
+        {
+            return;
+        }
+
+        // GET export has no client snapshot — the server lays the stored document out headlessly.
+        var response = await _client.GetAsync("/api/document-editor/contract-demo/export/pdf");
+
+        response.EnsureSuccessStatusCode();
+        response.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        Encoding.ASCII.GetString(bytes, 0, 5).Should().Be("%PDF-");
+        var text = Encoding.Latin1.GetString(bytes);
+        text.Should().Contain("/FontFile", "the headless path renders through the production vector renderer");
     }
 
     [Fact]

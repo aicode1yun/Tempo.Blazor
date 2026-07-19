@@ -55,6 +55,29 @@
   ≈ 0.9 s warm for a 54-page document (≈ 17 ms/page); 369-page stress run 5.4 s cold / 3.8 s
   warm. Perf gate budgets: 15 s cold / 6 s warm at 21+ pages.
 
+### Headless document runtime — Phase 3: headless ↔ browser export parity
+
+- Committed 21-page parity pair (`headless-parity-document.json` + request + snapshot fixtures,
+  regenerable via `TEMPO_REGENERATE_HEADLESS_PARITY_FIXTURE=1`): the Jint-hosted layout of the
+  committed Czech contract document matches the browser-generated
+  `layout-snapshot-parity-fixture.json` in page count (21) and page geometry (< 1 pt — the only
+  difference is the canvas engine's rounded 794×1123 px A4 default vs the exact
+  595.276 pt × 96⁄72), reproduces the committed headless snapshot byte-for-byte, and replaying
+  the identical request through the bundle in Node (V8) yields a DEEPLY EQUAL snapshot — layout
+  does not depend on the hosting JS engine. Headless snapshot → `TempoDocumentPdfRenderer` PDF
+  keeps page count and block positions within 1 pt.
+- `Demo.Api` `DemoDocumentPdfExportProvider`: the legacy text-only PDF stub is deleted. Every
+  export flows through the production WYSIWYG renderer — snapshot-less requests (GET exports,
+  headless API clients) are laid out server-side via `ITempoDocumentLayoutService` with the new
+  `DemoDocumentExportFontCatalog` (system Arial/DejaVu faces aliased as `Aptos` for the demo
+  theme), the same faces the PDF embeds.
+- `JintDocumentLayoutEngine.BuildRequestJson` is now public — the exact JS-seam payload, used by
+  the cross-runtime parity test and available for diagnostics.
+- New E2E (`DocumentEditorHeadlessExportParityE2ETests`): the same document exported through the
+  browser path (live canvas snapshot) and the server path (headless GET export) agrees on
+  pagination and text layer; both PDFs open in TmPdfViewer (screenshots); empty-document server
+  export yields a valid single-page PDF.
+
 ## 2.3.9 - 2026-07-19
 
 ### Document editor — canvas command layer completed (TmDocumentEditor)
