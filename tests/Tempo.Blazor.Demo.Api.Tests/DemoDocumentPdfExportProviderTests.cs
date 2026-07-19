@@ -16,7 +16,10 @@ namespace Tempo.Blazor.Demo.Api.Tests;
 public class DemoDocumentPdfExportProviderTests
 {
     private static DemoDocumentPdfExportProvider CreateProvider()
-        => new(new JintDocumentLayoutEngine(), new DemoDocumentExportFontCatalog());
+        => new(
+            new TempoDocumentService(new JintDocumentLayoutEngine()),
+            new DemoDocumentExportFontCatalog(),
+            new DemoDocumentEditorStore());
 
     [Fact]
     public async Task ExportPdf_WithLayoutSnapshot_RendersOnePdfPagePerSnapshotPage()
@@ -120,6 +123,34 @@ public class DemoDocumentPdfExportProviderTests
         Encoding.ASCII.GetString(result.Content, 0, 5).Should().Be("%PDF-");
         CountOccurrences(Encoding.Latin1.GetString(result.Content), "/MediaBox").Should().Be(1,
             "an empty document lays out as a single empty page");
+    }
+
+    [Fact]
+    public async Task ExportPdf_WithoutLayoutSnapshot_EmbedsAssetBackedImagesFromTheStore()
+    {
+        if (!new DemoDocumentExportFontCatalog().HasFonts)
+        {
+            return;
+        }
+
+        // contract-demo carries asset-backed drawings ('Image resolved through
+        // IDocumentImageUrlResolver', exhibits) whose bytes live in the demo image store —
+        // the headless path must resolve them into real embedded images, not placeholder rects.
+        var store = new DemoDocumentEditorStore();
+        var provider = new DemoDocumentPdfExportProvider(
+            new TempoDocumentService(new JintDocumentLayoutEngine()),
+            new DemoDocumentExportFontCatalog(),
+            store);
+        var loaded = await store.LoadAsync("contract-demo", new DocumentEditorLoadOptions { IncludeDocument = true });
+
+        var result = await provider.ExportPdfAsync(new DocumentPdfExportRequest
+        {
+            DocumentId = "contract-demo",
+            Document = loaded.Document!,
+        });
+
+        var text = Encoding.Latin1.GetString(result.Content);
+        text.Should().Contain("/XObject", "asset-backed images must be embedded in the headless PDF");
     }
 
     [Fact]

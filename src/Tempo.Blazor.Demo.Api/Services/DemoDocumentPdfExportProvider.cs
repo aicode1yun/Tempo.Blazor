@@ -9,22 +9,26 @@ namespace Tempo.Blazor.Demo.Api.Services;
 /// Server-side demo implementation of the document PDF export provider boundary. Every export
 /// flows through the production WYSIWYG renderer: requests carrying the editor's canvas layout
 /// snapshot render it directly, and snapshot-less requests (headless API clients, GET exports)
-/// are laid out server-side via <see cref="ITempoDocumentLayoutService"/> — the same JS layout
-/// chain the editor paints with, measured from the same font bytes the PDF embeds.
+/// are laid out server-side via <see cref="ITempoDocumentService"/> — the same JS layout chain
+/// the editor paints with, measured from the same font bytes the PDF embeds, with asset-backed
+/// image sources resolved from the demo image store so headless exports embed real images.
 /// </summary>
 public sealed class DemoDocumentPdfExportProvider : IDocumentPdfExportProvider
 {
-    private readonly ITempoDocumentLayoutService _layoutService;
+    private readonly ITempoDocumentService _documentService;
     private readonly DemoDocumentExportFontCatalog _fontCatalog;
+    private readonly DemoDocumentEditorStore _store;
     private readonly TempoDocumentPdfRenderer _renderer;
 
-    /// <summary>Creates the provider over the headless layout service and the demo font catalog.</summary>
+    /// <summary>Creates the provider over the headless document facade, demo fonts and the demo image store.</summary>
     public DemoDocumentPdfExportProvider(
-        ITempoDocumentLayoutService layoutService,
-        DemoDocumentExportFontCatalog fontCatalog)
+        ITempoDocumentService documentService,
+        DemoDocumentExportFontCatalog fontCatalog,
+        DemoDocumentEditorStore store)
     {
-        _layoutService = layoutService;
+        _documentService = documentService;
         _fontCatalog = fontCatalog;
+        _store = store;
         // The renderer embeds the same faces the headless layout measures with — measurement and
         // drawing agree by construction.
         _renderer = new TempoDocumentPdfRenderer(new TempoDocumentPdfRendererOptions
@@ -34,30 +38,56 @@ public sealed class DemoDocumentPdfExportProvider : IDocumentPdfExportProvider
     }
 
     /// <inheritdoc />
-    public Task<DocumentPdfExportResult> ExportPdfAsync(
+    public async Task<DocumentPdfExportResult> ExportPdfAsync(
         DocumentPdfExportRequest request,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         var fileName = EnsurePdfFileName(request.FileName, request.DocumentId);
+        byte[] content;
         if (string.IsNullOrWhiteSpace(request.LayoutSnapshotJson))
         {
-            // Headless path: lay the document out server-side with the canvas layout chain.
-            var options = request.Options ?? new DocumentPdfExportOptions();
-            request.LayoutSnapshotJson = _layoutService.GenerateLayoutSnapshotJson(
-                request.Document,
-                options.PageSetup,
-                _fontCatalog.Fonts,
-                options.ReviewDisplayMode);
+            // Headless path: lay the document out server-side with the canvas layout chain,
+            // resolving asset-backed images from the demo store into embeddable data URIs.
+            var rendered = await _documentService.RenderPdfAsync(new TempoDocumentRenderRequest
+            {
+                Document = request.Document,
+                Options = request.Options,
+                Fonts = _fontCatalog.Fonts,
+                DocumentId = request.DocumentId,
+                FileName = request.FileName,
+                ImageResolver = ResolveImageSourceAsync,
+            }, cancellationToken);
+            content = rendered.PdfContent;
+        }
+        else
+        {
+            content = _renderer.Render(request);
         }
 
-        return Task.FromResult(new DocumentPdfExportResult
+        return new DocumentPdfExportResult
         {
-            Content = _renderer.Render(request),
+            Content = content,
             ContentType = "application/pdf",
             FileName = fileName
-        });
+        };
+    }
+
+    /// <summary>
+    /// Resolves demo image references: asset-backed sources come from the demo image store as
+    /// data URIs; host-relative URLs are not resolvable server-side and keep their placeholder.
+    /// </summary>
+    private Task<string?> ResolveImageSourceAsync(TempoDocumentImageReference reference, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!string.IsNullOrWhiteSpace(reference.AssetId)
+            && _store.GetImage(reference.AssetId!) is { } image)
+        {
+            return Task.FromResult<string?>($"data:{image.ContentType};base64,{Convert.ToBase64String(image.Content)}");
+        }
+
+        return Task.FromResult<string?>(null);
     }
 
     private static string EnsurePdfFileName(string? requestedName, string documentId)

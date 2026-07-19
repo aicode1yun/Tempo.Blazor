@@ -1,0 +1,10 @@
+{
+  "itemName": "TempoDocumentImageReference",
+  "kind": "Class",
+  "category": "HeadlessLayout",
+  "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+  "description": "An image reference the headless pipeline needs an embeddable source for: the owning document id, the provider asset id (when asset-backed) and the original URL (never an already-embeddable data URI). Passed to TempoDocumentImageSourceResolver before layout.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentService.cs",
+  "documentationStatus": "generated"
+}

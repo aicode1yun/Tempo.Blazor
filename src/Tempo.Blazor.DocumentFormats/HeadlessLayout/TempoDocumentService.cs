@@ -5,6 +5,20 @@ using Tempo.Reporting.Engine.Pdf;
 
 namespace Tempo.Blazor.DocumentFormats.HeadlessLayout;
 
+/// <summary>An image reference the headless pipeline needs an embeddable source for.</summary>
+/// <param name="DocumentId">Owning document id.</param>
+/// <param name="AssetId">Provider asset id, when the image is asset-backed.</param>
+/// <param name="Url">Original URL, when present (never an already-embeddable data URI).</param>
+public sealed record TempoDocumentImageReference(string DocumentId, string? AssetId, string? Url);
+
+/// <summary>
+/// Resolves an image reference to an embeddable data URI. Return null to leave the reference
+/// unresolved (the layout then paints the image's footprint as a placeholder rectangle).
+/// </summary>
+public delegate Task<string?> TempoDocumentImageSourceResolver(
+    TempoDocumentImageReference reference,
+    CancellationToken cancellationToken);
+
 /// <summary>Request for the headless document facade: a template or plain document plus the data to render it with.</summary>
 public sealed class TempoDocumentRenderRequest
 {
@@ -28,6 +42,15 @@ public sealed class TempoDocumentRenderRequest
 
     /// <summary>Suggested file name without extension.</summary>
     public string? FileName { get; init; }
+
+    /// <summary>
+    /// Optional server-side image resolution: asset-backed and URL-based image sources that are
+    /// not data URIs yet are resolved to embeddable data URIs before layout, so headless exports
+    /// embed real images (the browser does this client-side via IDocumentImageUrlResolver).
+    /// Unresolved references keep their placeholder footprint. Hosts should prefer asset-backed
+    /// images for server-rendered exports — host-relative URLs are not resolvable on the server.
+    /// </summary>
+    public TempoDocumentImageSourceResolver? ImageResolver { get; init; }
 }
 
 /// <summary>Result of a headless PDF render.</summary>
@@ -100,26 +123,26 @@ public sealed class TempoDocumentService : ITempoDocumentService
     }
 
     /// <inheritdoc />
-    public Task<TempoDocumentPdfResult> RenderPdfAsync(
+    public async Task<TempoDocumentPdfResult> RenderPdfAsync(
         TempoDocumentRenderRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
         cancellationToken.ThrowIfCancellationRequested();
 
-        var (exportRequest, fonts, forensicTimestamp) = PrepareExportRequest(request);
+        var (exportRequest, fonts, forensicTimestamp) = await PrepareExportRequestAsync(request, cancellationToken);
         var renderer = new TempoDocumentPdfRenderer(new TempoDocumentPdfRendererOptions { Fonts = fonts });
-        return Task.FromResult(new TempoDocumentPdfResult
+        return new TempoDocumentPdfResult
         {
             PdfContent = renderer.Render(exportRequest),
             PageCount = PageCountOf(exportRequest.LayoutSnapshotJson!),
             LayoutSnapshotJson = exportRequest.LayoutSnapshotJson!,
             ForensicTimestamp = forensicTimestamp,
-        });
+        };
     }
 
     /// <inheritdoc />
-    public Task<IReadOnlyList<TempoDocumentPageImage>> RenderPageImagesAsync(
+    public async Task<IReadOnlyList<TempoDocumentPageImage>> RenderPageImagesAsync(
         TempoDocumentRenderRequest request,
         double dpi = 96,
         CancellationToken cancellationToken = default)
@@ -132,7 +155,7 @@ public sealed class TempoDocumentService : ITempoDocumentService
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        var (exportRequest, fonts, _) = PrepareExportRequest(request);
+        var (exportRequest, fonts, _) = await PrepareExportRequestAsync(request, cancellationToken);
         var renderer = new TempoDocumentPdfRenderer(new TempoDocumentPdfRendererOptions { Fonts = fonts });
         var snapshot = renderer.BuildReportSnapshot(exportRequest);
         var rasterOptions = new ReportPdfRendererOptions { Fonts = fonts };
@@ -150,11 +173,11 @@ public sealed class TempoDocumentService : ITempoDocumentService
                 png));
         }
 
-        return Task.FromResult<IReadOnlyList<TempoDocumentPageImage>>(images);
+        return images;
     }
 
-    private (DocumentPdfExportRequest ExportRequest, IReadOnlyList<ReportPdfFontFace> Fonts, DateTimeOffset? ForensicTimestamp)
-        PrepareExportRequest(TempoDocumentRenderRequest request)
+    private async Task<(DocumentPdfExportRequest ExportRequest, IReadOnlyList<ReportPdfFontFace> Fonts, DateTimeOffset? ForensicTimestamp)>
+        PrepareExportRequestAsync(TempoDocumentRenderRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request.Document);
         var fonts = request.Fonts ?? [];
@@ -165,6 +188,11 @@ public sealed class TempoDocumentService : ITempoDocumentService
                 request.Document,
                 request.TokenValues,
                 new DocumentAssemblyOptions { Now = _timeProvider.GetUtcNow() });
+
+        if (request.ImageResolver is not null)
+        {
+            document = await ResolveImageSourcesAsync(document, request.ImageResolver, cancellationToken);
+        }
 
         var options = request.Options ?? new DocumentPdfExportOptions();
         DateTimeOffset? forensicTimestamp = null;
@@ -206,6 +234,107 @@ public sealed class TempoDocumentService : ITempoDocumentService
             LayoutSnapshotJson = snapshotJson,
         }, fonts, forensicTimestamp);
     }
+
+    /// <summary>
+    /// Resolves non-data image sources (document assets, image blocks, drawing runs — incl.
+    /// content inside table cells, content controls and headers/footers) to embeddable data URIs
+    /// on a CLONE of the document; the caller's instance is never mutated. References the
+    /// resolver returns null for keep their original source.
+    /// </summary>
+    private static async Task<DocumentEditorDocument> ResolveImageSourcesAsync(
+        DocumentEditorDocument source,
+        TempoDocumentImageSourceResolver resolver,
+        CancellationToken cancellationToken)
+    {
+        var document = DocumentEditorJson.Deserialize(DocumentEditorJson.Serialize(source));
+
+        async Task<string?> ResolveAsync(string? assetId, string? url)
+        {
+            if (IsEmbeddable(url) || (string.IsNullOrWhiteSpace(assetId) && string.IsNullOrWhiteSpace(url)))
+            {
+                return null;
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            var resolved = await resolver(new TempoDocumentImageReference(document.DocumentId, assetId, url), cancellationToken);
+            return string.IsNullOrWhiteSpace(resolved) ? null : resolved;
+        }
+
+        foreach (var asset in document.Assets)
+        {
+            if (await ResolveAsync(asset.Id, asset.Url) is { } resolvedAssetUrl)
+            {
+                asset.Url = resolvedAssetUrl;
+            }
+        }
+
+        foreach (var block in EnumerateAllBlocks(document))
+        {
+            if (block.Content is ImageBlockContent image
+                && await ResolveAsync(image.AssetId, image.Url) is { } resolvedImageUrl)
+            {
+                image.Url = resolvedImageUrl;
+            }
+
+            foreach (var drawing in InlinesOf(block.Content).OfType<DocumentDrawingRun>())
+            {
+                if (await ResolveAsync(drawing.AssetId, drawing.Url) is { } resolvedDrawingUrl)
+                {
+                    drawing.Url = resolvedDrawingUrl;
+                }
+            }
+        }
+
+        return document;
+    }
+
+    private static bool IsEmbeddable(string? url)
+        => url is not null && url.StartsWith("data:", StringComparison.OrdinalIgnoreCase);
+
+    private static IEnumerable<DocumentBlock> EnumerateAllBlocks(DocumentEditorDocument document)
+    {
+        foreach (var block in EnumerateBlocks(document.Blocks))
+        {
+            yield return block;
+        }
+
+        foreach (var region in document.HeadersFooters)
+        {
+            foreach (var block in EnumerateBlocks(region.Blocks))
+            {
+                yield return block;
+            }
+        }
+    }
+
+    private static IEnumerable<DocumentBlock> EnumerateBlocks(IEnumerable<DocumentBlock> blocks)
+    {
+        foreach (var block in blocks)
+        {
+            yield return block;
+
+            var nested = block.Content switch
+            {
+                TableBlockContent table => table.Rows.SelectMany(row => row.Cells).SelectMany(cell => cell.Blocks),
+                ContentControlBlockContent control => control.Blocks,
+                _ => [],
+            };
+            foreach (var child in EnumerateBlocks(nested))
+            {
+                yield return child;
+            }
+        }
+    }
+
+    private static IEnumerable<InlineContent> InlinesOf(DocumentBlockContent content)
+        => content switch
+        {
+            ParagraphBlockContent paragraph => paragraph.Inlines,
+            HeadingBlockContent heading => heading.Inlines,
+            QuoteBlockContent quote => quote.Inlines,
+            ListBlockContent list => list.Inlines,
+            _ => [],
+        };
 
     private static int PageCountOf(string layoutSnapshotJson)
     {

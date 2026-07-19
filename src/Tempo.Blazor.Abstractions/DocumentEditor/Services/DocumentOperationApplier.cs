@@ -640,8 +640,13 @@ public class DocumentOperationApplier
 
         if (ReferenceEquals(location.Container, document.Blocks))
         {
+            // Order-value semantics with a deterministic tie-break: the moved block sorts BEFORE
+            // blocks that already carry the same order — mirrors the JS collaboration applier, so
+            // "move to order 0" puts the block first on both sides.
+            document.Blocks.RemoveAt(location.Index);
             location.Block.Order = operation.Target.Order.Value;
-            document.Blocks = document.Blocks.OrderBy(item => item.Order).ToList();
+            var bodyIndex = document.Blocks.FindIndex(item => item.Order >= location.Block.Order);
+            document.Blocks.Insert(bodyIndex < 0 ? document.Blocks.Count : bodyIndex, location.Block);
             return DocumentOperationValidationResult.Valid();
         }
 

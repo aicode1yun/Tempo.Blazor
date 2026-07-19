@@ -97,6 +97,25 @@
   their totals, with PNG preview screenshots for UX review; COMPONENTS.md gained a
   "Headless dokumentový runtime" section.
 
+### Headless document runtime — follow-ups
+
+- Server-side image resolution: `TempoDocumentRenderRequest.ImageResolver`
+  (`TempoDocumentImageSourceResolver` + `TempoDocumentImageReference`) resolves asset-backed and
+  URL-based image sources to embeddable data URIs before layout — headless exports embed real
+  images instead of placeholder rects. `DemoDocumentPdfExportProvider` resolves demo-store
+  assets this way (`/XObject` embedded in headless PDFs); host-relative URLs remain
+  unresolvable server-side by design.
+- Applier convergence completed: body-level `insertBlock`/`moveBlock` now share ORDER-VALUE
+  semantics with deterministic tie-breaks on both runtimes (JS previously spliced by index —
+  fractional/large C# order values landed wrong), the JS applier normalizes persistence-shaped
+  block payloads (`content.$type`/`inlines`) into canvas blocks on apply, and nested moves stay
+  in their source cell. The convergence fixture now covers insert/update/move incl. cell
+  containers and persistence payloads.
+- Skia-derived parity fixtures are platform-aware: byte-exact on Windows (the generator
+  platform), structural with tight tolerances elsewhere — Skia's scaler backend (FreeType vs
+  DirectWrite) differs by ~1e-5 font units per advance, which broke byte comparisons on Linux
+  CI.
+
 ### Headless document runtime — Phase 5: server-side operation applier
 
 - Coverage audit of the canonical operation model across the C# applier

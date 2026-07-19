@@ -55,20 +55,22 @@ runs back. Same errors/invariants.
 ## Block operations
 
 ### `insertBlock`
-Inserts `Block` (cloned) into the target container — the body (ordered by `Order`, which
-`Target.Order` overrides) or a table cell (`Target.TableCellId`; `Target.Order` = list index).
-Idempotent: an existing block id in the container is a valid no-op. Errors: `Block` payload or
-target cell missing.
+Inserts `Block` (cloned) into the target container — the body (ORDER-VALUE semantics:
+`Target.Order` becomes the block's order; the block lands after blocks already carrying the
+same order) or a table cell (`Target.TableCellId`; `Target.Order` = list index). The JS applier
+normalizes persistence-shaped payloads into canvas blocks on apply. Idempotent: an existing
+block id in the container is a valid no-op. Errors: `Block` payload or target cell missing.
 
 ### `deleteBlock`
 Removes the block (body or nested). Valid even when already gone. The conflict resolver drops
 LATER operations targeting a deleted block.
 
 ### `moveBlock`
-Body: sets `Block.Order = Target.Order` and re-sorts the body. Table cell: index-based move
-within the cell's list. Errors: block missing or `Target.Order` null. (Known cross-runtime
-nuance: body moves are order-value semantics in C#, index semantics in JS — see the coverage
-doc.)
+Body: ORDER-VALUE semantics — `Block.Order = Target.Order` with a deterministic tie-break (the
+moved block sorts BEFORE blocks already carrying the same order, so "move to order 0" puts the
+block first on both runtimes). Table cell: index-based move within the cell's list; a nested
+block stays in its source cell when no cell id is given. Errors: block missing or
+`Target.Order` null.
 
 ### `updateBlock`
 Replaces the whole block payload in place (body keeps the existing `Order` unless

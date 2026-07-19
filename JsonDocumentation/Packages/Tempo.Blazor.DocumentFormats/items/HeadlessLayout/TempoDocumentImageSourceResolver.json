@@ -1,0 +1,10 @@
+{
+  "itemName": "TempoDocumentImageSourceResolver",
+  "kind": "Delegate",
+  "category": "HeadlessLayout",
+  "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+  "description": "Server-side image resolution seam for the headless facade (TempoDocumentRenderRequest.ImageResolver): resolves an image reference (asset id / URL) to an embeddable data URI before layout, so headless exports embed real images — the counterpart of the browser's IDocumentImageUrlResolver. Return null to leave the reference unresolved; its footprint then renders as a placeholder rectangle. Hosts should prefer asset-backed images for server-rendered exports; host-relative URLs are not resolvable on the server.",
+  "packageId": "Tempo.Blazor.DocumentFormats",
+  "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentService.cs",
+  "documentationStatus": "generated"
+}

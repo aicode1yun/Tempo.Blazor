@@ -1,6 +1,6 @@
 import { asArray, asText, clone, sortObject } from '../../document-editor/core/helpers.mjs';
 import { transformOperation as transformCoreTextOperation } from '../../document-editor/core-engine/operations.mjs';
-import { createCanvasDocumentModel } from '../model/canvas-document-model.mjs';
+import { createCanvasDocumentModel, normalizeBlock } from '../model/canvas-document-model.mjs';
 
 export function applyRemoteOperationBatch(model = {}, remoteBatch = {}, options = {}) {
     let working = createCanvasDocumentModel(clone(model));
@@ -207,9 +207,78 @@ function applyTextMutation(model, operation, mode) {
     return { applied: true, model };
 }
 
-function applyInsertBlock(model, operation) {
-    const block = clone(operation.block || operation.Block);
+// Converts a persistence-shaped block payload (C# DocumentBlock wire format: `$type`
+// discriminated content with `inlines`/`level`) into the canvas shape (`content.runs`,
+// `headingLevel`, `content.table`) and re-normalizes it, so blocks carried by C#-produced
+// insertBlock/updateBlock operations become fully editable canvas blocks. Canvas-shaped
+// payloads pass through the same normalization unchanged.
+function normalizeOperationBlock(payload) {
+    const block = clone(payload);
     if (!block || !asText(block.id)) {
+        return null;
+    }
+
+    // Canvas-shaped payloads pass through untouched (historical behavior — free-form block
+    // props like alignment/width survive); only persistence-shaped payloads are converted and
+    // fully normalized.
+    const content = block.content;
+    if (content && content.$type && !Array.isArray(content.runs) && !content.table) {
+        return normalizeBlock(convertPersistenceBlock(block), 0);
+    }
+
+    return block;
+}
+
+function convertPersistenceBlock(block) {
+    const content = block?.content;
+    if (!content || Array.isArray(content.runs) || content.table || !content.$type) {
+        return block;
+    }
+
+    const kind = asText(content.$type);
+    const converted = { ...block };
+    if (kind === 'table') {
+        converted.type = 'table';
+        converted.content = {
+            type: 'table',
+            table: {
+                rows: asArray(content.rows).map(row => ({
+                    ...row,
+                    cells: asArray(row?.cells).map(cell => ({
+                        ...cell,
+                        blocks: asArray(cell?.blocks).map(convertPersistenceBlock),
+                    })),
+                })),
+            },
+        };
+        return converted;
+    }
+
+    const headingLevel = kind === 'heading' ? Math.max(1, Number(content.level) || 1) : null;
+    converted.type = headingLevel ? 'heading' : kind === 'quote' || kind === 'list' ? kind : 'paragraph';
+    converted.content = {
+        type: converted.type,
+        ...(headingLevel ? { headingLevel } : {}),
+        runs: asArray(content.inlines).map((inline, index) => convertPersistenceInline(inline, index)),
+    };
+    return converted;
+}
+
+function convertPersistenceInline(inline, index) {
+    const kind = asText(inline?.$type || inline?.type || 'text');
+    return {
+        ...inline,
+        $type: undefined,
+        id: asText(inline?.id) || `run-${index + 1}`,
+        type: kind,
+        text: asText(inline?.text),
+        marks: asArray(inline?.marks),
+    };
+}
+
+function applyInsertBlock(model, operation) {
+    const block = normalizeOperationBlock(operation.block || operation.Block);
+    if (!block) {
         return { applied: false, model, reason: 'blockMissing' };
     }
 
@@ -225,8 +294,19 @@ function applyInsertBlock(model, operation) {
         blocks.splice(existing, 1);
     }
 
-    const order = Math.max(0, Math.min(blocks.length, Number(target.order ?? target.Order ?? blocks.length) || 0));
-    blocks.splice(order, 0, block);
+    const orderValue = Number(target.order ?? target.Order ?? blocks.length) || 0;
+    if (blocks === model?.body?.blocks) {
+        // Body container: ORDER-VALUE semantics — the inserted block lands after blocks that
+        // already carry the same order (mirrors the C# applier's append + stable sort).
+        block.order = orderValue;
+        const bodyIndex = blocks.findIndex(item => (Number(item?.order) || 0) > orderValue);
+        blocks.splice(bodyIndex < 0 ? blocks.length : bodyIndex, 0, block);
+    } else {
+        // Nested containers (table cells) keep list order — index-based insert.
+        const index = Math.max(0, Math.min(blocks.length, orderValue));
+        blocks.splice(index, 0, block);
+    }
+
     refreshModelVersion(model);
     syncSections(model);
     return { applied: true, model };
@@ -253,10 +333,22 @@ function applyMoveBlock(model, operation) {
     }
 
     const [block] = location.blocks.splice(location.index, 1);
-    const container = findContainer(model, asText(target.tableCellId || target.TableCellId)) || { blocks: location.blocks };
+    const cellId = asText(target.tableCellId || target.TableCellId || location.cellId);
+    const container = findContainer(model, cellId) || { blocks: location.blocks };
     const blocks = ensureBlocks(container);
-    const order = Math.max(0, Math.min(blocks.length, Number(target.order ?? target.Order ?? blocks.length) || 0));
-    blocks.splice(order, 0, block);
+    const orderValue = Number(target.order ?? target.Order ?? blocks.length) || 0;
+    if (blocks === model?.body?.blocks) {
+        // Body container: ORDER-VALUE semantics with a deterministic tie-break — the moved block
+        // sorts before blocks already carrying the same order (mirrors the C# applier, so
+        // fractional/large order values from C#-produced operations land correctly).
+        block.order = orderValue;
+        const bodyIndex = blocks.findIndex(item => (Number(item?.order) || 0) >= orderValue);
+        blocks.splice(bodyIndex < 0 ? blocks.length : bodyIndex, 0, block);
+    } else {
+        // Nested containers (table cells) keep list order — index-based move.
+        const index = Math.max(0, Math.min(blocks.length, orderValue));
+        blocks.splice(index, 0, block);
+    }
     if (isOutlineBlock(block)) {
         refreshOutlineCacheVersions(model);
     }
@@ -267,7 +359,7 @@ function applyMoveBlock(model, operation) {
 }
 
 function applyUpdateBlock(model, operation) {
-    const block = clone(operation.block || operation.Block);
+    const block = normalizeOperationBlock(operation.block || operation.Block);
     const target = targetOf(operation);
     const blockId = asText(target.blockId || target.BlockId || block?.id);
     const location = findBlockLocation(model, blockId, asText(target.tableCellId || target.TableCellId));

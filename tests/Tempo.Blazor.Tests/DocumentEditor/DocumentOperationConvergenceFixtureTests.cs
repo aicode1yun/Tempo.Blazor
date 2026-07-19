@@ -225,7 +225,54 @@ public sealed class DocumentOperationConvergenceFixtureTests
             }
         }
 
-        // Phase 2 — block-level operations shared by both appliers.
+        // Phase 2 — block-level operations shared by both appliers (incl. the semantics
+        // converged in this plan: persistence-shaped insert/update payloads and body-level
+        // order-value moves).
+        Emit(NewOperation(DocumentOperationType.InsertBlock, op =>
+        {
+            op.Target.Order = 1.5 + random.Next(2);
+            op.Block = new DocumentBlock
+            {
+                Id = $"inserted-{seed}",
+                Type = DocumentBlockType.Paragraph,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines = [new TextRun { Id = $"inserted-{seed}-run", Text = $"Vložený odstavec {seed}." }],
+                },
+            };
+        }));
+        Emit(NewOperation(DocumentOperationType.InsertBlock, op =>
+        {
+            op.Target.TableCellId = "t1c1";
+            op.Target.Order = 1;
+            op.Block = new DocumentBlock
+            {
+                Id = $"inserted-cell-{seed}",
+                Type = DocumentBlockType.Paragraph,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines = [new TextRun { Id = $"inserted-cell-{seed}-run", Text = "Vloženo do buňky." }],
+                },
+            };
+        }));
+        Emit(NewOperation(DocumentOperationType.UpdateBlock, op =>
+        {
+            op.Target.BlockId = "p0";
+            op.Block = new DocumentBlock
+            {
+                Id = "p0",
+                Type = DocumentBlockType.Paragraph,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines = [new TextRun { Id = "p0-updated-run", Text = $"Aktualizovaný obsah {seed}." }],
+                },
+            };
+        }));
+        Emit(NewOperation(DocumentOperationType.MoveBlock, op =>
+        {
+            op.Target.BlockId = "p2";
+            op.Target.Order = 0.5;
+        }));
         Emit(NewOperation(DocumentOperationType.SetBlockAttribute, op =>
         {
             op.Target.BlockId = "p1";

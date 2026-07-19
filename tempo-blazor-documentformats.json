@@ -656,6 +656,16 @@
       ]
     },
     {
+      "itemName": "TempoDocumentImageReference",
+      "kind": "Record",
+      "category": "Headless Layout",
+      "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+      "description": "An image reference the headless pipeline needs an embeddable source for: the owning document id, the provider asset id (when asset-backed) and the original URL (never an already-embeddable data URI). Passed to TempoDocumentImageSourceResolver before layout.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentService.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "TempoDocumentLayoutException",
       "kind": "Class",
       "category": "Headless Layout",
@@ -754,6 +764,16 @@
       "packageId": "Tempo.Blazor.DocumentFormats",
       "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoFontAdvanceTableExtractor.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "TempoDocumentImageSourceResolver",
+      "kind": "Delegate",
+      "category": "HeadlessLayout",
+      "namespace": "Tempo.Blazor.DocumentFormats.HeadlessLayout",
+      "description": "Server-side image resolution seam for the headless facade (TempoDocumentRenderRequest.ImageResolver): resolves an image reference (asset id / URL) to an embeddable data URI before layout, so headless exports embed real images — the counterpart of the browser's IDocumentImageUrlResolver. Return null to leave the reference unresolved; its footprint then renders as a placeholder rectangle. Hosts should prefer asset-backed images for server-rendered exports; host-relative URLs are not resolvable on the server.",
+      "packageId": "Tempo.Blazor.DocumentFormats",
+      "sourcePath": "src/Tempo.Blazor.DocumentFormats/HeadlessLayout/TempoDocumentService.cs",
+      "documentationStatus": "generated"
     },
     {
       "itemName": "DocumentHtmlExporter",
@@ -958,11 +978,11 @@
     }
   ],
   "summary": {
-    "itemCount": 57,
-    "manualItemCount": 57,
-    "generatedItemCount": 57,
+    "itemCount": 59,
+    "manualItemCount": 59,
+    "generatedItemCount": 58,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 57
+    "publicApiTypeCount": 58
   }
 }

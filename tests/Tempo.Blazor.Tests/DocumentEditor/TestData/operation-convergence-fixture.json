@@ -9,7 +9,7 @@
         "version": 0,
         "metadata": {
           "title": "",
-          "createdAt": "2026-07-19T13:39:57.5590938+00:00",
+          "createdAt": "2026-07-19T14:18:04.4276389+00:00",
           "status": "draft",
           "tags": []
         },
@@ -59,7 +59,7 @@
         },
         "sections": [
           {
-            "id": "3418b701ff3f404faa883a36af63f085",
+            "id": "684b23e6852d49bdbf4c2b1b775313c2",
             "order": 0,
             "properties": {
               "pageSettings": {
@@ -343,7 +343,7 @@
               }
             ],
             "preserve": {
-              "sourceJson": "{\u0022Id\u0022:\u00223418b701ff3f404faa883a36af63f085\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
+              "sourceJson": "{\u0022Id\u0022:\u0022684b23e6852d49bdbf4c2b1b775313c2\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
             }
           }
         ],
@@ -590,12 +590,12 @@
         "outlineRevision": 0,
         "tableOfContentsRevision": 0,
         "preserve": {
-          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-11\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T13:39:57.5590938\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u00223418b701ff3f404faa883a36af63f085\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
+          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-11\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T14:18:04.4276389\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u0022684b23e6852d49bdbf4c2b1b775313c2\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
         }
       },
       "operations": [
         {
-          "operationId": "5f43ebd15fef4b7aad7544f68bb440fe",
+          "operationId": "a9c00420171c4fbbb88299542c7ea36d",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -605,12 +605,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8172174+00:00"
+            "createdAt": "2026-07-19T14:18:04.7425639+00:00"
           },
           "text": "\u002B110\u002B"
         },
         {
-          "operationId": "052fc07d8a6f4ed4a8ee0f09aedb597a",
+          "operationId": "52c17844aa33487f9ae3fb09f307cfa1",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -621,12 +621,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8254593+00:00"
+            "createdAt": "2026-07-19T14:18:04.7519224+00:00"
           },
           "text": "\u002B111\u002B"
         },
         {
-          "operationId": "304496cb13394f18ac8c8265f068ccae",
+          "operationId": "b6648aff3b384ab1a958482ebb421aaf",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -638,11 +638,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8254962+00:00"
+            "createdAt": "2026-07-19T14:18:04.7519667+00:00"
           }
         },
         {
-          "operationId": "50c834e3aa4346069084047af90c25a8",
+          "operationId": "2c2724f7cd6744b4916fc3dba5755816",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -652,12 +652,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8258371+00:00"
+            "createdAt": "2026-07-19T14:18:04.7523277+00:00"
           },
           "text": "\u002B113\u002B"
         },
         {
-          "operationId": "705cf57caae44e359840416c5d9aeae0",
+          "operationId": "b7ab549d1d944d7b8da7e3c49c6b6184",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -667,12 +667,147 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8258468+00:00"
+            "createdAt": "2026-07-19T14:18:04.7523346+00:00"
           },
           "text": "\u002B114\u002B"
         },
         {
-          "operationId": "0900c537995149cebf14efc9a8d28bc3",
+          "operationId": "1a041002815642c195b2ddc4fe9c2339",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "order": 2.5
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7523414+00:00"
+          },
+          "block": {
+            "id": "inserted-11",
+            "type": "paragraph",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "paragraph",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Vlo\u017Een\u00FD odstavec 11.",
+                  "id": "inserted-11-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "b7abc6ee6f9c49b991822bc0c17e831a",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "tableCellId": "t1c1",
+            "order": 1
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7541567+00:00"
+          },
+          "block": {
+            "id": "inserted-cell-11",
+            "type": "paragraph",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "paragraph",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Vlo\u017Eeno do bu\u0148ky.",
+                  "id": "inserted-cell-11-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "ba9acf2d07ee4ff096f3c56f87cb624c",
+          "schemaVersion": 1,
+          "type": "updateBlock",
+          "target": {
+            "blockId": "p0"
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7555154+00:00"
+          },
+          "block": {
+            "id": "p0",
+            "type": "paragraph",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "paragraph",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Aktualizovan\u00FD obsah 11.",
+                  "id": "p0-updated-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "1d6db24270f94ae3853c8a7d3818d932",
+          "schemaVersion": 1,
+          "type": "moveBlock",
+          "target": {
+            "blockId": "p2",
+            "order": 0.5
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7560843+00:00"
+          }
+        },
+        {
+          "operationId": "f282fe307d7d455eaf2b3aa4f0e8e59f",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -681,13 +816,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8258491+00:00"
+            "createdAt": "2026-07-19T14:18:04.756449+00:00"
           },
           "attributeName": "headingLevel",
-          "attributeValueJson": "3"
+          "attributeValueJson": "2"
         },
         {
-          "operationId": "f7f76791c45d464bb1a2cccbbff958ed",
+          "operationId": "6dbc49f4f1a04491bb484c6ad09ce77f",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -696,13 +831,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.82738+00:00"
+            "createdAt": "2026-07-19T14:18:04.7576842+00:00"
           },
           "attributeName": "text",
           "attributeValueJson": "\u0022Nahrazen\\u00FD text 11.\u0022"
         },
         {
-          "operationId": "b9542f50fe0d4f00a252bb5b02980692",
+          "operationId": "3707f19996bf4d8caaae75cce6bc0f58",
           "schemaVersion": 1,
           "type": "deleteBlock",
           "target": {
@@ -711,40 +846,41 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8276122+00:00"
+            "createdAt": "2026-07-19T14:18:04.7579036+00:00"
           }
         },
         {
-          "operationId": "86e4af52907044909a13085ff92800d4",
+          "operationId": "f3ad6f85f3ea4196a33c50e4113c5037",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
-            "blockId": "p1",
-            "offset": 26,
+            "blockId": "t1c1p0",
+            "tableCellId": "t1c1",
+            "offset": 20,
             "length": 3
           },
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8278605+00:00"
+            "createdAt": "2026-07-19T14:18:04.7581195+00:00"
           },
           "mark": {
             "type": "italic"
           }
         },
         {
-          "operationId": "ba42158039734aea99539b72344e2ff5",
+          "operationId": "fb8b79c7008247d9b2a53694de902e98",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
             "blockId": "p2",
-            "offset": 4,
+            "offset": 8,
             "length": 3
           },
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.831241+00:00"
+            "createdAt": "2026-07-19T14:18:04.7618717+00:00"
           },
           "mark": {
             "type": "italic"
@@ -757,23 +893,8 @@
             "container": "body",
             "id": "p0",
             "kind": "paragraph",
-            "text": "Odstavec 0 se z\u00E1kladn\u002B114\u002B\u00EDm textem.",
+            "text": "Aktualizovan\u00FD obsah 11.",
             "marks": {}
-          },
-          {
-            "container": "body",
-            "id": "p1",
-            "kind": "heading",
-            "headingLevel": 3,
-            "text": "O\u002B113\u002Bdstavec 1 se z\u00E1kladn\u00EDm textem.",
-            "marks": {
-              "italic": [
-                [
-                  26,
-                  29
-                ]
-              ]
-            }
           },
           {
             "container": "body",
@@ -783,11 +904,26 @@
             "marks": {
               "italic": [
                 [
-                  4,
-                  7
+                  8,
+                  11
                 ]
               ]
             }
+          },
+          {
+            "container": "body",
+            "id": "p1",
+            "kind": "heading",
+            "headingLevel": 2,
+            "text": "O\u002B113\u002Bdstavec 1 se z\u00E1kladn\u00EDm textem.",
+            "marks": {}
+          },
+          {
+            "container": "body",
+            "id": "inserted-11",
+            "kind": "paragraph",
+            "text": "Vlo\u017Een\u00FD odstavec 11.",
+            "marks": {}
           },
           {
             "container": "body",
@@ -801,6 +937,20 @@
             "id": "t1c1p0",
             "kind": "paragraph",
             "text": "Tex\u002B111\u002Bv bu\u0148ce tabulky.",
+            "marks": {
+              "italic": [
+                [
+                  20,
+                  23
+                ]
+              ]
+            }
+          },
+          {
+            "container": "cell:t1c1",
+            "id": "inserted-cell-11",
+            "kind": "paragraph",
+            "text": "Vlo\u017Eeno do bu\u0148ky.",
             "marks": {}
           }
         ]
@@ -814,7 +964,7 @@
         "version": 0,
         "metadata": {
           "title": "",
-          "createdAt": "2026-07-19T13:39:57.8418056+00:00",
+          "createdAt": "2026-07-19T14:18:04.7726639+00:00",
           "status": "draft",
           "tags": []
         },
@@ -864,7 +1014,7 @@
         },
         "sections": [
           {
-            "id": "979e2bff9f624d9bbc1f72d701f9e5d6",
+            "id": "c37a5c5904ca4476955b85985f0289ea",
             "order": 0,
             "properties": {
               "pageSettings": {
@@ -1148,7 +1298,7 @@
               }
             ],
             "preserve": {
-              "sourceJson": "{\u0022Id\u0022:\u0022979e2bff9f624d9bbc1f72d701f9e5d6\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
+              "sourceJson": "{\u0022Id\u0022:\u0022c37a5c5904ca4476955b85985f0289ea\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
             }
           }
         ],
@@ -1395,12 +1545,12 @@
         "outlineRevision": 0,
         "tableOfContentsRevision": 0,
         "preserve": {
-          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-23\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T13:39:57.8418056\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u0022979e2bff9f624d9bbc1f72d701f9e5d6\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
+          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-23\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T14:18:04.7726639\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u0022c37a5c5904ca4476955b85985f0289ea\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
         }
       },
       "operations": [
         {
-          "operationId": "ed5daa2b538d45f5a4b12123108f77b0",
+          "operationId": "220f8a1228c04152a3cd6777b3b83f3e",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -1411,11 +1561,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8420421+00:00"
+            "createdAt": "2026-07-19T14:18:04.7729271+00:00"
           }
         },
         {
-          "operationId": "9f77499222af4fbca205b5fc1ee6f4f5",
+          "operationId": "9f21c08dfe4c4537ba49972ccfeeb1df",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -1426,11 +1576,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8420503+00:00"
+            "createdAt": "2026-07-19T14:18:04.7729436+00:00"
           }
         },
         {
-          "operationId": "64ee6212bda44304b95a2e8994e7093a",
+          "operationId": "6ed67266c7324b738336fffe566e7a87",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -1441,11 +1591,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8420534+00:00"
+            "createdAt": "2026-07-19T14:18:04.7729477+00:00"
           }
         },
         {
-          "operationId": "50c310cd973e42f7af8ea37912fceb05",
+          "operationId": "ddcb2de3ac7644cbbb7e4d9519954900",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -1455,12 +1605,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8420596+00:00"
+            "createdAt": "2026-07-19T14:18:04.7729509+00:00"
           },
           "text": "\u002B233\u002B"
         },
         {
-          "operationId": "e866a0b0dfb04ef892f91a6dad18c9fe",
+          "operationId": "8df441819c824d19acaf1708d78e434f",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -1470,12 +1620,147 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8420635+00:00"
+            "createdAt": "2026-07-19T14:18:04.7729577+00:00"
           },
           "text": "\u002B234\u002B"
         },
         {
-          "operationId": "ad613f5f9e814db5a808f549475fa82f",
+          "operationId": "faefdf11906f4cfd8167ad06573d0cff",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "order": 1.5
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7729597+00:00"
+          },
+          "block": {
+            "id": "inserted-23",
+            "type": "paragraph",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "paragraph",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Vlo\u017Een\u00FD odstavec 23.",
+                  "id": "inserted-23-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "c6afc2f063fd41d9b4499083199229fe",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "tableCellId": "t1c1",
+            "order": 1
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7729899+00:00"
+          },
+          "block": {
+            "id": "inserted-cell-23",
+            "type": "paragraph",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "paragraph",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Vlo\u017Eeno do bu\u0148ky.",
+                  "id": "inserted-cell-23-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "f4480d9190e446a6be5451b578bf959a",
+          "schemaVersion": 1,
+          "type": "updateBlock",
+          "target": {
+            "blockId": "p0"
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7730094+00:00"
+          },
+          "block": {
+            "id": "p0",
+            "type": "paragraph",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "paragraph",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Aktualizovan\u00FD obsah 23.",
+                  "id": "p0-updated-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "00553b7cce6c4598ad9df59859dad0cb",
+          "schemaVersion": 1,
+          "type": "moveBlock",
+          "target": {
+            "blockId": "p2",
+            "order": 0.5
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7730304+00:00"
+          }
+        },
+        {
+          "operationId": "67a20a3f7e294f86a654628baf4f47c6",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -1484,13 +1769,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8420678+00:00"
+            "createdAt": "2026-07-19T14:18:04.7730329+00:00"
           },
           "attributeName": "headingLevel",
           "attributeValueJson": "2"
         },
         {
-          "operationId": "3ba6312105a54c20b7b49c9d4a0e16f6",
+          "operationId": "2cfa6f65d4824724b6d2861b4dd2e700",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -1499,13 +1784,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8420805+00:00"
+            "createdAt": "2026-07-19T14:18:04.773046+00:00"
           },
           "attributeName": "text",
           "attributeValueJson": "\u0022Nahrazen\\u00FD text 23.\u0022"
         },
         {
-          "operationId": "9a3d653f3d5e4a38b044e4b3e26a4b39",
+          "operationId": "82bc6f77cb134ce886b52279f631ffc2",
           "schemaVersion": 1,
           "type": "deleteBlock",
           "target": {
@@ -1514,43 +1799,44 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8420854+00:00"
+            "createdAt": "2026-07-19T14:18:04.7730509+00:00"
           }
         },
         {
-          "operationId": "628d2faa37f9438eae40357273da3ba0",
+          "operationId": "a593596dd1554fb98446d2a495ce31e1",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
             "blockId": "p2",
-            "offset": 3,
+            "offset": 4,
             "length": 3
           },
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8420928+00:00"
+            "createdAt": "2026-07-19T14:18:04.7730554+00:00"
           },
           "mark": {
             "type": "bold"
           }
         },
         {
-          "operationId": "e6fae62c713d4598aaf2da25da5fcf08",
+          "operationId": "68771fba36c54de9a1bd01f2798ec36b",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
-            "blockId": "p0",
-            "offset": 24,
+            "blockId": "inserted-cell-23",
+            "tableCellId": "t1c1",
+            "offset": 6,
             "length": 3
           },
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.842573+00:00"
+            "createdAt": "2026-07-19T14:18:04.7731115+00:00"
           },
           "mark": {
-            "type": "bold"
+            "type": "italic"
           }
         }
       ],
@@ -1560,12 +1846,19 @@
             "container": "body",
             "id": "p0",
             "kind": "paragraph",
-            "text": "Odstavec 0 se z\u00E1kladn\u00EDm textem.",
+            "text": "Aktualizovan\u00FD obsah 23.",
+            "marks": {}
+          },
+          {
+            "container": "body",
+            "id": "p2",
+            "kind": "paragraph",
+            "text": "Nahrazen\u00FD text 23.",
             "marks": {
               "bold": [
                 [
-                  24,
-                  27
+                  4,
+                  7
                 ]
               ]
             }
@@ -1580,17 +1873,10 @@
           },
           {
             "container": "body",
-            "id": "p2",
+            "id": "inserted-23",
             "kind": "paragraph",
-            "text": "Nahrazen\u00FD text 23.",
-            "marks": {
-              "bold": [
-                [
-                  3,
-                  6
-                ]
-              ]
-            }
+            "text": "Vlo\u017Een\u00FD odstavec 23.",
+            "marks": {}
           },
           {
             "container": "body",
@@ -1605,6 +1891,20 @@
             "kind": "paragraph",
             "text": "Text v bu\u0148ce tabulky.",
             "marks": {}
+          },
+          {
+            "container": "cell:t1c1",
+            "id": "inserted-cell-23",
+            "kind": "paragraph",
+            "text": "Vlo\u017Eeno do bu\u0148ky.",
+            "marks": {
+              "italic": [
+                [
+                  6,
+                  9
+                ]
+              ]
+            }
           }
         ]
       }
@@ -1617,7 +1917,7 @@
         "version": 0,
         "metadata": {
           "title": "",
-          "createdAt": "2026-07-19T13:39:57.8433149+00:00",
+          "createdAt": "2026-07-19T14:18:04.773872+00:00",
           "status": "draft",
           "tags": []
         },
@@ -1667,7 +1967,7 @@
         },
         "sections": [
           {
-            "id": "bcf1d4953e704557b0d1b9b1fe2a4542",
+            "id": "6fb7f276df1d4fa2aeba8a6313589ed3",
             "order": 0,
             "properties": {
               "pageSettings": {
@@ -1951,7 +2251,7 @@
               }
             ],
             "preserve": {
-              "sourceJson": "{\u0022Id\u0022:\u0022bcf1d4953e704557b0d1b9b1fe2a4542\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
+              "sourceJson": "{\u0022Id\u0022:\u00226fb7f276df1d4fa2aeba8a6313589ed3\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
             }
           }
         ],
@@ -2198,12 +2498,12 @@
         "outlineRevision": 0,
         "tableOfContentsRevision": 0,
         "preserve": {
-          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-47\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T13:39:57.8433149\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u0022bcf1d4953e704557b0d1b9b1fe2a4542\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
+          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-47\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T14:18:04.773872\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u00226fb7f276df1d4fa2aeba8a6313589ed3\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
         }
       },
       "operations": [
         {
-          "operationId": "396a8c55bcbf40fb95b811fdf05e4ed5",
+          "operationId": "85cbeda5b67a42cb9fed00993c79d283",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -2214,11 +2514,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.843482+00:00"
+            "createdAt": "2026-07-19T14:18:04.7740674+00:00"
           }
         },
         {
-          "operationId": "ec105c6fad474e7996d3091ce9739655",
+          "operationId": "c25e6022672b48039100a34945331d1f",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -2228,12 +2528,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8434907+00:00"
+            "createdAt": "2026-07-19T14:18:04.7740736+00:00"
           },
           "text": "\u002B471\u002B"
         },
         {
-          "operationId": "9a521baf46734dcaa6199a1c146e38ca",
+          "operationId": "d69825152ae44a008c22635a91ff6df7",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -2244,12 +2544,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8434951+00:00"
+            "createdAt": "2026-07-19T14:18:04.7740805+00:00"
           },
           "text": "\u002B472\u002B"
         },
         {
-          "operationId": "51c34300610742fe91abdd83e1e852d2",
+          "operationId": "ae6ca5e045034440a2468525b8db4673",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -2260,11 +2560,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8435002+00:00"
+            "createdAt": "2026-07-19T14:18:04.7740844+00:00"
           }
         },
         {
-          "operationId": "d91d0d261f9948b79d8d3cf919a927b7",
+          "operationId": "27ac55c903dc4ab6aecf3eb4271d8262",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -2276,11 +2576,146 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8435038+00:00"
+            "createdAt": "2026-07-19T14:18:04.7740904+00:00"
           }
         },
         {
-          "operationId": "be003315f82e4d28a8b912e0df7cf96b",
+          "operationId": "1ea2f91d165448bc98159cea1ff920a6",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "order": 1.5
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7740924+00:00"
+          },
+          "block": {
+            "id": "inserted-47",
+            "type": "paragraph",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "paragraph",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Vlo\u017Een\u00FD odstavec 47.",
+                  "id": "inserted-47-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "11fb0a818083480b9e551b112d79b23f",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "tableCellId": "t1c1",
+            "order": 1
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7741186+00:00"
+          },
+          "block": {
+            "id": "inserted-cell-47",
+            "type": "paragraph",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "paragraph",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Vlo\u017Eeno do bu\u0148ky.",
+                  "id": "inserted-cell-47-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "675a0410fb184dedaf070243bcaa12ca",
+          "schemaVersion": 1,
+          "type": "updateBlock",
+          "target": {
+            "blockId": "p0"
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7741361+00:00"
+          },
+          "block": {
+            "id": "p0",
+            "type": "paragraph",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "paragraph",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Aktualizovan\u00FD obsah 47.",
+                  "id": "p0-updated-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "d5397909b4db4c8481c3ac5197236c04",
+          "schemaVersion": 1,
+          "type": "moveBlock",
+          "target": {
+            "blockId": "p2",
+            "order": 0.5
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7741541+00:00"
+          }
+        },
+        {
+          "operationId": "491b92d608704e5dbed4bb16820f964a",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -2289,13 +2724,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8435058+00:00"
+            "createdAt": "2026-07-19T14:18:04.7741563+00:00"
           },
           "attributeName": "headingLevel",
           "attributeValueJson": "2"
         },
         {
-          "operationId": "559198b9b37f47a4b4e3bb5e2319d325",
+          "operationId": "bf0b6d03e4f2419bb542496cacb90ee2",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -2304,13 +2739,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8435216+00:00"
+            "createdAt": "2026-07-19T14:18:04.7741681+00:00"
           },
           "attributeName": "text",
           "attributeValueJson": "\u0022Nahrazen\\u00FD text 47.\u0022"
         },
         {
-          "operationId": "edb6494f813e4edc9fb85fb81f4cac85",
+          "operationId": "260b61e9d46e44b6a6a5cc4a90e9fed1",
           "schemaVersion": 1,
           "type": "deleteBlock",
           "target": {
@@ -2319,43 +2754,43 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8435256+00:00"
+            "createdAt": "2026-07-19T14:18:04.774172+00:00"
           }
         },
         {
-          "operationId": "7a3dde1850284075acc8d20ea0b9f284",
+          "operationId": "0695a793ac674256949746cce7695b6c",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
-            "blockId": "p2",
-            "offset": 2,
+            "blockId": "p0",
+            "offset": 18,
             "length": 3
           },
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8435286+00:00"
+            "createdAt": "2026-07-19T14:18:04.774179+00:00"
           },
           "mark": {
             "type": "italic"
           }
         },
         {
-          "operationId": "c1940a9b872b47759d9e89a050b49b46",
+          "operationId": "3695afee7b86419b8a340b8cef444d54",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
-            "blockId": "p2",
-            "offset": 0,
+            "blockId": "p0",
+            "offset": 7,
             "length": 3
           },
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.843572+00:00"
+            "createdAt": "2026-07-19T14:18:04.7742334+00:00"
           },
           "mark": {
-            "type": "bold"
+            "type": "italic"
           }
         }
       ],
@@ -2365,7 +2800,25 @@
             "container": "body",
             "id": "p0",
             "kind": "paragraph",
-            "text": "Odstavec 0 se z\u00E1kladn\u00EDm textem.",
+            "text": "Aktualizovan\u00FD obsah 47.",
+            "marks": {
+              "italic": [
+                [
+                  7,
+                  10
+                ],
+                [
+                  18,
+                  21
+                ]
+              ]
+            }
+          },
+          {
+            "container": "body",
+            "id": "p2",
+            "kind": "paragraph",
+            "text": "Nahrazen\u00FD text 47.",
             "marks": {}
           },
           {
@@ -2378,23 +2831,10 @@
           },
           {
             "container": "body",
-            "id": "p2",
+            "id": "inserted-47",
             "kind": "paragraph",
-            "text": "Nahrazen\u00FD text 47.",
-            "marks": {
-              "bold": [
-                [
-                  0,
-                  3
-                ]
-              ],
-              "italic": [
-                [
-                  2,
-                  5
-                ]
-              ]
-            }
+            "text": "Vlo\u017Een\u00FD odstavec 47.",
+            "marks": {}
           },
           {
             "container": "body",
@@ -2409,6 +2849,13 @@
             "kind": "paragraph",
             "text": "Text v bu\u0148ce tabu\u002B472ky.",
             "marks": {}
+          },
+          {
+            "container": "cell:t1c1",
+            "id": "inserted-cell-47",
+            "kind": "paragraph",
+            "text": "Vlo\u017Eeno do bu\u0148ky.",
+            "marks": {}
           }
         ]
       }
@@ -2421,7 +2868,7 @@
         "version": 0,
         "metadata": {
           "title": "",
-          "createdAt": "2026-07-19T13:39:57.8448907+00:00",
+          "createdAt": "2026-07-19T14:18:04.7750159+00:00",
           "status": "draft",
           "tags": []
         },
@@ -2471,7 +2918,7 @@
         },
         "sections": [
           {
-            "id": "c7dfa4c774b44defa2870a9dd3b1c26b",
+            "id": "e7940521e02d477a9a8b529bb770f0ac",
             "order": 0,
             "properties": {
               "pageSettings": {
@@ -2755,7 +3202,7 @@
               }
             ],
             "preserve": {
-              "sourceJson": "{\u0022Id\u0022:\u0022c7dfa4c774b44defa2870a9dd3b1c26b\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
+              "sourceJson": "{\u0022Id\u0022:\u0022e7940521e02d477a9a8b529bb770f0ac\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
             }
           }
         ],
@@ -3002,12 +3449,12 @@
         "outlineRevision": 0,
         "tableOfContentsRevision": 0,
         "preserve": {
-          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-71\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T13:39:57.8448907\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u0022c7dfa4c774b44defa2870a9dd3b1c26b\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
+          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-71\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T14:18:04.7750159\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u0022e7940521e02d477a9a8b529bb770f0ac\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
         }
       },
       "operations": [
         {
-          "operationId": "1920966401664e5ea2c861cd657b765e",
+          "operationId": "65fc98d2edfd4dc1806f0b23fc389d91",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -3019,11 +3466,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8450971+00:00"
+            "createdAt": "2026-07-19T14:18:04.7752155+00:00"
           }
         },
         {
-          "operationId": "b886a3c340ac422ba7c797d09a10b64a",
+          "operationId": "75c2baa87cfc47bbb98860258e71262b",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -3033,12 +3480,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8451052+00:00"
+            "createdAt": "2026-07-19T14:18:04.7752248+00:00"
           },
           "text": "\u002B711\u002B"
         },
         {
-          "operationId": "c124792a151a444da4b23d41bcc87c4a",
+          "operationId": "19f4957071844f9882c8d949388b25a6",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -3048,12 +3495,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8451118+00:00"
+            "createdAt": "2026-07-19T14:18:04.7752331+00:00"
           },
           "text": "\u002B712\u002B"
         },
         {
-          "operationId": "e357e5a5b54f44309e49f64e2d9348ab",
+          "operationId": "b6797ab5d9514ae783ae313ee7c962fa",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -3064,11 +3511,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8451147+00:00"
+            "createdAt": "2026-07-19T14:18:04.7752364+00:00"
           }
         },
         {
-          "operationId": "d96c76e7600c4240a2e2cc9050b334b2",
+          "operationId": "fba8e753bf03435496ae1ffa224f583c",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -3078,12 +3525,147 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8451191+00:00"
+            "createdAt": "2026-07-19T14:18:04.7752426+00:00"
           },
           "text": "\u002B714\u002B"
         },
         {
-          "operationId": "7b8541724a2d4e39beb1596bb57d8d5c",
+          "operationId": "699ea8ede2dc4ff898b44b013c732511",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "order": 1.5
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7752446+00:00"
+          },
+          "block": {
+            "id": "inserted-71",
+            "type": "paragraph",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "paragraph",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Vlo\u017Een\u00FD odstavec 71.",
+                  "id": "inserted-71-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "7635d2f808054c91a9571b90608bc4fa",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "tableCellId": "t1c1",
+            "order": 1
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7752834+00:00"
+          },
+          "block": {
+            "id": "inserted-cell-71",
+            "type": "paragraph",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "paragraph",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Vlo\u017Eeno do bu\u0148ky.",
+                  "id": "inserted-cell-71-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "3e8f06918c2c45f7aaed8cd8343f3800",
+          "schemaVersion": 1,
+          "type": "updateBlock",
+          "target": {
+            "blockId": "p0"
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.775302+00:00"
+          },
+          "block": {
+            "id": "p0",
+            "type": "paragraph",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "paragraph",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Aktualizovan\u00FD obsah 71.",
+                  "id": "p0-updated-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "41d8a190cd7d4c45ab117123ff1bfa33",
+          "schemaVersion": 1,
+          "type": "moveBlock",
+          "target": {
+            "blockId": "p2",
+            "order": 0.5
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7753211+00:00"
+          }
+        },
+        {
+          "operationId": "bf2c91a7fe4c4cd1abb9a809046e02b1",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -3092,13 +3674,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8451209+00:00"
+            "createdAt": "2026-07-19T14:18:04.7753233+00:00"
           },
           "attributeName": "headingLevel",
-          "attributeValueJson": "2"
+          "attributeValueJson": "3"
         },
         {
-          "operationId": "e3a9f57dd5884de5a2943eae8c0dd07d",
+          "operationId": "6bdd95f581d34e9b9c5a362cb1035a73",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -3107,13 +3689,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8451328+00:00"
+            "createdAt": "2026-07-19T14:18:04.7753346+00:00"
           },
           "attributeName": "text",
           "attributeValueJson": "\u0022Nahrazen\\u00FD text 71.\u0022"
         },
         {
-          "operationId": "42bb12a20f214087a974c731372da42f",
+          "operationId": "15a493fc450a472e80de6dd3e95f0aed",
           "schemaVersion": 1,
           "type": "deleteBlock",
           "target": {
@@ -3122,44 +3704,43 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.845143+00:00"
+            "createdAt": "2026-07-19T14:18:04.7753388+00:00"
           }
         },
         {
-          "operationId": "f695f3fc169b46ef95f2388e74dd2961",
+          "operationId": "f08a568f84614c67ae4a8b4d52e860b7",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
-            "blockId": "p2",
-            "offset": 0,
+            "blockId": "p0",
+            "offset": 11,
             "length": 3
           },
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8451462+00:00"
+            "createdAt": "2026-07-19T14:18:04.7753431+00:00"
           },
           "mark": {
             "type": "italic"
           }
         },
         {
-          "operationId": "7e80994bd713482b8b46590b41fe8c0b",
+          "operationId": "231c8644f32e43e7ad59347a5928f024",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
-            "blockId": "t1c1p0",
-            "tableCellId": "t1c1",
+            "blockId": "p2",
             "offset": 4,
             "length": 3
           },
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8451811+00:00"
+            "createdAt": "2026-07-19T14:18:04.7753972+00:00"
           },
           "mark": {
-            "type": "bold"
+            "type": "italic"
           }
         }
       ],
@@ -3169,16 +3750,15 @@
             "container": "body",
             "id": "p0",
             "kind": "paragraph",
-            "text": "Odstavec 0 se z\u00E1kladn\u00EDm textem.",
-            "marks": {}
-          },
-          {
-            "container": "body",
-            "id": "p1",
-            "kind": "heading",
-            "headingLevel": 2,
-            "text": "Odstavec 1 se z\u00E1kladn\u00EDm textem.",
-            "marks": {}
+            "text": "Aktualizovan\u00FD obsah 71.",
+            "marks": {
+              "italic": [
+                [
+                  11,
+                  14
+                ]
+              ]
+            }
           },
           {
             "container": "body",
@@ -3188,11 +3768,26 @@
             "marks": {
               "italic": [
                 [
-                  0,
-                  3
+                  4,
+                  7
                 ]
               ]
             }
+          },
+          {
+            "container": "body",
+            "id": "p1",
+            "kind": "heading",
+            "headingLevel": 3,
+            "text": "Odstavec 1 se z\u00E1kladn\u00EDm textem.",
+            "marks": {}
+          },
+          {
+            "container": "body",
+            "id": "inserted-71",
+            "kind": "paragraph",
+            "text": "Vlo\u017Een\u00FD odstavec 71.",
+            "marks": {}
           },
           {
             "container": "body",
@@ -3206,14 +3801,14 @@
             "id": "t1c1p0",
             "kind": "paragraph",
             "text": "Text v \u0148ce tabulky.",
-            "marks": {
-              "bold": [
-                [
-                  4,
-                  7
-                ]
-              ]
-            }
+            "marks": {}
+          },
+          {
+            "container": "cell:t1c1",
+            "id": "inserted-cell-71",
+            "kind": "paragraph",
+            "text": "Vlo\u017Eeno do bu\u0148ky.",
+            "marks": {}
           }
         ]
       }
@@ -3226,7 +3821,7 @@
         "version": 0,
         "metadata": {
           "title": "",
-          "createdAt": "2026-07-19T13:39:57.8457368+00:00",
+          "createdAt": "2026-07-19T14:18:04.7760666+00:00",
           "status": "draft",
           "tags": []
         },
@@ -3276,7 +3871,7 @@
         },
         "sections": [
           {
-            "id": "1de246daf2bf4220bc164a8603dca5ba",
+            "id": "6178cef13eab414580d7a41838f55089",
             "order": 0,
             "properties": {
               "pageSettings": {
@@ -3560,7 +4155,7 @@
               }
             ],
             "preserve": {
-              "sourceJson": "{\u0022Id\u0022:\u00221de246daf2bf4220bc164a8603dca5ba\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
+              "sourceJson": "{\u0022Id\u0022:\u00226178cef13eab414580d7a41838f55089\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
             }
           }
         ],
@@ -3807,12 +4402,12 @@
         "outlineRevision": 0,
         "tableOfContentsRevision": 0,
         "preserve": {
-          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-97\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T13:39:57.8457368\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u00221de246daf2bf4220bc164a8603dca5ba\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
+          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-97\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T14:18:04.7760666\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u00226178cef13eab414580d7a41838f55089\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
         }
       },
       "operations": [
         {
-          "operationId": "5892894e70c945b89f90e66bb6968148",
+          "operationId": "1e6b540701184a8abd68e221f30f818a",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -3822,12 +4417,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8458925+00:00"
+            "createdAt": "2026-07-19T14:18:04.7762401+00:00"
           },
           "text": "\u002B970\u002B"
         },
         {
-          "operationId": "afd307deb4f34b088b1f1e8fc9831610",
+          "operationId": "32c4b57d6f654fc89d1379fde39dfd24",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -3837,12 +4432,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8458973+00:00"
+            "createdAt": "2026-07-19T14:18:04.7762452+00:00"
           },
           "text": "\u002B971\u002B"
         },
         {
-          "operationId": "e7669d1a1bcd46b7bd573c565d758b7f",
+          "operationId": "708076530d7a4d73b636f031a2e043be",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -3852,12 +4447,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8459005+00:00"
+            "createdAt": "2026-07-19T14:18:04.7762507+00:00"
           },
           "text": "\u002B972\u002B"
         },
         {
-          "operationId": "52c8b7a976a548c48e10d11c6357a3ce",
+          "operationId": "99408eb3854240039320808d843f57ba",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -3868,11 +4463,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8459054+00:00"
+            "createdAt": "2026-07-19T14:18:04.776254+00:00"
           }
         },
         {
-          "operationId": "30d8096f70a8409d80a257a95c2c0f5a",
+          "operationId": "aacc76144a064a0c815b62225e609cf5",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -3883,11 +4478,146 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8459084+00:00"
+            "createdAt": "2026-07-19T14:18:04.7762573+00:00"
           }
         },
         {
-          "operationId": "aef5583439e5471792be32ba772677e7",
+          "operationId": "411b3246d2044cb2b28f45edff541826",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "order": 2.5
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7762614+00:00"
+          },
+          "block": {
+            "id": "inserted-97",
+            "type": "paragraph",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "paragraph",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Vlo\u017Een\u00FD odstavec 97.",
+                  "id": "inserted-97-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "edeb4de489be462c96c35abe77adc206",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "tableCellId": "t1c1",
+            "order": 1
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7762811+00:00"
+          },
+          "block": {
+            "id": "inserted-cell-97",
+            "type": "paragraph",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "paragraph",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Vlo\u017Eeno do bu\u0148ky.",
+                  "id": "inserted-cell-97-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "832d3895a371446f8908e4b6ec31df2c",
+          "schemaVersion": 1,
+          "type": "updateBlock",
+          "target": {
+            "blockId": "p0"
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.7763003+00:00"
+          },
+          "block": {
+            "id": "p0",
+            "type": "paragraph",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "paragraph",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Aktualizovan\u00FD obsah 97.",
+                  "id": "p0-updated-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "a20da0c12e534e4aa74795b44411e423",
+          "schemaVersion": 1,
+          "type": "moveBlock",
+          "target": {
+            "blockId": "p2",
+            "order": 0.5
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T14:18:04.776319+00:00"
+          }
+        },
+        {
+          "operationId": "3c43c36d05514fe1b53e89c41acb0331",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -3896,13 +4626,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8459122+00:00"
+            "createdAt": "2026-07-19T14:18:04.7763207+00:00"
           },
           "attributeName": "headingLevel",
           "attributeValueJson": "2"
         },
         {
-          "operationId": "f298ce11eb004b6aad3cbd7e5bcd7112",
+          "operationId": "1f12da6c37c0437b96ceff52fbb13f27",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -3911,13 +4641,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8459227+00:00"
+            "createdAt": "2026-07-19T14:18:04.7763306+00:00"
           },
           "attributeName": "text",
           "attributeValueJson": "\u0022Nahrazen\\u00FD text 97.\u0022"
         },
         {
-          "operationId": "69b3c9a583764daa87c9556581706b07",
+          "operationId": "912a9e2c9f424f9a94558bb0949fe575",
           "schemaVersion": 1,
           "type": "deleteBlock",
           "target": {
@@ -3926,44 +4656,44 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8459264+00:00"
+            "createdAt": "2026-07-19T14:18:04.7763366+00:00"
           }
         },
         {
-          "operationId": "1d5a5decb721488b8ebb150a859dd051",
+          "operationId": "d915dd6d13e5414993835a4043f4015e",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
-            "blockId": "p2",
-            "offset": 2,
+            "blockId": "p0",
+            "offset": 6,
             "length": 3
           },
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8459315+00:00"
+            "createdAt": "2026-07-19T14:18:04.7763403+00:00"
           },
           "mark": {
-            "type": "bold"
+            "type": "italic"
           }
         },
         {
-          "operationId": "bcd1017b5e4245608c7c7d20c2bae7fc",
+          "operationId": "a13cef428fbe48f681b59243e90ac4b0",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
             "blockId": "t1c1p0",
             "tableCellId": "t1c1",
-            "offset": 12,
+            "offset": 11,
             "length": 3
           },
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T13:39:57.8459705+00:00"
+            "createdAt": "2026-07-19T14:18:04.7763893+00:00"
           },
           "mark": {
-            "type": "italic"
+            "type": "bold"
           }
         }
       ],
@@ -3973,7 +4703,21 @@
             "container": "body",
             "id": "p0",
             "kind": "paragraph",
-            "text": "Odstac 0 se z\u00E1kladn\u00EDm textem.",
+            "text": "Aktualizovan\u00FD obsah 97.",
+            "marks": {
+              "italic": [
+                [
+                  6,
+                  9
+                ]
+              ]
+            }
+          },
+          {
+            "container": "body",
+            "id": "p2",
+            "kind": "paragraph",
+            "text": "Nahrazen\u00FD text 97.",
             "marks": {}
           },
           {
@@ -3986,17 +4730,10 @@
           },
           {
             "container": "body",
-            "id": "p2",
+            "id": "inserted-97",
             "kind": "paragraph",
-            "text": "Nahrazen\u00FD text 97.",
-            "marks": {
-              "bold": [
-                [
-                  2,
-                  5
-                ]
-              ]
-            }
+            "text": "Vlo\u017Een\u00FD odstavec 97.",
+            "marks": {}
           },
           {
             "container": "body",
@@ -4011,13 +4748,20 @@
             "kind": "paragraph",
             "text": "Text v bu\u0148ce tabulky.",
             "marks": {
-              "italic": [
+              "bold": [
                 [
-                  12,
-                  15
+                  11,
+                  14
                 ]
               ]
             }
+          },
+          {
+            "container": "cell:t1c1",
+            "id": "inserted-cell-97",
+            "kind": "paragraph",
+            "text": "Vlo\u017Eeno do bu\u0148ky.",
+            "marks": {}
           }
         ]
       }

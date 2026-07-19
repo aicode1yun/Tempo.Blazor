@@ -201,6 +201,86 @@ public class TempoDocumentServiceTests
         await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
+    // ── Image resolution ───────────────────────────────────────────────────────────────────────
+
+    private const string TinyPngDataUri =
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+    [Fact]
+    public async Task RenderPdfAsync_ImageResolver_ResolvesAssetBackedImagesIntoTheSnapshot()
+    {
+        var service = CreateService();
+        var document = DocumentEditorDocument.Empty("image-resolver-doc");
+        document.Theme.BodyFontFamily = "Dancing Script";
+        document.Blocks =
+        [
+            new DocumentBlock
+            {
+                Id = "image-block",
+                Type = DocumentBlockType.Image,
+                Order = 0,
+                Content = new ImageBlockContent
+                {
+                    Source = DocumentImageSource.Asset,
+                    AssetId = "asset-1",
+                    AltText = "Resolved asset",
+                    Size = new DocumentImageSize { Width = 120, Height = 60 },
+                },
+            },
+        ];
+
+        var requestedReferences = new List<TempoDocumentImageReference>();
+        var result = await service.RenderPdfAsync(new TempoDocumentRenderRequest
+        {
+            Document = document,
+            Fonts = CreateFonts(),
+            ImageResolver = (reference, _) =>
+            {
+                requestedReferences.Add(reference);
+                return Task.FromResult<string?>(reference.AssetId == "asset-1" ? TinyPngDataUri : null);
+            },
+        });
+
+        requestedReferences.Should().Contain(reference => reference.AssetId == "asset-1");
+        result.LayoutSnapshotJson.Should().Contain(TinyPngDataUri,
+            "the resolved data URI must reach the layout snapshot as a real image command");
+        result.LayoutSnapshotJson.Should().Contain("\"type\":\"image\"");
+        ((ImageBlockContent)document.Blocks[0].Content).Url.Should().BeNull("the caller's document must never be mutated");
+    }
+
+    [Fact]
+    public async Task RenderPdfAsync_ImageResolver_UnresolvedSourcesKeepThePlaceholderFootprint()
+    {
+        var service = CreateService();
+        var document = DocumentEditorDocument.Empty("image-unresolved-doc");
+        document.Theme.BodyFontFamily = "Dancing Script";
+        document.Blocks =
+        [
+            new DocumentBlock
+            {
+                Id = "image-block",
+                Type = DocumentBlockType.Image,
+                Order = 0,
+                Content = new ImageBlockContent
+                {
+                    Source = DocumentImageSource.Url,
+                    Url = "/host-relative-evidence.svg",
+                    Size = new DocumentImageSize { Width = 120, Height = 60 },
+                },
+            },
+        ];
+
+        var result = await service.RenderPdfAsync(new TempoDocumentRenderRequest
+        {
+            Document = document,
+            Fonts = CreateFonts(),
+            ImageResolver = (_, _) => Task.FromResult<string?>(null),
+        });
+
+        result.LayoutSnapshotJson.Should().NotContain("data:image",
+            "unresolved sources stay unembedded — their footprint renders as a placeholder");
+    }
+
     // ── DI ─────────────────────────────────────────────────────────────────────────────────────
 
     [Fact]

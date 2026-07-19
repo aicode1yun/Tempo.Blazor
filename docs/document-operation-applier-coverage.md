@@ -25,11 +25,11 @@ fixture `tests/Tempo.Blazor.Tests/DocumentEditor/TestData/operation-convergence-
 | `deleteText` | ✅ single-run range delete | ✅ multi-run range delete | ✅ dedup + shifts | ✅ both (Fáze 5) | ✅ |
 | `addInlineMark` / `addMark` | ✅ character-range with run splitting/merging | ✅ character-range with run splitting (Fáze 5 fix — previously whole-run) | ✅ range transform vs. text edits | ✅ both (Fáze 5) | ✅ |
 | `removeInlineMark` / `removeMark` | ✅ incl. run merge-back | ✅ range-based | ✅ range transform | ✅ both (Fáze 5) | ✅ |
-| `insertBlock` | ✅ body (Order + sort) + table cell containers (index, Fáze 5) | ✅ body + cell containers (index) | ✅ passthrough (id dedup by applier) | ✅ both | ⚠️ excluded — payload shape (see below) |
+| `insertBlock` | ✅ body (order-value: append + stable sort) + table cell containers (index, Fáze 5) | ✅ body (order-value, mirrors C#) + cell containers (index); persistence payloads normalized to canvas shape | ✅ passthrough (id dedup by applier) | ✅ both | ✅ (incl. persistence payloads + cell containers) |
 | `deleteBlock` | ✅ body + nested (Fáze 5) | ✅ deep | ✅ suppresses later ops on deleted block | ✅ both | ✅ |
-| `moveBlock` | ✅ body (Order-value) / cell (index, Fáze 5) | ✅ index-based splice | ✅ last-write-wins per block | ✅ both | ⚠️ body-level excluded (see below) |
+| `moveBlock` | ✅ body (order-value, moved-block-wins-ties) / cell (index, Fáze 5) | ✅ body (order-value, moved-block-wins-ties — mirrors C#) / cell (index) | ✅ last-write-wins per block | ✅ both | ✅ (incl. body order-value moves) |
 | `setBlockAttribute` | ✅ `headingLevel`, `text`, `paragraphProperties`, `clearFormatting`, `table.cell.text`, `order`, `metadata.title` | ✅ `headingLevel`, `text`, `content.*` paths | ✅ last-write-wins per (block, attribute) | ✅ both (Fáze 5; `table.cell.text` keeps its table-targeting semantics) | ✅ (`headingLevel`, `text`) |
-| `updateBlock` | ✅ body + nested in-place (Fáze 5) | ✅ deep replace | ✅ last-write-wins per block | ✅ both | ⚠️ excluded — payload shape (see below) |
+| `updateBlock` | ✅ body + nested in-place (Fáze 5) | ✅ deep replace; persistence payloads normalized to canvas shape | ✅ last-write-wins per block | ✅ both | ✅ (incl. persistence payloads) |
 | `moveDrawingObject` | ✅ by objectId/inlineId/index across body, headers/footers, nested blocks | ✅ | ✅ last-write-wins per object | ✅ (deep `FindDrawingRun`) | — (layout payload, no text content) |
 | `createRevision` | ✅ pending markup incl. formatting revisions | ❌ not in `applyOperation` (revisions reach the canvas via model replace / engine commands) | ✅ passthrough | n/a | — (C#-only in the collab applier) |
 | `acceptRevision` | ✅ | ❌ (as above) | ✅ first-decision-wins | n/a | — |
@@ -48,16 +48,18 @@ fixture `tests/Tempo.Blazor.Tests/DocumentEditor/TestData/operation-convergence-
    every intersecting run without splitting, so a remote bold over 3 characters bolded the whole
    run. Fixed: runs now split at the range boundaries (head/tail keep formatting, middle keeps
    the run id) — mirrors the C# `ApplyMarkAbsoluteRange` semantics and the real engine commands.
-3. **Known divergence — body-level `moveBlock`**: C# models the body as `Order` values
-   (re-sorted), JS as list indices. Same intent, different tie semantics under concurrency.
-   Excluded from the convergence property set; nested (cell) moves are index-based on both sides
-   and converge.
-4. **Known divergence — `insertBlock`/`updateBlock` payload shape**: the C# operation carries a
-   persistence `DocumentBlock` (`content.$type`/`inlines`), while the JS applier clones the
-   payload as-is into the canvas model, which expects the canvas shape (`content.runs`). A block
-   inserted via a C#-serialized payload is not text-editable on the JS side until it round-trips
-   through model normalization. Left as a carry-forward for plan C (semantic tools compile to
-   operations and must emit canvas-shaped payloads or normalize on apply).
+3. **RESOLVED — body-level `moveBlock`/`insertBlock` semantics**: C# modeled the body as
+   `Order` values while JS spliced by index — fractional/large order values from C#-produced
+   operations landed wrong on the JS side. Both appliers now share ORDER-VALUE semantics for
+   the body with deterministic tie-breaks (moved block sorts before equal orders; inserted
+   block after equal orders — matching C#'s append + stable sort) and index semantics for
+   table-cell containers. Nested moves without an explicit cell id now stay in their source
+   cell on the JS side too.
+4. **RESOLVED — `insertBlock`/`updateBlock` payload shape**: the JS applier now detects
+   persistence-shaped payloads (`content.$type`/`inlines`) and converts + normalizes them into
+   canvas blocks (`content.runs`, `headingLevel`, `content.table`) on apply; canvas-shaped
+   payloads pass through untouched (free-form block props survive as before). Blocks carried by
+   C#-produced operations are fully text-editable on the JS side.
 5. **Revision operations are C#-only in the collab applier** — the canvas receives revision state
    via model replacement/engine commands, not via `applyOperation`. Server-side revision
    application is fully covered by `DocumentOperationEngineTests`.
