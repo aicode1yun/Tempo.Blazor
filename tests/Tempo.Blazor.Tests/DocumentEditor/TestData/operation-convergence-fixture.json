@@ -9,7 +9,7 @@
         "version": 0,
         "metadata": {
           "title": "",
-          "createdAt": "2026-07-19T14:18:04.4276389+00:00",
+          "createdAt": "2026-07-19T16:39:56.3881938+00:00",
           "status": "draft",
           "tags": []
         },
@@ -59,7 +59,7 @@
         },
         "sections": [
           {
-            "id": "684b23e6852d49bdbf4c2b1b775313c2",
+            "id": "fd39b833c5684bb7b3ef9dfce3784574",
             "order": 0,
             "properties": {
               "pageSettings": {
@@ -343,7 +343,7 @@
               }
             ],
             "preserve": {
-              "sourceJson": "{\u0022Id\u0022:\u0022684b23e6852d49bdbf4c2b1b775313c2\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
+              "sourceJson": "{\u0022Id\u0022:\u0022fd39b833c5684bb7b3ef9dfce3784574\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
             }
           }
         ],
@@ -590,12 +590,12 @@
         "outlineRevision": 0,
         "tableOfContentsRevision": 0,
         "preserve": {
-          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-11\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T14:18:04.4276389\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u0022684b23e6852d49bdbf4c2b1b775313c2\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
+          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-11\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T16:39:56.3881938\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u0022fd39b833c5684bb7b3ef9dfce3784574\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
         }
       },
       "operations": [
         {
-          "operationId": "a9c00420171c4fbbb88299542c7ea36d",
+          "operationId": "32801cc884744353b89d6f12053fb569",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -605,12 +605,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7425639+00:00"
+            "createdAt": "2026-07-19T16:39:56.7892689+00:00"
           },
           "text": "\u002B110\u002B"
         },
         {
-          "operationId": "52c17844aa33487f9ae3fb09f307cfa1",
+          "operationId": "e64a94b1b44f4ec2af08050837fd9dd8",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -621,12 +621,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7519224+00:00"
+            "createdAt": "2026-07-19T16:39:56.7988654+00:00"
           },
           "text": "\u002B111\u002B"
         },
         {
-          "operationId": "b6648aff3b384ab1a958482ebb421aaf",
+          "operationId": "8930d046a132494fb682e213ff3affa4",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -638,11 +638,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7519667+00:00"
+            "createdAt": "2026-07-19T16:39:56.7989216+00:00"
           }
         },
         {
-          "operationId": "2c2724f7cd6744b4916fc3dba5755816",
+          "operationId": "2bf49614704f419da2dd589ae6375e91",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -652,12 +652,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7523277+00:00"
+            "createdAt": "2026-07-19T16:39:56.7992844+00:00"
           },
           "text": "\u002B113\u002B"
         },
         {
-          "operationId": "b7ab549d1d944d7b8da7e3c49c6b6184",
+          "operationId": "c4f65e04c0354bf8b2c4a520d6ec443a",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -667,12 +667,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7523346+00:00"
+            "createdAt": "2026-07-19T16:39:56.799297+00:00"
           },
           "text": "\u002B114\u002B"
         },
         {
-          "operationId": "1a041002815642c195b2ddc4fe9c2339",
+          "operationId": "05d26a55cd944c20b27ca48709ee6a08",
           "schemaVersion": 1,
           "type": "insertBlock",
           "target": {
@@ -681,7 +681,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7523414+00:00"
+            "createdAt": "2026-07-19T16:39:56.7993+00:00"
           },
           "block": {
             "id": "inserted-11",
@@ -712,7 +712,7 @@
           }
         },
         {
-          "operationId": "b7abc6ee6f9c49b991822bc0c17e831a",
+          "operationId": "21ad0d1b2f504b55a34d6e51d625030b",
           "schemaVersion": 1,
           "type": "insertBlock",
           "target": {
@@ -722,7 +722,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7541567+00:00"
+            "createdAt": "2026-07-19T16:39:56.8011637+00:00"
           },
           "block": {
             "id": "inserted-cell-11",
@@ -753,7 +753,7 @@
           }
         },
         {
-          "operationId": "ba9acf2d07ee4ff096f3c56f87cb624c",
+          "operationId": "7643661ba4104736a6761a90ac663334",
           "schemaVersion": 1,
           "type": "updateBlock",
           "target": {
@@ -762,7 +762,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7555154+00:00"
+            "createdAt": "2026-07-19T16:39:56.8025891+00:00"
           },
           "block": {
             "id": "p0",
@@ -793,7 +793,7 @@
           }
         },
         {
-          "operationId": "1d6db24270f94ae3853c8a7d3818d932",
+          "operationId": "f289497bb6774747b67f1e7e950f686f",
           "schemaVersion": 1,
           "type": "moveBlock",
           "target": {
@@ -803,11 +803,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7560843+00:00"
+            "createdAt": "2026-07-19T16:39:56.8031757+00:00"
           }
         },
         {
-          "operationId": "f282fe307d7d455eaf2b3aa4f0e8e59f",
+          "operationId": "b6f441fa41fb48ab998696158cb38ced",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -816,13 +816,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.756449+00:00"
+            "createdAt": "2026-07-19T16:39:56.803548+00:00"
           },
           "attributeName": "headingLevel",
           "attributeValueJson": "2"
         },
         {
-          "operationId": "6dbc49f4f1a04491bb484c6ad09ce77f",
+          "operationId": "fa16e53c246d424b963c349560dc7099",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -831,13 +831,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7576842+00:00"
+            "createdAt": "2026-07-19T16:39:56.8047975+00:00"
           },
           "attributeName": "text",
           "attributeValueJson": "\u0022Nahrazen\\u00FD text 11.\u0022"
         },
         {
-          "operationId": "3707f19996bf4d8caaae75cce6bc0f58",
+          "operationId": "24b866fdea134594b37d4d08ec68ea06",
           "schemaVersion": 1,
           "type": "deleteBlock",
           "target": {
@@ -846,44 +846,127 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7579036+00:00"
+            "createdAt": "2026-07-19T16:39:56.8050196+00:00"
           }
         },
         {
-          "operationId": "f3ad6f85f3ea4196a33c50e4113c5037",
+          "operationId": "9d496a37746c4a46b6b5e5acc8ca9b76",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "order": 2.25
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T16:39:56.8052024+00:00"
+          },
+          "block": {
+            "id": "inserted-list-11",
+            "type": "list",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "list",
+              "ordered": false,
+              "indentLevel": 0,
+              "startNumber": 1,
+              "restartNumbering": false,
+              "continueNumbering": false,
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Polo\u017Eka seznamu 11.",
+                  "id": "inserted-list-11-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "31fcecd31b2540f89e33ded030501736",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "tableCellId": "t1c1",
+            "order": 0
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T16:39:56.8066933+00:00"
+          },
+          "block": {
+            "id": "inserted-cell-quote-11",
+            "type": "quote",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "quote",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Citace v bu\u0148ce.",
+                  "id": "inserted-cell-quote-11-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "4d0c28ca5d414576a5b94081013b2047",
+          "schemaVersion": 1,
+          "type": "moveBlock",
+          "target": {
+            "blockId": "inserted-cell-11",
+            "tableCellId": "t1c1",
+            "order": 0
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T16:39:56.8070469+00:00"
+          }
+        },
+        {
+          "operationId": "092f59c7a1b84851baee29c56b1afcb0",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
             "blockId": "t1c1p0",
             "tableCellId": "t1c1",
-            "offset": 20,
+            "offset": 12,
             "length": 3
           },
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7581195+00:00"
+            "createdAt": "2026-07-19T16:39:56.8071518+00:00"
           },
           "mark": {
-            "type": "italic"
-          }
-        },
-        {
-          "operationId": "fb8b79c7008247d9b2a53694de902e98",
-          "schemaVersion": 1,
-          "type": "addInlineMark",
-          "target": {
-            "blockId": "p2",
-            "offset": 8,
-            "length": 3
-          },
-          "metadata": {
-            "authorId": "",
-            "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7618717+00:00"
-          },
-          "mark": {
-            "type": "italic"
+            "type": "bold"
           }
         }
       ],
@@ -901,14 +984,7 @@
             "id": "p2",
             "kind": "paragraph",
             "text": "Nahrazen\u00FD text 11.",
-            "marks": {
-              "italic": [
-                [
-                  8,
-                  11
-                ]
-              ]
-            }
+            "marks": {}
           },
           {
             "container": "body",
@@ -916,6 +992,13 @@
             "kind": "heading",
             "headingLevel": 2,
             "text": "O\u002B113\u002Bdstavec 1 se z\u00E1kladn\u00EDm textem.",
+            "marks": {}
+          },
+          {
+            "container": "body",
+            "id": "inserted-list-11",
+            "kind": "list",
+            "text": "Polo\u017Eka seznamu 11.",
             "marks": {}
           },
           {
@@ -934,24 +1017,31 @@
           },
           {
             "container": "cell:t1c1",
-            "id": "t1c1p0",
-            "kind": "paragraph",
-            "text": "Tex\u002B111\u002Bv bu\u0148ce tabulky.",
-            "marks": {
-              "italic": [
-                [
-                  20,
-                  23
-                ]
-              ]
-            }
-          },
-          {
-            "container": "cell:t1c1",
             "id": "inserted-cell-11",
             "kind": "paragraph",
             "text": "Vlo\u017Eeno do bu\u0148ky.",
             "marks": {}
+          },
+          {
+            "container": "cell:t1c1",
+            "id": "inserted-cell-quote-11",
+            "kind": "quote",
+            "text": "Citace v bu\u0148ce.",
+            "marks": {}
+          },
+          {
+            "container": "cell:t1c1",
+            "id": "t1c1p0",
+            "kind": "paragraph",
+            "text": "Tex\u002B111\u002Bv bu\u0148ce tabulky.",
+            "marks": {
+              "bold": [
+                [
+                  12,
+                  15
+                ]
+              ]
+            }
           }
         ]
       }
@@ -964,7 +1054,7 @@
         "version": 0,
         "metadata": {
           "title": "",
-          "createdAt": "2026-07-19T14:18:04.7726639+00:00",
+          "createdAt": "2026-07-19T16:39:56.836901+00:00",
           "status": "draft",
           "tags": []
         },
@@ -1014,7 +1104,7 @@
         },
         "sections": [
           {
-            "id": "c37a5c5904ca4476955b85985f0289ea",
+            "id": "5a5f4e913577435f977b6e9aefdd7d5e",
             "order": 0,
             "properties": {
               "pageSettings": {
@@ -1298,7 +1388,7 @@
               }
             ],
             "preserve": {
-              "sourceJson": "{\u0022Id\u0022:\u0022c37a5c5904ca4476955b85985f0289ea\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
+              "sourceJson": "{\u0022Id\u0022:\u00225a5f4e913577435f977b6e9aefdd7d5e\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
             }
           }
         ],
@@ -1545,12 +1635,12 @@
         "outlineRevision": 0,
         "tableOfContentsRevision": 0,
         "preserve": {
-          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-23\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T14:18:04.7726639\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u0022c37a5c5904ca4476955b85985f0289ea\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
+          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-23\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T16:39:56.836901\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u00225a5f4e913577435f977b6e9aefdd7d5e\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
         }
       },
       "operations": [
         {
-          "operationId": "220f8a1228c04152a3cd6777b3b83f3e",
+          "operationId": "2242ffd798b841eea3efa4a99d4d23fc",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -1561,11 +1651,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7729271+00:00"
+            "createdAt": "2026-07-19T16:39:56.8374471+00:00"
           }
         },
         {
-          "operationId": "9f21c08dfe4c4537ba49972ccfeeb1df",
+          "operationId": "5cbe2decee1242c2b9d2c9158abf4b87",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -1576,11 +1666,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7729436+00:00"
+            "createdAt": "2026-07-19T16:39:56.8374817+00:00"
           }
         },
         {
-          "operationId": "6ed67266c7324b738336fffe566e7a87",
+          "operationId": "61ae21243d7e452885324a6ca52cfc2c",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -1591,11 +1681,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7729477+00:00"
+            "createdAt": "2026-07-19T16:39:56.8374995+00:00"
           }
         },
         {
-          "operationId": "ddcb2de3ac7644cbbb7e4d9519954900",
+          "operationId": "7b7072edd30d4f05a1d87e77ac43fb2c",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -1605,12 +1695,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7729509+00:00"
+            "createdAt": "2026-07-19T16:39:56.837521+00:00"
           },
           "text": "\u002B233\u002B"
         },
         {
-          "operationId": "8df441819c824d19acaf1708d78e434f",
+          "operationId": "702829f0b460423ba0d09f65b0da101d",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -1620,12 +1710,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7729577+00:00"
+            "createdAt": "2026-07-19T16:39:56.8375379+00:00"
           },
           "text": "\u002B234\u002B"
         },
         {
-          "operationId": "faefdf11906f4cfd8167ad06573d0cff",
+          "operationId": "bb7eda9b483c4d0d9c2cc660dfb617f4",
           "schemaVersion": 1,
           "type": "insertBlock",
           "target": {
@@ -1634,7 +1724,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7729597+00:00"
+            "createdAt": "2026-07-19T16:39:56.8375459+00:00"
           },
           "block": {
             "id": "inserted-23",
@@ -1665,7 +1755,7 @@
           }
         },
         {
-          "operationId": "c6afc2f063fd41d9b4499083199229fe",
+          "operationId": "0e859f5bf2504cc5bc78fe321866d36a",
           "schemaVersion": 1,
           "type": "insertBlock",
           "target": {
@@ -1675,7 +1765,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7729899+00:00"
+            "createdAt": "2026-07-19T16:39:56.8376291+00:00"
           },
           "block": {
             "id": "inserted-cell-23",
@@ -1706,7 +1796,7 @@
           }
         },
         {
-          "operationId": "f4480d9190e446a6be5451b578bf959a",
+          "operationId": "2f2b6f8a12fa4adb8be985a431a36dda",
           "schemaVersion": 1,
           "type": "updateBlock",
           "target": {
@@ -1715,7 +1805,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7730094+00:00"
+            "createdAt": "2026-07-19T16:39:56.8376974+00:00"
           },
           "block": {
             "id": "p0",
@@ -1746,7 +1836,7 @@
           }
         },
         {
-          "operationId": "00553b7cce6c4598ad9df59859dad0cb",
+          "operationId": "0545b1f8c46a4604bd7223661d0fea65",
           "schemaVersion": 1,
           "type": "moveBlock",
           "target": {
@@ -1756,11 +1846,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7730304+00:00"
+            "createdAt": "2026-07-19T16:39:56.8377515+00:00"
           }
         },
         {
-          "operationId": "67a20a3f7e294f86a654628baf4f47c6",
+          "operationId": "120c6e201f23405e896c56d2e8a5147c",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -1769,13 +1859,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7730329+00:00"
+            "createdAt": "2026-07-19T16:39:56.837763+00:00"
           },
           "attributeName": "headingLevel",
           "attributeValueJson": "2"
         },
         {
-          "operationId": "2cfa6f65d4824724b6d2861b4dd2e700",
+          "operationId": "47669b27a2f44b0ca05e6e1ccfdf78d7",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -1784,13 +1874,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.773046+00:00"
+            "createdAt": "2026-07-19T16:39:56.8378006+00:00"
           },
           "attributeName": "text",
           "attributeValueJson": "\u0022Nahrazen\\u00FD text 23.\u0022"
         },
         {
-          "operationId": "82bc6f77cb134ce886b52279f631ffc2",
+          "operationId": "73c5497b25cb4870b491cfcfb6b6e7a4",
           "schemaVersion": 1,
           "type": "deleteBlock",
           "target": {
@@ -1799,11 +1889,112 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7730509+00:00"
+            "createdAt": "2026-07-19T16:39:56.8378178+00:00"
           }
         },
         {
-          "operationId": "a593596dd1554fb98446d2a495ce31e1",
+          "operationId": "e9546e8580c64348ba7adc67d4e10105",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "order": 2.25
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T16:39:56.8378263+00:00"
+          },
+          "block": {
+            "id": "inserted-list-23",
+            "type": "list",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "list",
+              "ordered": false,
+              "indentLevel": 0,
+              "startNumber": 1,
+              "restartNumbering": false,
+              "continueNumbering": false,
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Polo\u017Eka seznamu 23.",
+                  "id": "inserted-list-23-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "cbbbe660d3814380924581f27fcda285",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "tableCellId": "t1c1",
+            "order": 0
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T16:39:56.8379099+00:00"
+          },
+          "block": {
+            "id": "inserted-cell-quote-23",
+            "type": "quote",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "quote",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Citace v bu\u0148ce.",
+                  "id": "inserted-cell-quote-23-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "f62a8b05c890421c9473f8bbf48a99ac",
+          "schemaVersion": 1,
+          "type": "moveBlock",
+          "target": {
+            "blockId": "inserted-cell-23",
+            "tableCellId": "t1c1",
+            "order": 0
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T16:39:56.8379714+00:00"
+          }
+        },
+        {
+          "operationId": "3e345665b6944d93b7496bdab3fe94b8",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
@@ -1814,26 +2005,26 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7730554+00:00"
+            "createdAt": "2026-07-19T16:39:56.8379895+00:00"
           },
           "mark": {
             "type": "bold"
           }
         },
         {
-          "operationId": "68771fba36c54de9a1bd01f2798ec36b",
+          "operationId": "49ea2294e21b444e90339bb082eb29cf",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
-            "blockId": "inserted-cell-23",
+            "blockId": "t1c1p0",
             "tableCellId": "t1c1",
-            "offset": 6,
+            "offset": 8,
             "length": 3
           },
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7731115+00:00"
+            "createdAt": "2026-07-19T16:39:56.8382064+00:00"
           },
           "mark": {
             "type": "italic"
@@ -1880,6 +2071,13 @@
           },
           {
             "container": "body",
+            "id": "inserted-list-23",
+            "kind": "list",
+            "text": "Polo\u017Eka seznamu 23.",
+            "marks": {}
+          },
+          {
+            "container": "body",
             "id": "t1",
             "kind": "table",
             "text": "",
@@ -1887,21 +2085,28 @@
           },
           {
             "container": "cell:t1c1",
-            "id": "t1c1p0",
+            "id": "inserted-cell-23",
             "kind": "paragraph",
-            "text": "Text v bu\u0148ce tabulky.",
+            "text": "Vlo\u017Eeno do bu\u0148ky.",
             "marks": {}
           },
           {
             "container": "cell:t1c1",
-            "id": "inserted-cell-23",
+            "id": "inserted-cell-quote-23",
+            "kind": "quote",
+            "text": "Citace v bu\u0148ce.",
+            "marks": {}
+          },
+          {
+            "container": "cell:t1c1",
+            "id": "t1c1p0",
             "kind": "paragraph",
-            "text": "Vlo\u017Eeno do bu\u0148ky.",
+            "text": "Text v bu\u0148ce tabulky.",
             "marks": {
               "italic": [
                 [
-                  6,
-                  9
+                  8,
+                  11
                 ]
               ]
             }
@@ -1917,7 +2122,7 @@
         "version": 0,
         "metadata": {
           "title": "",
-          "createdAt": "2026-07-19T14:18:04.773872+00:00",
+          "createdAt": "2026-07-19T16:39:56.840458+00:00",
           "status": "draft",
           "tags": []
         },
@@ -1967,7 +2172,7 @@
         },
         "sections": [
           {
-            "id": "6fb7f276df1d4fa2aeba8a6313589ed3",
+            "id": "000275c623c14e778a5a8885bff74413",
             "order": 0,
             "properties": {
               "pageSettings": {
@@ -2251,7 +2456,7 @@
               }
             ],
             "preserve": {
-              "sourceJson": "{\u0022Id\u0022:\u00226fb7f276df1d4fa2aeba8a6313589ed3\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
+              "sourceJson": "{\u0022Id\u0022:\u0022000275c623c14e778a5a8885bff74413\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
             }
           }
         ],
@@ -2498,12 +2703,12 @@
         "outlineRevision": 0,
         "tableOfContentsRevision": 0,
         "preserve": {
-          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-47\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T14:18:04.773872\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u00226fb7f276df1d4fa2aeba8a6313589ed3\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
+          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-47\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T16:39:56.840458\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u0022000275c623c14e778a5a8885bff74413\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
         }
       },
       "operations": [
         {
-          "operationId": "85cbeda5b67a42cb9fed00993c79d283",
+          "operationId": "30bf5680c0614de08d53891b377aa1a8",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -2514,11 +2719,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7740674+00:00"
+            "createdAt": "2026-07-19T16:39:56.8407811+00:00"
           }
         },
         {
-          "operationId": "c25e6022672b48039100a34945331d1f",
+          "operationId": "9fea41c26ce34915962f5e3797384b63",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -2528,12 +2733,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7740736+00:00"
+            "createdAt": "2026-07-19T16:39:56.8408017+00:00"
           },
           "text": "\u002B471\u002B"
         },
         {
-          "operationId": "d69825152ae44a008c22635a91ff6df7",
+          "operationId": "a4d806f933ae45d98dc8d0095aceead9",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -2544,12 +2749,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7740805+00:00"
+            "createdAt": "2026-07-19T16:39:56.8408167+00:00"
           },
           "text": "\u002B472\u002B"
         },
         {
-          "operationId": "ae6ca5e045034440a2468525b8db4673",
+          "operationId": "20ce6dce4dd94db2ac8ca0a1e91df6d2",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -2560,11 +2765,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7740844+00:00"
+            "createdAt": "2026-07-19T16:39:56.8408287+00:00"
           }
         },
         {
-          "operationId": "27ac55c903dc4ab6aecf3eb4271d8262",
+          "operationId": "415a6b11024642cb9a00140352a8cf2a",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -2576,11 +2781,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7740904+00:00"
+            "createdAt": "2026-07-19T16:39:56.8408449+00:00"
           }
         },
         {
-          "operationId": "1ea2f91d165448bc98159cea1ff920a6",
+          "operationId": "d47c059a188a476a820b4a0b757b4a67",
           "schemaVersion": 1,
           "type": "insertBlock",
           "target": {
@@ -2589,7 +2794,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7740924+00:00"
+            "createdAt": "2026-07-19T16:39:56.8408509+00:00"
           },
           "block": {
             "id": "inserted-47",
@@ -2620,7 +2825,7 @@
           }
         },
         {
-          "operationId": "11fb0a818083480b9e551b112d79b23f",
+          "operationId": "21a0a597ac0c4067a49010d4a30d159d",
           "schemaVersion": 1,
           "type": "insertBlock",
           "target": {
@@ -2630,7 +2835,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7741186+00:00"
+            "createdAt": "2026-07-19T16:39:56.840911+00:00"
           },
           "block": {
             "id": "inserted-cell-47",
@@ -2661,7 +2866,7 @@
           }
         },
         {
-          "operationId": "675a0410fb184dedaf070243bcaa12ca",
+          "operationId": "5c84f13c5ce44acb8bca7b28ed25744e",
           "schemaVersion": 1,
           "type": "updateBlock",
           "target": {
@@ -2670,7 +2875,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7741361+00:00"
+            "createdAt": "2026-07-19T16:39:56.840963+00:00"
           },
           "block": {
             "id": "p0",
@@ -2701,7 +2906,7 @@
           }
         },
         {
-          "operationId": "d5397909b4db4c8481c3ac5197236c04",
+          "operationId": "6360d9a9cb8b42d58fe28752c5eb1b2e",
           "schemaVersion": 1,
           "type": "moveBlock",
           "target": {
@@ -2711,11 +2916,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7741541+00:00"
+            "createdAt": "2026-07-19T16:39:56.841006+00:00"
           }
         },
         {
-          "operationId": "491b92d608704e5dbed4bb16820f964a",
+          "operationId": "18adc384d2e94fe49e88cf62970d7789",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -2724,13 +2929,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7741563+00:00"
+            "createdAt": "2026-07-19T16:39:56.8410144+00:00"
           },
           "attributeName": "headingLevel",
           "attributeValueJson": "2"
         },
         {
-          "operationId": "bf0b6d03e4f2419bb542496cacb90ee2",
+          "operationId": "00e8d15c5e9b446883e41c100999852d",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -2739,13 +2944,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7741681+00:00"
+            "createdAt": "2026-07-19T16:39:56.8410414+00:00"
           },
           "attributeName": "text",
           "attributeValueJson": "\u0022Nahrazen\\u00FD text 47.\u0022"
         },
         {
-          "operationId": "260b61e9d46e44b6a6a5cc4a90e9fed1",
+          "operationId": "6a74243406e34ba6b77fcca99d9ddc68",
           "schemaVersion": 1,
           "type": "deleteBlock",
           "target": {
@@ -2754,11 +2959,112 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.774172+00:00"
+            "createdAt": "2026-07-19T16:39:56.8410544+00:00"
           }
         },
         {
-          "operationId": "0695a793ac674256949746cce7695b6c",
+          "operationId": "e42a8990588842fc9b13c5dcdd1fdaea",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "order": 2.25
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T16:39:56.8410572+00:00"
+          },
+          "block": {
+            "id": "inserted-list-47",
+            "type": "list",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "list",
+              "ordered": false,
+              "indentLevel": 0,
+              "startNumber": 1,
+              "restartNumbering": false,
+              "continueNumbering": false,
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Polo\u017Eka seznamu 47.",
+                  "id": "inserted-list-47-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "b3f7fe33fa7a4ef5a4eb947f9e2b0671",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "tableCellId": "t1c1",
+            "order": 0
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T16:39:56.8411124+00:00"
+          },
+          "block": {
+            "id": "inserted-cell-quote-47",
+            "type": "quote",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "quote",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Citace v bu\u0148ce.",
+                  "id": "inserted-cell-quote-47-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "ec33029d63fd4764b07cac27d37b883d",
+          "schemaVersion": 1,
+          "type": "moveBlock",
+          "target": {
+            "blockId": "inserted-cell-47",
+            "tableCellId": "t1c1",
+            "order": 0
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T16:39:56.841162+00:00"
+          }
+        },
+        {
+          "operationId": "578d57eeac5d415ba32528ac81d9c45a",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
@@ -2769,14 +3075,14 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.774179+00:00"
+            "createdAt": "2026-07-19T16:39:56.8411755+00:00"
           },
           "mark": {
             "type": "italic"
           }
         },
         {
-          "operationId": "3695afee7b86419b8a340b8cef444d54",
+          "operationId": "512d4f3ac2694c4c982ae1f2a8b8ddfe",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
@@ -2787,7 +3093,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7742334+00:00"
+            "createdAt": "2026-07-19T16:39:56.8413494+00:00"
           },
           "mark": {
             "type": "italic"
@@ -2838,6 +3144,13 @@
           },
           {
             "container": "body",
+            "id": "inserted-list-47",
+            "kind": "list",
+            "text": "Polo\u017Eka seznamu 47.",
+            "marks": {}
+          },
+          {
+            "container": "body",
             "id": "t1",
             "kind": "table",
             "text": "",
@@ -2845,16 +3158,23 @@
           },
           {
             "container": "cell:t1c1",
-            "id": "t1c1p0",
+            "id": "inserted-cell-47",
             "kind": "paragraph",
-            "text": "Text v bu\u0148ce tabu\u002B472ky.",
+            "text": "Vlo\u017Eeno do bu\u0148ky.",
             "marks": {}
           },
           {
             "container": "cell:t1c1",
-            "id": "inserted-cell-47",
+            "id": "inserted-cell-quote-47",
+            "kind": "quote",
+            "text": "Citace v bu\u0148ce.",
+            "marks": {}
+          },
+          {
+            "container": "cell:t1c1",
+            "id": "t1c1p0",
             "kind": "paragraph",
-            "text": "Vlo\u017Eeno do bu\u0148ky.",
+            "text": "Text v bu\u0148ce tabu\u002B472ky.",
             "marks": {}
           }
         ]
@@ -2868,7 +3188,7 @@
         "version": 0,
         "metadata": {
           "title": "",
-          "createdAt": "2026-07-19T14:18:04.7750159+00:00",
+          "createdAt": "2026-07-19T16:39:56.8447975+00:00",
           "status": "draft",
           "tags": []
         },
@@ -2918,7 +3238,7 @@
         },
         "sections": [
           {
-            "id": "e7940521e02d477a9a8b529bb770f0ac",
+            "id": "e153b6b14e3348fabdd44ca3ffbfb1e0",
             "order": 0,
             "properties": {
               "pageSettings": {
@@ -3202,7 +3522,7 @@
               }
             ],
             "preserve": {
-              "sourceJson": "{\u0022Id\u0022:\u0022e7940521e02d477a9a8b529bb770f0ac\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
+              "sourceJson": "{\u0022Id\u0022:\u0022e153b6b14e3348fabdd44ca3ffbfb1e0\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
             }
           }
         ],
@@ -3449,12 +3769,12 @@
         "outlineRevision": 0,
         "tableOfContentsRevision": 0,
         "preserve": {
-          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-71\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T14:18:04.7750159\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u0022e7940521e02d477a9a8b529bb770f0ac\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
+          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-71\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T16:39:56.8447975\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u0022e153b6b14e3348fabdd44ca3ffbfb1e0\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
         }
       },
       "operations": [
         {
-          "operationId": "65fc98d2edfd4dc1806f0b23fc389d91",
+          "operationId": "9e1698c30b784d039790c968c114dc03",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -3466,11 +3786,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7752155+00:00"
+            "createdAt": "2026-07-19T16:39:56.8451266+00:00"
           }
         },
         {
-          "operationId": "75c2baa87cfc47bbb98860258e71262b",
+          "operationId": "8751ee44107145569ea55982f5289535",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -3480,12 +3800,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7752248+00:00"
+            "createdAt": "2026-07-19T16:39:56.8451484+00:00"
           },
           "text": "\u002B711\u002B"
         },
         {
-          "operationId": "19f4957071844f9882c8d949388b25a6",
+          "operationId": "a5f0083332f0457b9a81d838c8a30667",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -3495,12 +3815,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7752331+00:00"
+            "createdAt": "2026-07-19T16:39:56.8451612+00:00"
           },
           "text": "\u002B712\u002B"
         },
         {
-          "operationId": "b6797ab5d9514ae783ae313ee7c962fa",
+          "operationId": "03208d2a5ecd416e9a93f3e520a9ac80",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -3511,11 +3831,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7752364+00:00"
+            "createdAt": "2026-07-19T16:39:56.8451733+00:00"
           }
         },
         {
-          "operationId": "fba8e753bf03435496ae1ffa224f583c",
+          "operationId": "a23c5e7f39884f37b8067e7b788e500d",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -3525,12 +3845,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7752426+00:00"
+            "createdAt": "2026-07-19T16:39:56.8451894+00:00"
           },
           "text": "\u002B714\u002B"
         },
         {
-          "operationId": "699ea8ede2dc4ff898b44b013c732511",
+          "operationId": "0c72e994fccc4c379b0c513619845d8d",
           "schemaVersion": 1,
           "type": "insertBlock",
           "target": {
@@ -3539,7 +3859,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7752446+00:00"
+            "createdAt": "2026-07-19T16:39:56.8451955+00:00"
           },
           "block": {
             "id": "inserted-71",
@@ -3570,7 +3890,7 @@
           }
         },
         {
-          "operationId": "7635d2f808054c91a9571b90608bc4fa",
+          "operationId": "47612411a1894ed69e36f3ba1c44a8f6",
           "schemaVersion": 1,
           "type": "insertBlock",
           "target": {
@@ -3580,7 +3900,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7752834+00:00"
+            "createdAt": "2026-07-19T16:39:56.8452521+00:00"
           },
           "block": {
             "id": "inserted-cell-71",
@@ -3611,7 +3931,7 @@
           }
         },
         {
-          "operationId": "3e8f06918c2c45f7aaed8cd8343f3800",
+          "operationId": "fb15d909b0b14983b9421911a9ffdedc",
           "schemaVersion": 1,
           "type": "updateBlock",
           "target": {
@@ -3620,7 +3940,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.775302+00:00"
+            "createdAt": "2026-07-19T16:39:56.8453053+00:00"
           },
           "block": {
             "id": "p0",
@@ -3651,7 +3971,7 @@
           }
         },
         {
-          "operationId": "41d8a190cd7d4c45ab117123ff1bfa33",
+          "operationId": "2941998cc7e64b8ba2dd50c12e08f582",
           "schemaVersion": 1,
           "type": "moveBlock",
           "target": {
@@ -3661,11 +3981,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7753211+00:00"
+            "createdAt": "2026-07-19T16:39:56.8453488+00:00"
           }
         },
         {
-          "operationId": "bf2c91a7fe4c4cd1abb9a809046e02b1",
+          "operationId": "7970c7130908433eb1cc56e32c400dfe",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -3674,13 +3994,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7753233+00:00"
+            "createdAt": "2026-07-19T16:39:56.8453537+00:00"
           },
           "attributeName": "headingLevel",
           "attributeValueJson": "3"
         },
         {
-          "operationId": "6bdd95f581d34e9b9c5a362cb1035a73",
+          "operationId": "5fe661208e504295a294c445eb34547e",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -3689,13 +4009,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7753346+00:00"
+            "createdAt": "2026-07-19T16:39:56.8453862+00:00"
           },
           "attributeName": "text",
           "attributeValueJson": "\u0022Nahrazen\\u00FD text 71.\u0022"
         },
         {
-          "operationId": "15a493fc450a472e80de6dd3e95f0aed",
+          "operationId": "f436e80cafed434b8c34671eb810dfed",
           "schemaVersion": 1,
           "type": "deleteBlock",
           "target": {
@@ -3704,11 +4024,112 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7753388+00:00"
+            "createdAt": "2026-07-19T16:39:56.8453992+00:00"
           }
         },
         {
-          "operationId": "f08a568f84614c67ae4a8b4d52e860b7",
+          "operationId": "8d8ed9bbfe684d059deb834539d71e38",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "order": 2.25
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T16:39:56.8454022+00:00"
+          },
+          "block": {
+            "id": "inserted-list-71",
+            "type": "list",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "list",
+              "ordered": false,
+              "indentLevel": 0,
+              "startNumber": 1,
+              "restartNumbering": false,
+              "continueNumbering": false,
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Polo\u017Eka seznamu 71.",
+                  "id": "inserted-list-71-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "14938d0274a741948a905893b8bfc12a",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "tableCellId": "t1c1",
+            "order": 0
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T16:39:56.845458+00:00"
+          },
+          "block": {
+            "id": "inserted-cell-quote-71",
+            "type": "quote",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "quote",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Citace v bu\u0148ce.",
+                  "id": "inserted-cell-quote-71-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "cc3b7f1cddb540dfbef49d33e37ce29f",
+          "schemaVersion": 1,
+          "type": "moveBlock",
+          "target": {
+            "blockId": "inserted-cell-71",
+            "tableCellId": "t1c1",
+            "order": 0
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T16:39:56.8455072+00:00"
+          }
+        },
+        {
+          "operationId": "256735c5896e4428bf220f04953e215d",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
@@ -3719,14 +4140,14 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7753431+00:00"
+            "createdAt": "2026-07-19T16:39:56.8455209+00:00"
           },
           "mark": {
             "type": "italic"
           }
         },
         {
-          "operationId": "231c8644f32e43e7ad59347a5928f024",
+          "operationId": "b15e96cc26144c61b53a14e7b3c1103f",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
@@ -3737,7 +4158,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7753972+00:00"
+            "createdAt": "2026-07-19T16:39:56.8456956+00:00"
           },
           "mark": {
             "type": "italic"
@@ -3791,6 +4212,13 @@
           },
           {
             "container": "body",
+            "id": "inserted-list-71",
+            "kind": "list",
+            "text": "Polo\u017Eka seznamu 71.",
+            "marks": {}
+          },
+          {
+            "container": "body",
             "id": "t1",
             "kind": "table",
             "text": "",
@@ -3798,16 +4226,23 @@
           },
           {
             "container": "cell:t1c1",
-            "id": "t1c1p0",
+            "id": "inserted-cell-71",
             "kind": "paragraph",
-            "text": "Text v \u0148ce tabulky.",
+            "text": "Vlo\u017Eeno do bu\u0148ky.",
             "marks": {}
           },
           {
             "container": "cell:t1c1",
-            "id": "inserted-cell-71",
+            "id": "inserted-cell-quote-71",
+            "kind": "quote",
+            "text": "Citace v bu\u0148ce.",
+            "marks": {}
+          },
+          {
+            "container": "cell:t1c1",
+            "id": "t1c1p0",
             "kind": "paragraph",
-            "text": "Vlo\u017Eeno do bu\u0148ky.",
+            "text": "Text v \u0148ce tabulky.",
             "marks": {}
           }
         ]
@@ -3821,7 +4256,7 @@
         "version": 0,
         "metadata": {
           "title": "",
-          "createdAt": "2026-07-19T14:18:04.7760666+00:00",
+          "createdAt": "2026-07-19T16:39:56.8478667+00:00",
           "status": "draft",
           "tags": []
         },
@@ -3871,7 +4306,7 @@
         },
         "sections": [
           {
-            "id": "6178cef13eab414580d7a41838f55089",
+            "id": "84d52ef138ba4ca2a05bd181f41108a5",
             "order": 0,
             "properties": {
               "pageSettings": {
@@ -4155,7 +4590,7 @@
               }
             ],
             "preserve": {
-              "sourceJson": "{\u0022Id\u0022:\u00226178cef13eab414580d7a41838f55089\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
+              "sourceJson": "{\u0022Id\u0022:\u002284d52ef138ba4ca2a05bd181f41108a5\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}"
             }
           }
         ],
@@ -4402,12 +4837,12 @@
         "outlineRevision": 0,
         "tableOfContentsRevision": 0,
         "preserve": {
-          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-97\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T14:18:04.7760666\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u00226178cef13eab414580d7a41838f55089\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
+          "sourceJson": "{\u0022SchemaVersion\u0022:1,\u0022DocumentId\u0022:\u0022convergence-97\u0022,\u0022Metadata\u0022:{\u0022Title\u0022:\u0022\u0022,\u0022CreatedAt\u0022:\u00222026-07-19T16:39:56.8478667\u002B00:00\u0022,\u0022Status\u0022:0,\u0022Tags\u0022:[]},\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Theme\u0022:{\u0022BodyFontFamily\u0022:\u0022Aptos, Arial, sans-serif\u0022,\u0022BodyFontSize\u0022:11,\u0022BodyLineHeight\u0022:1.15,\u0022ParagraphSpacingAfter\u0022:8},\u0022Hyphenation\u0022:{\u0022Enabled\u0022:false,\u0022Mode\u0022:\u0022off\u0022,\u0022Zone\u0022:0,\u0022ConsecutiveLimit\u0022:2,\u0022MinPrefix\u0022:3,\u0022MinSuffix\u0022:3},\u0022PageBackground\u0022:{\u0022Watermark\u0022:{\u0022Enabled\u0022:false,\u0022Kind\u0022:\u0022text\u0022,\u0022Opacity\u0022:0.16,\u0022Rotation\u0022:-36},\u0022Border\u0022:{\u0022Enabled\u0022:false,\u0022Width\u0022:1,\u0022Margin\u0022:0,\u0022AlignTo\u0022:\u0022page\u0022,\u0022Dash\u0022:[]}},\u0022Sections\u0022:[{\u0022Id\u0022:\u002284d52ef138ba4ca2a05bd181f41108a5\u0022,\u0022Order\u0022:0,\u0022Properties\u0022:{\u0022PageSettings\u0022:{\u0022Size\u0022:{\u0022Name\u0022:\u0022A4\u0022,\u0022Width\u0022:595.276,\u0022Height\u0022:841.89},\u0022Margins\u0022:{\u0022Top\u0022:72,\u0022Right\u0022:72,\u0022Bottom\u0022:72,\u0022Left\u0022:72},\u0022Landscape\u0022:false,\u0022HeaderDistanceFromTop\u0022:36,\u0022FooterDistanceFromBottom\u0022:36},\u0022Columns\u0022:{\u0022Count\u0022:1,\u0022Spacing\u0022:36,\u0022SeparatorLine\u0022:false,\u0022Balance\u0022:false,\u0022Preset\u0022:\u0022one\u0022,\u0022Items\u0022:[]},\u0022LineNumbering\u0022:{\u0022Enabled\u0022:false,\u0022StartAt\u0022:1,\u0022Increment\u0022:1,\u0022DistanceFromText\u0022:18,\u0022Restart\u0022:0},\u0022DifferentFirstPage\u0022:false,\u0022DifferentOddAndEvenPages\u0022:false,\u0022HeaderFooterReferences\u0022:[],\u0022NoteNumbering\u0022:{\u0022Style\u0022:\u0022decimal\u0022,\u0022StartAt\u0022:1,\u0022RestartEachSection\u0022:true}}}],\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 0 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p0-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p1\u0022,\u0022Type\u0022:0,\u0022Order\u0022:1,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 1 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p1-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p2\u0022,\u0022Type\u0022:0,\u0022Order\u0022:2,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 2 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p2-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022p3\u0022,\u0022Type\u0022:0,\u0022Order\u0022:3,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Odstavec 3 se z\\u00E1kladn\\u00EDm textem.\u0022,\u0022Id\u0022:\u0022p3-run\u0022,\u0022Marks\u0022:[]}]}},{\u0022Id\u0022:\u0022t1\u0022,\u0022Type\u0022:4,\u0022Order\u0022:4,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022table\u0022,\u0022Rows\u0022:[{\u0022Cells\u0022:[{\u0022Id\u0022:\u0022t1c1\u0022,\u0022ColumnSpan\u0022:1,\u0022RowSpan\u0022:1,\u0022IsHeader\u0022:false,\u0022Merge\u0022:{\u0022IsOrigin\u0022:true},\u0022Borders\u0022:{},\u0022VerticalAlignment\u0022:0,\u0022Blocks\u0022:[{\u0022Id\u0022:\u0022t1c1p0\u0022,\u0022Type\u0022:0,\u0022Order\u0022:0,\u0022ParagraphProperties\u0022:{\u0022Alignment\u0022:0,\u0022LineSpacing\u0022:1,\u0022SpacingBefore\u0022:0,\u0022SpacingAfter\u0022:0,\u0022LeftIndent\u0022:0,\u0022RightIndent\u0022:0,\u0022FirstLineIndent\u0022:0,\u0022DefaultTabWidth\u0022:36,\u0022TabStops\u0022:[]},\u0022Content\u0022:{\u0022$type\u0022:\u0022paragraph\u0022,\u0022Inlines\u0022:[{\u0022$type\u0022:\u0022text\u0022,\u0022Text\u0022:\u0022Text v bu\\u0148ce tabulky.\u0022,\u0022Id\u0022:\u0022t1c1p0-run\u0022,\u0022Marks\u0022:[]}]}}]}]}],\u0022Layout\u0022:{\u0022Alignment\u0022:0,\u0022Borders\u0022:{},\u0022RepeatHeaderRows\u0022:false,\u0022BandedRows\u0022:false,\u0022BandedColumns\u0022:false,\u0022HeaderRow\u0022:false,\u0022TotalRow\u0022:false,\u0022Style\u0022:{}},\u0022ColumnAlignments\u0022:[]}}],\u0022Comments\u0022:[],\u0022Notes\u0022:[],\u0022HeadersFooters\u0022:[],\u0022NumberingDefinitions\u0022:[],\u0022ListStyles\u0022:[],\u0022Styles\u0022:[],\u0022BibliographySources\u0022:[],\u0022Citations\u0022:[],\u0022Revisions\u0022:[],\u0022Assets\u0022:[],\u0022Anchors\u0022:[],\u0022IsProtected\u0022:false,\u0022RestrictedMarkers\u0022:[]}"
         }
       },
       "operations": [
         {
-          "operationId": "1e6b540701184a8abd68e221f30f818a",
+          "operationId": "3a9a67798c8e4c1cba54e7ac3d9a83b3",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -4417,12 +4852,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7762401+00:00"
+            "createdAt": "2026-07-19T16:39:56.8482409+00:00"
           },
           "text": "\u002B970\u002B"
         },
         {
-          "operationId": "32c4b57d6f654fc89d1379fde39dfd24",
+          "operationId": "eed91bf66aa34a31b1c28d0bd13aaed5",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -4432,12 +4867,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7762452+00:00"
+            "createdAt": "2026-07-19T16:39:56.8482635+00:00"
           },
           "text": "\u002B971\u002B"
         },
         {
-          "operationId": "708076530d7a4d73b636f031a2e043be",
+          "operationId": "497cfd3ab2584f00ae6172925f31cdb1",
           "schemaVersion": 1,
           "type": "insertText",
           "target": {
@@ -4447,12 +4882,12 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7762507+00:00"
+            "createdAt": "2026-07-19T16:39:56.8482881+00:00"
           },
           "text": "\u002B972\u002B"
         },
         {
-          "operationId": "99408eb3854240039320808d843f57ba",
+          "operationId": "dae618fcbfbd40d690d49ef7aa3ef806",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -4463,11 +4898,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.776254+00:00"
+            "createdAt": "2026-07-19T16:39:56.8483017+00:00"
           }
         },
         {
-          "operationId": "aacc76144a064a0c815b62225e609cf5",
+          "operationId": "a35b82ee68144924b1ef7916e202a842",
           "schemaVersion": 1,
           "type": "deleteText",
           "target": {
@@ -4478,11 +4913,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7762573+00:00"
+            "createdAt": "2026-07-19T16:39:56.8483201+00:00"
           }
         },
         {
-          "operationId": "411b3246d2044cb2b28f45edff541826",
+          "operationId": "c7bad550763c4c0ca50750d81c529413",
           "schemaVersion": 1,
           "type": "insertBlock",
           "target": {
@@ -4491,7 +4926,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7762614+00:00"
+            "createdAt": "2026-07-19T16:39:56.848328+00:00"
           },
           "block": {
             "id": "inserted-97",
@@ -4522,7 +4957,7 @@
           }
         },
         {
-          "operationId": "edeb4de489be462c96c35abe77adc206",
+          "operationId": "0ed9e6bff7374ec9bfb8f3e2121350b3",
           "schemaVersion": 1,
           "type": "insertBlock",
           "target": {
@@ -4532,7 +4967,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7762811+00:00"
+            "createdAt": "2026-07-19T16:39:56.8483952+00:00"
           },
           "block": {
             "id": "inserted-cell-97",
@@ -4563,7 +4998,7 @@
           }
         },
         {
-          "operationId": "832d3895a371446f8908e4b6ec31df2c",
+          "operationId": "8a1500750ab4419d9461974f7aef5b19",
           "schemaVersion": 1,
           "type": "updateBlock",
           "target": {
@@ -4572,7 +5007,7 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7763003+00:00"
+            "createdAt": "2026-07-19T16:39:56.8484687+00:00"
           },
           "block": {
             "id": "p0",
@@ -4603,7 +5038,7 @@
           }
         },
         {
-          "operationId": "a20da0c12e534e4aa74795b44411e423",
+          "operationId": "a9b2bce84faf48a19325947038ad3396",
           "schemaVersion": 1,
           "type": "moveBlock",
           "target": {
@@ -4613,11 +5048,11 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.776319+00:00"
+            "createdAt": "2026-07-19T16:39:56.8485306+00:00"
           }
         },
         {
-          "operationId": "3c43c36d05514fe1b53e89c41acb0331",
+          "operationId": "f8080bb38cd44f7c9f05020da3a98ec3",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -4626,13 +5061,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7763207+00:00"
+            "createdAt": "2026-07-19T16:39:56.8485362+00:00"
           },
           "attributeName": "headingLevel",
           "attributeValueJson": "2"
         },
         {
-          "operationId": "1f12da6c37c0437b96ceff52fbb13f27",
+          "operationId": "dc23453388de4224a9dc2d2e12256fb3",
           "schemaVersion": 1,
           "type": "setBlockAttribute",
           "target": {
@@ -4641,13 +5076,13 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7763306+00:00"
+            "createdAt": "2026-07-19T16:39:56.8485789+00:00"
           },
           "attributeName": "text",
           "attributeValueJson": "\u0022Nahrazen\\u00FD text 97.\u0022"
         },
         {
-          "operationId": "912a9e2c9f424f9a94558bb0949fe575",
+          "operationId": "916ddeb38a4d45e19002f0f29377c96a",
           "schemaVersion": 1,
           "type": "deleteBlock",
           "target": {
@@ -4656,11 +5091,112 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7763366+00:00"
+            "createdAt": "2026-07-19T16:39:56.848597+00:00"
           }
         },
         {
-          "operationId": "d915dd6d13e5414993835a4043f4015e",
+          "operationId": "7abc50e275b64b86a5ef543314526265",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "order": 2.25
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T16:39:56.8486008+00:00"
+          },
+          "block": {
+            "id": "inserted-list-97",
+            "type": "list",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "list",
+              "ordered": false,
+              "indentLevel": 0,
+              "startNumber": 1,
+              "restartNumbering": false,
+              "continueNumbering": false,
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Polo\u017Eka seznamu 97.",
+                  "id": "inserted-list-97-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "a81411044af64b08a9fe749b6a103e4e",
+          "schemaVersion": 1,
+          "type": "insertBlock",
+          "target": {
+            "tableCellId": "t1c1",
+            "order": 0
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T16:39:56.8486714+00:00"
+          },
+          "block": {
+            "id": "inserted-cell-quote-97",
+            "type": "quote",
+            "order": 0,
+            "paragraphProperties": {
+              "alignment": "left",
+              "lineSpacing": 1,
+              "spacingBefore": 0,
+              "spacingAfter": 0,
+              "leftIndent": 0,
+              "rightIndent": 0,
+              "firstLineIndent": 0,
+              "defaultTabWidth": 36,
+              "tabStops": []
+            },
+            "content": {
+              "$type": "quote",
+              "inlines": [
+                {
+                  "$type": "text",
+                  "text": "Citace v bu\u0148ce.",
+                  "id": "inserted-cell-quote-97-run",
+                  "marks": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "operationId": "604b4b4ec1ca4815a18e2afb226949c1",
+          "schemaVersion": 1,
+          "type": "moveBlock",
+          "target": {
+            "blockId": "inserted-cell-97",
+            "tableCellId": "t1c1",
+            "order": 0
+          },
+          "metadata": {
+            "authorId": "",
+            "logicalTimestamp": 0,
+            "createdAt": "2026-07-19T16:39:56.8487297+00:00"
+          }
+        },
+        {
+          "operationId": "1da213cb94a14182b42a4a5666b030a9",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
@@ -4671,26 +5207,26 @@
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7763403+00:00"
+            "createdAt": "2026-07-19T16:39:56.8487565+00:00"
           },
           "mark": {
             "type": "italic"
           }
         },
         {
-          "operationId": "a13cef428fbe48f681b59243e90ac4b0",
+          "operationId": "9d43196cd10d4ecbad4599f5c7a18072",
           "schemaVersion": 1,
           "type": "addInlineMark",
           "target": {
-            "blockId": "t1c1p0",
+            "blockId": "inserted-cell-97",
             "tableCellId": "t1c1",
-            "offset": 11,
+            "offset": 9,
             "length": 3
           },
           "metadata": {
             "authorId": "",
             "logicalTimestamp": 0,
-            "createdAt": "2026-07-19T14:18:04.7763893+00:00"
+            "createdAt": "2026-07-19T16:39:56.848992+00:00"
           },
           "mark": {
             "type": "bold"
@@ -4730,6 +5266,13 @@
           },
           {
             "container": "body",
+            "id": "inserted-list-97",
+            "kind": "list",
+            "text": "Polo\u017Eka seznamu 97.",
+            "marks": {}
+          },
+          {
+            "container": "body",
             "id": "inserted-97",
             "kind": "paragraph",
             "text": "Vlo\u017Een\u00FD odstavec 97.",
@@ -4744,23 +5287,30 @@
           },
           {
             "container": "cell:t1c1",
-            "id": "t1c1p0",
+            "id": "inserted-cell-97",
             "kind": "paragraph",
-            "text": "Text v bu\u0148ce tabulky.",
+            "text": "Vlo\u017Eeno do bu\u0148ky.",
             "marks": {
               "bold": [
                 [
-                  11,
-                  14
+                  9,
+                  12
                 ]
               ]
             }
           },
           {
             "container": "cell:t1c1",
-            "id": "inserted-cell-97",
+            "id": "inserted-cell-quote-97",
+            "kind": "quote",
+            "text": "Citace v bu\u0148ce.",
+            "marks": {}
+          },
+          {
+            "container": "cell:t1c1",
+            "id": "t1c1p0",
             "kind": "paragraph",
-            "text": "Vlo\u017Eeno do bu\u0148ky.",
+            "text": "Text v bu\u0148ce tabulky.",
             "marks": {}
           }
         ]

@@ -138,7 +138,7 @@ public static class DocumentEditorSemanticTextTools
 
         if (!load.Found || load.Document is null)
         {
-            return McpToolResults.Failure(McpToolResults.NotFound, load.ErrorMessage ?? $"DocumentEditor document '{documentId}' not found.");
+            return DocumentEditorSemanticCore.DocumentNotFound(load, documentId);
         }
 
         if (McpConcurrency.TokenConflict(expectedConcurrencyToken, load.ConcurrencyToken, "document_editor_describe_document") is { } conflict)
@@ -146,17 +146,13 @@ public static class DocumentEditorSemanticTextTools
             return McpToolResults.Failure(McpToolResults.Conflict, conflict);
         }
 
-        var block = FindBlock(load.Document, blockId, tableCellId);
+        var block = DocumentEditorSemanticCore.FindBlock(load.Document, blockId, tableCellId);
         if (block is null)
         {
-            return McpToolResults.Failure(
-                McpToolResults.NotFound,
-                $"Block '{blockId}' was not found in the document body or its table cells"
-                + (string.IsNullOrWhiteSpace(tableCellId) ? "" : $" (table cell '{tableCellId}')")
-                + ". Use document_editor_describe_document to list block addresses; blocks inside content controls or headers/footers are not operation-addressable.");
+            return DocumentEditorSemanticCore.BlockNotFound(blockId, tableCellId);
         }
 
-        var inlines = GetInlineList(block.Content);
+        var inlines = DocumentEditorSemanticCore.GetInlineList(block.Content);
         if (inlines is null)
         {
             return McpToolResults.Failure(
@@ -171,68 +167,26 @@ public static class DocumentEditorSemanticTextTools
             return McpToolResults.Failure(compilation.ErrorCode ?? McpToolResults.Error, compilation.ErrorMessage ?? "The request could not be compiled into operations.");
         }
 
-        var batch = new DocumentOperationBatch
-        {
-            DocumentId = documentId,
-            Operations = compilation.Operations
-        };
-
-        var working = McpJsonHelpers.Clone(load.Document, DocumentEditorJson.Options);
-        var applyResult = new DocumentOperationApplier().Apply(working, batch);
-        if (!applyResult.IsValid)
-        {
-            return McpToolResults.Failure(McpToolResults.InvalidOperation, "One or more compiled document operations failed.", applyResult.Errors);
-        }
-
-        var postFixWarnings = DocumentEditorMcpPostFixer.Fix(working);
-        var validation = DocumentEditorValidationEngine.Validate(working);
-        if (!validation.IsValid)
-        {
-            return McpToolResults.Failure(McpToolResults.ValidationFailed, "The resulting document is invalid; nothing was saved.", validation.Errors);
-        }
-
-        var normalized = DocumentEditorJson.Serialize(working);
-        var save = await documents.SaveAsync(new DocumentEditorSaveRequest
-        {
-            DocumentId = documentId,
-            Document = working,
-            JsonSnapshot = normalized,
-            BaseConcurrencyToken = expectedConcurrencyToken,
-            ConcurrencyMode = force
-                ? DocumentEditorConcurrencyMode.Force
-                : string.IsNullOrEmpty(expectedConcurrencyToken)
-                    ? DocumentEditorConcurrencyMode.Optional
-                    : DocumentEditorConcurrencyMode.Required,
-            NormalizeJson = true
-        });
-
-        if (save.Conflict)
-        {
-            return McpToolResults.Failure(
-                McpToolResults.Conflict,
-                "The document was modified since you read it. Re-read with document_editor_describe_document and retry.");
-        }
-
-        if (!save.Success)
-        {
-            return McpToolResults.Failure(McpToolResults.Error, save.ErrorMessage ?? "The document could not be saved.");
-        }
-
-        var savedDocument = save.Document ?? working;
-        var savedBlock = FindBlock(savedDocument, blockId, tableCellId);
-        var savedPlainText = savedBlock is null ? null : PlainTextOf(GetInlineList(savedBlock.Content));
-
-        return McpToolResults.Success(new
-        {
-            id = documentId,
-            blockId,
-            applied = batch.Operations.Count,
-            concurrencyToken = save.ConcurrencyToken,
-            contentDigest = DocumentEditorDescribeTools.ComputeContentDigest(savedDocument),
-            blockPlainText = savedPlainText,
-            blockTextLength = savedPlainText?.Length,
-            postFixWarnings = DocumentEditorMcpPostFixer.ToToolWarnings(postFixWarnings)
-        });
+        return await DocumentEditorSemanticCore.ApplyAsync(
+            documents,
+            documentId,
+            load,
+            compilation.Operations,
+            expectedConcurrencyToken,
+            force,
+            savedDocument =>
+            {
+                var savedBlock = DocumentEditorSemanticCore.FindBlock(savedDocument, blockId, tableCellId);
+                var savedPlainText = savedBlock is null
+                    ? null
+                    : DocumentEditorSemanticCore.PlainTextOf(DocumentEditorSemanticCore.GetInlineList(savedBlock.Content));
+                return new Dictionary<string, object?>
+                {
+                    ["blockId"] = blockId,
+                    ["blockPlainText"] = savedPlainText,
+                    ["blockTextLength"] = savedPlainText?.Length
+                };
+            });
     }
 
     // ---------------------------------------------------------------- compilers
@@ -626,7 +580,7 @@ public static class DocumentEditorSemanticTextTools
     }
 
     private static string PlainTextOf(List<InlineContent>? inlines)
-        => string.Concat((inlines ?? []).OfType<TextRun>().Select(r => r.Text));
+        => DocumentEditorSemanticCore.PlainTextOf(inlines);
 
     private static string CamelCase(InlineMarkType type)
     {
@@ -634,57 +588,4 @@ public static class DocumentEditorSemanticTextTools
         return char.ToLowerInvariant(name[0]) + name[1..];
     }
 
-    // ---------------------------------------------------------------- block resolution
-
-    /// <summary>
-    /// Deep block resolution mirroring DocumentOperationApplier.FindBlockLocation: body blocks
-    /// first, then recursively through table cells; tableCellId, when supplied, restricts which
-    /// container may match.
-    /// </summary>
-    private static DocumentBlock? FindBlock(DocumentEditorDocument document, string blockId, string? tableCellId)
-    {
-        return Visit(document.Blocks, string.Empty);
-
-        DocumentBlock? Visit(List<DocumentBlock> blocks, string cellId)
-        {
-            foreach (var block in blocks)
-            {
-                if (string.Equals(block.Id, blockId, StringComparison.Ordinal)
-                    && (string.IsNullOrWhiteSpace(tableCellId) || string.Equals(tableCellId, cellId, StringComparison.Ordinal)))
-                {
-                    return block;
-                }
-
-                if (block.Content is not TableBlockContent table)
-                {
-                    continue;
-                }
-
-                foreach (var row in table.Rows)
-                {
-                    foreach (var cell in row.Cells)
-                    {
-                        if (Visit(cell.Blocks, cell.Id ?? string.Empty) is { } nested)
-                        {
-                            return nested;
-                        }
-                    }
-                }
-            }
-
-            return null;
-        }
-    }
-
-    private static List<InlineContent>? GetInlineList(DocumentBlockContent content)
-    {
-        return content switch
-        {
-            ParagraphBlockContent paragraph => paragraph.Inlines,
-            HeadingBlockContent heading => heading.Inlines,
-            ListBlockContent list => list.Inlines,
-            QuoteBlockContent quote => quote.Inlines,
-            _ => null
-        };
-    }
 }

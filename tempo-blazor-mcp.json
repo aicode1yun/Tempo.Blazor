@@ -516,6 +516,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DocumentEditorBlockTools",
+      "kind": "Class",
+      "category": "Document Editor",
+      "namespace": "Tempo.Blazor.Mcp.DocumentEditor",
+      "description": "Semantic MCP block/table tools (document_editor_insert_block/delete_block/move_block/update_block/set_table_cell_text). Insert paragraph/heading/list/quote blocks into the body (order-value semantics) or table cells (index semantics), move/delete/replace blocks and set table-cell text; compile into canonical insertBlock/deleteBlock/moveBlock/updateBlock/setBlockAttribute operations applied through the same pipeline as document_editor_apply_operations. Operation patterns are pinned by the C#/JS convergence fixture.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/DocumentEditor/DocumentEditorBlockTools.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DocumentEditorDescribeTools",
       "kind": "Class",
       "category": "Document Editor",
@@ -1771,11 +1781,11 @@
     }
   ],
   "summary": {
-    "itemCount": 78,
-    "manualItemCount": 78,
-    "generatedItemCount": 78,
+    "itemCount": 79,
+    "manualItemCount": 79,
+    "generatedItemCount": 79,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 78
+    "publicApiTypeCount": 79
   }
 }

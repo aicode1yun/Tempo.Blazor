@@ -287,6 +287,43 @@ public sealed class DocumentOperationConvergenceFixtureTests
         }));
         Emit(NewOperation(DocumentOperationType.DeleteBlock, op => op.Target.BlockId = "p3"));
 
+        // Phase 2b — patterns emitted by the semantic MCP block tools (plan 3, Fáze 2):
+        // list/quote persistence payloads and index-based moves inside a table cell.
+        Emit(NewOperation(DocumentOperationType.InsertBlock, op =>
+        {
+            op.Target.Order = 2.25;
+            op.Block = new DocumentBlock
+            {
+                Id = $"inserted-list-{seed}",
+                Type = DocumentBlockType.List,
+                Content = new ListBlockContent
+                {
+                    Ordered = seed % 2 == 0,
+                    Inlines = [new TextRun { Id = $"inserted-list-{seed}-run", Text = $"Položka seznamu {seed}." }],
+                },
+            };
+        }));
+        Emit(NewOperation(DocumentOperationType.InsertBlock, op =>
+        {
+            op.Target.TableCellId = "t1c1";
+            op.Target.Order = 0;
+            op.Block = new DocumentBlock
+            {
+                Id = $"inserted-cell-quote-{seed}",
+                Type = DocumentBlockType.Quote,
+                Content = new QuoteBlockContent
+                {
+                    Inlines = [new TextRun { Id = $"inserted-cell-quote-{seed}-run", Text = "Citace v buňce." }],
+                },
+            };
+        }));
+        Emit(NewOperation(DocumentOperationType.MoveBlock, op =>
+        {
+            op.Target.BlockId = $"inserted-cell-{seed}";
+            op.Target.TableCellId = "t1c1";
+            op.Target.Order = 0;
+        }));
+
         // Phase 3 — mark ranges last (they split runs; both appliers converge on content).
         for (var index = 0; index < 2; index++)
         {
@@ -366,6 +403,8 @@ public sealed class DocumentOperationConvergenceFixtureTests
         {
             ParagraphBlockContent paragraph => paragraph.Inlines,
             HeadingBlockContent heading => heading.Inlines,
+            ListBlockContent list => list.Inlines,
+            QuoteBlockContent quote => quote.Inlines,
             _ => null,
         };
 
@@ -407,6 +446,8 @@ public sealed class DocumentOperationConvergenceFixtureTests
             {
                 HeadingBlockContent => "heading",
                 ParagraphBlockContent => "paragraph",
+                ListBlockContent => "list",
+                QuoteBlockContent => "quote",
                 TableBlockContent => "table",
                 _ => "other",
             },

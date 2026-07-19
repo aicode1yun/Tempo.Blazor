@@ -39,13 +39,16 @@ function computeSignature(model) {
 }
 
 function signatureEntry(container, block) {
+    const declaredType = String(block?.type || block?.content?.type || '');
     const kind = block?.content?.headingLevel
         ? 'heading'
         : block?.content?.table
             ? 'table'
-            : Array.isArray(block?.content?.runs)
-                ? 'paragraph'
-                : 'other';
+            : declaredType === 'list' || declaredType === 'quote'
+                ? declaredType
+                : Array.isArray(block?.content?.runs)
+                    ? 'paragraph'
+                    : 'other';
 
     let text = '';
     const marks = {};

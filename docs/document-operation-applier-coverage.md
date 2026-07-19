@@ -25,9 +25,9 @@ fixture `tests/Tempo.Blazor.Tests/DocumentEditor/TestData/operation-convergence-
 | `deleteText` | ✅ single-run range delete | ✅ multi-run range delete | ✅ dedup + shifts | ✅ both (Fáze 5) | ✅ |
 | `addInlineMark` / `addMark` | ✅ character-range with run splitting/merging | ✅ character-range with run splitting (Fáze 5 fix — previously whole-run) | ✅ range transform vs. text edits | ✅ both (Fáze 5) | ✅ |
 | `removeInlineMark` / `removeMark` | ✅ incl. run merge-back | ✅ range-based | ✅ range transform | ✅ both (Fáze 5) | ✅ |
-| `insertBlock` | ✅ body (order-value: append + stable sort) + table cell containers (index, Fáze 5) | ✅ body (order-value, mirrors C#) + cell containers (index); persistence payloads normalized to canvas shape | ✅ passthrough (id dedup by applier) | ✅ both | ✅ (incl. persistence payloads + cell containers) |
+| `insertBlock` | ✅ body (order-value: append + stable sort) + table cell containers (index, Fáze 5) | ✅ body (order-value, mirrors C#) + cell containers (index); persistence payloads normalized to canvas shape | ✅ passthrough (id dedup by applier) | ✅ both | ✅ (incl. persistence payloads + cell containers; list/quote payloads emitted by the MCP block tools — plan 3 Fáze 2) |
 | `deleteBlock` | ✅ body + nested (Fáze 5) | ✅ deep | ✅ suppresses later ops on deleted block | ✅ both | ✅ |
-| `moveBlock` | ✅ body (order-value, moved-block-wins-ties) / cell (index, Fáze 5) | ✅ body (order-value, moved-block-wins-ties — mirrors C#) / cell (index) | ✅ last-write-wins per block | ✅ both | ✅ (incl. body order-value moves) |
+| `moveBlock` | ✅ body (order-value, moved-block-wins-ties) / cell (index, Fáze 5) | ✅ body (order-value, moved-block-wins-ties — mirrors C#) / cell (index) | ✅ last-write-wins per block | ✅ both | ✅ (incl. body order-value moves + cell index moves — plan 3 Fáze 2) |
 | `setBlockAttribute` | ✅ `headingLevel`, `text`, `paragraphProperties`, `clearFormatting`, `table.cell.text`, `order`, `metadata.title` | ✅ `headingLevel`, `text`, `content.*` paths | ✅ last-write-wins per (block, attribute) | ✅ both (Fáze 5; `table.cell.text` keeps its table-targeting semantics) | ✅ (`headingLevel`, `text`) |
 | `updateBlock` | ✅ body + nested in-place (Fáze 5) | ✅ deep replace; persistence payloads normalized to canvas shape | ✅ last-write-wins per block | ✅ both | ✅ (incl. persistence payloads) |
 | `moveDrawingObject` | ✅ by objectId/inlineId/index across body, headers/footers, nested blocks | ✅ | ✅ last-write-wins per object | ✅ (deep `FindDrawingRun`) | — (layout payload, no text content) |
@@ -60,7 +60,13 @@ fixture `tests/Tempo.Blazor.Tests/DocumentEditor/TestData/operation-convergence-
    canvas blocks (`content.runs`, `headingLevel`, `content.table`) on apply; canvas-shaped
    payloads pass through untouched (free-form block props survive as before). Blocks carried by
    C#-produced operations are fully text-editable on the JS side.
-5. **Revision operations are C#-only in the collab applier** — the canvas receives revision state
+5. **`setBlockAttribute table.cell.text` is server-side only in practice** — the C# applier
+   implements the cell-targeting semantics (replace the cell's first paragraph text); the JS
+   collab applier has no special handling for the attribute (it would fall through to a generic
+   `setPath`), so the attribute is deliberately EXCLUDED from the convergence fixture. The MCP
+   tool `document_editor_set_table_cell_text` emits it for server-side application; live
+   co-editing hosts propagate the result via model replace, not via `applyOperation`.
+6. **Revision operations are C#-only in the collab applier** — the canvas receives revision state
    via model replacement/engine commands, not via `applyOperation`. Server-side revision
    application is fully covered by `DocumentOperationEngineTests`.
 
