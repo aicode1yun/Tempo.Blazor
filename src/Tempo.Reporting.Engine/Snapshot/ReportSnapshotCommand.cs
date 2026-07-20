@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Tempo.Reporting.Abstractions.Definitions;
 
 namespace Tempo.Reporting.Engine.Snapshot;
 
@@ -96,6 +97,14 @@ public sealed class ReportSnapshotCommand
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public double Rotation { get; init; }
 
+    /// <summary>
+    /// Base writing direction for this text run. Defaults to <see cref="ReportTextDirection.Auto"/>,
+    /// which resolves the paragraph level from the text via the Unicode Bidirectional Algorithm.
+    /// </summary>
+    [JsonPropertyOrder(22)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ReportTextDirection TextDirection { get; init; }
+
     /// <summary>Creates a text command.</summary>
     public static ReportSnapshotCommand TextRun(
         string id,
@@ -113,7 +122,8 @@ public sealed class ReportSnapshotCommand
         bool underline = false,
         bool strikeThrough = false,
         string? highlight = null,
-        double rotation = 0)
+        double rotation = 0,
+        ReportTextDirection textDirection = ReportTextDirection.Auto)
         => new()
         {
             Id = id,
@@ -133,7 +143,8 @@ public sealed class ReportSnapshotCommand
             Underline = underline,
             StrikeThrough = strikeThrough,
             Highlight = highlight,
-            Rotation = rotation
+            Rotation = rotation,
+            TextDirection = textDirection
         };
 
     /// <summary>Creates a rectangle command.</summary>

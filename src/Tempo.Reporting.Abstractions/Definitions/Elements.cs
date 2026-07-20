@@ -55,6 +55,13 @@ public sealed record ReportTextBoxElement : ReportElement
     /// <summary>Vertical text alignment.</summary>
     public ReportVerticalAlignment VerticalAlignment { get; init; } = ReportVerticalAlignment.Top;
 
+    /// <summary>
+    /// Base writing direction for the text box. Defaults to <see cref="ReportTextDirection.Auto"/>,
+    /// which detects the direction per paragraph from its content.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ReportTextDirection TextDirection { get; init; } = ReportTextDirection.Auto;
+
     /// <summary>Text padding.</summary>
     public ReportThickness? Padding { get; init; }
 
@@ -273,6 +280,12 @@ public sealed record ReportTableCell
 
     /// <summary>Horizontal text alignment.</summary>
     public ReportHorizontalAlignment HorizontalAlignment { get; init; } = ReportHorizontalAlignment.Left;
+
+    /// <summary>
+    /// Base writing direction for the cell text. Defaults to <see cref="ReportTextDirection.Auto"/>.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ReportTextDirection TextDirection { get; init; } = ReportTextDirection.Auto;
 
     /// <summary>Whether text can grow the row height.</summary>
     public bool CanGrow { get; init; } = true;

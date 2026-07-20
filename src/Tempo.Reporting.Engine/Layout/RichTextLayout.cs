@@ -26,6 +26,12 @@ public sealed record ReportRichTextRun
     /// <summary>Letter spacing in CSS pixels.</summary>
     public double LetterSpacing { get; init; }
 
+    /// <summary>
+    /// Base writing direction for the run. Defaults to <see cref="ReportTextDirection.Auto"/>,
+    /// which resolves the paragraph level from the run text.
+    /// </summary>
+    public ReportTextDirection Direction { get; init; } = ReportTextDirection.Auto;
+
     /// <summary>Creates a copy with different text.</summary>
     public ReportRichTextRun WithText(string text) => this with { Text = text };
 
@@ -61,7 +67,8 @@ public sealed record ReportRichTextRun
             LetterSpacing,
             Style.Underline,
             Style.StrikeThrough,
-            Style.BackgroundColor);
+            Style.BackgroundColor,
+            textDirection: Direction);
 }
 
 /// <summary>Simple rectangle used by layout results.</summary>

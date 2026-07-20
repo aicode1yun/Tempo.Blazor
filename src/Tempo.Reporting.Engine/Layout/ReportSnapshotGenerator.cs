@@ -272,6 +272,9 @@ public static class ReportSnapshotGenerator
                 FillColor = style?.FillColor,
                 HorizontalAlignment = textBox.HorizontalAlignment,
                 VerticalAlignment = textBox.VerticalAlignment,
+                TextDirection = textBox.TextDirection != ReportTextDirection.Auto
+                    ? textBox.TextDirection
+                    : definition.TextDirection,
                 LineSpacing = textStyle.LineHeight,
                 CanGrow = textBox.CanGrow,
                 Runs = runs,

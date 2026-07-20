@@ -18,6 +18,26 @@ public enum ReportHorizontalAlignment
     Justify,
 }
 
+/// <summary>
+/// Base writing direction for text content. Controls the Unicode Bidirectional Algorithm
+/// paragraph embedding level used when shaping and drawing runs.
+/// </summary>
+public enum ReportTextDirection
+{
+    /// <summary>
+    /// Auto-detect the base direction from the first strong character (Unicode rules P2/P3).
+    /// This is the default and leaves existing left-to-right content unchanged while rendering
+    /// Arabic/Hebrew paragraphs right-to-left automatically.
+    /// </summary>
+    Auto,
+
+    /// <summary>Force a left-to-right base direction (paragraph embedding level 0).</summary>
+    Ltr,
+
+    /// <summary>Force a right-to-left base direction (paragraph embedding level 1).</summary>
+    Rtl,
+}
+
 /// <summary>Vertical alignment for text content.</summary>
 public enum ReportVerticalAlignment
 {

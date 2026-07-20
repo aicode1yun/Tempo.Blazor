@@ -39,6 +39,13 @@ public sealed record ReportTextBoxLayoutRequest
     /// <summary>Vertical text alignment.</summary>
     public ReportVerticalAlignment VerticalAlignment { get; init; } = ReportVerticalAlignment.Top;
 
+    /// <summary>
+    /// Base writing direction for the text box, carried through to emitted text runs so the
+    /// renderer can apply the Unicode Bidirectional Algorithm. Defaults to
+    /// <see cref="ReportTextDirection.Auto"/>.
+    /// </summary>
+    public ReportTextDirection TextDirection { get; init; } = ReportTextDirection.Auto;
+
     /// <summary>Line spacing multiplier.</summary>
     public double LineSpacing { get; init; } = 1;
 
@@ -149,7 +156,10 @@ public sealed record ReportTextBoxLayout
                         run.Style.BackgroundColor);
                 }
 
-                var richRun = new ReportRichTextRun(run.Text, run.Style, run.LetterSpacing);
+                var richRun = new ReportRichTextRun(run.Text, run.Style, run.LetterSpacing)
+                {
+                    Direction = Request.TextDirection,
+                };
                 yield return richRun.ToSnapshotCommand(
                     $"{Request.Id}-text-{index}",
                     run.X,

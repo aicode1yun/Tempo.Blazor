@@ -1,5 +1,7 @@
 #pragma warning disable MA0016
 
+using System.Text.Json.Serialization;
+
 namespace Tempo.Reporting.Abstractions.Definitions;
 
 /// <summary>Root report definition contract shared by designers, servers and embedded hosts.</summary>
@@ -22,6 +24,15 @@ public sealed record ReportDefinition
 
     /// <summary>Physical page setup used by the layout engine.</summary>
     public ReportPageSetup PageSetup { get; init; } = new();
+
+    /// <summary>
+    /// Document-level default base writing direction, applied to text elements that leave their
+    /// own <see cref="ReportTextDirection.Auto"/> unresolved. Defaults to
+    /// <see cref="ReportTextDirection.Auto"/> so existing reports are unchanged; set to
+    /// <see cref="ReportTextDirection.Rtl"/> to make a whole Arabic/Hebrew report right-to-left.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public ReportTextDirection TextDirection { get; init; } = ReportTextDirection.Auto;
 
     /// <summary>Parameter definitions exposed before rendering.</summary>
     public List<ReportParameterDefinition> Parameters { get; init; } = [];
