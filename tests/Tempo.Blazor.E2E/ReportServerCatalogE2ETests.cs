@@ -69,6 +69,78 @@ public sealed class ReportServerCatalogServerE2ETests : ReportServerE2ETestBase
         await TakeScreenshotAsync(page, "rs-server-designer").ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Fáze 19 (C4) RDL import happy path: uploading a real SSRS RDL creates a genuine catalog report whose
+    /// definition carries the IMPORTED content. Uses the true 2016 <c>ReportSections</c> body shape so the
+    /// lane also guards the nested-body resolution end to end.
+    /// </summary>
+    [TestMethod]
+    public async Task NewReport_ImportsRdl_CreatesRealReport_ShownInDesigner_AndPersisted()
+    {
+        const string rdl = """
+            <?xml version="1.0" encoding="utf-8"?>
+            <Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition">
+              <ReportSections>
+                <ReportSection>
+                  <Page>
+                    <PageHeight>11in</PageHeight><PageWidth>8.5in</PageWidth>
+                    <LeftMargin>1in</LeftMargin><RightMargin>1in</RightMargin>
+                    <TopMargin>1in</TopMargin><BottomMargin>1in</BottomMargin>
+                  </Page>
+                  <Body>
+                    <ReportItems>
+                      <Textbox Name="ImportedHeading">
+                        <Paragraphs><Paragraph><TextRuns><TextRun><Value>Imported From RDL</Value></TextRun></TextRuns></Paragraph></Paragraphs>
+                        <Top>0.25in</Top><Left>0.5in</Left><Height>0.4in</Height><Width>4in</Width>
+                      </Textbox>
+                    </ReportItems>
+                    <Height>2in</Height>
+                  </Body>
+                </ReportSection>
+              </ReportSections>
+            </Report>
+            """;
+
+        var folderName = $"Rdl {UniqueTag()}";
+        var (folderId, _) = await SeedFolderAsync(folderName).ConfigureAwait(false);
+
+        var page = await OpenServerPageAsync("/").ConfigureAwait(false);
+        await DemoSignInAsync(page).ConfigureAwait(false);
+
+        var reportName = $"E2E Rdl Import {UniqueTag()}";
+        await page.GetByTestId("new-report-open").ClickAsync().ConfigureAwait(false);
+        await page.GetByTestId("new-report-form").WaitForAsync().ConfigureAwait(false);
+        await page.GetByTestId("new-report-name").FillAsync(reportName).ConfigureAwait(false);
+        await page.GetByTestId("new-report-folder").SelectOptionAsync(new SelectOptionValue { Value = folderId }).ConfigureAwait(false);
+
+        await page.GetByTestId("new-report-source-rdl").ClickAsync().ConfigureAwait(false);
+        await page.GetByTestId("new-report-rdl-file").WaitForAsync().ConfigureAwait(false);
+        await page.GetByTestId("new-report-rdl-file").SetInputFilesAsync(new FilePayload
+        {
+            Name = "imported.rdl",
+            MimeType = "application/xml",
+            Buffer = System.Text.Encoding.UTF8.GetBytes(rdl),
+        }).ConfigureAwait(false);
+
+        // The import must succeed inline (no file error) before submit is allowed.
+        await Assertions.Expect(page.GetByTestId("new-report-rdl-ok")).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 15_000 }).ConfigureAwait(false);
+        await Assertions.Expect(page.GetByTestId("new-report-file-error")).ToHaveCountAsync(0).ConfigureAwait(false);
+        await TakeScreenshotAsync(page, "rs-server-rdl-imported").ConfigureAwait(false);
+
+        await page.GetByTestId("new-report-submit").ClickAsync().ConfigureAwait(false);
+
+        await page.WaitForURLAsync(new System.Text.RegularExpressions.Regex("/designer/"), new PageWaitForURLOptions { Timeout = 30_000 }).ConfigureAwait(false);
+        await page.GetByTestId("f13-designer-page").WaitForAsync(new LocatorWaitForOptions { Timeout = 30_000 }).ConfigureAwait(false);
+
+        // The designer shows the real report AND the content that came from the RDL body.
+        await Assertions.Expect(page.Locator("body")).ToContainTextAsync(reportName, new LocatorAssertionsToContainTextOptions { Timeout = 15_000 }).ConfigureAwait(false);
+        await Assertions.Expect(page.Locator("body")).ToContainTextAsync("Imported From RDL", new LocatorAssertionsToContainTextOptions { Timeout = 15_000 }).ConfigureAwait(false);
+
+        await PollAsync(async () => await CountReportsAsync(TenantId, reportName).ConfigureAwait(false) == 1,
+            $"Imported RDL report '{reportName}' should be persisted as a Reports row.").ConfigureAwait(false);
+        await TakeScreenshotAsync(page, "rs-server-rdl-designer").ConfigureAwait(false);
+    }
+
     [TestMethod]
     public async Task Favorites_ToggleRoundTrips_AndPersists()
     {

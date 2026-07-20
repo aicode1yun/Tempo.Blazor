@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.telerik.com/reporting/2020/1.0/reportdefinition">
+  <Description>A Telerik-namespaced RDL variant with a textbox and a table.</Description>
+  <PageWidth>21cm</PageWidth>
+  <PageHeight>29.7cm</PageHeight>
+  <LeftMargin>2cm</LeftMargin>
+  <RightMargin>2cm</RightMargin>
+  <TopMargin>2cm</TopMargin>
+  <BottomMargin>2cm</BottomMargin>
+  <Body>
+    <ReportItems>
+      <Textbox Name="Caption">
+        <Paragraphs>
+          <Paragraph><TextRuns><TextRun><Value>Telerik Export</Value></TextRun></TextRuns></Paragraph>
+        </Paragraphs>
+        <Top>10pt</Top>
+        <Left>10pt</Left>
+        <Height>24pt</Height>
+        <Width>200pt</Width>
+        <Style />
+      </Textbox>
+      <Table Name="Items">
+        <Top>40pt</Top>
+        <Left>10pt</Left>
+        <Height>60pt</Height>
+        <Width>300pt</Width>
+        <TableColumns>
+          <TableColumn><Width>150pt</Width></TableColumn>
+          <TableColumn><Width>150pt</Width></TableColumn>
+        </TableColumns>
+        <Header>
+          <TableRows>
+            <TableRow>
+              <Height>20pt</Height>
+              <TableCells>
+                <TableCell><ReportItems><Textbox Name="hName"><Value>Name</Value></Textbox></ReportItems></TableCell>
+                <TableCell><ReportItems><Textbox Name="hQty"><Value>Quantity</Value></Textbox></ReportItems></TableCell>
+              </TableCells>
+            </TableRow>
+          </TableRows>
+        </Header>
+        <Details>
+          <TableRows>
+            <TableRow>
+              <Height>20pt</Height>
+              <TableCells>
+                <TableCell><ReportItems><Textbox Name="dName"><Value>=Fields!Name.Value</Value></Textbox></ReportItems></TableCell>
+                <TableCell><ReportItems><Textbox Name="dQty"><Value>=Fields!Quantity.Value</Value></Textbox></ReportItems></TableCell>
+              </TableCells>
+            </TableRow>
+          </TableRows>
+        </Details>
+      </Table>
+    </ReportItems>
+    <Height>120pt</Height>
+  </Body>
+</Report>

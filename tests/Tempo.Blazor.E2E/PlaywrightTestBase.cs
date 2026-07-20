@@ -422,6 +422,12 @@ public abstract class PlaywrightTestBase
         startInfo.ArgumentList.Add(projectPath);
         startInfo.ArgumentList.Add("--launch-profile");
         startInfo.ArgumentList.Add(launchProfile);
+        // The run build must not fail on the repo-wide NuGet audit warning-as-error (NU1902, AngleSharp
+        // via bUnit/AngleSharp) or other warnings-as-errors — we only need the host to launch. Without
+        // these the host dies during build and every dependent lane fails in ClassInitialize with
+        // "…exited before it became ready". Mirrors ReportServerE2ETestBase.StartHostProcess.
+        startInfo.ArgumentList.Add("--property:NuGetAudit=false");
+        startInfo.ArgumentList.Add("--property:TreatWarningsAsErrors=false");
         startInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
         startInfo.Environment["DOTNET_ENVIRONMENT"] = "Development";
 

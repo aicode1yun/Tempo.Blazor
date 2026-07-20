@@ -1,6 +1,8 @@
 using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.Extensions.DependencyInjection;
+using Tempo.Reporting.Abstractions.Definitions;
 using Tempo.Reporting.Abstractions.Dtos;
 using Tempo.Reporting.Abstractions.Serialization;
 using Tempo.ReportServer.Web.Components;
@@ -99,6 +101,87 @@ public sealed class NewReportFormTests : ReportServerWebTestBase
         cut.FindComponent<InputFile>().UploadFiles(InputFileContent.CreateFromText("{ this is not valid", "definition.json"));
 
         cut.Find("[data-testid='new-report-file-error']").Should().NotBeNull();
+
+        cut.Find("[data-testid='new-report-submit']").Click();
+        captured.Should().BeNull();
+    }
+
+    /// <summary>A minimal but valid SSRS 2016 RDL: a page setup plus one textbox in the body.</summary>
+    private const string SampleRdl = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition">
+          <PageHeight>11in</PageHeight>
+          <PageWidth>8.5in</PageWidth>
+          <LeftMargin>1in</LeftMargin>
+          <RightMargin>1in</RightMargin>
+          <TopMargin>1in</TopMargin>
+          <BottomMargin>1in</BottomMargin>
+          <Body>
+            <ReportItems>
+              <Textbox Name="Heading">
+                <Paragraphs><Paragraph><TextRuns><TextRun><Value>Legacy Sales</Value></TextRun></TextRuns></Paragraph></Paragraphs>
+                <Top>0.25in</Top><Left>0.5in</Left><Height>0.4in</Height><Width>4in</Width>
+              </Textbox>
+              <Subreport Name="Unsupported"><ReportName>Detail</ReportName>
+                <Top>1in</Top><Left>0.5in</Left><Height>1in</Height><Width>4in</Width>
+              </Subreport>
+            </ReportItems>
+          </Body>
+        </Report>
+        """;
+
+    [Fact]
+    public async Task Rdl_WithValidDocument_ImportsAndCallsCreateReportWithMappedDefinition()
+    {
+        // Drive OnSubmit through the SAME typed client the catalog page uses, so this proves the RDL path
+        // reaches CreateReportAsync with the mapped definition rather than just raising a callback.
+        var client = (FakeTempoReportServerClient)Services.GetRequiredService<ITempoReportServerClient>();
+        var cut = RenderComponent<NewReportForm>(parameters => parameters
+            .Add(component => component.TenantId, "northwind")
+            .Add(component => component.Folders, Folders)
+            .Add(component => component.OnSubmit, EventCallback.Factory.Create<CreateReportRequestDto>(
+                this, async dto => await client.CreateReportAsync(dto))));
+
+        cut.Find("[data-testid='new-report-name']").Input("Legacy Sales");
+        cut.Find("[data-testid='new-report-source-rdl']").Change(true);
+        cut.FindComponent<InputFile>().UploadFiles(InputFileContent.CreateFromText(SampleRdl, "legacy.rdl"));
+
+        // The skipped <Subreport> must be surfaced as a non-fatal warning, never dropped silently.
+        cut.Find("[data-testid='new-report-rdl-ok']").Should().NotBeNull();
+        cut.Find("[data-testid='new-report-rdl-warnings']").Should().NotBeNull();
+
+        cut.Find("[data-testid='new-report-submit']").Click();
+        await Task.Yield();
+
+        var request = client.LastCreateReportRequest;
+        request.Should().NotBeNull();
+        request!.Name.Should().Be("Legacy Sales");
+
+        var definition = ReportDefinitionJsonSerializer.Deserialize(request.DefinitionJson);
+        definition.Name.Should().Be("Legacy Sales");
+        definition.PageSetup.PageSize.Width.Should().BeApproximately(612, 0.5);
+        var textBox = definition.Bands.Detail!.Elements.OfType<ReportTextBoxElement>().Single();
+        textBox.Id.Should().Be("Heading");
+        textBox.Text.Should().Be("Legacy Sales");
+    }
+
+    [Fact]
+    public void Rdl_WithMalformedDocument_ShowsInlineError_AndBlocksSubmit()
+    {
+        CreateReportRequestDto? captured = null;
+        var cut = RenderComponent<NewReportForm>(parameters => parameters
+            .Add(component => component.TenantId, "northwind")
+            .Add(component => component.Folders, Folders)
+            .Add(component => component.OnSubmit, EventCallback.Factory.Create<CreateReportRequestDto>(this, dto => captured = dto)));
+
+        cut.Find("[data-testid='new-report-name']").Input("Broken");
+        cut.Find("[data-testid='new-report-source-rdl']").Change(true);
+        cut.FindComponent<InputFile>().UploadFiles(
+            InputFileContent.CreateFromText("<Report><Body><Textbox></Body></Report>", "broken.rdl"));
+
+        // A malformed RDL must surface inline (no exception, no 500) and must not produce a create request.
+        cut.Find("[data-testid='new-report-file-error']").Should().NotBeNull();
+        cut.FindAll("[data-testid='new-report-rdl-ok']").Should().BeEmpty();
 
         cut.Find("[data-testid='new-report-submit']").Click();
         captured.Should().BeNull();

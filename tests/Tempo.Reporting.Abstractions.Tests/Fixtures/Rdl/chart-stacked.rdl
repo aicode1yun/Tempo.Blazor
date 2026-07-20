@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2008/01/reportdefinition">
+  <Description>A stacked column chart report.</Description>
+  <PageHeight>8.5in</PageHeight>
+  <PageWidth>11in</PageWidth>
+  <LeftMargin>0.5in</LeftMargin>
+  <RightMargin>0.5in</RightMargin>
+  <TopMargin>0.5in</TopMargin>
+  <BottomMargin>0.5in</BottomMargin>
+  <Body>
+    <ReportItems>
+      <Chart Name="RevenueChart">
+        <Top>0.5in</Top>
+        <Left>0.5in</Left>
+        <Height>3in</Height>
+        <Width>6in</Width>
+        <DataSetName>Revenue</DataSetName>
+        <Titles>
+          <Title>
+            <Caption>Revenue by Quarter</Caption>
+          </Title>
+        </Titles>
+        <ChartData>
+          <ChartSeriesCollection>
+            <ChartSeries Name="Online">
+              <ChartDataPoints>
+                <ChartDataPoint>
+                  <ChartDataPointValues>
+                    <Y>=Sum(Fields!Online.Value)</Y>
+                  </ChartDataPointValues>
+                </ChartDataPoint>
+              </ChartDataPoints>
+              <Type>Column</Type>
+              <Subtype>Stacked</Subtype>
+            </ChartSeries>
+            <ChartSeries Name="Retail">
+              <ChartDataPoints>
+                <ChartDataPoint>
+                  <ChartDataPointValues>
+                    <Y>=Sum(Fields!Retail.Value)</Y>
+                  </ChartDataPointValues>
+                </ChartDataPoint>
+              </ChartDataPoints>
+              <Type>Column</Type>
+              <Subtype>Stacked</Subtype>
+            </ChartSeries>
+          </ChartSeriesCollection>
+        </ChartData>
+        <ChartCategoryHierarchy>
+          <ChartMembers>
+            <ChartMember>
+              <Group Name="Quarter">
+                <GroupExpressions>
+                  <GroupExpression>=Fields!Quarter.Value</GroupExpression>
+                </GroupExpressions>
+              </Group>
+            </ChartMember>
+          </ChartMembers>
+        </ChartCategoryHierarchy>
+      </Chart>
+    </ReportItems>
+    <Height>4in</Height>
+  </Body>
+</Report>

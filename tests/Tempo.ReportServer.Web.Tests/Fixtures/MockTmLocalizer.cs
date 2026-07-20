@@ -35,6 +35,12 @@ public sealed class MockTmLocalizer : ITmLocalizer
         ["ReportServer_Nav_Favorites"] = "Favorites",
         ["ReportServer_Tenant"] = "Tenant",
         ["ReportServer_Favorites_EmptyTitle"] = "No favorites yet",
+        ["ReportServer_NewReport_SourceRdl"] = "Import RDL",
+        ["ReportServer_NewReport_RdlFile"] = "RDL file (.rdl, .xml)",
+        ["ReportServer_NewReport_RdlImported"] = "Imported {0}.",
+        ["ReportServer_NewReport_InvalidRdl"] = "The uploaded RDL could not be imported.",
+        ["ReportServer_NewReport_RdlWarnings"] = "{0} RDL element(s) were not fully imported. Review the report after creating it.",
+        ["ReportServer_NewReport_RdlRequired"] = "Upload an RDL file to continue.",
     });
 
     /// <summary>A small Czech seed covering the same representative keys.</summary>
@@ -44,5 +50,11 @@ public sealed class MockTmLocalizer : ITmLocalizer
         ["ReportServer_Nav_Favorites"] = "Oblíbené",
         ["ReportServer_Tenant"] = "Nájemce",
         ["ReportServer_Favorites_EmptyTitle"] = "Zatím žádné oblíbené",
+        ["ReportServer_NewReport_SourceRdl"] = "Importovat RDL",
+        ["ReportServer_NewReport_RdlFile"] = "Soubor RDL (.rdl, .xml)",
+        ["ReportServer_NewReport_RdlImported"] = "Importováno {0}.",
+        ["ReportServer_NewReport_InvalidRdl"] = "Nahraný soubor RDL se nepodařilo importovat.",
+        ["ReportServer_NewReport_RdlWarnings"] = "{0} prvků RDL nebylo plně importováno. Po vytvoření sestavu zkontrolujte.",
+        ["ReportServer_NewReport_RdlRequired"] = "Pro pokračování nahrajte soubor RDL.",
     });
 }

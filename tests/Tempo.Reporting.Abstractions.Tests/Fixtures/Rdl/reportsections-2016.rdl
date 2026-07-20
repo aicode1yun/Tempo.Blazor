@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The TRUE SSRS 2016 / Report Builder shape: the body is nested under ReportSections/ReportSection,
+     not directly under Report. This is the dominant real-world layout and must import fully. -->
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition"
+        xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <Description>A single-section 2016 report with a nested body.</Description>
+  <DataSets>
+    <DataSet Name="Sales">
+      <Query>
+        <DataSourceName>ErpDb</DataSourceName>
+        <CommandText>SELECT Product, Total FROM Sales</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Product"><DataField>Product</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="Total"><DataField>Total</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Page>
+        <PageHeight>11in</PageHeight>
+        <PageWidth>8.5in</PageWidth>
+        <LeftMargin>1in</LeftMargin>
+        <RightMargin>1in</RightMargin>
+        <TopMargin>1in</TopMargin>
+        <BottomMargin>1in</BottomMargin>
+      </Page>
+      <Body>
+        <ReportItems>
+          <Textbox Name="SectionTitle">
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>Section Body Title</Value>
+                    <Style><FontWeight>Bold</FontWeight></Style>
+                  </TextRun>
+                </TextRuns>
+              </Paragraph>
+            </Paragraphs>
+            <Top>0.25in</Top>
+            <Left>0.5in</Left>
+            <Height>0.4in</Height>
+            <Width>4in</Width>
+          </Textbox>
+          <Tablix Name="SectionTablix">
+            <Top>1in</Top>
+            <Left>0.5in</Left>
+            <Height>1in</Height>
+            <Width>4in</Width>
+            <DataSetName>Sales</DataSetName>
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn><Width>2in</Width></TablixColumn>
+                <TablixColumn><Width>2in</Width></TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.3in</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="hP"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Product</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="hT"><Paragraphs><Paragraph><TextRuns><TextRun><Value>Total</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.25in</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="dP"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Product.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="dT"><Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!Total.Value</Value></TextRun></TextRuns></Paragraph></Paragraphs></Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+          </Tablix>
+        </ReportItems>
+        <Height>3in</Height>
+      </Body>
+    </ReportSection>
+  </ReportSections>
+</Report>
