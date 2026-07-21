@@ -141,8 +141,8 @@
                 @* Scope Selection *@
                 <div class="tm-form-group tm-mb-4">
                     <label class="tm-form-label">@(Loc["TmViewManager_Visibility"])</label>
-                    <div class="tm-radio-group">
-                        <label class="tm-radio-label">
+                    <div class="tm-view-radio-group">
+                        <label class="tm-view-radio-label">
                             <input type="radio" name="viewScope" value="Personal"
                                    checked="@(_viewScope == ViewScope.Personal)"
                                    @onchange="() => _viewScope = ViewScope.Personal" />
@@ -150,7 +150,7 @@
                         </label>
                         @if (CanCreateTenantViews)
                         {
-                            <label class="tm-radio-label">
+                            <label class="tm-view-radio-label">
                                 <input type="radio" name="viewScope" value="Tenant"
                                        checked="@(_viewScope == ViewScope.Tenant)"
                                        @onchange="() => _viewScope = ViewScope.Tenant" />

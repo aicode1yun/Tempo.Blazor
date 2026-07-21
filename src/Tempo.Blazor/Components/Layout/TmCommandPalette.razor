@@ -1,42 +1,71 @@
 @namespace Tempo.Blazor.Components.Layout
 @using Tempo.Blazor.Interfaces
+@using Tempo.Blazor.Helpers
+@using Microsoft.AspNetCore.Components.Web
+@implements IAsyncDisposable
+@inject IJSRuntime JS
 
 @if (IsOpen)
 {
     <div class="tm-command-palette-backdrop @Class" @attributes="AdditionalAttributes">
-        <div class="tm-command-palette" role="dialog" aria-modal="true" aria-label="@Loc["TmCommandPalette_Aria"]">
+        <div class="tm-command-palette"
+             role="dialog"
+             aria-modal="true"
+             aria-label="@Loc["TmCommandPalette_Aria"]"
+             tabindex="-1"
+             @ref="_paletteElement"
+             @onkeydown="HandleKeyDownAsync">
             <div class="tm-command-palette-header">
                 <input class="tm-command-palette-input"
                        value="@_query"
-                       @oninput="e => _query = e.Value?.ToString() ?? string.Empty"
-                       placeholder="Type a command…"
+                       @oninput="HandleInput"
+                       placeholder="@Loc["TmCommandPalette_Placeholder"]"
                        aria-label="@Loc["TmCommandPalette_SearchAria"]"
                        autocomplete="off" />
                 <button class="tm-command-palette-close" aria-label="@Loc["TmCommandPalette_Close"]" @onclick="CloseAsync">×</button>
             </div>
-            <ul class="tm-command-palette-list" role="listbox">
-                @foreach (var action in FilteredActions)
-                {
-                    var a = action;
-                    <li class="tm-command-palette-item" role="option" @onclick="() => ExecuteAsync(a)">
-                        <span class="tm-command-palette-title">@a.Title</span>
-                        @if (!string.IsNullOrEmpty(a.Description))
-                        {
-                            <span class="tm-command-palette-description">@a.Description</span>
-                        }
-                        @if (!string.IsNullOrEmpty(a.Shortcut))
-                        {
-                            <kbd class="tm-command-palette-shortcut">@a.Shortcut</kbd>
-                        }
-                    </li>
-                }
-            </ul>
+            @if (_filtered.Count == 0)
+            {
+                <div class="tm-command-palette-empty">@Loc["TmCommandPalette_NoResults"]</div>
+            }
+            else
+            {
+                <ul class="tm-command-palette-list" role="listbox">
+                    @for (var i = 0; i < _filtered.Count; i++)
+                    {
+                        var index = i;
+                        var action = _filtered[index];
+                        var focused = index == _highlightedIndex;
+                        <li class="tm-command-palette-item @(focused ? "tm-command-palette-item-focused" : "")"
+                            role="option"
+                            aria-selected="@(focused ? "true" : "false")"
+                            @onclick="() => ExecuteAsync(action)">
+                            <span class="tm-command-palette-title">@action.Title</span>
+                            @if (!string.IsNullOrEmpty(action.Description))
+                            {
+                                <span class="tm-command-palette-description">@action.Description</span>
+                            }
+                            @if (!string.IsNullOrEmpty(action.Shortcut))
+                            {
+                                <kbd class="tm-command-palette-shortcut">@action.Shortcut</kbd>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
         </div>
     </div>
 }
 
 @code {
     private string _query = string.Empty;
+    private List<ICommandPaletteAction> _filtered = new();
+    private int _highlightedIndex;
+
+    private ElementReference _paletteElement;
+    private bool _wasOpen;
+    private bool _shouldActivateTrap;
+    private FocusTrap? _focusTrap;
 
     /// <summary>Whether the command palette is visible.</summary>
     [Parameter] public bool IsOpen { get; set; }
@@ -53,12 +82,91 @@
     /// <summary>Additional HTML attributes for the root element.</summary>
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
-    private IEnumerable<ICommandPaletteAction> FilteredActions =>
-        string.IsNullOrWhiteSpace(_query)
-            ? Actions ?? Enumerable.Empty<ICommandPaletteAction>()
-            : (Actions ?? Enumerable.Empty<ICommandPaletteAction>())
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && !_wasOpen)
+        {
+            _wasOpen = true;
+            // Fresh state every time the palette opens: empty query, first item highlighted.
+            _query = string.Empty;
+            _highlightedIndex = 0;
+            _shouldActivateTrap = true;
+        }
+        else if (!IsOpen && _wasOpen)
+        {
+            _wasOpen = false;
+            await DeactivateTrapAsync();
+        }
+
+        RecomputeFiltered();
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Activate the trap AFTER the palette has rendered so the input element exists. FocusTrap
+        // moves initial focus to the first focusable (the search input = autofocus), traps Tab, and
+        // restores focus to the trigger on deactivate. Escape is handled at element level below, so
+        // no document-level listener / DotNetObjectReference is needed (mirrors TmModal, not TmDrawer).
+        if (_shouldActivateTrap && IsOpen)
+        {
+            _shouldActivateTrap = false;
+            _focusTrap ??= new FocusTrap(JS);
+            await _focusTrap.ActivateAsync<TmCommandPalette>(_paletteElement);
+        }
+    }
+
+    private void HandleInput(ChangeEventArgs e)
+    {
+        _query = e.Value?.ToString() ?? string.Empty;
+        _highlightedIndex = 0;
+        RecomputeFiltered();
+    }
+
+    private void RecomputeFiltered()
+    {
+        var source = Actions ?? Enumerable.Empty<ICommandPaletteAction>();
+        _filtered = string.IsNullOrWhiteSpace(_query)
+            ? source.ToList()
+            : source
                 .Where(a => a.Title.Contains(_query, StringComparison.OrdinalIgnoreCase)
-                         || (a.Description?.Contains(_query, StringComparison.OrdinalIgnoreCase) == true));
+                         || (a.Description?.Contains(_query, StringComparison.OrdinalIgnoreCase) == true))
+                .ToList();
+
+        if (_highlightedIndex >= _filtered.Count)
+        {
+            _highlightedIndex = Math.Max(0, _filtered.Count - 1);
+        }
+    }
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                if (_filtered.Count > 0)
+                {
+                    _highlightedIndex = (_highlightedIndex + 1) % _filtered.Count;
+                }
+                break;
+            case "ArrowUp":
+                if (_filtered.Count > 0)
+                {
+                    _highlightedIndex = (_highlightedIndex - 1 + _filtered.Count) % _filtered.Count;
+                }
+                break;
+            case "Enter":
+                if (_highlightedIndex >= 0 && _highlightedIndex < _filtered.Count)
+                {
+                    await ExecuteAsync(_filtered[_highlightedIndex]);
+                }
+                break;
+            case "Escape":
+                await CloseAsync();
+                break;
+        }
+    }
 
     private async Task ExecuteAsync(ICommandPaletteAction action)
     {
@@ -67,4 +175,21 @@
     }
 
     private Task CloseAsync() => IsOpenChanged.InvokeAsync(false);
+
+    private async Task DeactivateTrapAsync()
+    {
+        if (_focusTrap is not null)
+        {
+            await _focusTrap.DeactivateAsync();
+        }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_focusTrap is not null)
+        {
+            await _focusTrap.DisposeAsync();
+        }
+    }
 }

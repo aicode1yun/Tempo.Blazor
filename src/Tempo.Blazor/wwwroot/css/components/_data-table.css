@@ -678,18 +678,11 @@
   font-size: var(--tm-font-size-sm);
   cursor: pointer;
 }
-.tm-radio-group {
+.tm-view-radio-group {
   display: flex;
   gap: var(--tm-space-4);
 }
-.tm-radio-label {
-  display: flex;
-  align-items: center;
-  gap: var(--tm-space-2);
-  font-size: var(--tm-font-size-sm);
-  cursor: pointer;
-}
-.tm-checkbox-label {
+.tm-view-radio-label {
   display: flex;
   align-items: center;
   gap: var(--tm-space-2);
