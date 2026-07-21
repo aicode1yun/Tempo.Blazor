@@ -205,4 +205,47 @@ public class TmDashboardTests : LocalizationTestBase
     }
 
     #endregion
+
+    #region 5. Mobile Stacking (A1)
+
+    // The desktop grid places widgets via inline `grid-column: X / span W` emitted by
+    // GetWidgetStyles. A plain `@media { .tm-dashboard-grid { grid-template-columns: 1fr } }`
+    // cannot stack them because the inline grid-column wins. The mobile rule must therefore
+    // override the widget placement itself with `grid-column: 1 / -1 !important`.
+
+    [Fact]
+    public void Dashboard_Css_MobileBreakpoint_StacksWidgets_OverridingInlineGridColumn()
+    {
+        var css = DashboardCss();
+
+        css.Should().MatchRegex(@"@media[^{]*max-width:\s*560px",
+            "a narrow-viewport breakpoint must exist to stack widgets");
+        css.Should().MatchRegex(@"\.tm-dashboard-grid\s+\.tm-widget\s*\{[^}]*grid-column:\s*1\s*/\s*-1\s*!important",
+            "the mobile rule must override the inline grid-column so widgets span the full width");
+    }
+
+    [Fact]
+    public void Dashboard_Css_DesktopGrid_Untouched()
+    {
+        var css = DashboardCss();
+
+        // The 12-column desktop template must remain exactly as before the mobile addition.
+        css.Should().Contain("grid-template-columns: repeat(var(--grid-columns, 12), 1fr)",
+            "desktop grid definition must not be modified by the mobile stacking rule");
+    }
+
+    private static string DashboardCss() =>
+        File.ReadAllText(Path.Combine(
+            RepoRoot(), "src", "Tempo.Blazor", "wwwroot", "css", "components", "_dashboard.css"));
+
+    private static string RepoRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "TempoBlazor.slnx")))
+            directory = directory.Parent;
+        directory.Should().NotBeNull("the repository root should be discoverable from the test output directory");
+        return directory!.FullName;
+    }
+
+    #endregion
 }

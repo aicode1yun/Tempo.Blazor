@@ -14,7 +14,7 @@
     <span style="display:none" aria-hidden="true">@ChildContent</span>
 </CascadingValue>
 
-<div class="tm-data-table-wrapper @Class" @attributes="AdditionalAttributes">
+<div class="@WrapperCssClass @Class" @attributes="AdditionalAttributes">
 
     @* ── Toolbar ─────────────────────────────────────────────── *@
     @if (ShowToolbar && HasVisibleToolbarControls())
@@ -273,7 +273,7 @@
                             }
                             @foreach (var col in _visibleColumns)
                             {
-                                <td class="@GetCellClass(col)" style="@GetColumnStyle(col)">
+                                <td class="@GetCellClass(col)" style="@GetColumnStyle(col)" data-label="@(CardMode ? col.Title : null)">
                                     @if (col.CellTemplate is not null)
                                     {
                                         @col.CellTemplate(rowItem)
@@ -307,7 +307,7 @@
                                     }
                                     @foreach (var col in _visibleColumns)
                                     {
-                                        <td class="@GetCellClass(col)" style="@GetColumnStyle(col)">
+                                        <td class="@GetCellClass(col)" style="@GetColumnStyle(col)" data-label="@(CardMode ? col.Title : null)">
                                             @if (col.Editable && col.EditTemplate is not null)
                                             {
                                                 @col.EditTemplate(rowItem)
@@ -371,7 +371,7 @@
                                 }
                                 @foreach (var col in _visibleColumns)
                                 {
-                                    <td class="@GetCellClass(col)" style="@GetColumnStyle(col)">
+                                    <td class="@GetCellClass(col)" style="@GetColumnStyle(col)" data-label="@(CardMode ? col.Title : null)">
                                         @if (col.CellTemplate is not null)
                                         {
                                             @col.CellTemplate(rowItem)

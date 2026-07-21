@@ -348,6 +348,24 @@ public partial class TmDataTable<TItem> : IDisposable
     [Parameter] public bool ShowToolbar { get; set; } = true;
 
     /// <summary>
+    /// Opt-in responsive card mode. When true, the wrapper gains the
+    /// <c>tm-data-table-wrapper--card</c> class and every data cell carries a
+    /// <c>data-label</c> attribute (the owning column's <see cref="TmDataTableColumn{TItem}.Title"/>),
+    /// which the scoped CSS uses on narrow viewports to stack each row into a labeled card.
+    /// Default: false — the rendered markup is unchanged from a non-card table, so existing
+    /// consumers are unaffected. Fully compatible with server-side data (<see cref="DataProvider"/>)
+    /// and sorting.
+    /// </summary>
+    [Parameter] public bool CardMode { get; set; }
+
+    /// <summary>
+    /// Base wrapper class. Adds the opt-in <c>tm-data-table-wrapper--card</c> modifier only
+    /// when <see cref="CardMode"/> is enabled, so non-card tables render an identical class list.
+    /// </summary>
+    private string WrapperCssClass =>
+        CardMode ? "tm-data-table-wrapper tm-data-table-wrapper--card" : "tm-data-table-wrapper";
+
+    /// <summary>
     /// High-level preset that controls which toolbar chrome elements are rendered.
     /// <list type="bullet">
     ///   <item><see cref="DataToolbarMode.Full"/> — respects the individual <c>Show*</c> booleans.</item>

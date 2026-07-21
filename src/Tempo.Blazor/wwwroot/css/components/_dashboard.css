@@ -912,3 +912,20 @@
     min-width: 150px;
   }
 }
+
+/* Mobile stacking: widgets carry an inline `grid-column: X / span W` (see
+   TmDashboard.GetWidgetStyles), so collapsing the grid template alone cannot stack
+   them — the inline placement wins. Override the widget placement itself with
+   !important so every widget spans the single column and flows in source order. */
+@media (max-width: 560px) {
+  .tm-dashboard-grid,
+  .tm-dashboard-grid-bg {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+  }
+
+  .tm-dashboard-grid .tm-widget {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+  }
+}
