@@ -38,8 +38,10 @@
     "projectReferences": [],
     "namespaces": [
       "Tempo.Reporting.Abstractions",
+      "Tempo.Reporting.Abstractions.Auth",
       "Tempo.Reporting.Abstractions.Data",
       "Tempo.Reporting.Abstractions.Definitions",
+      "Tempo.Reporting.Abstractions.Definitions.Rdl",
       "Tempo.Reporting.Abstractions.Dtos",
       "Tempo.Reporting.Abstractions.Resources",
       "Tempo.Reporting.Abstractions.Serialization",
@@ -179,6 +181,36 @@
     ]
   },
   "items": [
+    {
+      "itemName": "AccessTokenResponse",
+      "kind": "Record",
+      "category": "Auth",
+      "namespace": "Tempo.Reporting.Abstractions.Auth",
+      "description": "Payload of the Blazor host's same-origin GET /auth/token hand-out endpoint: a short-lived access token plus its absolute expiry. The WebAssembly leg caches this in memory only and re-fetches when it nears expiry. The refresh token is never part of this payload — it stays in the server-side token store.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Auth/AccessTokenResponse.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ApiClientBase",
+      "kind": "Class",
+      "category": "Auth",
+      "namespace": "Tempo.Reporting.Abstractions.Auth",
+      "description": "Base class for typed HTTP clients that call the Tempo Report Server API from either Blazor runtime. It attaches the bearer token per request, read from the consuming scope's IAccessTokenProvider, and performs the standard 401 → force-refresh → retry once step.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Auth/ApiClientBase.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IAccessTokenProvider",
+      "kind": "Interface",
+      "category": "Auth",
+      "namespace": "Tempo.Reporting.Abstractions.Auth",
+      "description": "Supplies the current user's API access token in whichever runtime the calling component happens to execute (InteractiveServer circuit or InteractiveWebAssembly). Implemented once per host — ServerAccessTokenProvider on the Blazor host and WasmAccessTokenProvider in the WebAssembly leg — and consumed behind this single abstraction so typed API clients never know which runtime produced the token. This is the IdP-agnostic seam: how the token is obtained at login is app-specific; everything downstream only depends on this contract.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Auth/IAccessTokenProvider.cs",
+      "documentationStatus": "merged"
+    },
     {
       "itemName": "InMemoryReportDefinitionStore",
       "kind": "Class",
@@ -338,6 +370,60 @@
       "packageId": "Tempo.Reporting.Abstractions",
       "sourcePath": "src/Tempo.Reporting.Abstractions/Data/ReportDataContracts.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RdlDiagnosticSeverity",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions.Rdl",
+      "description": "Severity of an RdlImportDiagnostic.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Rdl/RdlImportResult.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RdlImportDiagnostic",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions.Rdl",
+      "description": "A single diagnostic produced while importing an RDL document.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Rdl/RdlImportResult.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RdlImportResult",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions.Rdl",
+      "description": "Outcome of importing an RDL document into a ReportDefinition.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Rdl/RdlImportResult.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RdlReportImporter",
+      "kind": "Class",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions.Rdl",
+      "description": "Imports SSRS / Telerik RDL (Report Definition Language, an XML dialect) into the internal ReportDefinition model. The importer is namespace-agnostic: RDL elements are matched by their local name, so the SSRS 2008 / 2010 / 2016 schema namespaces (which differ only by year) and Telerik-namespaced RDL all parse where their element vocabulary overlaps.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Rdl/RdlReportImporter.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Import",
+          "kind": "Method",
+          "type": "RdlImportResult",
+          "description": "Imports an RDL document supplied as a UTF-8/UTF-16 XML string.",
+          "parameters": [
+            {
+              "name": "rdlXml",
+              "type": "string"
+            }
+          ]
+        }
+      ]
     },
     {
       "itemName": "ReportBand",
@@ -528,6 +614,12 @@
           "kind": "Property",
           "type": "List<ReportStyleDefinition>",
           "description": "Reusable named styles."
+        },
+        {
+          "name": "TextDirection",
+          "kind": "Property",
+          "type": "ReportTextDirection",
+          "description": "Document-level default base writing direction, applied to text elements that leave their own Auto unresolved. Defaults to Auto so existing reports are unchanged; set to Rtl to make a whole Arabic/Hebrew report right-to-left."
         }
       ],
       "relatedTypes": [
@@ -538,11 +630,61 @@
       ]
     },
     {
+      "itemName": "ReportDrillThroughAction",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Navigates the interactive viewer to another report when the owning element is clicked, passing parameter values derived from the clicked context. Target the report by path (preferred, resolved through /resolve) or by identifier.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDrillThroughEvaluator",
+      "kind": "Class",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Evaluates ReportDrillThroughAction parameter mappings against a clicked context.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/ReportDrillThroughEvaluator.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDrillThroughParameterMapping",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Maps a single target-report parameter to a value derived from the clicked context.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDrillThroughResolution",
+      "kind": "Record",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Resolved drill-through target and mapped parameter values ready for viewer navigation.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/ReportDrillThroughEvaluator.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportDrillThroughSourceKind",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Kind of source that feeds a drill-through target parameter.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ReportElement",
       "kind": "Record",
       "category": "Definitions",
       "namespace": "Tempo.Reporting.Abstractions.Definitions",
-      "description": "Public record defined by Tempo.Reporting.Abstractions.",
+      "description": "Base type for absolutely positioned report elements.",
       "packageId": "Tempo.Reporting.Abstractions",
       "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
       "documentationStatus": "merged"
@@ -828,6 +970,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "ReportTextDirection",
+      "kind": "Enum",
+      "category": "Definitions",
+      "namespace": "Tempo.Reporting.Abstractions.Definitions",
+      "description": "Base writing direction for text content. Controls the Unicode Bidirectional Algorithm paragraph embedding level used when shaping and drawing runs.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Styles.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ReportTextStyle",
       "kind": "Record",
       "category": "Definitions",
@@ -868,6 +1020,36 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "AddReportFavoriteRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request to add a report to the caller's favorites.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "CreateReportApiKeyRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request to create a tenant/application-scoped API key.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "CreateReportApiKeyResultDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "API key creation/rotation result. The PlainTextKey is returned exactly once and is never retrievable again — the store keeps only a hash.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "CreateReportFolderRequestDto",
       "kind": "Record",
       "category": "DTOs",
@@ -885,6 +1067,16 @@
       "description": "Request for creating a report.",
       "packageId": "Tempo.Reporting.Abstractions",
       "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "GrantReportPermissionRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request to grant (or replace) an ACL entry for a subject on a folder.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
       "documentationStatus": "merged"
     },
     {
@@ -1013,6 +1205,76 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "RenderRunDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "An ad-hoc (synchronous) render run history record scoped to the requesting actor.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportAclEffectDto",
+      "kind": "Enum",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "ACL effect (mirrors the server ACL effect).",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportAclSubjectKindDto",
+      "kind": "Enum",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Subject type used by folder ACL grants (mirrors the server ACL subject kind).",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportApiKeyDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Embedding API key descriptor projected for admin clients. Never carries secret material.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportAuditActionDto",
+      "kind": "Enum",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Audited report server action (mirrors the server audit action).",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportAuditEventDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Report server audit event projected for admin clients.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportAuditOutcomeDto",
+      "kind": "Enum",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Audit outcome (mirrors the server audit outcome).",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ReportDataSourceConnectionTestResultDto",
       "kind": "Record",
       "category": "DTOs",
@@ -1073,6 +1335,26 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "ReportFavoriteDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "A single user's report favorite, enriched with catalog metadata when available.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportFolderAclEntryDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Per-folder ACL grant projected for admin clients.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ReportFolderDto",
       "kind": "Record",
       "category": "DTOs",
@@ -1123,6 +1405,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "ReportPermissionsDto",
+      "kind": "Enum",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Report server permission bits exposed over the wire. Mirrors the server-side Tempo.ReportServer.Api.Security.ReportPermission flags exactly (same bit layout) so an admin client can display and request API-key scopes and folder ACL grants without referencing the server assembly.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ReportRenderFormat",
       "kind": "Enum",
       "category": "DTOs",
@@ -1133,6 +1425,26 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "ReportResolveResultDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Resolved report catalog entry returned to the viewer. Carries the metadata and current revision a viewer needs to open and render a real report from the catalog, by report id or by path.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportResourceKindDto",
+      "kind": "Enum",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Resource category protected by report server authorization (mirrors the server resource kind).",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ReportRevisionDto",
       "kind": "Record",
       "category": "DTOs",
@@ -1140,6 +1452,66 @@
       "description": "Report revision DTO.",
       "packageId": "Tempo.Reporting.Abstractions",
       "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportScheduleDeliveryKind",
+      "kind": "Enum",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Delivery channel used to hand off a rendered scheduled report.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportScheduleDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportScheduleDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Persisted report schedule projected for API consumers.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportScheduleDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportScheduleFormat",
+      "kind": "Enum",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Output format produced by a scheduled report run.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportScheduleDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportScheduleMissedRunPolicy",
+      "kind": "Enum",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Behaviour when a schedule has missed one or more occurrences.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportScheduleDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportScheduleRunDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Audit record of a single scheduled report run attempt.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportScheduleDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportScheduleRunStatus",
+      "kind": "Enum",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Latest observed schedule state.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportScheduleDtos.cs",
       "documentationStatus": "merged"
     },
     {
@@ -1210,6 +1582,16 @@
       ]
     },
     {
+      "itemName": "ReportServerVersionDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Host version metadata returned by the anonymous GET /version endpoint.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ReportSummaryDto",
       "kind": "Record",
       "category": "DTOs",
@@ -1220,6 +1602,26 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "RevokeReportApiKeyRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request to revoke an API key.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RevokeReportPermissionRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request to revoke a subject's ACL grant on a folder.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "RollbackReportRevisionRequestDto",
       "kind": "Record",
       "category": "DTOs",
@@ -1227,6 +1629,26 @@
       "description": "Request for rolling back a report to a previous revision.",
       "packageId": "Tempo.Reporting.Abstractions",
       "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "RotateReportApiKeyRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Request to rotate an API key (revoke the old key, issue a replacement with the same scope).",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "SetReportScheduleEnabledRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Toggle-enabled request for a schedule.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportScheduleDtos.cs",
       "documentationStatus": "merged"
     },
     {
@@ -1298,6 +1720,26 @@
               "default": "default"
             }
           ]
+        },
+        {
+          "name": "DeleteScheduleAsync",
+          "kind": "Method",
+          "type": "Task",
+          "parameters": [
+            {
+              "name": "scheduleId",
+              "type": "string"
+            },
+            {
+              "name": "tenantId",
+              "type": "string"
+            },
+            {
+              "name": "cancellationToken",
+              "type": "CancellationToken",
+              "default": "default"
+            }
+          ]
         }
       ],
       "constructor": {
@@ -1343,6 +1785,16 @@
       "description": "Request for creating or updating a named data source.",
       "packageId": "Tempo.Reporting.Abstractions",
       "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerDtos.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "UpsertReportScheduleRequestDto",
+      "kind": "Record",
+      "category": "DTOs",
+      "namespace": "Tempo.Reporting.Abstractions.Dtos",
+      "description": "Create-or-update request for a report schedule.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportScheduleDtos.cs",
       "documentationStatus": "merged"
     },
     {
@@ -1508,6 +1960,26 @@
       ]
     },
     {
+      "itemName": "AddReportFavoriteRequestValidator",
+      "kind": "Class",
+      "category": "Validation",
+      "namespace": "Tempo.Reporting.Abstractions.Validation",
+      "description": "Validates AddReportFavoriteRequestDto for the favorites endpoint. Messages are TmResources KEYS (resolved by the caller/UI localizer) so the validator is reusable by the Blazor front end without depending on a server-side string localizer.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Validation/AddReportFavoriteRequestValidator.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "CreateReportRequestValidator",
+      "kind": "Class",
+      "category": "Validation",
+      "namespace": "Tempo.Reporting.Abstractions.Validation",
+      "description": "Validates CreateReportRequestDto for the report-create endpoint and the portal's new-report form. Like the favorites validator, messages are TmResources KEYS (resolved by the caller/UI localizer, e.g. the localized report-server portal), so the validator is reusable by the Blazor front end without depending on a server-side string localizer. The API host reuses the same validator for a 400 response, so that body carries the resource key rather than English prose.",
+      "packageId": "Tempo.Reporting.Abstractions",
+      "sourcePath": "src/Tempo.Reporting.Abstractions/Validation/CreateReportRequestValidator.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "ReportDefinitionValidator",
       "kind": "Class",
       "category": "Validation",
@@ -1554,11 +2026,11 @@
     }
   ],
   "summary": {
-    "itemCount": 101,
-    "manualItemCount": 101,
-    "generatedItemCount": 100,
+    "itemCount": 144,
+    "manualItemCount": 144,
+    "generatedItemCount": 143,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 100
+    "publicApiTypeCount": 143
   }
 }

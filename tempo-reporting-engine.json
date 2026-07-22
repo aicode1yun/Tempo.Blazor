@@ -27,8 +27,20 @@
         "version": "3.119.2"
       },
       {
+        "name": "SkiaSharp.HarfBuzz",
+        "version": "3.119.2"
+      },
+      {
         "name": "SkiaSharp.NativeAssets.Linux.NoDependencies",
         "version": "3.119.2"
+      },
+      {
+        "name": "HarfBuzzSharp",
+        "version": "8.3.1.3"
+      },
+      {
+        "name": "HarfBuzzSharp.NativeAssets.Linux",
+        "version": "8.3.1.3"
       },
       {
         "name": "Svg.Skia",
@@ -45,7 +57,8 @@
       "Tempo.Reporting.Engine.Layout",
       "Tempo.Reporting.Engine.Pdf",
       "Tempo.Reporting.Engine.Processing",
-      "Tempo.Reporting.Engine.Snapshot"
+      "Tempo.Reporting.Engine.Snapshot",
+      "Tempo.Reporting.Engine.Text"
     ]
   },
   "gettingStarted": {
@@ -1053,6 +1066,37 @@
       "documentationStatus": "merged",
       "members": [
         {
+          "name": "Add",
+          "kind": "Method",
+          "type": "void",
+          "parameters": [
+            {
+              "name": "seriesIndex",
+              "type": "int"
+            },
+            {
+              "name": "category",
+              "type": "ChartCategoryKey"
+            },
+            {
+              "name": "x",
+              "type": "double"
+            },
+            {
+              "name": "y",
+              "type": "double"
+            },
+            {
+              "name": "width",
+              "type": "double"
+            },
+            {
+              "name": "height",
+              "type": "double"
+            }
+          ]
+        },
+        {
           "name": "CategoryCenter",
           "kind": "Method",
           "type": "double",
@@ -1234,6 +1278,16 @@
       "description": "Rich text run consumed by the report text layout engine.",
       "packageId": "Tempo.Reporting.Engine",
       "sourcePath": "src/Tempo.Reporting.Engine/Layout/RichTextLayout.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ReportSnapshotGenerationResult",
+      "kind": "Record",
+      "category": "Layout",
+      "namespace": "Tempo.Reporting.Engine.Layout",
+      "description": "Snapshot plus the interactive drill-through regions projected during layout.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Layout/ReportSnapshotGenerator.cs",
       "documentationStatus": "merged"
     },
     {
@@ -1784,6 +1838,66 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "ReportDrillThroughRegion",
+      "kind": "Record",
+      "category": "Snapshot",
+      "namespace": "Tempo.Reporting.Engine.Snapshot",
+      "description": "A clickable region projected onto a rendered report page during layout. It anchors an element's ReportDrillThroughAction to the element's rectangle and carries the bound data-point field values so a Field-source parameter mapping resolves against the real clicked context.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Snapshot/ReportDrillThroughRegion.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Action",
+          "kind": "Property",
+          "type": "ReportDrillThroughAction",
+          "description": "Drill-through action navigated when the region is clicked."
+        },
+        {
+          "name": "Context",
+          "kind": "Property",
+          "type": "IReadOnlyDictionary<string, string?>",
+          "description": "Field values of the clicked data point, used to evaluate field-sourced parameter mappings."
+        },
+        {
+          "name": "Height",
+          "kind": "Property",
+          "type": "double",
+          "description": "Region height in page pixels."
+        },
+        {
+          "name": "Label",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Optional accessible label describing the drill-through target."
+        },
+        {
+          "name": "PageNumber",
+          "kind": "Property",
+          "type": "int",
+          "description": "One-based page number the region belongs to."
+        },
+        {
+          "name": "Width",
+          "kind": "Property",
+          "type": "double",
+          "description": "Region width in page pixels."
+        },
+        {
+          "name": "X",
+          "kind": "Property",
+          "type": "double",
+          "description": "Left coordinate in page pixels."
+        },
+        {
+          "name": "Y",
+          "kind": "Property",
+          "type": "double",
+          "description": "Top coordinate in page pixels."
+        }
+      ]
+    },
+    {
       "itemName": "ReportSnapshot",
       "kind": "Class",
       "category": "Snapshot",
@@ -1802,17 +1916,20 @@
         {
           "name": "Pages",
           "kind": "Property",
-          "type": "List<ReportSnapshotPage>"
+          "type": "List<ReportSnapshotPage>",
+          "description": "Snapshot pages in print order."
         },
         {
           "name": "SchemaVersion",
           "kind": "Property",
-          "type": "int"
+          "type": "int",
+          "description": "Version of the serialized snapshot schema."
         },
         {
           "name": "SnapshotId",
           "kind": "Property",
-          "type": "string"
+          "type": "string",
+          "description": "Stable snapshot identifier."
         }
       ]
     },
@@ -1937,112 +2054,140 @@
         {
           "name": "Baseline",
           "kind": "Property",
-          "type": "double?"
+          "type": "double?",
+          "description": "Optional text baseline in CSS pixels."
         },
         {
           "name": "Fill",
           "kind": "Property",
-          "type": "string?"
+          "type": "string?",
+          "description": "Optional fill color."
         },
         {
           "name": "FontFamily",
           "kind": "Property",
-          "type": "string?"
+          "type": "string?",
+          "description": "Optional font family."
         },
         {
           "name": "FontSize",
           "kind": "Property",
-          "type": "double?"
+          "type": "double?",
+          "description": "Optional font size in CSS pixels."
         },
         {
           "name": "FontStyle",
           "kind": "Property",
-          "type": "string?"
+          "type": "string?",
+          "description": "Optional CSS font style."
         },
         {
           "name": "FontWeight",
           "kind": "Property",
-          "type": "string?"
+          "type": "string?",
+          "description": "Optional CSS font weight."
         },
         {
           "name": "Height",
           "kind": "Property",
-          "type": "double"
+          "type": "double",
+          "description": "Command height in CSS pixels."
         },
         {
           "name": "Highlight",
           "kind": "Property",
-          "type": "string?"
+          "type": "string?",
+          "description": "Optional text highlight color."
         },
         {
           "name": "Id",
           "kind": "Property",
-          "type": "string"
+          "type": "string",
+          "description": "Stable command identifier."
         },
         {
           "name": "LetterSpacing",
           "kind": "Property",
-          "type": "double"
+          "type": "double",
+          "description": "Optional letter spacing in CSS pixels."
         },
         {
           "name": "PathData",
           "kind": "Property",
-          "type": "string?"
+          "type": "string?",
+          "description": "Optional SVG-like path data for vector commands."
         },
         {
           "name": "Rotation",
           "kind": "Property",
-          "type": "double"
+          "type": "double",
+          "description": "Optional clockwise text rotation in degrees around the text origin."
         },
         {
           "name": "Source",
           "kind": "Property",
-          "type": "string?"
+          "type": "string?",
+          "description": "Optional image source URL or data URI."
         },
         {
           "name": "StrikeThrough",
           "kind": "Property",
-          "type": "bool"
+          "type": "bool",
+          "description": "Whether this text command has strike-through decoration."
         },
         {
           "name": "Stroke",
           "kind": "Property",
-          "type": "string?"
+          "type": "string?",
+          "description": "Optional stroke color."
         },
         {
           "name": "StrokeWidth",
           "kind": "Property",
-          "type": "double"
+          "type": "double",
+          "description": "Optional stroke width."
         },
         {
           "name": "Text",
           "kind": "Property",
-          "type": "string?"
+          "type": "string?",
+          "description": "Optional text content."
+        },
+        {
+          "name": "TextDirection",
+          "kind": "Property",
+          "type": "ReportTextDirection",
+          "description": "Base writing direction for this text run. Defaults to Auto, which resolves the paragraph level from the text via the Unicode Bidirectional Algorithm."
         },
         {
           "name": "Type",
           "kind": "Property",
-          "type": "ReportSnapshotCommandType"
+          "type": "ReportSnapshotCommandType",
+          "description": "Primitive command kind."
         },
         {
           "name": "Underline",
           "kind": "Property",
-          "type": "bool"
+          "type": "bool",
+          "description": "Whether this text command is underlined."
         },
         {
           "name": "Width",
           "kind": "Property",
-          "type": "double"
+          "type": "double",
+          "description": "Command width in CSS pixels."
         },
         {
           "name": "X",
           "kind": "Property",
-          "type": "double"
+          "type": "double",
+          "description": "X coordinate in CSS pixels."
         },
         {
           "name": "Y",
           "kind": "Property",
-          "type": "double"
+          "type": "double",
+          "description": "Y coordinate in CSS pixels."
         }
       ]
     },
@@ -2121,24 +2266,48 @@
         {
           "name": "Commands",
           "kind": "Property",
-          "type": "List<ReportSnapshotCommand>"
+          "type": "List<ReportSnapshotCommand>",
+          "description": "Absolute drawing commands ordered by paint sequence."
         },
         {
           "name": "Height",
           "kind": "Property",
-          "type": "double"
+          "type": "double",
+          "description": "Page height in CSS pixels at 96 DPI."
         },
         {
           "name": "PageNumber",
           "kind": "Property",
-          "type": "int"
+          "type": "int",
+          "description": "One-based page number."
         },
         {
           "name": "Width",
           "kind": "Property",
-          "type": "double"
+          "type": "double",
+          "description": "Page width in CSS pixels at 96 DPI."
         }
       ]
+    },
+    {
+      "itemName": "BidiAlgorithm",
+      "kind": "Class",
+      "category": "Text",
+      "namespace": "Tempo.Reporting.Engine.Text",
+      "description": "Self-contained implementation of the Unicode Bidirectional Algorithm (UAX#9), covering rules P2/P3, X1–X10 (explicit levels, directional overrides and isolates), W1–W7, N0 (paired brackets), N1–N2, I1–I2, and the line-based rules L1/L2. Character properties come from the Unicode Character Database 16.0.0 (see BidiCharacterData).",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Text/BidiAlgorithm.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "BidiResult",
+      "kind": "Record",
+      "category": "Text",
+      "namespace": "Tempo.Reporting.Engine.Text",
+      "description": "Result of running the Unicode Bidirectional Algorithm over a run of UTF-16 text. All arrays are indexed by UTF-16 code-unit position within the input span; both halves of a surrogate pair carry the values of their combined Unicode scalar value.",
+      "packageId": "Tempo.Reporting.Engine",
+      "sourcePath": "src/Tempo.Reporting.Engine/Text/BidiAlgorithm.cs",
+      "documentationStatus": "merged"
     }
   ],
   "libraryExamples": [
@@ -2168,11 +2337,11 @@
     }
   ],
   "summary": {
-    "itemCount": 108,
-    "manualItemCount": 108,
-    "generatedItemCount": 108,
+    "itemCount": 112,
+    "manualItemCount": 112,
+    "generatedItemCount": 112,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 108
+    "publicApiTypeCount": 112
   }
 }
