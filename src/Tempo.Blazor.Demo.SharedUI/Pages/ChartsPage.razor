@@ -320,9 +320,38 @@
     }
 </section>
 
+<!-- Stacked (Fáze 18 / C5) -->
+<section class="demo-section mb-8" data-testid="charts-demo-stacked">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Stacked — Revenue by Channel</h2>
+    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        Each quarter's channels accumulate on a shared baseline, so the full column reads the
+        total while segments read the split. Vertical, horizontal, and area variants share the
+        same stacking. Toggle a channel in the legend to drop it from every stack.
+    </p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <TmChart Type="ChartType.StackedBar" Data="_stackedData" Height="300px"
+                 InteractiveLegend="true" OnSegmentClick="HandleSegmentClick" />
+        <TmChart Type="ChartType.StackedHorizontalBar" Data="_stackedData" Height="300px"
+                 InteractiveLegend="true" OnSegmentClick="HandleSegmentClick" />
+        <TmChart Type="ChartType.StackedArea" Data="_stackedData" Height="300px"
+                 InteractiveLegend="true" />
+    </div>
+</section>
+
 @code {
     private ChartSegment? _clickedSegment;
     private ChartSeriesToggle? _lastToggle;
+
+    private static readonly ChartData _stackedData = new()
+    {
+        Labels = ["Q1", "Q2", "Q3", "Q4"],
+        Datasets =
+        [
+            new ChartDataset { Label = "Direct", Values = [40, 52, 48, 60], Color = "#2563eb" },
+            new ChartDataset { Label = "Partner", Values = [20, 24, 30, 28], Color = "#16a34a" },
+            new ChartDataset { Label = "Online", Values = [15, 18, 26, 34], Color = "#db2777" }
+        ]
+    };
 
     private static readonly ChartData _funnelData = new()
     {

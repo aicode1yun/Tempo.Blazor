@@ -1,0 +1,72 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Tempo.ReportServer.Web.Client;
+using Tempo.ReportServer.Web.Services;
+
+namespace Tempo.ReportServer.Web.Tests;
+
+/// <summary>
+/// Guards the dual-mode DI gate in <see cref="CommonServiceCollectionExtensions.AddCommonServices"/>.
+/// This runs in BOTH InteractiveAuto legs, so the gate must resolve consistently from whichever config
+/// the leg carries — the regression that would silently drop the WASM leg into demo mode.
+/// </summary>
+public sealed class CommonServicesGateTests
+{
+    [Fact]
+    public void NoOidcConfig_ResolvesDemoSession()
+    {
+        using var provider = BuildProvider(authority: null, clientId: null);
+        using var scope = provider.CreateScope();
+
+        var identity = scope.ServiceProvider.GetRequiredService<IPortalIdentity>();
+
+        identity.Should().BeOfType<ReportServerSessionState>();
+        identity.CanSwitchTenant.Should().BeTrue();
+    }
+
+    [Fact]
+    public void OidcConfigured_ResolvesOidcIdentity()
+    {
+        using var provider = BuildProvider(authority: "https://keycloak/realms/tempo-reports", clientId: "tempo-report-web");
+        using var scope = provider.CreateScope();
+
+        var identity = scope.ServiceProvider.GetRequiredService<IPortalIdentity>();
+
+        identity.Should().BeOfType<OidcPortalIdentity>();
+        identity.CanSwitchTenant.Should().BeFalse();
+    }
+
+    [Fact]
+    public void AuthorityWithoutClientId_StaysDemo()
+    {
+        using var provider = BuildProvider(authority: "https://keycloak/realms/tempo-reports", clientId: "");
+        using var scope = provider.CreateScope();
+
+        scope.ServiceProvider.GetRequiredService<IPortalIdentity>().Should().BeOfType<ReportServerSessionState>();
+    }
+
+    private static ServiceProvider BuildProvider(string? authority, string? clientId)
+    {
+        var settings = new Dictionary<string, string?>
+        {
+            ["Authentication:Oidc:Authority"] = authority,
+            ["Authentication:Oidc:ClientId"] = clientId,
+        };
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
+
+        var services = new ServiceCollection();
+        // OidcPortalIdentity needs an ambient provider (present in both legs of the real app).
+        services.AddScoped<AuthenticationStateProvider>(_ =>
+            new AnonymousAuthenticationStateProvider());
+        services.AddCommonServices(configuration);
+        return services.BuildServiceProvider();
+    }
+
+    private sealed class AnonymousAuthenticationStateProvider : AuthenticationStateProvider
+    {
+        public override Task<AuthenticationState> GetAuthenticationStateAsync()
+            => Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())));
+    }
+}

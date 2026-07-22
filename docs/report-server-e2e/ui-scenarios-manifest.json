@@ -1,0 +1,44 @@
+{
+  "S4_author1": {
+    "pass": true,
+    "realmRoles": [
+      "report-author"
+    ],
+    "aud": "tempo-report-api",
+    "tokenUser": "author1",
+    "jwtInWebStorage": false,
+    "marker": "Server",
+    "interactive": "True",
+    "serverSideAuthdApiCalls": 1,
+    "browserApiReqs": 0,
+    "browserNonBearer": 0,
+    "browserSample": []
+  },
+  "S2_UI_folder_create": {
+    "pass": true,
+    "folderName": "UI Folder 1784350048229",
+    "dbFolderRows": "1",
+    "dbTenant": "northwind"
+  },
+  "S4_viewer1": {
+    "pass": true,
+    "realmRoles": [
+      "report-viewer"
+    ],
+    "aud": "tempo-report-api",
+    "tokenUser": "viewer1",
+    "jwtInWebStorage": false,
+    "marker": "Server",
+    "interactive": "True",
+    "serverSideAuthdApiCalls": 1,
+    "browserApiReqs": 0,
+    "browserNonBearer": 0,
+    "browserSample": []
+  },
+  "S1_render_modes": {
+    "pass": true,
+    "serverMode": "Server",
+    "prerendered": true,
+    "wasmMode": "WebAssembly"
+  }
+}

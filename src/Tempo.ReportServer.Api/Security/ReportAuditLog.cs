@@ -99,14 +99,45 @@ public sealed record ReportAuditEvent
         };
 }
 
+/// <summary>Filter used to query the report server audit log.</summary>
+public sealed record ReportAuditQuery
+{
+    /// <summary>Tenant identifier (required).</summary>
+    public string TenantId { get; init; } = string.Empty;
+
+    /// <summary>Optional action filter.</summary>
+    public ReportAuditAction? Action { get; init; }
+
+    /// <summary>Optional outcome filter.</summary>
+    public ReportAuditOutcome? Outcome { get; init; }
+
+    /// <summary>Optional actor (user or API principal) filter.</summary>
+    public string? ActorId { get; init; }
+
+    /// <summary>Optional resource identifier filter.</summary>
+    public string? ResourceId { get; init; }
+
+    /// <summary>Optional inclusive lower time bound.</summary>
+    public DateTimeOffset? From { get; init; }
+
+    /// <summary>Optional inclusive upper time bound.</summary>
+    public DateTimeOffset? To { get; init; }
+
+    /// <summary>Optional maximum number of rows returned (most recent first).</summary>
+    public int? Take { get; init; }
+}
+
 /// <summary>Report server audit log.</summary>
 public interface IReportAuditLog
 {
     /// <summary>Writes an event.</summary>
     Task WriteAsync(ReportAuditEvent auditEvent, CancellationToken cancellationToken = default);
 
-    /// <summary>Lists events for a tenant.</summary>
+    /// <summary>Lists events for a tenant in chronological order.</summary>
     Task<IReadOnlyList<ReportAuditEvent>> ListAsync(string tenantId, CancellationToken cancellationToken = default);
+
+    /// <summary>Queries events for a tenant with optional filters, most recent first.</summary>
+    Task<IReadOnlyList<ReportAuditEvent>> QueryAsync(ReportAuditQuery query, CancellationToken cancellationToken = default);
 }
 
 /// <summary>In-memory audit log.</summary>
@@ -140,6 +171,58 @@ public sealed class InMemoryReportAuditLog : IReportAuditLog
                 .Where(auditEvent => string.Equals(auditEvent.TenantId, tenantId, StringComparison.Ordinal))
                 .OrderBy(auditEvent => auditEvent.Timestamp)
                 .ToArray());
+        }
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<ReportAuditEvent>> QueryAsync(
+        ReportAuditQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        cancellationToken.ThrowIfCancellationRequested();
+        lock (_gate)
+        {
+            IEnumerable<ReportAuditEvent> events = _events
+                .Where(auditEvent => string.Equals(auditEvent.TenantId, query.TenantId, StringComparison.Ordinal));
+
+            if (query.Action is { } action)
+            {
+                events = events.Where(auditEvent => auditEvent.Action == action);
+            }
+
+            if (query.Outcome is { } outcome)
+            {
+                events = events.Where(auditEvent => auditEvent.Outcome == outcome);
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.ActorId))
+            {
+                events = events.Where(auditEvent => string.Equals(auditEvent.ActorId, query.ActorId, StringComparison.Ordinal));
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.ResourceId))
+            {
+                events = events.Where(auditEvent => string.Equals(auditEvent.ResourceId, query.ResourceId, StringComparison.Ordinal));
+            }
+
+            if (query.From is { } from)
+            {
+                events = events.Where(auditEvent => auditEvent.Timestamp >= from);
+            }
+
+            if (query.To is { } to)
+            {
+                events = events.Where(auditEvent => auditEvent.Timestamp <= to);
+            }
+
+            events = events.OrderByDescending(auditEvent => auditEvent.Timestamp);
+            if (query.Take is { } take && take >= 0)
+            {
+                events = events.Take(take);
+            }
+
+            return Task.FromResult((IReadOnlyList<ReportAuditEvent>)events.ToArray());
         }
     }
 }

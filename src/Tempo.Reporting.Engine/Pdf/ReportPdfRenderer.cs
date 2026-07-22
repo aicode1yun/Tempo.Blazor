@@ -7,6 +7,7 @@ using System.Text;
 using SkiaSharp;
 using Svg.Skia;
 using Tempo.Reporting.Engine.Snapshot;
+using Tempo.Reporting.Engine.Text;
 
 namespace Tempo.Reporting.Engine.Pdf;
 
@@ -308,7 +309,49 @@ public sealed class ReportPdfRenderer
             Edging = SKFontEdging.Antialias,
             Subpixel = true,
         };
-        var naturalWidth = font.MeasureText(text, paint) + Math.Max(0, text.EnumerateRunes().Count() - 1) * command.LetterSpacing;
+
+        // Resolve the base writing direction and run the Unicode Bidirectional Algorithm. Pure
+        // left-to-right text with no right-to-left runs keeps the original simple render path so its
+        // output is unchanged; anything requiring reordering or mirroring uses the shaped path.
+        var baseLevel = BidiTextShaper.ToParagraphLevel(command.TextDirection);
+        var bidi = BidiAlgorithm.Resolve(text, baseLevel);
+        if (!BidiTextShaper.RequiresBidiShaping(bidi))
+        {
+            var naturalWidth = font.MeasureText(text, paint) + Math.Max(0, text.EnumerateRunes().Count() - 1) * command.LetterSpacing;
+            var scaleX = naturalWidth > 0 && command.Width > 0 ? command.Width / naturalWidth : 1;
+            var baseline = command.Baseline ?? command.Y + command.Height * 0.8;
+
+            canvas.Save();
+            canvas.Translate((float)command.X, (float)baseline);
+            if (Math.Abs(command.Rotation) > 0.0001)
+            {
+                canvas.RotateDegrees((float)command.Rotation);
+            }
+
+            canvas.Scale((float)scaleX, 1);
+            DrawTextWithLetterSpacing(canvas, text, command.LetterSpacing, font, paint);
+            canvas.Restore();
+            return;
+        }
+
+        DrawShapedTextRun(canvas, command, typeface, font, paint, baseLevel);
+    }
+
+    private static void DrawShapedTextRun(
+        SKCanvas canvas,
+        ReportSnapshotCommand command,
+        SKTypeface typeface,
+        SKFont font,
+        SKPaint paint,
+        sbyte? baseLevel)
+    {
+        var text = command.Text ?? string.Empty;
+        var shaped = BidiTextShaper.ShapeAndOrder(text, typeface, font, command.LetterSpacing, baseLevel);
+
+        // Natural width comes from the shaped advances so box-fit scaling is correct for complex
+        // scripts. Right-to-left paragraphs are laid out in visual order, so the run already ends at
+        // the right edge of its box after scaling.
+        var naturalWidth = shaped.Width;
         var scaleX = naturalWidth > 0 && command.Width > 0 ? command.Width / naturalWidth : 1;
         var baseline = command.Baseline ?? command.Y + command.Height * 0.8;
 
@@ -320,7 +363,7 @@ public sealed class ReportPdfRenderer
         }
 
         canvas.Scale((float)scaleX, 1);
-        DrawTextWithLetterSpacing(canvas, text, command.LetterSpacing, font, paint);
+        BidiTextShaper.Draw(canvas, shaped, font, paint);
         canvas.Restore();
     }
 

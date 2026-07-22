@@ -35,6 +35,7 @@
     <Project Path="src/Tempo.Reporting.Engine/Tempo.Reporting.Engine.csproj" />
     <Project Path="src/Tempo.ReportServer.Api/Tempo.ReportServer.Api.csproj" />
     <Project Path="src/Tempo.ReportServer.Web/Tempo.ReportServer.Web.csproj" />
+    <Project Path="src/Tempo.ReportServer.Web.Client/Tempo.ReportServer.Web.Client.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Tempo.Blazor.E2E/Tempo.Blazor.E2E.csproj" />

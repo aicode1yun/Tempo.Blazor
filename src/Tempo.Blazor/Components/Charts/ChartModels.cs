@@ -20,7 +20,13 @@ public enum ChartType
     /// <summary>Intensity matrix: dataset rows × label columns (e.g. day × hour).</summary>
     Heatmap,
     /// <summary>Squarified share tiles; hierarchical when <see cref="ChartTreeNode"/> data is supplied.</summary>
-    Treemap
+    Treemap,
+    /// <summary>Stacked vertical bars: each category's datasets accumulate on a shared baseline.</summary>
+    StackedBar,
+    /// <summary>Stacked horizontal bars: each category's datasets accumulate from the left baseline.</summary>
+    StackedHorizontalBar,
+    /// <summary>Stacked area: each dataset is filled on top of the cumulative baseline of the ones below it.</summary>
+    StackedArea
 }
 
 /// <summary>Data for TmChart.</summary>

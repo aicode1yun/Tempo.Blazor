@@ -1,0 +1,61 @@
+{
+  "user": "author1",
+  "webUrl": "https://localhost:7150",
+  "scenarios": {
+    "s1": {
+      "name": "create-blank-report",
+      "designerUrl": "https://localhost:7150/designer/report_92823b536394409a933e88125f11cc81",
+      "reportId": "report_92823b536394409a933e88125f11cc81",
+      "pass": true
+    },
+    "s2": {
+      "name": "upload-json-edge-case",
+      "brokenError": "The uploaded file is not valid JSON for a report definition.",
+      "blockedStillOnForm": true,
+      "blockedNotDesigner": true,
+      "validOk": "Loaded param-report.json.",
+      "paramReportId": "report_2540c34768b04f8e9c17bab5fa003cdb",
+      "pass": true
+    },
+    "s3": {
+      "name": "favorites",
+      "reportId": "report_2540c34768b04f8e9c17bab5fa003cdb",
+      "notFound": false,
+      "hasToggle": true,
+      "pressedBefore": "false",
+      "pressedAfter": "true",
+      "hasList": true,
+      "itemCount": 1,
+      "itemText": "E2E Param Report /Finance",
+      "roundTripNotFound": false,
+      "roundTripResolved": true,
+      "pass": true
+    },
+    "s4": {
+      "name": "parametric-render-run-history",
+      "reportId": "report_2540c34768b04f8e9c17bab5fa003cdb",
+      "hasParamInput": true,
+      "runStatus": "Ran Pdf — 1 page(s), 883 bytes",
+      "hasTable": true,
+      "rowCount": 1,
+      "firstRow": "E2E Param Report Pdf Succeeded 1 883 B 419 ms 2026-07-19 08:06:13Z",
+      "pass": true
+    },
+    "s3b": {
+      "name": "unfavorite-empty-state",
+      "reportId": "report_2540c34768b04f8e9c17bab5fa003cdb",
+      "pressedBefore": "true",
+      "pressedAfter": "false",
+      "emptyState": true,
+      "itemCount": 0,
+      "pass": true
+    }
+  },
+  "errors": [
+    "TypeError: Failed to fetch",
+    "Error: download 'https://localhost:7150/_framework/dotnet.native.u31nt9bth6.wasm' for dotnet.native.u31nt9bth6.wasm failed 0 TypeError: Failed to fetch",
+    "Error: download 'https://localhost:7150/_framework/System.Runtime.InteropServices.JavaScript.a0smuvq74f.wasm' for System.Runtime.InteropServices.JavaScript.a0smuvq74f.wasm failed 0 TypeError: Failed to fetch",
+    "Error: download 'https://localhost:7150/_framework/AngleSharp.xjfp703riv.wasm' for AngleSharp.xjfp703riv.wasm failed 0 TypeError: Failed to fetch"
+  ],
+  "errorCount": 793
+}

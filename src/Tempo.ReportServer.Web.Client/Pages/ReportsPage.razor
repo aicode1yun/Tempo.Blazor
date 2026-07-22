@@ -1,0 +1,157 @@
+@namespace Tempo.ReportServer.Web.Pages
+@page "/reports"
+@inject NavigationManager Navigation
+@inject IPortalIdentity Session
+@inject ITempoReportServerClient Client
+
+<ReportServerShell Title="@Loc["ReportServer_Nav_Reports"]" ActiveSection="reports">
+    <div class="rs-page rs-page--explorer" data-testid="f12-explorer-page">
+        <div class="rs-page__heading">
+            <div>
+                <p class="rs-kicker">@Loc["ReportServer_Kicker_Catalog"]</p>
+                <h2>@Loc["ReportServer_Reports_Heading"]</h2>
+            </div>
+            <div class="rs-page__stats">
+                <span>@_reportItems.Count @(_reportItems.Count == 1 ? Loc["ReportServer_Unit_Report"] : Loc["ReportServer_Unit_Reports"])</span>
+                <span>@_folderCount @(_folderCount == 1 ? Loc["ReportServer_Unit_Folder"] : Loc["ReportServer_Unit_Folders"])</span>
+                @if (Session.CanAccess(PortalRole.Author))
+                {
+                    <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Plus" data-testid="new-report-open" OnClick="OpenNewReport">
+                        @Loc["ReportServer_NewReport"]
+                    </TmButton>
+                }
+            </div>
+        </div>
+
+        @if (_showNewReport)
+        {
+            <NewReportForm Folders="@(Folders ?? [])"
+                           TenantId="@Session.CurrentTenantId"
+                           OnSubmit="CreateReportAsync"
+                           OnCancel="CloseNewReport" />
+        }
+
+        <TmReportExplorer RootFolder="@_rootFolder"
+                          Reports="@_reportItems"
+                          CurrentFolderPath="@_currentFolderPath"
+                          CurrentFolderPathChanged="SetFolder"
+                          ViewMode="@_viewMode"
+                          ViewModeChanged="SetViewMode"
+                          AllowFolderManagement="true"
+                          ReportOpened="OpenReport"
+                          CreateFolderRequested="CreateFolderAsync"
+                          ReportMoveRequested="MoveReportAsync" />
+    </div>
+</ReportServerShell>
+
+@code {
+    // Prerendered catalog snapshot handed to the interactive (WASM) leg so it does not re-fetch.
+    [PersistentState] public List<ReportFolderDto>? Folders { get; set; }
+    [PersistentState] public List<ReportSummaryDto>? Reports { get; set; }
+
+    private ReportExplorerFolder _rootFolder = new(ReportServerCatalogMapper.RootFolderPath, "Reports");
+    private IReadOnlyList<ReportExplorerReportItem> _reportItems = [];
+    private IReadOnlyDictionary<string, string> _folderIdByPath =
+        new Dictionary<string, string>(StringComparer.Ordinal);
+    private int _folderCount;
+    private string _currentFolderPath = ReportServerCatalogMapper.RootFolderPath;
+    private ReportExplorerViewMode _viewMode = ReportExplorerViewMode.Grid;
+    private bool _showNewReport;
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        Folders ??= [.. await Client.GetFoldersAsync(Session.CurrentTenantId)];
+        Reports ??= [.. await Client.SearchReportsAsync(new ReportSearchRequestDto { TenantId = Session.CurrentTenantId })];
+        Rebuild(selectDefaultFolder: true);
+    }
+
+    private void Rebuild(bool selectDefaultFolder)
+    {
+        var folders = Folders ?? [];
+        var reports = Reports ?? [];
+
+        var countByFolderId = reports
+            .GroupBy(report => report.FolderId, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
+        _rootFolder = ReportServerCatalogMapper.BuildFolderTree(folders, countByFolderId);
+        _folderIdByPath = ReportServerCatalogMapper.FolderIdsByPath(folders);
+        _folderCount = folders.Count;
+
+        var pathByFolderId = ReportServerCatalogMapper.FolderPathsById(folders);
+        _reportItems = [.. reports.Select(report => ReportServerCatalogMapper.ToReportItem(report, pathByFolderId))];
+
+        if (selectDefaultFolder)
+        {
+            _currentFolderPath = _reportItems.Count > 0
+                ? _reportItems[0].FolderPath
+                : folders.Count > 0
+                    ? folders[0].Path
+                    : ReportServerCatalogMapper.RootFolderPath;
+        }
+    }
+
+    private void SetFolder(string folderPath)
+        => _currentFolderPath = folderPath;
+
+    private void SetViewMode(ReportExplorerViewMode viewMode)
+        => _viewMode = viewMode;
+
+    private void OpenReport(ReportExplorerReportItem report)
+        => Navigation.NavigateTo(report.Path);
+
+    private void OpenNewReport()
+        => _showNewReport = true;
+
+    private void CloseNewReport()
+        => _showNewReport = false;
+
+    // The write endpoint (/reports) enforces the Author role; the create action is only shown to
+    // authors, and on success we hand off to the designer for the freshly created report.
+    private async Task CreateReportAsync(CreateReportRequestDto request)
+    {
+        var created = await Client.CreateReportAsync(request);
+        _showNewReport = false;
+        Navigation.NavigateTo($"/designer/{created.ReportId}");
+    }
+
+    private async Task CreateFolderAsync(ReportExplorerCreateFolderRequest request)
+    {
+        await Client.CreateFolderAsync(new CreateReportFolderRequestDto
+        {
+            TenantId = Session.CurrentTenantId,
+            ParentFolderId = ResolveFolderId(request.ParentPath),
+            Name = request.Name,
+        });
+
+        Folders = [.. await Client.GetFoldersAsync(Session.CurrentTenantId)];
+        Rebuild(selectDefaultFolder: false);
+        _currentFolderPath = request.ParentPath;
+    }
+
+    private async Task MoveReportAsync(ReportExplorerMoveReportRequest request)
+    {
+        var targetFolderId = ResolveFolderId(request.TargetFolderPath);
+        if (targetFolderId is null)
+        {
+            return;
+        }
+
+        await Client.MoveReportAsync(request.ReportId, Session.CurrentTenantId, new MoveReportRequestDto
+        {
+            FolderId = targetFolderId,
+        });
+
+        Reports = [.. await Client.SearchReportsAsync(new ReportSearchRequestDto { TenantId = Session.CurrentTenantId })];
+        Rebuild(selectDefaultFolder: false);
+        _currentFolderPath = request.TargetFolderPath;
+    }
+
+    // The explorer works in folder paths; the synthetic root maps to a null (top-level) parent.
+    private string? ResolveFolderId(string folderPath)
+        => string.IsNullOrEmpty(folderPath) || string.Equals(folderPath, ReportServerCatalogMapper.RootFolderPath, StringComparison.Ordinal)
+            ? null
+            : _folderIdByPath.TryGetValue(folderPath, out var folderId)
+                ? folderId
+                : null;
+}

@@ -1,0 +1,307 @@
+@namespace Tempo.ReportServer.Web.Components
+@using Microsoft.Extensions.Localization
+@using Tempo.Reporting.Abstractions.Definitions
+@using Tempo.Reporting.Abstractions.Definitions.Rdl
+@using Tempo.Reporting.Abstractions.Resources
+@using Tempo.Reporting.Abstractions.Serialization
+@using Tempo.Reporting.Abstractions.Validation
+@inject IStringLocalizer<ReportingValidationResources> ValidationLocalizer
+
+<div class="rs-newreport" data-testid="new-report-form" role="dialog" aria-label="@Loc["ReportServer_NewReport"]">
+    <div class="rs-newreport__header">
+        <h3>@Loc["ReportServer_NewReport"]</h3>
+        <button type="button" class="rs-icon-button" aria-label="@Loc["ReportServer_Cancel"]" data-testid="new-report-cancel" @onclick="CancelAsync">
+            <TmIcon Name="@IconNames.X" Size="IconSize.Sm" />
+        </button>
+    </div>
+
+    <label class="rs-field">
+        <span>@Loc["ReportServer_Field_Name"]</span>
+        <input data-testid="new-report-name" value="@_name" @oninput="HandleNameInput" />
+    </label>
+    @if (_errors.TryGetValue("Name", out var nameError))
+    {
+        <p class="rs-error" data-testid="new-report-name-error">@nameError</p>
+    }
+
+    <label class="rs-field">
+        <span>@Loc["ReportServer_NewReport_TargetFolder"]</span>
+        <select data-testid="new-report-folder" value="@_folderId" @onchange="HandleFolderChange">
+            <option value="">@Loc["ReportServer_NewReport_SelectFolder"]</option>
+            @foreach (var folder in Folders)
+            {
+                <option value="@folder.FolderId">@folder.Path</option>
+            }
+        </select>
+    </label>
+    @if (_errors.TryGetValue("FolderId", out var folderError))
+    {
+        <p class="rs-error" data-testid="new-report-folder-error">@folderError</p>
+    }
+
+    <fieldset class="rs-field rs-newreport__source">
+        <span>@Loc["ReportServer_NewReport_DefinitionSource"]</span>
+        <label>
+            <input type="radio" name="new-report-source" data-testid="new-report-source-blank"
+                   checked="@(_source == DefinitionSource.Blank)" @onchange="() => SetSource(DefinitionSource.Blank)" />
+            @Loc["ReportServer_NewReport_SourceBlank"]
+        </label>
+        <label>
+            <input type="radio" name="new-report-source" data-testid="new-report-source-upload"
+                   checked="@(_source == DefinitionSource.Upload)" @onchange="() => SetSource(DefinitionSource.Upload)" />
+            @Loc["ReportServer_NewReport_SourceUpload"]
+        </label>
+        <label>
+            <input type="radio" name="new-report-source" data-testid="new-report-source-rdl"
+                   checked="@(_source == DefinitionSource.Rdl)" @onchange="() => SetSource(DefinitionSource.Rdl)" />
+            @Loc["ReportServer_NewReport_SourceRdl"]
+        </label>
+    </fieldset>
+
+    @if (_source == DefinitionSource.Upload)
+    {
+        <label class="rs-field">
+            <span>@Loc["ReportServer_NewReport_DefinitionFile"]</span>
+            <InputFile OnChange="HandleFileSelectedAsync" accept=".json" data-testid="new-report-file" />
+        </label>
+        @if (_uploadedJson is not null && _fileError is null)
+        {
+            <p class="rs-hint" data-testid="new-report-file-ok">@Loc["ReportServer_NewReport_FileLoaded", _uploadedFileName ?? string.Empty]</p>
+        }
+    }
+
+    @if (_source == DefinitionSource.Rdl)
+    {
+        <label class="rs-field">
+            <span>@Loc["ReportServer_NewReport_RdlFile"]</span>
+            <InputFile OnChange="HandleRdlSelectedAsync" accept=".rdl,.xml" data-testid="new-report-rdl-file" />
+        </label>
+        @if (_importedDefinition is not null && _fileError is null)
+        {
+            <p class="rs-hint" data-testid="new-report-rdl-ok">@Loc["ReportServer_NewReport_RdlImported", _uploadedFileName ?? string.Empty]</p>
+            @* Non-fatal import losses are surfaced so the user knows the report needs a review. *@
+            @if (_rdlWarningCount > 0)
+            {
+                <p class="rs-hint" data-testid="new-report-rdl-warnings">@Loc["ReportServer_NewReport_RdlWarnings", _rdlWarningCount]</p>
+            }
+        }
+    }
+    @if (_fileError is not null)
+    {
+        <p class="rs-error" data-testid="new-report-file-error">@_fileError</p>
+    }
+
+    @if (_errors.TryGetValue("DefinitionJson", out var definitionError))
+    {
+        <p class="rs-error" data-testid="new-report-definition-error">@definitionError</p>
+    }
+    @if (_errors.TryGetValue("TenantId", out var tenantError))
+    {
+        <p class="rs-error" data-testid="new-report-tenant-error">@tenantError</p>
+    }
+
+    <div class="rs-newreport__actions">
+        @* Submit is disabled while an unresolved file-parse error is showing, so the action can't
+           silently no-op — the user must fix or clear the upload first. *@
+        <TmButton Variant="ButtonVariant.Primary"
+                  Icon="@IconNames.Check"
+                  data-testid="new-report-submit"
+                  Disabled="@(_fileError is not null)"
+                  OnClick="SubmitAsync">
+            @Loc["ReportServer_NewReport_Submit"]
+        </TmButton>
+    </div>
+</div>
+
+@code {
+    /// <summary>Folders the report can be created in.</summary>
+    [Parameter] public IReadOnlyList<ReportFolderDto> Folders { get; set; } = [];
+
+    /// <summary>Tenant the report belongs to.</summary>
+    [Parameter] public string TenantId { get; set; } = string.Empty;
+
+    /// <summary>Raised with a valid create request when the form is submitted.</summary>
+    [Parameter] public EventCallback<CreateReportRequestDto> OnSubmit { get; set; }
+
+    /// <summary>Raised when the user cancels.</summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private enum DefinitionSource
+    {
+        Blank,
+        Upload,
+        Rdl,
+    }
+
+    private string _name = string.Empty;
+    private string _folderId = string.Empty;
+    private DefinitionSource _source = DefinitionSource.Blank;
+    private string? _uploadedJson;
+    private string? _uploadedFileName;
+    private string? _fileError;
+    private ReportDefinition? _importedDefinition;
+    private int _rdlWarningCount;
+    private readonly Dictionary<string, string> _errors = new(StringComparer.Ordinal);
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (string.IsNullOrEmpty(_folderId) && Folders.Count > 0)
+        {
+            _folderId = Folders[0].FolderId;
+        }
+    }
+
+    private void HandleNameInput(ChangeEventArgs args)
+        => _name = args.Value?.ToString() ?? string.Empty;
+
+    private void HandleFolderChange(ChangeEventArgs args)
+        => _folderId = args.Value?.ToString() ?? string.Empty;
+
+    private void SetSource(DefinitionSource source)
+    {
+        _source = source;
+        if (source == DefinitionSource.Blank)
+        {
+            _fileError = null;
+        }
+    }
+
+    private async Task HandleRdlSelectedAsync(InputFileChangeEventArgs args)
+    {
+        _fileError = null;
+        _importedDefinition = null;
+        _uploadedFileName = null;
+        _rdlWarningCount = 0;
+        var file = args.File;
+
+        string xml;
+        try
+        {
+            // Reading can throw on an oversize or unreadable upload; an unhandled exception here would
+            // escape the event handler and tear down the circuit instead of showing an inline error.
+            using var stream = file.OpenReadStream(8 * 1024 * 1024);
+            using var reader = new StreamReader(stream);
+            xml = await reader.ReadToEndAsync();
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or NotSupportedException)
+        {
+            _fileError = Loc["ReportServer_NewReport_InvalidRdl"];
+            return;
+        }
+
+        // The importer NEVER throws on bad input: malformed or non-RDL XML comes back as an Error
+        // diagnostic so the form can block submission inline instead of surfacing a 500 later.
+        var result = new RdlReportImporter().Import(xml);
+        if (result.HasErrors)
+        {
+            _fileError = Loc["ReportServer_NewReport_InvalidRdl"];
+            return;
+        }
+
+        // Validate with the canonical validator the SERVER uses, so an incomplete import surfaces inline
+        // here rather than coming back as a 400 from CreateReport.
+        var validation = new ReportDefinitionValidator(ValidationLocalizer).Validate(result.Definition);
+        if (!validation.IsValid)
+        {
+            _fileError = Loc["ReportServer_NewReport_InvalidRdl"];
+            return;
+        }
+
+        _importedDefinition = result.Definition;
+        _rdlWarningCount = result.Warnings.Count;
+        _uploadedFileName = file.Name;
+    }
+
+    private async Task HandleFileSelectedAsync(InputFileChangeEventArgs args)
+    {
+        _fileError = null;
+        _uploadedJson = null;
+        _uploadedFileName = null;
+        var file = args.File;
+        try
+        {
+            // IOException/InvalidOperationException cover an oversize or unreadable upload; without them an
+            // unhandled exception escapes the event handler instead of showing an inline error.
+            using var stream = file.OpenReadStream(2 * 1024 * 1024);
+            using var reader = new StreamReader(stream);
+            var text = await reader.ReadToEndAsync();
+
+            // Validate the upload with the CANONICAL serializer the server reads definitions with (custom
+            // converters, e.g. ReportPageSize.unit) so a valid canonical definition is accepted and an
+            // invalid one is rejected the same way the server would. The user's JSON is passed through
+            // unchanged on success (no re-normalization).
+            _ = ReportDefinitionJsonSerializer.Deserialize(text);
+            _uploadedJson = text;
+            _uploadedFileName = file.Name;
+        }
+        catch (Exception ex) when (ex is ReportDefinitionJsonException or IOException
+            or InvalidOperationException or NotSupportedException)
+        {
+            _fileError = Loc["ReportServer_NewReport_InvalidFile"];
+        }
+    }
+
+    private async Task CancelAsync()
+        => await OnCancel.InvokeAsync();
+
+    private async Task SubmitAsync()
+    {
+        _errors.Clear();
+
+        string definitionJson;
+        if (_source == DefinitionSource.Upload)
+        {
+            if (_uploadedJson is null || _fileError is not null)
+            {
+                _fileError ??= Loc["ReportServer_NewReport_UploadRequired"];
+                return;
+            }
+
+            definitionJson = _uploadedJson;
+        }
+        else if (_source == DefinitionSource.Rdl)
+        {
+            if (_importedDefinition is null || _fileError is not null)
+            {
+                _fileError ??= Loc["ReportServer_NewReport_RdlRequired"];
+                return;
+            }
+
+            // Serialize the IMPORTED definition with the CANONICAL serializer (same guarantee as the blank
+            // path), carrying the name the user typed so the catalog entry and the definition agree.
+            definitionJson = ReportDefinitionJsonSerializer.Serialize(_importedDefinition with { Name = _name.Trim() });
+        }
+        else
+        {
+            // A blank report is a minimal ReportDefinition carrying the chosen name, serialized with the
+            // CANONICAL serializer the server reads definitions back with. Plain System.Text.Json does not
+            // round-trip (e.g. ReportPageSize.unit), so a blank-created report would 500 on the server's
+            // GET /reports/{id}/parameters. The canonical serializer guarantees the round-trip.
+            definitionJson = ReportDefinitionJsonSerializer.Serialize(new ReportDefinition { Name = _name.Trim() });
+        }
+
+        var request = new CreateReportRequestDto
+        {
+            TenantId = TenantId,
+            FolderId = _folderId,
+            Name = _name.Trim(),
+            DefinitionJson = definitionJson,
+        };
+
+        var validation = new CreateReportRequestValidator().Validate(request);
+        if (!validation.IsValid)
+        {
+            foreach (var failure in validation.Errors)
+            {
+                // The validator emits TmResources KEYS (same convention as the favorites validator);
+                // resolve them through the portal localizer so inline errors honor the current culture.
+                _errors[failure.PropertyName] = Loc[failure.ErrorMessage];
+            }
+
+            return;
+        }
+
+        await OnSubmit.InvokeAsync(request);
+    }
+}

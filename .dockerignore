@@ -1,0 +1,16 @@
+# Docker build context excludes (context = repo root for the Report Server images).
+# Keep the context small and prevent host build output from poisoning the in-container restore.
+**/bin/
+**/obj/
+**/out/
+**/.vs/
+**/.vscode/
+**/node_modules/
+.git/
+.github/
+**/*.user
+**/TestResults/
+**/.playwright/
+**/*.log
+# Local docker env with real secrets must never enter an image layer.
+deploy/docker/.env

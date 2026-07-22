@@ -1,0 +1,230 @@
+@namespace Tempo.ReportServer.Web.Pages
+@page "/admin/schedules"
+@inject IPortalIdentity Session
+@inject ITempoReportServerClient Client
+
+<ReportServerShell Title="@Loc["ReportServer_Nav_Schedules"]" ActiveSection="schedules">
+    <div class="rs-page" data-testid="f16-schedules-page">
+        <div class="rs-page__heading">
+            <div>
+                <p class="rs-kicker">@Loc["ReportServer_Kicker_Automation"]</p>
+                <h2>@Loc["ReportServer_Nav_Schedules"]</h2>
+            </div>
+            <div class="rs-page__stats">
+                <span>@Loc["ReportServer_Schedules_CountSchedules", _schedules.Count]</span>
+                <span>@Loc["ReportServer_Schedules_CountRecentRuns", _runs.Count]</span>
+            </div>
+        </div>
+
+        <section class="rs-admin-grid">
+            <form class="rs-panel" @onsubmit="SaveScheduleAsync" @onsubmit:preventDefault>
+                <h3>@Loc["ReportServer_Schedules_Create"]</h3>
+                <label class="rs-field">
+                    <span>@Loc["ReportServer_Field_Name"]</span>
+                    <input data-testid="schedule-name" value="@_name" @oninput="HandleNameInput" />
+                </label>
+                <label class="rs-field">
+                    <span>@Loc["ReportServer_Field_Report"]</span>
+                    <select data-testid="schedule-report" value="@_reportId" @onchange="HandleReportChange">
+                        @foreach (var report in _reports)
+                        {
+                            <option value="@report.ReportId">@report.Name</option>
+                        }
+                    </select>
+                </label>
+                <label class="rs-field">
+                    <span>@Loc["ReportServer_Schedules_CronUtc"]</span>
+                    <input data-testid="schedule-cron" value="@_cron" @oninput="HandleCronInput" />
+                </label>
+                <label class="rs-field">
+                    <span>@Loc["ReportServer_Column_Format"]</span>
+                    <select data-testid="schedule-format" value="@_format" @onchange="HandleFormatChange">
+                        @foreach (var format in Enum.GetValues<ReportScheduleFormat>())
+                        {
+                            <option value="@format">@format</option>
+                        }
+                    </select>
+                </label>
+                <label class="rs-field">
+                    <span>@Loc["ReportServer_Schedules_Recipients"]</span>
+                    <input data-testid="schedule-email" value="@_email" @oninput="HandleEmailInput" />
+                </label>
+                <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Plus" data-testid="schedule-save" OnClick="SaveScheduleAsync">
+                    @Loc["ReportServer_Schedules_Save"]
+                </TmButton>
+                @if (!string.IsNullOrWhiteSpace(_status))
+                {
+                    <span class="rs-status rs-status--ok" data-testid="schedule-form-status">@_status</span>
+                }
+            </form>
+
+            <section class="rs-panel rs-table-panel">
+                <h3>@Loc["ReportServer_Schedules_ScheduledReports"]</h3>
+                <div class="rs-table" data-testid="schedules-table">
+                    @if (_schedules.Count == 0)
+                    {
+                        <p class="rs-hint" data-testid="schedules-empty">@Loc["ReportServer_Schedules_Empty"]</p>
+                    }
+                    @foreach (var schedule in _schedules)
+                    {
+                        <article class="rs-table__row rs-schedule-row" data-testid="@($"schedule-row-{schedule.ScheduleId}")">
+                            <div>
+                                <strong>@schedule.Name</strong>
+                                <span>@ReportName(schedule.ReportId) · @schedule.Format</span>
+                            </div>
+                            <div>
+                                <code>@schedule.CronExpression</code>
+                                <span>@Loc["ReportServer_Schedules_Next", schedule.NextRunUtc.ToLocalTime().ToString("g", System.Globalization.CultureInfo.InvariantCulture)]</span>
+                            </div>
+                            <div>
+                                <span>@schedule.DeliveryTarget</span>
+                                <span>@schedule.LastStatusMessage</span>
+                            </div>
+                            <button type="button"
+                                    class="rs-text-button"
+                                    data-testid="@($"toggle-schedule-{schedule.ScheduleId}")"
+                                    @onclick="() => ToggleScheduleAsync(schedule)">
+                                @(schedule.IsEnabled ? Loc["ReportServer_Schedules_Disable"] : Loc["ReportServer_Schedules_Enable"])
+                            </button>
+                        </article>
+                    }
+                </div>
+            </section>
+        </section>
+
+        <section class="rs-panel rs-table-panel" data-testid="schedule-runs">
+            <div class="rs-revision__header">
+                <div>
+                    <h3>@Loc["ReportServer_Schedules_RecentRuns"]</h3>
+                    <span>@Loc["ReportServer_Schedules_RecentRunsSubtitle"]</span>
+                </div>
+                <span class="rs-status">@Loc["ReportServer_Schedules_CountRuns", _runs.Count]</span>
+            </div>
+            @if (_runs.Count == 0)
+            {
+                <div class="rs-empty rs-empty--compact">
+                    <TmIcon Name="@IconNames.Calendar" Size="IconSize.Md" />
+                    <strong>@Loc["ReportServer_RunHistory_EmptyTitle"]</strong>
+                    <span>@Loc["ReportServer_Schedules_RunsEmptyHint"]</span>
+                </div>
+            }
+            else
+            {
+                <div class="rs-revisions">
+                    @foreach (var run in _runs.Take(5))
+                    {
+                        <article class="rs-revision rs-outbox-item" data-testid="@($"run-row-{run.RunId}")">
+                            <div class="rs-revision__header">
+                                <div>
+                                    <strong>@(run.ArtifactFileName ?? Loc["ReportServer_Schedules_NoArtifact"])</strong>
+                                    <span>@run.DeliveryTarget</span>
+                                </div>
+                                <span class="@(run.Status == Tempo.Reporting.Abstractions.Dtos.ReportScheduleRunStatus.Delivered ? "rs-status rs-status--ok" : "rs-status")">@run.Status</span>
+                            </div>
+                            <div class="rs-param-chips">
+                                <span>@ScheduleName(run.ScheduleId)</span>
+                                <span>@run.ArtifactByteCount @Loc["ReportServer_Unit_Bytes"]</span>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    </div>
+</ReportServerShell>
+
+@code {
+    private string _name = "Executive dashboard digest";
+    private string _reportId = string.Empty;
+    private string _cron = "0 8 * * 1";
+    private string _format = nameof(ReportScheduleFormat.Pdf);
+    private string _email = "finance@example.test";
+    private string? _status;
+
+    private IReadOnlyList<ReportSummaryDto> _reports = [];
+    private IReadOnlyList<ReportScheduleDto> _schedules = [];
+    private List<ReportScheduleRunDto> _runs = [];
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        _reports = await Client.SearchReportsAsync(new ReportSearchRequestDto { TenantId = Session.CurrentTenantId });
+        _reportId = _reports.Count > 0 ? _reports[0].ReportId : string.Empty;
+        await ReloadSchedulesAsync();
+    }
+
+    private void HandleNameInput(ChangeEventArgs args)
+        => _name = args.Value?.ToString() ?? string.Empty;
+
+    private void HandleReportChange(ChangeEventArgs args)
+        => _reportId = args.Value?.ToString() ?? _reportId;
+
+    private void HandleCronInput(ChangeEventArgs args)
+        => _cron = args.Value?.ToString() ?? "0 8 * * 1";
+
+    private void HandleFormatChange(ChangeEventArgs args)
+        => _format = args.Value?.ToString() ?? nameof(ReportScheduleFormat.Pdf);
+
+    private void HandleEmailInput(ChangeEventArgs args)
+        => _email = args.Value?.ToString() ?? string.Empty;
+
+    private async Task SaveScheduleAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_email))
+        {
+            _status = Loc["ReportServer_Schedules_RecipientRequired"];
+            return;
+        }
+
+        if (!Enum.TryParse<ReportScheduleFormat>(_format, ignoreCase: true, out var format))
+        {
+            format = ReportScheduleFormat.Pdf;
+        }
+
+        var schedule = await Client.UpsertScheduleAsync(new UpsertReportScheduleRequestDto
+        {
+            TenantId = Session.CurrentTenantId,
+            OwnerUserId = Session.UserName,
+            Name = string.IsNullOrWhiteSpace(_name) ? ReportName(_reportId) : _name.Trim(),
+            ReportId = _reportId,
+            CronExpression = _cron,
+            Format = format,
+            DeliveryKind = ReportScheduleDeliveryKind.Email,
+            DeliveryTarget = _email.Trim(),
+            IsEnabled = true,
+        });
+        _status = Loc["ReportServer_Schedules_SavedStatus", schedule.Name];
+        await ReloadSchedulesAsync();
+    }
+
+    private async Task ToggleScheduleAsync(ReportScheduleDto schedule)
+    {
+        await Client.SetScheduleEnabledAsync(schedule.ScheduleId, new SetReportScheduleEnabledRequestDto
+        {
+            TenantId = Session.CurrentTenantId,
+            IsEnabled = !schedule.IsEnabled,
+        });
+        await ReloadSchedulesAsync();
+    }
+
+    private async Task ReloadSchedulesAsync()
+    {
+        _schedules = await Client.GetSchedulesAsync(Session.CurrentTenantId);
+        var runs = new List<ReportScheduleRunDto>();
+        foreach (var schedule in _schedules)
+        {
+            runs.AddRange(await Client.GetScheduleRunsAsync(Session.CurrentTenantId, schedule.ScheduleId, max: 5));
+        }
+
+        _runs = [.. runs.OrderByDescending(run => run.StartedUtc)];
+        StateHasChanged();
+    }
+
+    private string ReportName(string reportId)
+        => _reports.FirstOrDefault(report => string.Equals(report.ReportId, reportId, StringComparison.Ordinal))?.Name
+            ?? reportId;
+
+    private string ScheduleName(string scheduleId)
+        => _schedules.FirstOrDefault(schedule => string.Equals(schedule.ScheduleId, scheduleId, StringComparison.Ordinal))?.Name
+            ?? scheduleId;
+}

@@ -17,7 +17,7 @@ public interface IReportHttpSecurityContextFactory
     Task<ReportSecurityContext?> CreateAsync(HttpContext httpContext, CancellationToken cancellationToken = default);
 }
 
-/// <summary>Header/API-key based security context factory for report server endpoints.</summary>
+/// <summary>Header/API-key/JWT based security context factory for report server endpoints.</summary>
 public sealed class ReportHttpSecurityContextFactory : IReportHttpSecurityContextFactory
 {
     private readonly IReportApiKeyStore _apiKeyStore;
@@ -42,22 +42,21 @@ public sealed class ReportHttpSecurityContextFactory : IReportHttpSecurityContex
 
         var tenantId = httpContext.Request.Headers[ReportSecurityHeaders.TenantId].ToString();
         var userId = httpContext.Request.Headers[ReportSecurityHeaders.UserId].ToString();
-        if (string.IsNullOrWhiteSpace(tenantId) || string.IsNullOrWhiteSpace(userId))
+        if (!string.IsNullOrWhiteSpace(tenantId) && !string.IsNullOrWhiteSpace(userId))
         {
-            return null;
+            var roles = ReportPrincipalMapper.ParseRoleNames(httpContext.Request.Headers[ReportSecurityHeaders.Roles].ToString());
+            return ReportSecurityContext.ForUser(tenantId, userId, roles);
         }
 
-        var roles = ParseRoles(httpContext.Request.Headers[ReportSecurityHeaders.Roles].ToString());
-        return ReportSecurityContext.ForUser(tenantId, userId, roles);
-    }
+        // Real OIDC (Keycloak): a validated JWT bearer principal maps to a user security context.
+        var principal = httpContext.User;
+        if (principal?.Identity?.IsAuthenticated == true)
+        {
+            return ReportPrincipalMapper.FromClaimsPrincipal(principal);
+        }
 
-    private static IReadOnlyList<ReportServerRole> ParseRoles(string value)
-        => value.Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(role => Enum.TryParse<ReportServerRole>(role, ignoreCase: true, out var parsed) ? parsed : (ReportServerRole?)null)
-            .Where(role => role.HasValue)
-            .Select(role => role!.Value)
-            .Distinct()
-            .ToArray();
+        return null;
+    }
 }
 
 /// <summary>Endpoint filter enforcing report server permissions.</summary>
@@ -157,6 +156,7 @@ public static class ReportServerSecurityExtensions
         services.TryAddSingleton<IReportPermissionResolver, ReportPermissionResolver>();
         services.TryAddSingleton<IReportApiKeyStore, InMemoryReportApiKeyStore>();
         services.TryAddSingleton<IReportAuditLog, InMemoryReportAuditLog>();
+        services.TryAddSingleton<IReportServerUserProvisioner, NullReportServerUserProvisioner>();
         services.TryAddSingleton<IReportHttpSecurityContextFactory, ReportHttpSecurityContextFactory>();
         services.TryAddTransient<ReportAuthorizationEndpointFilter>();
         return services;

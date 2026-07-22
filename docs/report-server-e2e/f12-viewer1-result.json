@@ -1,0 +1,28 @@
+{
+  "user": "viewer1",
+  "scenarios": {
+    "s5": {
+      "name": "viewer1-role-gating",
+      "newReportOpenAbsent": true,
+      "navReports": true,
+      "navFavorites": true,
+      "navHistory": true,
+      "navDesignerAbsent": true,
+      "navSchedulesAbsent": true,
+      "signedInUser": "viewer1",
+      "pass": true
+    },
+    "s6": {
+      "name": "empty-states",
+      "favoritesEmpty": true,
+      "historyEmpty": true,
+      "pass": true
+    }
+  },
+  "errors": [
+    "TypeError: Failed to fetch",
+    "Error: download 'https://localhost:7150/_framework/dotnet.native.u31nt9bth6.wasm' for dotnet.native.u31nt9bth6.wasm failed 0 TypeError: Failed to fetch",
+    "Error: download 'https://localhost:7150/_framework/System.Runtime.InteropServices.JavaScript.a0smuvq74f.wasm' for System.Runtime.InteropServices.JavaScript.a0smuvq74f.wasm failed 0 TypeError: Failed to fetch"
+  ],
+  "errorCount": 241
+}

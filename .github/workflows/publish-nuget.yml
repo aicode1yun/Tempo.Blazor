@@ -78,8 +78,9 @@ jobs:
   publish:
     needs: build-and-test
     runs-on: ubuntu-latest
-    # Publikujeme jen při push na main/master, tagu, nebo ručním spuštění
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    # Publikujeme jen na verzovaném tagu (release, refs/tags/v*) nebo při ručním spuštění -
+    # NE na každý push do main/master (ten jen builduje a testuje). Verzi řídí tag / csproj.
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     permissions:
       packages: write
       contents: read
@@ -122,12 +123,10 @@ jobs:
             # Suffix pro prerelease verze (např. 1.0.0-beta1)
             echo "VERSION=$BASE_VERSION-${{ github.event.inputs.version_suffix }}" >> $GITHUB_OUTPUT
             echo "Using version with suffix: $BASE_VERSION-${{ github.event.inputs.version_suffix }}"
-          else
-            # Pro main/master push použijeme timestamp jako prerelease
-            TIMESTAMP=$(date +'%Y%m%d%H%M%S')
-            echo "VERSION=$BASE_VERSION-ci-$TIMESTAMP" >> $GITHUB_OUTPUT
-            echo "Using CI version: $BASE_VERSION-ci-$TIMESTAMP"
           fi
+          # Tato publish úloha běží jen na tagu refs/tags/v* (release) nebo workflow_dispatch
+          # (viz job `if:`), takže větev s CI timestampem (main/master push) z build-and-test zde
+          # není dosažitelná a záměrně chybí.
 
       - name: Build
         run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.version.outputs.VERSION }}

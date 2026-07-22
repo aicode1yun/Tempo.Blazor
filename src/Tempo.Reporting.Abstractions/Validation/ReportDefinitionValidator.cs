@@ -129,6 +129,8 @@ public sealed class ReportDefinitionValidator : AbstractValidator<ReportDefiniti
                 {
                     AddFailure(context, "Bands.Elements.Text", "ReportTextBox.Content.Required", "ReportTextBox_Content_Required");
                 }
+
+                ValidateDrillThrough(context, textBox.DrillThrough);
                 break;
             case ReportImageElement image:
                 if (string.IsNullOrWhiteSpace(image.Source))
@@ -140,6 +142,11 @@ public sealed class ReportDefinitionValidator : AbstractValidator<ReportDefiniti
                 if (table.Columns.Count == 0)
                 {
                     AddFailure(context, "Bands.Elements.Columns", "ReportTable.Columns.Required", "ReportTable_Columns_Required");
+                }
+
+                foreach (var cell in EnumerateTableCells(table))
+                {
+                    ValidateDrillThrough(context, cell.DrillThrough);
                 }
                 break;
             case ReportChartElement chart:
@@ -159,6 +166,8 @@ public sealed class ReportDefinitionValidator : AbstractValidator<ReportDefiniti
                     {
                         AddFailure(context, "Bands.Elements.Series.ValueExpression", "ReportChart.Series.ValueExpression.Required", "ReportChart_Series_ValueExpression_Required");
                     }
+
+                    ValidateDrillThrough(context, series.DrillThrough);
                 }
 
                 break;
@@ -168,6 +177,56 @@ public sealed class ReportDefinitionValidator : AbstractValidator<ReportDefiniti
                     AddFailure(context, "Bands.Elements.ReportId", "ReportSubReport.ReportId.Required", "ReportSubReport_ReportId_Required");
                 }
                 break;
+        }
+    }
+
+    private void ValidateDrillThrough(ValidationContext<ReportDefinition> context, ReportDrillThroughAction? action)
+    {
+        if (action is null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(action.TargetReportPath) && string.IsNullOrWhiteSpace(action.TargetReportId))
+        {
+            AddFailure(context, "Bands.Elements.DrillThrough.Target", "ReportDrillThrough.Target.Required", "ReportDrillThrough_Target_Required");
+        }
+
+        foreach (var mapping in action.ParameterMappings)
+        {
+            if (string.IsNullOrWhiteSpace(mapping.ParameterName))
+            {
+                AddFailure(context, "Bands.Elements.DrillThrough.ParameterName", "ReportDrillThrough.Mapping.ParameterName.Required", "ReportDrillThrough_Mapping_ParameterName_Required");
+            }
+
+            if (mapping.SourceKind is ReportDrillThroughSourceKind.Field or ReportDrillThroughSourceKind.Parameter
+                && string.IsNullOrWhiteSpace(mapping.Source))
+            {
+                AddFailure(context, "Bands.Elements.DrillThrough.Source", "ReportDrillThrough.Mapping.Source.Required", "ReportDrillThrough_Mapping_Source_Required");
+            }
+        }
+    }
+
+    private static IEnumerable<ReportTableCell> EnumerateTableCells(ReportTableElement table)
+    {
+        var rows = new List<ReportTableRow?> { table.Header, table.Detail, table.Footer };
+        foreach (var group in table.Groups)
+        {
+            rows.Add(group.Header);
+            rows.Add(group.Footer);
+        }
+
+        foreach (var row in rows)
+        {
+            if (row is null)
+            {
+                continue;
+            }
+
+            foreach (var cell in row.Cells)
+            {
+                yield return cell;
+            }
         }
     }
 

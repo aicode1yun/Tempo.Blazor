@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition">
+  <Description>A well-formed report using constructs outside the supported subset.</Description>
+  <PageHeight>11in</PageHeight>
+  <PageWidth>8.5in</PageWidth>
+  <LeftMargin>1in</LeftMargin>
+  <RightMargin>1in</RightMargin>
+  <TopMargin>1in</TopMargin>
+  <BottomMargin>1in</BottomMargin>
+  <Code>Public Function Foo() As Integer
+    Return 42
+  End Function</Code>
+  <Body>
+    <ReportItems>
+      <Textbox Name="Header">
+        <Paragraphs>
+          <Paragraph><TextRuns><TextRun><Value>Dashboard</Value></TextRun></TextRuns></Paragraph>
+        </Paragraphs>
+        <Top>0.2in</Top>
+        <Left>0.5in</Left>
+        <Height>0.4in</Height>
+        <Width>4in</Width>
+        <Style />
+      </Textbox>
+      <Subreport Name="DetailSub">
+        <ReportName>OrderDetails</ReportName>
+        <Top>1in</Top>
+        <Left>0.5in</Left>
+        <Height>2in</Height>
+        <Width>6in</Width>
+      </Subreport>
+      <Gauge Name="KpiGauge">
+        <Top>3.5in</Top>
+        <Left>0.5in</Left>
+        <Height>1in</Height>
+        <Width>2in</Width>
+      </Gauge>
+    </ReportItems>
+    <Height>5in</Height>
+  </Body>
+</Report>

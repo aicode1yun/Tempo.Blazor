@@ -1,0 +1,114 @@
+@namespace Tempo.ReportServer.Web.Pages
+@page "/history"
+@inject IPortalIdentity Session
+@inject ITempoReportServerClient Client
+
+<ReportServerShell Title="@Loc["ReportServer_RunHistory_Title"]" ActiveSection="history">
+    <div class="rs-page" data-testid="run-history-page">
+        <div class="rs-page__heading">
+            <div>
+                <p class="rs-kicker">@Loc["ReportServer_Kicker_Activity"]</p>
+                <h2>@Loc["ReportServer_RunHistory_Title"]</h2>
+            </div>
+            <div class="rs-page__stats">
+                <span>@_visibleRuns.Count @(_visibleRuns.Count == 1 ? Loc["ReportServer_Unit_Run"] : Loc["ReportServer_Unit_Runs"])</span>
+            </div>
+        </div>
+
+        @if (_reportFilterOptions.Count > 0)
+        {
+            <div class="rs-filter-bar">
+                <label class="rs-field rs-field--inline">
+                    <span>@Loc["ReportServer_Field_Report"]</span>
+                    <select data-testid="run-history-filter" value="@_reportFilter" @onchange="HandleFilterChange">
+                        <option value="">@Loc["ReportServer_RunHistory_AllReports"]</option>
+                        @foreach (var reportId in _reportFilterOptions)
+                        {
+                            <option value="@reportId">@ReportName(reportId)</option>
+                        }
+                    </select>
+                </label>
+            </div>
+        }
+
+        @if (_visibleRuns.Count == 0)
+        {
+            <div class="rs-empty" data-testid="run-history-empty">
+                <TmIcon Name="@IconNames.Clock" Size="IconSize.Md" />
+                <strong>@Loc["ReportServer_RunHistory_EmptyTitle"]</strong>
+                <span>@Loc["ReportServer_RunHistory_EmptyHint"]</span>
+            </div>
+        }
+        else
+        {
+            <section class="rs-panel rs-table-panel">
+                <div class="rs-table" data-testid="run-history-table">
+                    <div class="rs-table__head rs-run-row" data-testid="run-history-head">
+                        <span>@Loc["ReportServer_Field_Report"]</span>
+                        <span>@Loc["ReportServer_Column_Format"]</span>
+                        <span>@Loc["ReportServer_Column_Outcome"]</span>
+                        <span>@Loc["ReportServer_Column_Pages"]</span>
+                        <span>@Loc["ReportServer_Column_Size"]</span>
+                        <span>@Loc["ReportServer_Column_Duration"]</span>
+                        <span>@Loc["ReportServer_Column_Time"]</span>
+                    </div>
+                    @foreach (var run in _visibleRuns)
+                    {
+                        <article class="rs-table__row rs-run-row" data-testid="run-history-row">
+                            <strong>@ReportName(run.ReportId)</strong>
+                            <span>@run.Format</span>
+                            <span class="@(IsSuccess(run) ? "rs-status rs-status--ok" : "rs-status")">@run.Outcome</span>
+                            <span>@(run.PageCount?.ToString() ?? "—")</span>
+                            <span>@FormatBytes(run.ByteSize)</span>
+                            <span>@(run.DurationMs is { } ms ? $"{ms} ms" : "—")</span>
+                            <span>@run.CreatedAt.ToString("u")</span>
+                        </article>
+                    }
+                </div>
+            </section>
+        }
+    </div>
+</ReportServerShell>
+
+@code {
+    // Prerendered snapshots handed to the interactive (WASM) leg so it does not re-fetch.
+    [PersistentState] public List<RenderRunDto>? Runs { get; set; }
+    [PersistentState] public List<ReportSummaryDto>? Reports { get; set; }
+
+    private IReadOnlyList<RenderRunDto> _runs = [];
+    private IReadOnlyList<RenderRunDto> _visibleRuns = [];
+    private IReadOnlyList<string> _reportFilterOptions = [];
+    private IReadOnlyDictionary<string, string> _reportNames = new Dictionary<string, string>(StringComparer.Ordinal);
+    private string _reportFilter = string.Empty;
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        Runs ??= [.. await Client.ListRenderRunsAsync(Session.CurrentTenantId)];
+        Reports ??= [.. await Client.SearchReportsAsync(new ReportSearchRequestDto { TenantId = Session.CurrentTenantId })];
+        _runs = Runs;
+        _reportNames = (Reports ?? []).ToDictionary(report => report.ReportId, report => report.Name, StringComparer.Ordinal);
+        _reportFilterOptions = [.. _runs.Select(run => run.ReportId).Distinct(StringComparer.Ordinal).OrderBy(id => id, StringComparer.Ordinal)];
+        ApplyFilter();
+    }
+
+    private void HandleFilterChange(ChangeEventArgs args)
+    {
+        _reportFilter = args.Value?.ToString() ?? string.Empty;
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+        => _visibleRuns = string.IsNullOrEmpty(_reportFilter)
+            ? _runs
+            : [.. _runs.Where(run => string.Equals(run.ReportId, _reportFilter, StringComparison.Ordinal))];
+
+    private string ReportName(string reportId)
+        => _reportNames.TryGetValue(reportId, out var name) ? name : reportId;
+
+    private static bool IsSuccess(RenderRunDto run)
+        => string.Equals(run.Outcome, "Succeeded", StringComparison.OrdinalIgnoreCase);
+
+    private static string FormatBytes(long? bytes)
+        => bytes is { } value ? $"{value:N0} B" : "—";
+}

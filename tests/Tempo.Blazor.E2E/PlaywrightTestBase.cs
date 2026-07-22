@@ -19,6 +19,14 @@ public abstract class PlaywrightTestBase
     private static readonly List<DemoHostProcess> DemoHostProcesses = [];
     private static bool _demoHostsInitialized;
 
+    /// <summary>
+    /// Additional teardown callbacks run by the single assembly cleanup. Derived lanes that self-host
+    /// extra processes (e.g. the report-server Api/Web in <see cref="ReportServerE2ETestBase"/>) register
+    /// a killer here so a normal test run tears them down deterministically — MSTest permits only one
+    /// <c>[AssemblyCleanup]</c> per assembly, so this is how other bases hook into it.
+    /// </summary>
+    internal static readonly List<Action> AdditionalAssemblyCleanups = [];
+
     // Per-test list of contexts created via CreatePageAsync / CreateContextAsync.
     // They MUST be disposed after each test, otherwise the shared static browser
     // process accumulates WebSocket/SignalR connections, service workers, and
@@ -86,6 +94,14 @@ public abstract class PlaywrightTestBase
 
             DemoHostProcesses.Clear();
             _demoHostsInitialized = false;
+
+            foreach (var cleanup in AdditionalAssemblyCleanups)
+            {
+                try { cleanup(); }
+                catch { /* best-effort teardown of extra self-hosted processes */ }
+            }
+
+            AdditionalAssemblyCleanups.Clear();
         }
         finally
         {
@@ -406,6 +422,12 @@ public abstract class PlaywrightTestBase
         startInfo.ArgumentList.Add(projectPath);
         startInfo.ArgumentList.Add("--launch-profile");
         startInfo.ArgumentList.Add(launchProfile);
+        // The run build must not fail on the repo-wide NuGet audit warning-as-error (NU1902, AngleSharp
+        // via bUnit/AngleSharp) or other warnings-as-errors — we only need the host to launch. Without
+        // these the host dies during build and every dependent lane fails in ClassInitialize with
+        // "…exited before it became ready". Mirrors ReportServerE2ETestBase.StartHostProcess.
+        startInfo.ArgumentList.Add("--property:NuGetAudit=false");
+        startInfo.ArgumentList.Add("--property:TreatWarningsAsErrors=false");
         startInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
         startInfo.Environment["DOTNET_ENVIRONMENT"] = "Development";
 

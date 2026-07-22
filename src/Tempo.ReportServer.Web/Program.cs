@@ -1,14 +1,30 @@
-using Tempo.Blazor.EmailTemplates.Abstractions;
-using Tempo.Blazor.EmailTemplates.Abstractions.Contracts;
-using Tempo.Blazor.Reporting.Configuration;
 using Tempo.ReportServer.Api.Security;
 using Tempo.ReportServer.Web;
+using Tempo.ReportServer.Web.Client;
 using Tempo.ReportServer.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+var razorComponents = builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents()
+    .AddInteractiveWebAssemblyComponents();
+
+// Cookie + OpenID Connect (Keycloak) BFF authentication with a server-side token store.
+// No-op when "Authentication:Oidc" is unconfigured, so the self-contained demo keeps running.
+var oidcOptions = builder.AddReportServerWebAuthentication();
+
+// Serialize the host's authentication state into the WASM runtime so [Authorize]/AuthorizeView
+// resolve identically in both legs of InteractiveAuto (claims only — never tokens). Only when auth
+// is configured, since demo mode has no AuthenticationStateProvider to serialize.
+if (oidcOptions.IsConfigured)
+{
+    razorComponents.AddAuthenticationStateSerialization();
+}
+
+// The typed ITempoReportServerClient is registered symmetrically for both runtimes in
+// AddCommonServices (base URL from "Api:BaseUrl"). It attaches the bearer token per request from
+// the scoped IAccessTokenProvider (ServerAccessTokenProvider here) via ApiClientBase — never through
+// a server-side DelegatingHandler, whose cached factory scope could leak tokens across users.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
@@ -18,22 +34,12 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod()
             .AllowAnyHeader());
 });
-builder.Services.AddTempoBlazorReporting();
-builder.Services.AddTempoEmailTemplateEngine();
+// Client-safe UI/data services shared with the WebAssembly leg (symmetric DI).
+builder.Services.AddCommonServices(builder.Configuration);
+
+// Host-only (server) services: report-server security + demo API key store.
 builder.Services.AddSingleton<IReportApiKeyStore, DemoReportApiKeyStore>();
 builder.Services.AddReportServerSecurity();
-builder.Services.AddSingleton<DemoReportSourceFactory>();
-builder.Services.AddSingleton<ReportServerCatalogStore>();
-builder.Services.AddSingleton<IReportScheduleClock, SystemReportScheduleClock>();
-builder.Services.AddSingleton<ReportScheduleStore>();
-builder.Services.AddSingleton<ReportRenderJobQueue>();
-builder.Services.AddSingleton<ReportEmailOutbox>();
-builder.Services.AddSingleton<ReportEmailTemplateGalleryStore>();
-builder.Services.AddSingleton<IEmailTemplateStore>(sp => sp.GetRequiredService<ReportEmailTemplateGalleryStore>());
-builder.Services.AddSingleton<IEmailSender, Smtp4DevEmailSender>();
-builder.Services.AddSingleton<IReportScheduledDeliveryService, ReportEmailDeliveryService>();
-builder.Services.AddSingleton<ReportScheduleWorker>();
-builder.Services.AddScoped<ReportServerSessionState>();
 
 var app = builder.Build();
 
@@ -46,12 +52,58 @@ UseProjectStaticAssets(app, "Tempo.Blazor.Reporting");
 UseProjectStaticAssets(app, "Tempo.Blazor");
 app.UseStaticFiles();
 app.UseCors("ReportServerEmbeddingDemo");
+if (oidcOptions.IsConfigured)
+{
+    app.UseAuthentication();
+    app.UseAuthorization();
+}
 app.UseAntiforgery();
 
 app.MapReportServerDemoApi();
+if (oidcOptions.IsConfigured)
+{
+    // Same-origin, cookie-authenticated token hand-out for the WASM leg (WasmAccessTokenProvider).
+    // NOT a data proxy and NOT CORS-enabled: a cross-site script cannot read the response. The
+    // refresh token never leaves the server — only a short-lived access token + its expiry.
+    app.MapReportServerAuthTokenEndpoint();
+
+    app.MapGet("/account/login", (string? returnUrl) => Results.Challenge(
+        new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = returnUrl ?? "/" },
+        [Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectDefaults.AuthenticationScheme]));
+    // Sign-out clears the BFF cookie and redirects to the Keycloak end-session endpoint. Exposed as
+    // both POST (form submit) and GET (the shell's sign-out link uses a full browser navigation from an
+    // interactive component, where an antiforgery-token form is not available in the WASM leg).
+    app.MapPost("/account/logout", () => Results.SignOut(
+        new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = "/" },
+        [
+            Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme,
+            Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectDefaults.AuthenticationScheme,
+        ]));
+    app.MapGet("/account/logout", (HttpContext httpContext) =>
+    {
+        // Reject cross-site GET triggers (logout CSRF, link prefetch, URL scanners). Browsers send
+        // Sec-Fetch-Site: same-origin for same-site navigations and "none" for user-typed/bookmarked
+        // ones; a cross-site <img>/prefetch sends "cross-site" (or "same-site" from a sibling origin).
+        var fetchSite = httpContext.Request.Headers["Sec-Fetch-Site"].ToString();
+        if (string.Equals(fetchSite, "cross-site", StringComparison.Ordinal) ||
+            string.Equals(fetchSite, "same-site", StringComparison.Ordinal))
+        {
+            return Results.Redirect("/");
+        }
+
+        return Results.SignOut(
+            new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = "/" },
+            [
+                Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme,
+                Microsoft.AspNetCore.Authentication.OpenIdConnect.OpenIdConnectDefaults.AuthenticationScheme,
+            ]);
+    });
+}
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+    .AddInteractiveServerRenderMode()
+    .AddInteractiveWebAssemblyRenderMode()
+    .AddAdditionalAssemblies(typeof(Tempo.ReportServer.Web.Client._Imports).Assembly);
 
 app.Run();
 

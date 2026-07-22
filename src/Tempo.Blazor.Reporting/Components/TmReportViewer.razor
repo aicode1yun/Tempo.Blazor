@@ -101,6 +101,21 @@
     <div class="tm-report-viewer__surface" data-testid="@TestId("tm-report-surface")">
         <div class="tm-report-viewer__canvas-wrap @(_snapshot is null ? "tm-report-viewer__canvas-wrap--hidden" : null)" data-testid="@TestId("tm-report-canvas-wrap")">
             <canvas @ref="_canvas" class="tm-report-viewer__canvas" data-testid="@TestId("tm-report-viewer-canvas")"></canvas>
+            @if (CurrentPageDrillThroughRegions.Count > 0)
+            {
+                <div class="tm-report-viewer__drillthrough-layer" style="@DrillThroughLayerStyle()" data-testid="@TestId("tm-report-drillthrough-layer")">
+                    @foreach (var region in CurrentPageDrillThroughRegions)
+                    {
+                        <button type="button"
+                                class="tm-report-viewer__drillthrough"
+                                data-testid="@TestId("drillthrough-target")"
+                                style="@RegionStyle(region)"
+                                title="@(region.Label ?? Loc["TmReportViewer_DrillThrough"])"
+                                aria-label="@(region.Label ?? Loc["TmReportViewer_DrillThrough"])"
+                                @onclick="() => HandleDrillThroughAsync(region)"></button>
+                    }
+                </div>
+            }
         </div>
 
         @if (_isLoading)
@@ -144,6 +159,7 @@
     private IReadOnlyDictionary<string, ReportParameterValue> _parameterValues =
         new Dictionary<string, ReportParameterValue>(StringComparer.Ordinal);
     private ReportViewerZoom _zoom = new();
+    private IReadOnlyList<ReportDrillThroughRegion> _drillThroughRegions = [];
     private string? _interactionToken;
     private string? _error;
     private bool _isLoading;
@@ -184,6 +200,12 @@
     /// <summary>Fired after a snapshot is rendered.</summary>
     [Parameter] public EventCallback<ReportSnapshot> SnapshotChanged { get; set; }
 
+    /// <summary>
+    /// Fired when a drill-through region is clicked, carrying the resolved target report reference and the
+    /// parameter values mapped from the clicked context. The host decides the actual navigation.
+    /// </summary>
+    [Parameter] public EventCallback<ReportDrillThroughResolution> OnDrillThrough { get; set; }
+
     /// <summary>Fired after a PDF export is produced.</summary>
     [Parameter] public EventCallback<ReportViewerExportResult> PdfExported { get; set; }
 
@@ -205,6 +227,30 @@
     private bool CanGoNext => _snapshot is not null && !_isLoading && CurrentPage < PageCount;
 
     private string ZoomValue => _zoom.Mode == ReportViewerZoomMode.Percent ? _zoom.Percent.ToString(System.Globalization.CultureInfo.InvariantCulture) : _zoom.Mode.ToString();
+
+    private IReadOnlyList<ReportDrillThroughRegion> CurrentPageDrillThroughRegions
+        => _drillThroughRegions.Count == 0
+            ? []
+            : _drillThroughRegions.Where(region => region.PageNumber == CurrentPage).ToList();
+
+    private static string RegionStyle(ReportDrillThroughRegion region)
+        => string.Create(
+            System.Globalization.CultureInfo.InvariantCulture,
+            $"left:{region.X}px;top:{region.Y}px;width:{region.Width}px;height:{region.Height}px");
+
+    // Scales/positions the overlay to match the zoomed, centered canvas. Percent zoom aligns exactly.
+    // Fit-width/Fit-page scale is computed in JS from the live viewport, so under those modes the overlay
+    // keeps the unscaled box — a documented residual drift tracked as a post-C6 follow-up.
+    private string DrillThroughLayerStyle()
+    {
+        var page = _snapshot?.Pages.ElementAtOrDefault(CurrentPage - 1);
+        var width = page?.Width ?? 0;
+        var height = page?.Height ?? 0;
+        var scale = _zoom.Mode == ReportViewerZoomMode.Percent ? _zoom.Percent / 100.0 : 1.0;
+        return string.Create(
+            System.Globalization.CultureInfo.InvariantCulture,
+            $"width:{width}px;height:{height}px;transform:translateX(-50%) scale({scale})");
+    }
 
     private string CssClass
         => string.IsNullOrWhiteSpace(Class)
@@ -231,6 +277,7 @@
         _loadedSource = ReportSource;
         _snapshot = null;
         _metadata = null;
+        _drillThroughRegions = [];
         _currentPage = 1;
         _error = null;
 
@@ -281,6 +328,7 @@
             }
 
             _interactionToken = result.InteractionToken ?? _interactionToken;
+            _drillThroughRegions = result.DrillThroughRegions ?? [];
             _currentPage = Math.Clamp(_currentPage, 1, PageCount);
             await SnapshotChanged.InvokeAsync(_snapshot);
         }
@@ -288,6 +336,7 @@
         {
             _error = exception.Message;
             _snapshot = null;
+            _drillThroughRegions = [];
         }
         finally
         {
@@ -295,6 +344,13 @@
         }
 
         await UpdateCanvasAsync();
+    }
+
+    /// <summary>Evaluates a drill-through region's parameter mappings and raises <see cref="OnDrillThrough"/>.</summary>
+    private async Task HandleDrillThroughAsync(ReportDrillThroughRegion region)
+    {
+        var resolution = ReportDrillThroughEvaluator.Resolve(region.Action, region.Context, _parameterValues);
+        await OnDrillThrough.InvokeAsync(resolution);
     }
 
     /// <summary>Toggles a stateless interaction key and re-renders the report.</summary>

@@ -1,0 +1,89 @@
+@namespace Tempo.ReportServer.Web.Pages
+@page "/"
+@page "/login"
+@inject NavigationManager Navigation
+@inject IPortalIdentity Session
+
+<main class="rs-login" data-testid="f12-login-page">
+    <section class="rs-login__panel">
+        <div class="rs-login__brand">
+            <TmIcon Name="@IconNames.BarChart2" Size="IconSize.Lg" />
+            <span>Tempo Report Server</span>
+        </div>
+        <h1>@Loc["ReportServer_Login_SignIn"]</h1>
+        <p>@Loc["ReportServer_Login_Subtitle"]</p>
+
+        <label class="rs-field">
+            <span>@Loc["ReportServer_Field_User"]</span>
+            <input data-testid="login-user" value="@_userName" @oninput="HandleUserName" />
+        </label>
+
+        <label class="rs-field">
+            <span>@Loc["ReportServer_Tenant"]</span>
+            <select data-testid="login-tenant" value="@Session.CurrentTenantId" @onchange="SwitchTenant">
+                @foreach (var tenant in Session.Tenants)
+                {
+                    <option value="@tenant.Id">@tenant.Name</option>
+                }
+            </select>
+        </label>
+
+        <TmButton Variant="ButtonVariant.Primary"
+                  Size="ButtonSize.Lg"
+                  Icon="@IconNames.LogIn"
+                  data-testid="login-submit"
+                  Disabled="@(!_interactiveReady)"
+                  OnClick="SignIn">
+            @Loc["ReportServer_Login_SignIn"]
+        </TmButton>
+        @if (_interactiveReady)
+        {
+            <span class="rs-ready-marker" data-testid="login-interactive-ready">@Loc["ReportServer_Login_Ready"]</span>
+        }
+    </section>
+</main>
+
+@code {
+    private string _userName = "Pavel Author";
+    private bool _interactiveReady;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        // Auth mode: the seeded demo login page is not used. Authenticated users go to the catalog;
+        // anonymous users are sent to the OIDC challenge. Demo mode keeps the seeded sign-in form.
+        if (Session.UsesExternalAuthNavigation)
+        {
+            if (Session.IsAuthenticated)
+            {
+                Navigation.NavigateTo("/reports");
+            }
+            else
+            {
+                Navigation.NavigateTo(Session.SignInPath, forceLoad: true);
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _interactiveReady = true;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleUserName(ChangeEventArgs args)
+        => _userName = args.Value?.ToString() ?? string.Empty;
+
+    private void SwitchTenant(ChangeEventArgs args)
+        => Session.SwitchTenant(args.Value?.ToString() ?? Session.CurrentTenantId);
+
+    private void SignIn()
+    {
+        Session.SignIn(_userName);
+        Navigation.NavigateTo("/reports");
+    }
+}

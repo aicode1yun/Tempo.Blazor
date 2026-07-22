@@ -1,0 +1,95 @@
+@namespace Tempo.ReportServer.Web.Pages
+@page "/designer/{ReportId?}"
+@using Tempo.Reporting.Abstractions.Definitions
+@inject IPortalIdentity Session
+@inject ITempoReportServerClient Client
+@inject DemoReportSourceFactory SourceFactory
+
+<ReportServerShell Title="@Loc["ReportServer_Designer_Title"]" ActiveSection="designer">
+    <div class="rs-page rs-designer-page" data-testid="f13-designer-page">
+        <div class="rs-page__heading">
+            <div>
+                <p class="rs-kicker">@(_resolved?.FolderId ?? "/finance")</p>
+                <h2>@(_definition?.Name ?? Loc["ReportServer_Designer_Title"])</h2>
+            </div>
+            <div class="rs-page__stats">
+                <span>@Loc["ReportServer_Designer_DatasetCount", _definition?.DataSets.Count ?? 0]</span>
+                <span>@(_resolved is null ? Loc["ReportServer_Designer_DraftReport"] : Loc["ReportServer_Designer_RevisionN", _resolved.RevisionNumber])</span>
+            </div>
+        </div>
+
+        @if (_definition is null)
+        {
+            <div class="rs-empty" data-testid="designer-not-found">
+                <TmIcon Name="@IconNames.AlertTriangle" Size="IconSize.Md" />
+                <strong>@Loc["ReportServer_ReportNotFound"]</strong>
+                <span>@Loc["ReportServer_Designer_NotFoundHint"]</span>
+            </div>
+        }
+        else
+        {
+            <TmReportDesigner Definition="@_definition"
+                              DefinitionChanged="HandleDefinitionChanged"
+                              Saved="HandleSaved" />
+        }
+
+        @if (_lastSave is not null)
+        {
+            <div class="rs-status" data-testid="designer-save-status">
+                <TmIcon Name="@IconNames.Check" Size="IconSize.Sm" />
+                <span>@Loc["ReportServer_Designer_SaveStatus", _lastSave.Kind, _lastSave.Revision]</span>
+            </div>
+        }
+    </div>
+</ReportServerShell>
+
+@code {
+    /// <summary>Catalog report id to open in the designer.</summary>
+    [Parameter] public string? ReportId { get; set; }
+
+    private ReportResolveResultDto? _resolved;
+    private ReportDefinition? _definition;
+    private ReportDesignerSaveEventArgs? _lastSave;
+    private string? _loadedReportId;
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        var reportId = string.IsNullOrWhiteSpace(ReportId) ? "sales-register" : ReportId;
+        if (string.Equals(_loadedReportId, reportId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _loadedReportId = reportId;
+        _lastSave = null;
+        try
+        {
+            // Resolution goes through the typed client (/resolve). The editable definition comes from the
+            // REAL resolved report (its DefinitionJson) so the designer always shows the actual report —
+            // its name, bands and fields. Only the hand-authored demo seeds (whose stored definition is a
+            // placeholder in the self-contained demo) fall back to the rich in-process demo definition.
+            _resolved = await Client.ResolveReportAsync(Session.CurrentTenantId, reportId: reportId);
+            _definition = DemoReportSourceFactory.TryParseDefinition(_resolved.DefinitionJson)
+                ?? (SourceFactory.IsKnownDemoReport(_resolved.ReportId)
+                    ? SourceFactory.CreateReportDefinition(_resolved.ReportId)
+                    : new ReportDefinition { Id = _resolved.ReportId, Name = _resolved.Name });
+        }
+        catch (KeyNotFoundException)
+        {
+            // A 404 from /resolve surfaces as KeyNotFoundException (the typed client translates it); render
+            // the graceful "not found" state instead of letting an exception reach the error page.
+            _resolved = null;
+            _definition = null;
+        }
+    }
+
+    private void HandleDefinitionChanged(ReportDefinition definition)
+        => _definition = definition;
+
+    private void HandleSaved(ReportDesignerSaveEventArgs args)
+    {
+        _definition = args.Definition;
+        _lastSave = args;
+    }
+}

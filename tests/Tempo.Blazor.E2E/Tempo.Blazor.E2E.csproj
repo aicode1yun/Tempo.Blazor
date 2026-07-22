@@ -13,9 +13,12 @@
   <ItemGroup>
     <PackageReference Include="Deque.AxeCore.Playwright" Version="4.11.3" />
     <PackageReference Include="FluentAssertions" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="Microsoft.Playwright" Version="1.51.0" />
     <PackageReference Include="MSTest" Version="3.8.3" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,6 +26,8 @@
     <ProjectReference Include="..\..\src\Tempo.Reporting.Engine\Tempo.Reporting.Engine.csproj" />
     <ProjectReference Include="..\..\src\Tempo.Blazor.Wireframe\Tempo.Blazor.Wireframe.csproj" />
     <ProjectReference Include="..\..\src\Tempo.Blazor.DataTableXlsx\Tempo.Blazor.DataTableXlsx.csproj" />
+    <!-- Report Server E2E lane: ReportServerDbContext + catalog DTOs for direct DB assertions. -->
+    <ProjectReference Include="..\..\src\Tempo.ReportServer.Api\Tempo.ReportServer.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>

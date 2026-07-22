@@ -1,25 +1,27 @@
 #pragma warning disable MA0048
 
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Tempo.Reporting.Abstractions.Auth;
 
 namespace Tempo.Reporting.Abstractions.Dtos;
 
-/// <summary>Default HTTP implementation of <see cref="ITempoReportServerClient"/>.</summary>
-public sealed class TempoReportServerClient : ITempoReportServerClient
+/// <summary>
+/// Default HTTP implementation of <see cref="ITempoReportServerClient"/>. Derives from
+/// <see cref="ApiClientBase"/> so every call attaches the current user's bearer token per request
+/// (from the scoped <see cref="IAccessTokenProvider"/>) and retries once after a 401 with a forced
+/// token refresh.
+/// </summary>
+public sealed class TempoReportServerClient : ApiClientBase, ITempoReportServerClient
 {
-    private readonly HttpClient _httpClient;
-    private readonly IReportServerTokenProvider? _tokenProvider;
     private readonly string _basePath;
 
     /// <summary>Creates a typed report server client.</summary>
     public TempoReportServerClient(
         HttpClient httpClient,
-        IReportServerTokenProvider? tokenProvider = null,
+        IAccessTokenProvider? accessTokenProvider = null,
         string basePath = "api")
+        : base(httpClient, accessTokenProvider)
     {
-        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        _tokenProvider = tokenProvider;
         _basePath = string.IsNullOrWhiteSpace(basePath) ? "api" : basePath.Trim('/');
     }
 
@@ -240,16 +242,291 @@ public sealed class TempoReportServerClient : ITempoReportServerClient
             $"{_basePath}/datasources/{Uri.EscapeDataString(dataSourceId)}/preview?tenantId={Uri.EscapeDataString(tenantId)}&top={top}",
             cancellationToken).ConfigureAwait(false) ?? new ReportDataSourcePreviewDto();
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ReportScheduleDto>> GetSchedulesAsync(
+        string tenantId,
+        CancellationToken cancellationToken = default)
+        => await GetAsync<List<ReportScheduleDto>>(
+            $"{_basePath}/schedules?tenantId={Uri.EscapeDataString(tenantId)}",
+            cancellationToken).ConfigureAwait(false) ?? [];
+
+    /// <inheritdoc />
+    public async Task<ReportScheduleDto?> GetScheduleAsync(
+        string tenantId,
+        string scheduleId,
+        CancellationToken cancellationToken = default)
+        => await GetAsync<ReportScheduleDto>(
+            $"{_basePath}/schedules/{Uri.EscapeDataString(scheduleId)}?tenantId={Uri.EscapeDataString(tenantId)}",
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<ReportScheduleDto> UpsertScheduleAsync(
+        UpsertReportScheduleRequestDto request,
+        CancellationToken cancellationToken = default)
+        => await PostAsync<UpsertReportScheduleRequestDto, ReportScheduleDto>(
+            $"{_basePath}/schedules",
+            request,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task SetScheduleEnabledAsync(
+        string scheduleId,
+        SetReportScheduleEnabledRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        using var response = await SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Post, $"{_basePath}/schedules/{Uri.EscapeDataString(scheduleId)}/enabled")
+            {
+                Content = JsonContent.Create(request),
+            },
+            cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteScheduleAsync(string scheduleId, string tenantId, CancellationToken cancellationToken = default)
+        => await DeleteAsync(
+            $"{_basePath}/schedules/{Uri.EscapeDataString(scheduleId)}?tenantId={Uri.EscapeDataString(tenantId)}",
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ReportScheduleRunDto>> GetScheduleRunsAsync(
+        string tenantId,
+        string scheduleId,
+        int max = 20,
+        CancellationToken cancellationToken = default)
+        => await GetAsync<List<ReportScheduleRunDto>>(
+            $"{_basePath}/schedules/{Uri.EscapeDataString(scheduleId)}/runs?tenantId={Uri.EscapeDataString(tenantId)}&max={max}",
+            cancellationToken).ConfigureAwait(false) ?? [];
+
+    /// <inheritdoc />
+    public async Task<CreateReportApiKeyResultDto> CreateApiKeyAsync(
+        CreateReportApiKeyRequestDto request,
+        CancellationToken cancellationToken = default)
+        => await PostAsync<CreateReportApiKeyRequestDto, CreateReportApiKeyResultDto>(
+            $"{_basePath}/apikeys",
+            request,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ReportApiKeyDto>> GetApiKeysAsync(
+        string tenantId,
+        CancellationToken cancellationToken = default)
+        => await GetAsync<List<ReportApiKeyDto>>(
+            $"{_basePath}/apikeys?tenantId={Uri.EscapeDataString(tenantId)}",
+            cancellationToken).ConfigureAwait(false) ?? [];
+
+    /// <inheritdoc />
+    public async Task<CreateReportApiKeyResultDto> RotateApiKeyAsync(
+        string keyId,
+        RotateReportApiKeyRequestDto request,
+        CancellationToken cancellationToken = default)
+        => await PostAsync<RotateReportApiKeyRequestDto, CreateReportApiKeyResultDto>(
+            $"{_basePath}/apikeys/{Uri.EscapeDataString(keyId)}/rotate",
+            request,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task RevokeApiKeyAsync(
+        string keyId,
+        RevokeReportApiKeyRequestDto request,
+        CancellationToken cancellationToken = default)
+        => await PostNoResponseAsync(
+            $"{_basePath}/apikeys/{Uri.EscapeDataString(keyId)}/revoke",
+            request,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ReportAuditEventDto>> QueryAuditAsync(
+        string tenantId,
+        ReportAuditActionDto? action = null,
+        ReportAuditOutcomeDto? outcome = null,
+        string? actorId = null,
+        string? resourceId = null,
+        DateTimeOffset? from = null,
+        DateTimeOffset? to = null,
+        int? take = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string> { $"tenantId={Uri.EscapeDataString(tenantId)}" };
+        if (action is { } a)
+        {
+            query.Add($"action={a}");
+        }
+
+        if (outcome is { } o)
+        {
+            query.Add($"outcome={o}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(actorId))
+        {
+            query.Add($"actorId={Uri.EscapeDataString(actorId)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(resourceId))
+        {
+            query.Add($"resourceId={Uri.EscapeDataString(resourceId)}");
+        }
+
+        if (from is { } f)
+        {
+            query.Add($"from={Uri.EscapeDataString(f.ToString("O"))}");
+        }
+
+        if (to is { } t)
+        {
+            query.Add($"to={Uri.EscapeDataString(t.ToString("O"))}");
+        }
+
+        if (take is { } take2)
+        {
+            query.Add($"take={take2}");
+        }
+
+        return await GetAsync<List<ReportAuditEventDto>>(
+            $"{_basePath}/audit?{string.Join('&', query)}",
+            cancellationToken).ConfigureAwait(false) ?? [];
+    }
+
+    /// <inheritdoc />
+    public async Task<ReportFolderAclEntryDto> GrantPermissionAsync(
+        GrantReportPermissionRequestDto request,
+        CancellationToken cancellationToken = default)
+        => await PostAsync<GrantReportPermissionRequestDto, ReportFolderAclEntryDto>(
+            $"{_basePath}/permissions",
+            request,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ReportFolderAclEntryDto>> GetFolderPermissionsAsync(
+        string tenantId,
+        string folderId,
+        string? subjectId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = $"tenantId={Uri.EscapeDataString(tenantId)}&folderId={Uri.EscapeDataString(folderId)}";
+        if (!string.IsNullOrWhiteSpace(subjectId))
+        {
+            query += $"&subjectId={Uri.EscapeDataString(subjectId)}";
+        }
+
+        return await GetAsync<List<ReportFolderAclEntryDto>>(
+            $"{_basePath}/permissions?{query}",
+            cancellationToken).ConfigureAwait(false) ?? [];
+    }
+
+    /// <inheritdoc />
+    public async Task RevokePermissionAsync(
+        RevokeReportPermissionRequestDto request,
+        CancellationToken cancellationToken = default)
+        => await PostNoResponseAsync(
+            $"{_basePath}/permissions/revoke",
+            request,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<ReportResolveResultDto> ResolveReportAsync(
+        string tenantId,
+        string? reportId = null,
+        string? path = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = $"tenantId={Uri.EscapeDataString(tenantId)}";
+        if (!string.IsNullOrWhiteSpace(reportId))
+        {
+            query += $"&reportId={Uri.EscapeDataString(reportId)}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            query += $"&path={Uri.EscapeDataString(path)}";
+        }
+
+        // A 404 (unknown report/path) is translated into KeyNotFoundException so callers (the portal
+        // viewer/designer pages) render their graceful "report not found" state instead of an unhandled
+        // HttpRequestException from EnsureSuccessStatusCode reaching the error page.
+        using var response = await SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Get, $"{_basePath}/resolve?{query}"),
+            cancellationToken).ConfigureAwait(false);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            throw new KeyNotFoundException($"No report resolved for reportId='{reportId}' path='{path}'.");
+        }
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ReportResolveResultDto>(cancellationToken).ConfigureAwait(false)
+            ?? throw new InvalidOperationException("Resolve response was empty.");
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ReportFavoriteDto>> ListFavoritesAsync(
+        string tenantId,
+        CancellationToken cancellationToken = default)
+        => await GetAsync<List<ReportFavoriteDto>>(
+            $"{_basePath}/favorites?tenantId={Uri.EscapeDataString(tenantId)}",
+            cancellationToken).ConfigureAwait(false) ?? [];
+
+    /// <inheritdoc />
+    public async Task<ReportFavoriteDto> AddFavoriteAsync(
+        AddReportFavoriteRequestDto request,
+        CancellationToken cancellationToken = default)
+        => await PostAsync<AddReportFavoriteRequestDto, ReportFavoriteDto>(
+            $"{_basePath}/favorites",
+            request,
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task RemoveFavoriteAsync(
+        string tenantId,
+        string reportId,
+        CancellationToken cancellationToken = default)
+        => await DeleteAsync(
+            $"{_basePath}/favorites/{Uri.EscapeDataString(reportId)}?tenantId={Uri.EscapeDataString(tenantId)}",
+            cancellationToken).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<RenderRunDto>> ListRenderRunsAsync(
+        string tenantId,
+        string? reportId = null,
+        int? max = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = $"tenantId={Uri.EscapeDataString(tenantId)}";
+        if (!string.IsNullOrWhiteSpace(reportId))
+        {
+            query += $"&reportId={Uri.EscapeDataString(reportId)}";
+        }
+
+        if (max is { } m)
+        {
+            query += $"&max={m}";
+        }
+
+        return await GetAsync<List<RenderRunDto>>(
+            $"{_basePath}/render/runs?{query}",
+            cancellationToken).ConfigureAwait(false) ?? [];
+    }
+
+    private async Task PostNoResponseAsync<TRequest>(
+        string uri,
+        TRequest request,
+        CancellationToken cancellationToken)
+    {
+        using var response = await SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Post, uri) { Content = JsonContent.Create(request) },
+            cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+    }
+
     private async Task<TResponse> PostAsync<TRequest, TResponse>(
         string uri,
         TRequest request,
         CancellationToken cancellationToken)
     {
-        using var message = new HttpRequestMessage(HttpMethod.Post, uri)
-        {
-            Content = JsonContent.Create(request),
-        };
-        using var response = await SendAsync(message, cancellationToken).ConfigureAwait(false);
+        using var response = await SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Post, uri) { Content = JsonContent.Create(request) },
+            cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken).ConfigureAwait(false) ??
             throw new InvalidOperationException("Report server response was empty.");
@@ -260,11 +537,9 @@ public sealed class TempoReportServerClient : ITempoReportServerClient
         TRequest request,
         CancellationToken cancellationToken)
     {
-        using var message = new HttpRequestMessage(HttpMethod.Put, uri)
-        {
-            Content = JsonContent.Create(request),
-        };
-        using var response = await SendAsync(message, cancellationToken).ConfigureAwait(false);
+        using var response = await SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Put, uri) { Content = JsonContent.Create(request) },
+            cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken).ConfigureAwait(false) ??
             throw new InvalidOperationException("Report server response was empty.");
@@ -272,30 +547,19 @@ public sealed class TempoReportServerClient : ITempoReportServerClient
 
     private async Task DeleteAsync(string uri, CancellationToken cancellationToken)
     {
-        using var message = new HttpRequestMessage(HttpMethod.Delete, uri);
-        using var response = await SendAsync(message, cancellationToken).ConfigureAwait(false);
+        using var response = await SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Delete, uri),
+            cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
     }
 
     private async Task<TResponse?> GetAsync<TResponse>(string uri, CancellationToken cancellationToken)
     {
-        using var message = new HttpRequestMessage(HttpMethod.Get, uri);
-        using var response = await SendAsync(message, cancellationToken).ConfigureAwait(false);
+        using var response = await SendAsync(
+            () => new HttpRequestMessage(HttpMethod.Get, uri),
+            cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken).ConfigureAwait(false);
-    }
-
-    private async Task<HttpResponseMessage> SendAsync(HttpRequestMessage message, CancellationToken cancellationToken)
-    {
-        var token = _tokenProvider is null
-            ? null
-            : await _tokenProvider.GetTokenAsync(cancellationToken).ConfigureAwait(false);
-        if (!string.IsNullOrWhiteSpace(token))
-        {
-            message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        }
-
-        return await _httpClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
     }
 }
 

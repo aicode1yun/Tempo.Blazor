@@ -1,0 +1,41 @@
+{
+  "S2_catalog_render_download": {
+    "pass": true,
+    "folderId": "folder_e23689bfa1db46c68a43fa6c29eb7437",
+    "reportId": "report_b12e53f8e91c41e3ad36b265aeb97b49",
+    "dbFolderRows": "1",
+    "dbReportRows": "1",
+    "pdfBytes": 536276,
+    "pdfSig": "%PDF",
+    "pdf": "Z:/e2e-artifacts/s2-report-1784349519133.pdf"
+  },
+  "S3_apikey_lifecycle": {
+    "pass": true,
+    "keyId": "rk_483fc676d880487b9f4dd162af7520c4",
+    "dbKeyRows": "1",
+    "readViaKeyStatus": 200,
+    "renderViaKey": {
+      "status": 200,
+      "pdf": true
+    },
+    "dbAuditRows": "0",
+    "auditSample": "",
+    "revokeStatus": 204,
+    "afterRevokeStatus": 401,
+    "expected401": true,
+    "dbRevokedRows": "1"
+  },
+  "S5_schedule_email": {
+    "pass": true,
+    "scheduleId": "e2e-s5-1784349519133",
+    "recipient": "s5-1784349519133@example.test",
+    "beforeCount": 0,
+    "messageId": "c8fbadea-a6be-45e6-b17d-430c973d9e59",
+    "subject": "Scheduled report: E2E S5 1784349519133",
+    "attachments": [],
+    "hasPdfAttachment": false,
+    "dbScheduleRunRows": "1",
+    "dbRunStatus": "Msg 207, Level 16, State 1, Server WIN-5F7V1OKQ0GO\\SQLEXPRESS, Line 1\r\nInvalid column name 'Message'.",
+    "waitedSec": 35
+  }
+}

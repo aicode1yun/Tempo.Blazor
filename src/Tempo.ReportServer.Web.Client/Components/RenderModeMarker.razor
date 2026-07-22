@@ -1,0 +1,9 @@
+@namespace Tempo.ReportServer.Web.Components
+
+@* Test contract for E2E/render-mode assertions: exposes the active renderer
+   (Static / Server / WebAssembly) and whether the region is interactive. *@
+<div id="render-mode-marker"
+     data-testid="render-mode-marker"
+     data-mode="@RendererInfo.Name"
+     data-interactive="@(RendererInfo.IsInteractive ? "true" : "false")"
+     hidden></div>

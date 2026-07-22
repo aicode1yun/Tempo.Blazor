@@ -37,17 +37,16 @@ public sealed class ReportPermissionResolver : IReportPermissionResolver
         ArgumentNullException.ThrowIfNull(requirement);
         cancellationToken.ThrowIfCancellationRequested();
 
+        // User-side author gate: a user principal without the Author or TenantAdmin realm role cannot
+        // satisfy an author-only requirement, regardless of any folder ACL grant. Machine (API key)
+        // principals have no realm role — their explicit permission scope IS their authority, so they
+        // are governed purely by the permission bits below (base scope & folder ACL), not this gate.
         if (requirement.RequiresAuthorRole &&
             principal.AuthenticationKind == ReportAuthenticationKind.User &&
             !principal.HasRole(ReportServerRole.Author) &&
             !principal.HasRole(ReportServerRole.TenantAdmin))
         {
             return ReportAuthorizationResult.Deny("Author role is required.");
-        }
-
-        if (requirement.RequiresAuthorRole && principal.AuthenticationKind == ReportAuthenticationKind.ApiKey)
-        {
-            return ReportAuthorizationResult.Deny("API keys cannot satisfy author-only requirements.");
         }
 
         var permissions = BasePermissions(principal);

@@ -399,6 +399,79 @@ public sealed record RenderReportResultDto
     public int PageCount { get; init; }
 }
 
+/// <summary>A single user's report favorite, enriched with catalog metadata when available.</summary>
+public sealed record ReportFavoriteDto
+{
+    /// <summary>Tenant identifier.</summary>
+    public string TenantId { get; init; } = string.Empty;
+
+    /// <summary>Favorited report identifier.</summary>
+    public string ReportId { get; init; } = string.Empty;
+
+    /// <summary>Report name, resolved from the catalog when available.</summary>
+    public string? ReportName { get; init; }
+
+    /// <summary>Folder identifier of the report, resolved from the catalog when available.</summary>
+    public string? FolderId { get; init; }
+
+    /// <summary>When the favorite was created.</summary>
+    public DateTimeOffset CreatedAt { get; init; }
+}
+
+/// <summary>Request to add a report to the caller's favorites.</summary>
+public sealed record AddReportFavoriteRequestDto
+{
+    /// <summary>Tenant identifier.</summary>
+    public string TenantId { get; init; } = string.Empty;
+
+    /// <summary>Report identifier to favorite.</summary>
+    public string ReportId { get; init; } = string.Empty;
+}
+
+/// <summary>An ad-hoc (synchronous) render run history record scoped to the requesting actor.</summary>
+public sealed record RenderRunDto
+{
+    /// <summary>Tenant identifier.</summary>
+    public string TenantId { get; init; } = string.Empty;
+
+    /// <summary>Actor that requested the render.</summary>
+    public string ActorId { get; init; } = string.Empty;
+
+    /// <summary>Rendered report identifier.</summary>
+    public string ReportId { get; init; } = string.Empty;
+
+    /// <summary>Requested output format token.</summary>
+    public string Format { get; init; } = string.Empty;
+
+    /// <summary>Render outcome token.</summary>
+    public string Outcome { get; init; } = string.Empty;
+
+    /// <summary>Number of rendered pages, when available.</summary>
+    public int? PageCount { get; init; }
+
+    /// <summary>Rendered payload size in bytes, when available.</summary>
+    public long? ByteSize { get; init; }
+
+    /// <summary>Wall-clock render duration in milliseconds, when available.</summary>
+    public int? DurationMs { get; init; }
+
+    /// <summary>When the run was recorded.</summary>
+    public DateTimeOffset CreatedAt { get; init; }
+
+    /// <summary>Serialized render parameter values.</summary>
+    public string ParametersJson { get; init; } = "{}";
+}
+
+/// <summary>Host version metadata returned by the anonymous <c>GET /version</c> endpoint.</summary>
+public sealed record ReportServerVersionDto
+{
+    /// <summary>Informational (or assembly) version of the running host.</summary>
+    public string Version { get; init; } = string.Empty;
+
+    /// <summary>Simple assembly version (major.minor.build.revision).</summary>
+    public string AssemblyVersion { get; init; } = string.Empty;
+}
+
 /// <summary>Named report data source DTO.</summary>
 public sealed record ReportDataSourceDto
 {
@@ -549,6 +622,72 @@ public interface ITempoReportServerClient
 
     /// <summary>Gets a top-N data source preview.</summary>
     Task<ReportDataSourcePreviewDto> PreviewDataSourceAsync(string dataSourceId, string tenantId, int top = 5, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists report schedules for a tenant.</summary>
+    Task<IReadOnlyList<ReportScheduleDto>> GetSchedulesAsync(string tenantId, CancellationToken cancellationToken = default);
+
+    /// <summary>Gets a single report schedule.</summary>
+    Task<ReportScheduleDto?> GetScheduleAsync(string tenantId, string scheduleId, CancellationToken cancellationToken = default);
+
+    /// <summary>Creates or updates a report schedule.</summary>
+    Task<ReportScheduleDto> UpsertScheduleAsync(UpsertReportScheduleRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Enables or disables a report schedule.</summary>
+    Task SetScheduleEnabledAsync(string scheduleId, SetReportScheduleEnabledRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Deletes a report schedule.</summary>
+    Task DeleteScheduleAsync(string scheduleId, string tenantId, CancellationToken cancellationToken = default);
+
+    /// <summary>Gets the most recent run history for a report schedule.</summary>
+    Task<IReadOnlyList<ReportScheduleRunDto>> GetScheduleRunsAsync(string tenantId, string scheduleId, int max = 20, CancellationToken cancellationToken = default);
+
+    /// <summary>Creates a tenant/application-scoped API key. The result carries the one-time secret.</summary>
+    Task<CreateReportApiKeyResultDto> CreateApiKeyAsync(CreateReportApiKeyRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists API key descriptors for a tenant (never returns secret material).</summary>
+    Task<IReadOnlyList<ReportApiKeyDto>> GetApiKeysAsync(string tenantId, CancellationToken cancellationToken = default);
+
+    /// <summary>Rotates an API key, returning the new one-time secret.</summary>
+    Task<CreateReportApiKeyResultDto> RotateApiKeyAsync(string keyId, RotateReportApiKeyRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Revokes an API key.</summary>
+    Task RevokeApiKeyAsync(string keyId, RevokeReportApiKeyRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Queries the report server audit log with optional filters (most recent first).</summary>
+    Task<IReadOnlyList<ReportAuditEventDto>> QueryAuditAsync(
+        string tenantId,
+        ReportAuditActionDto? action = null,
+        ReportAuditOutcomeDto? outcome = null,
+        string? actorId = null,
+        string? resourceId = null,
+        DateTimeOffset? from = null,
+        DateTimeOffset? to = null,
+        int? take = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Grants (or replaces) an ACL entry for a subject on a folder.</summary>
+    Task<ReportFolderAclEntryDto> GrantPermissionAsync(GrantReportPermissionRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists the ACL entries defined directly on a folder (optionally filtered by subject).</summary>
+    Task<IReadOnlyList<ReportFolderAclEntryDto>> GetFolderPermissionsAsync(string tenantId, string folderId, string? subjectId = null, CancellationToken cancellationToken = default);
+
+    /// <summary>Revokes a subject's ACL grant on a folder.</summary>
+    Task RevokePermissionAsync(RevokeReportPermissionRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Resolves a catalog report (by id or by path) for the viewer, with its current revision.</summary>
+    Task<ReportResolveResultDto> ResolveReportAsync(string tenantId, string? reportId = null, string? path = null, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists the calling user's own report favorites within a tenant.</summary>
+    Task<IReadOnlyList<ReportFavoriteDto>> ListFavoritesAsync(string tenantId, CancellationToken cancellationToken = default);
+
+    /// <summary>Adds a report to the calling user's favorites (idempotent).</summary>
+    Task<ReportFavoriteDto> AddFavoriteAsync(AddReportFavoriteRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Removes a report from the calling user's favorites.</summary>
+    Task RemoveFavoriteAsync(string tenantId, string reportId, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists the calling user's own ad-hoc render run history, newest first.</summary>
+    Task<IReadOnlyList<RenderRunDto>> ListRenderRunsAsync(string tenantId, string? reportId = null, int? max = null, CancellationToken cancellationToken = default);
 }
 
 #pragma warning restore MA0016, MA0048

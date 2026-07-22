@@ -40,7 +40,9 @@ public static class ReportChartLayouter
         double x,
         double y,
         string idPrefix,
-        ITextMeasurer measurer)
+        ITextMeasurer measurer,
+        List<ReportDrillThroughRegion>? regions = null,
+        int pageNumber = 1)
     {
         ArgumentNullException.ThrowIfNull(chart);
         ArgumentNullException.ThrowIfNull(context);
@@ -52,14 +54,18 @@ public static class ReportChartLayouter
         }
 
         var series = ResolveSeries(chart, dataSet, context);
+        var sink = new ChartRegionSink(chart, regions, pageNumber, context.Culture);
         return chart.ChartType switch
         {
-            ReportChartType.Bar => CreateBarChart(chart, series, x, y, idPrefix, measurer, context.Culture),
+            ReportChartType.Bar => CreateBarChart(chart, series, x, y, idPrefix, measurer, context.Culture, sink),
             ReportChartType.Line => CreateLineChart(chart, series, x, y, idPrefix, measurer, context.Culture, fillArea: false),
             ReportChartType.Area => CreateLineChart(chart, series, x, y, idPrefix, measurer, context.Culture, fillArea: true),
             ReportChartType.Pie => CreateRadialChart(chart, series, x, y, idPrefix, measurer, context.Culture, donut: false),
             ReportChartType.Donut => CreateRadialChart(chart, series, x, y, idPrefix, measurer, context.Culture, donut: true),
-            _ => CreateColumnChart(chart, series, x, y, idPrefix, measurer, context.Culture),
+            ReportChartType.StackedColumn => CreateStackedColumnChart(chart, series, x, y, idPrefix, measurer, context.Culture, sink),
+            ReportChartType.StackedBar => CreateStackedBarChart(chart, series, x, y, idPrefix, measurer, context.Culture, sink),
+            ReportChartType.StackedArea => CreateStackedAreaChart(chart, series, x, y, idPrefix, measurer, context.Culture),
+            _ => CreateColumnChart(chart, series, x, y, idPrefix, measurer, context.Culture, sink),
         };
     }
 
@@ -70,7 +76,8 @@ public static class ReportChartLayouter
         double y,
         string idPrefix,
         ITextMeasurer measurer,
-        CultureInfo culture)
+        CultureInfo culture,
+        ChartRegionSink sink)
     {
         var commands = new List<ReportSnapshotCommand>();
         AddTitle(chart, commands, x, y, idPrefix, measurer);
@@ -107,6 +114,7 @@ public static class ReportChartLayouter
                     Round(barWidth),
                     Round(height),
                     current.Color));
+                sink.Add(seriesIndex, categories[categoryIndex], Round(barX), Round(barY), Round(barWidth), Round(height));
             }
         }
 
@@ -120,7 +128,8 @@ public static class ReportChartLayouter
         double y,
         string idPrefix,
         ITextMeasurer measurer,
-        CultureInfo culture)
+        CultureInfo culture,
+        ChartRegionSink sink)
     {
         var commands = new List<ReportSnapshotCommand>();
         AddTitle(chart, commands, x, y, idPrefix, measurer);
@@ -147,6 +156,7 @@ public static class ReportChartLayouter
                     Round(width),
                     Round(barHeight),
                     current.Color));
+                sink.Add(seriesIndex, categories[categoryIndex], Round(frame.AxisLeft), Round(centerY - barHeight / 2), Round(width), Round(barHeight));
             }
         }
 
@@ -302,6 +312,206 @@ public static class ReportChartLayouter
         return commands;
     }
 
+    // ── Stacked charts (Fáze 18 / C5) ──
+    // Each category's series segments accumulate on a shared baseline instead of sitting
+    // side by side. The value axis is scaled to the largest STACK total (sum of the positive
+    // series values in a category), so a full stack fills the plot. Non-positive values
+    // contribute nothing to the stack (see StackedMaximum / ScaleValue clamping).
+
+    private static IReadOnlyList<ReportSnapshotCommand> CreateStackedColumnChart(
+        ReportChartElement chart,
+        IReadOnlyList<ChartSeriesData> series,
+        double x,
+        double y,
+        string idPrefix,
+        ITextMeasurer measurer,
+        CultureInfo culture,
+        ChartRegionSink sink)
+    {
+        var commands = new List<ReportSnapshotCommand>();
+        AddTitle(chart, commands, x, y, idPrefix, measurer);
+        var frame = CreateCartesianFrame(chart, series, x, y, idPrefix, measurer, culture, commands, stacked: true);
+        var categories = DistinctCategories(series);
+        if (categories.Count == 0)
+        {
+            return commands;
+        }
+
+        var bandWidth = frame.PlotWidth / categories.Count;
+        var barWidth = Math.Max(6, Math.Min(34, bandWidth * 0.6));
+        for (var categoryIndex = 0; categoryIndex < categories.Count; categoryIndex++)
+        {
+            var center = frame.CategoryCenter(categoryIndex, categories.Count);
+            var barX = center - barWidth / 2;
+            var cumulative = 0d;
+            for (var seriesIndex = 0; seriesIndex < series.Count; seriesIndex++)
+            {
+                var current = series[seriesIndex];
+                var height = frame.ScaleValue(current.ValueFor(categories[categoryIndex]));
+                if (height <= 0)
+                {
+                    continue;
+                }
+
+                var barY = frame.PlotBottom - cumulative - height;
+                commands.Add(ReportSnapshotCommand.Rectangle(
+                    $"{idPrefix}-chart-{current.Slug}-bar-{categoryIndex:000}",
+                    Round(barX),
+                    Round(barY),
+                    Round(barWidth),
+                    Round(height),
+                    current.Color));
+                sink.Add(seriesIndex, categories[categoryIndex], Round(barX), Round(barY), Round(barWidth), Round(height));
+                cumulative += height;
+            }
+        }
+
+        return commands;
+    }
+
+    private static IReadOnlyList<ReportSnapshotCommand> CreateStackedBarChart(
+        ReportChartElement chart,
+        IReadOnlyList<ChartSeriesData> series,
+        double x,
+        double y,
+        string idPrefix,
+        ITextMeasurer measurer,
+        CultureInfo culture,
+        ChartRegionSink sink)
+    {
+        var commands = new List<ReportSnapshotCommand>();
+        AddTitle(chart, commands, x, y, idPrefix, measurer);
+        var frame = CreateCartesianFrame(chart, series, x, y, idPrefix, measurer, culture, commands, stacked: true);
+        var categories = DistinctCategories(series);
+        if (categories.Count == 0)
+        {
+            return commands;
+        }
+
+        var barHeight = Math.Max(6, Math.Min(26, frame.PlotHeight / (categories.Count * 1.6)));
+        for (var categoryIndex = 0; categoryIndex < categories.Count; categoryIndex++)
+        {
+            var centerY = frame.PlotTop + (categoryIndex + 0.5) * frame.PlotHeight / categories.Count;
+            var cumulative = 0d;
+            for (var seriesIndex = 0; seriesIndex < series.Count; seriesIndex++)
+            {
+                var current = series[seriesIndex];
+                var width = frame.ScaleValue(current.ValueFor(categories[categoryIndex]), frame.PlotWidth);
+                if (width <= 0)
+                {
+                    continue;
+                }
+
+                commands.Add(ReportSnapshotCommand.Rectangle(
+                    $"{idPrefix}-chart-{current.Slug}-bar-{categoryIndex:000}",
+                    Round(frame.AxisLeft + cumulative),
+                    Round(centerY - barHeight / 2),
+                    Round(width),
+                    Round(barHeight),
+                    current.Color));
+                sink.Add(seriesIndex, categories[categoryIndex], Round(frame.AxisLeft + cumulative), Round(centerY - barHeight / 2), Round(width), Round(barHeight));
+                cumulative += width;
+            }
+        }
+
+        return commands;
+    }
+
+    private static IReadOnlyList<ReportSnapshotCommand> CreateStackedAreaChart(
+        ReportChartElement chart,
+        IReadOnlyList<ChartSeriesData> series,
+        double x,
+        double y,
+        string idPrefix,
+        ITextMeasurer measurer,
+        CultureInfo culture)
+    {
+        var commands = new List<ReportSnapshotCommand>();
+        AddTitle(chart, commands, x, y, idPrefix, measurer);
+        var frame = CreateCartesianFrame(chart, series, x, y, idPrefix, measurer, culture, commands, stacked: true);
+        var categories = DistinctCategories(series);
+        if (categories.Count == 0)
+        {
+            return commands;
+        }
+
+        var cumulative = new double[categories.Count];
+        foreach (var current in series)
+        {
+            var top = new ChartPoint[categories.Count];
+            var baseline = new ChartPoint[categories.Count];
+            for (var index = 0; index < categories.Count; index++)
+            {
+                var height = frame.ScaleValue(current.ValueFor(categories[index]));
+                var baseHeight = cumulative[index];
+                var topHeight = baseHeight + height;
+                var center = frame.CategoryCenter(index, categories.Count);
+                top[index] = new ChartPoint(center, frame.PlotBottom - topHeight);
+                baseline[index] = new ChartPoint(center, frame.PlotBottom - baseHeight);
+                cumulative[index] = topHeight;
+            }
+
+            var areaPath = new StringBuilder();
+            for (var index = 0; index < top.Length; index++)
+            {
+                areaPath.Append(CultureInfo.InvariantCulture, $"{(index == 0 ? "M" : " L")} {Format(top[index].X)} {Format(top[index].Y)}");
+            }
+
+            for (var index = baseline.Length - 1; index >= 0; index--)
+            {
+                areaPath.Append(CultureInfo.InvariantCulture, $" L {Format(baseline[index].X)} {Format(baseline[index].Y)}");
+            }
+
+            areaPath.Append(" Z");
+            commands.Add(ReportSnapshotCommand.Path(
+                $"{idPrefix}-chart-{current.Slug}-area",
+                areaPath.ToString(),
+                frame.AxisLeft,
+                frame.PlotTop,
+                frame.PlotWidth,
+                frame.PlotHeight,
+                WithAlpha(current.Color, "cc")));
+
+            // Top outline drawn as a stroke (not a gap) so stacked segment area ratios stay exact.
+            var topLine = string.Join(" ", top.Select((point, index) => $"{(index == 0 ? "M" : "L")} {Format(point.X)} {Format(point.Y)}"));
+            commands.Add(ReportSnapshotCommand.Path(
+                $"{idPrefix}-chart-{current.Slug}-area-line",
+                topLine,
+                frame.AxisLeft,
+                frame.PlotTop,
+                frame.PlotWidth,
+                frame.PlotHeight,
+                stroke: current.Color,
+                strokeWidth: 1.5));
+        }
+
+        return commands;
+    }
+
+    private static double StackedMaximum(IReadOnlyList<ChartSeriesData> series, IReadOnlyList<ChartCategoryKey> categories)
+    {
+        var max = 0d;
+        foreach (var category in categories)
+        {
+            var sum = 0d;
+            foreach (var current in series)
+            {
+                var value = current.ValueFor(category);
+                if (value > 0)
+                {
+                    sum += value;
+                }
+            }
+
+            if (sum > max)
+            {
+                max = sum;
+            }
+        }
+
+        return max;
+    }
+
     private static CartesianFrame CreateCartesianFrame(
         ReportChartElement chart,
         IReadOnlyList<ChartSeriesData> series,
@@ -310,10 +520,13 @@ public static class ReportChartLayouter
         string idPrefix,
         ITextMeasurer measurer,
         CultureInfo culture,
-        List<ReportSnapshotCommand> commands)
+        List<ReportSnapshotCommand> commands,
+        bool stacked = false)
     {
         var categories = DistinctCategories(series);
-        var maxValue = Math.Max(0, series.SelectMany(item => item.Points).Select(point => point.Value).DefaultIfEmpty().Max());
+        var maxValue = stacked
+            ? StackedMaximum(series, categories)
+            : Math.Max(0, series.SelectMany(item => item.Points).Select(point => point.Value).DefaultIfEmpty().Max());
         var axis = NiceAxis(maxValue);
         var top = y + 10;
         var plotHeight = Math.Max(36, chart.Height * 0.5);
@@ -763,6 +976,88 @@ public static class ReportChartLayouter
 
     private static double Round(double value)
         => Math.Round(value, 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>Extracts the bound field name from a simple <c>=Fields.Name</c> / <c>=Fields!Name</c> expression.</summary>
+    internal static string? ExtractFieldName(string? expression)
+    {
+        if (string.IsNullOrWhiteSpace(expression))
+        {
+            return null;
+        }
+
+        var text = expression.Trim();
+        if (text.StartsWith("=", StringComparison.Ordinal))
+        {
+            text = text[1..].Trim();
+        }
+
+        foreach (var prefix in new[] { "Fields.", "Fields!" })
+        {
+            if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                var name = text[prefix.Length..].Trim();
+                return name.Length == 0 ? null : name;
+            }
+        }
+
+        return null;
+    }
+
+    // Collects a drill-through region for each rendered bar whose owning series declares a DrillThrough
+    // action. The region is anchored to the bar rectangle and carries the category value under both a
+    // conventional "Category" key and the bound category field name, so a Field-source mapping resolves.
+    private sealed class ChartRegionSink
+    {
+        private readonly ReportChartElement _chart;
+        private readonly List<ReportDrillThroughRegion>? _regions;
+        private readonly int _pageNumber;
+        private readonly CultureInfo _culture;
+
+        public ChartRegionSink(
+            ReportChartElement chart,
+            List<ReportDrillThroughRegion>? regions,
+            int pageNumber,
+            CultureInfo culture)
+        {
+            _chart = chart;
+            _regions = regions;
+            _pageNumber = pageNumber;
+            _culture = culture;
+        }
+
+        public void Add(int seriesIndex, ChartCategoryKey category, double x, double y, double width, double height)
+        {
+            if (_regions is null || seriesIndex < 0 || seriesIndex >= _chart.Series.Count)
+            {
+                return;
+            }
+
+            var definition = _chart.Series[seriesIndex];
+            if (definition.DrillThrough is null)
+            {
+                return;
+            }
+
+            var value = FormatCategory(category, _culture);
+            var context = new Dictionary<string, string?>(StringComparer.Ordinal) { ["Category"] = value };
+            var field = ExtractFieldName(definition.CategoryExpression);
+            if (!string.IsNullOrEmpty(field))
+            {
+                context[field] = value;
+            }
+
+            _regions.Add(new ReportDrillThroughRegion
+            {
+                PageNumber = _pageNumber,
+                X = x,
+                Y = y,
+                Width = width,
+                Height = height,
+                Action = definition.DrillThrough,
+                Context = context,
+            });
+        }
+    }
 
     private sealed record NiceAxisDefinition(double Maximum, int TickCount);
 

@@ -116,6 +116,36 @@
     justify-content: center;
     min-height: 100%;
     padding: var(--tm-space-6);
+    position: relative;
+}
+
+/* Positioned and scaled to coincide with the zoomed, flex-centered canvas: left:50% + translateX(-50%)
+   matches the canvas centering, and scale(zoom) with a top-center origin matches the canvas transform so
+   projected page-pixel regions stay on target. Width/height/transform are set inline per current page. */
+.tm-report-viewer__drillthrough-layer {
+    left: 50%;
+    pointer-events: none;
+    position: absolute;
+    top: var(--tm-space-6);
+    transform-origin: top center;
+}
+
+.tm-report-viewer__drillthrough {
+    background: transparent;
+    border: 0;
+    border-radius: var(--tm-radius-sm);
+    cursor: pointer;
+    padding: 0;
+    pointer-events: auto;
+    position: absolute;
+    transition: background-color 120ms ease, outline-color 120ms ease;
+}
+
+.tm-report-viewer__drillthrough:hover,
+.tm-report-viewer__drillthrough:focus-visible {
+    background: color-mix(in srgb, var(--tm-color-primary, #2563eb) 14%, transparent);
+    outline: 2px solid var(--tm-color-primary, #2563eb);
+    outline-offset: 1px;
 }
 
 .tm-report-viewer__canvas-wrap--hidden {

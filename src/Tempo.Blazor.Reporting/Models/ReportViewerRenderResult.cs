@@ -18,6 +18,9 @@ public sealed record ReportViewerRenderResult
     /// <summary>Interaction token used for this render.</summary>
     public string? InteractionToken { get; init; }
 
+    /// <summary>Clickable drill-through regions overlaid on the rendered pages by the interactive viewer.</summary>
+    public IReadOnlyList<ReportDrillThroughRegion> DrillThroughRegions { get; init; } = [];
+
     /// <summary>UTC render time.</summary>
     public DateTimeOffset RenderedAt { get; init; } = DateTimeOffset.UtcNow;
 }

@@ -1,0 +1,352 @@
+@namespace Tempo.ReportServer.Web.Pages
+@page "/admin/api-keys"
+@inject IPortalIdentity Session
+@inject ITempoReportServerClient Client
+@inject IJSRuntime JS
+
+<ReportServerShell Title="@Loc["ReportServer_Nav_ApiKeys"]" ActiveSection="apikeys">
+    <div class="rs-page" data-testid="f18-api-keys-page">
+        <div class="rs-page__heading">
+            <div>
+                <p class="rs-kicker">@Loc["ReportServer_Kicker_Administration"]</p>
+                <h2>@Loc["ReportServer_ApiKeys_Heading"]</h2>
+            </div>
+        </div>
+
+        @if (_issuedKey is not null)
+        {
+            <section class="rs-panel rs-keycard" data-testid="api-key-secret" role="status" aria-live="polite">
+                <h3>@Loc["ReportServer_ApiKeys_StoreNow"]</h3>
+                <p class="rs-hint">@Loc["ReportServer_ApiKeys_StoreHint"]</p>
+                <div class="rs-secret-row">
+                    <code class="rs-secret" data-testid="api-key-secret-value">@_issuedKey.PlainTextKey</code>
+                    <TmButton Variant="ButtonVariant.Secondary"
+                              Size="ButtonSize.Sm"
+                              Icon="@IconNames.Copy"
+                              data-testid="api-key-copy"
+                              OnClick="CopySecretAsync">
+                        @(_secretCopied ? Loc["ReportServer_ApiKeys_Copied"] : Loc["ReportServer_Action_Copy"])
+                    </TmButton>
+                </div>
+                <span class="rs-hint">@Loc["ReportServer_ApiKeys_KeyIdLabel"] <strong>@_issuedKey.KeyId</strong> · @Loc["ReportServer_ApiKeys_ApplicationWord"] <strong>@_issuedKey.Key.ApplicationId</strong></span>
+            </section>
+        }
+
+        <section class="rs-admin-grid">
+            <form class="rs-panel" @onsubmit="CreateKeyAsync" @onsubmit:preventDefault>
+                <h3>@Loc["ReportServer_ApiKeys_IssueKey"]</h3>
+                <label class="rs-field">
+                    <span>@Loc["ReportServer_ApiKeys_Application"]</span>
+                    <input data-testid="api-key-application" value="@_applicationId" @oninput="OnApplicationInput" />
+                </label>
+                <fieldset class="rs-field">
+                    <legend>@Loc["ReportServer_ApiKeys_Scopes"]</legend>
+                    @foreach (var permission in SelectablePermissions)
+                    {
+                        <label class="rs-check">
+                            <input type="checkbox"
+                                   data-testid="@($"api-key-scope-{permission}")"
+                                   checked="@_scopes.Contains(permission)"
+                                   @onchange="args => ToggleScope(permission, args)" />
+                            <span>@permission</span>
+                        </label>
+                    }
+                </fieldset>
+                <label class="rs-field">
+                    <span>@Loc["ReportServer_ApiKeys_ExpiresIn"]</span>
+                    <input data-testid="api-key-expiry-days" type="number" min="1" value="@_expiryDays" @oninput="OnExpiryInput" />
+                </label>
+                <TmButton Variant="ButtonVariant.Primary" Icon="@IconNames.Key" data-testid="api-key-create" OnClick="CreateKeyAsync">
+                    @Loc["ReportServer_ApiKeys_IssueKey"]
+                </TmButton>
+            </form>
+
+            <section class="rs-panel rs-table-panel">
+                <h3>@Loc["ReportServer_ApiKeys_ActiveRevoked"]</h3>
+                <div class="rs-table" data-testid="api-keys-table">
+                    @if (_keys.Count == 0)
+                    {
+                        <p class="rs-hint" data-testid="api-keys-empty">@Loc["ReportServer_ApiKeys_Empty"]</p>
+                    }
+                    @foreach (var key in _keys)
+                    {
+                        <article class="rs-table__row" data-testid="@($"api-key-row-{key.KeyId}")">
+                            <div>
+                                <strong>@key.ApplicationId</strong>
+                                <span>@key.KeyId</span>
+                            </div>
+                            <span>@FormatPermissions(key.Permissions)</span>
+                            <span>@FormatExpiry(key)</span>
+                            <span class="@StatusClass(key)" data-testid="@($"api-key-status-{key.KeyId}")">@StatusText(key)</span>
+                            <div class="rs-row-actions">
+                                @if (!key.IsActive)
+                                {
+                                    <span class="rs-hint">@Loc["ReportServer_ApiKeys_NoActions"]</span>
+                                }
+                                else if (_confirming == $"revoke:{key.KeyId}")
+                                {
+                                    <div class="rs-confirm" data-testid="@($"api-key-revoke-confirm-panel-{key.KeyId}")">
+                                        <span class="rs-hint">@Loc["ReportServer_ApiKeys_RevokeWarn"]</span>
+                                        <div class="rs-row-actions">
+                                            <TmButton Variant="ButtonVariant.Danger"
+                                                      Size="ButtonSize.Sm"
+                                                      Icon="@IconNames.Ban"
+                                                      data-testid="@($"api-key-revoke-confirm-{key.KeyId}")"
+                                                      OnClick="() => RevokeKeyAsync(key.KeyId)">
+                                                @Loc["ReportServer_ApiKeys_ConfirmRevoke"]
+                                            </TmButton>
+                                            <TmButton Variant="ButtonVariant.Secondary"
+                                                      Size="ButtonSize.Sm"
+                                                      data-testid="@($"api-key-revoke-cancel-{key.KeyId}")"
+                                                      OnClick="CancelConfirm">
+                                                @Loc["ReportServer_Cancel"]
+                                            </TmButton>
+                                        </div>
+                                    </div>
+                                }
+                                else if (_confirming == $"rotate:{key.KeyId}")
+                                {
+                                    <div class="rs-confirm" data-testid="@($"api-key-rotate-confirm-panel-{key.KeyId}")">
+                                        <span class="rs-hint">@Loc["ReportServer_ApiKeys_RotateWarn"]</span>
+                                        <div class="rs-row-actions">
+                                            <TmButton Variant="ButtonVariant.Primary"
+                                                      Size="ButtonSize.Sm"
+                                                      Icon="@IconNames.Refresh"
+                                                      data-testid="@($"api-key-rotate-confirm-{key.KeyId}")"
+                                                      OnClick="() => RotateKeyAsync(key.KeyId)">
+                                                @Loc["ReportServer_ApiKeys_ConfirmRotate"]
+                                            </TmButton>
+                                            <TmButton Variant="ButtonVariant.Secondary"
+                                                      Size="ButtonSize.Sm"
+                                                      data-testid="@($"api-key-rotate-cancel-{key.KeyId}")"
+                                                      OnClick="CancelConfirm">
+                                                @Loc["ReportServer_Cancel"]
+                                            </TmButton>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <TmButton Variant="ButtonVariant.Secondary"
+                                              Size="ButtonSize.Sm"
+                                              Icon="@IconNames.Refresh"
+                                              data-testid="@($"api-key-rotate-{key.KeyId}")"
+                                              OnClick="() => BeginRotate(key.KeyId)">
+                                        @Loc["ReportServer_ApiKeys_Rotate"]
+                                    </TmButton>
+                                    <TmButton Variant="ButtonVariant.Danger"
+                                              Size="ButtonSize.Sm"
+                                              Icon="@IconNames.Ban"
+                                              data-testid="@($"api-key-revoke-{key.KeyId}")"
+                                              OnClick="() => BeginRevoke(key.KeyId)">
+                                        @Loc["ReportServer_Action_Revoke"]
+                                    </TmButton>
+                                }
+                            </div>
+                        </article>
+                    }
+                </div>
+            </section>
+        </section>
+
+        <section class="rs-panel rs-table-panel">
+            <div class="rs-page__heading">
+                <h3>@Loc["ReportServer_ApiKeys_AuditTrail"]</h3>
+                <div class="rs-filter-bar">
+                    <label class="rs-field">
+                        <span>@Loc["ReportServer_ApiKeys_Action"]</span>
+                        <select data-testid="audit-filter-action" value="@_actionFilter" @onchange="OnActionFilterChanged">
+                            <option value="">@Loc["ReportServer_ApiKeys_AllActions"]</option>
+                            @foreach (var action in Enum.GetValues<ReportAuditActionDto>())
+                            {
+                                <option value="@action">@action</option>
+                            }
+                        </select>
+                    </label>
+                    <label class="rs-field">
+                        <span>@Loc["ReportServer_Column_Outcome"]</span>
+                        <select data-testid="audit-filter-outcome" value="@_outcomeFilter" @onchange="OnOutcomeFilterChanged">
+                            <option value="">@Loc["ReportServer_ApiKeys_AllOutcomes"]</option>
+                            @foreach (var outcome in Enum.GetValues<ReportAuditOutcomeDto>())
+                            {
+                                <option value="@outcome">@outcome</option>
+                            }
+                        </select>
+                    </label>
+                </div>
+            </div>
+            <div class="rs-table" data-testid="audit-table">
+                @if (_auditEvents.Count == 0)
+                {
+                    <p class="rs-hint" data-testid="audit-empty">@Loc["ReportServer_ApiKeys_AuditEmpty"]</p>
+                }
+                @foreach (var auditEvent in _auditEvents)
+                {
+                    <article class="rs-table__row" data-testid="audit-row">
+                        <div>
+                            <strong>@auditEvent.Action</strong>
+                            <span>@auditEvent.ResourceId</span>
+                        </div>
+                        <span>@auditEvent.ActorId</span>
+                        <span>@auditEvent.Timestamp.ToString("u", System.Globalization.CultureInfo.InvariantCulture)</span>
+                        <span class="@(auditEvent.Outcome == ReportAuditOutcomeDto.Denied ? "rs-status rs-status--deny" : "rs-status rs-status--ok")">
+                            @auditEvent.Outcome
+                        </span>
+                    </article>
+                }
+            </div>
+        </section>
+    </div>
+</ReportServerShell>
+
+@code {
+    private static readonly ReportPermissionsDto[] SelectablePermissions =
+    [
+        ReportPermissionsDto.View,
+        ReportPermissionsDto.Render,
+        ReportPermissionsDto.Export,
+        ReportPermissionsDto.EditDefinition,
+        ReportPermissionsDto.ManageDataSources,
+        ReportPermissionsDto.ManagePermissions,
+    ];
+
+    private string _applicationId = "embedded-app";
+    private int? _expiryDays;
+    private readonly HashSet<ReportPermissionsDto> _scopes = [ReportPermissionsDto.View, ReportPermissionsDto.Render];
+    private CreateReportApiKeyResultDto? _issuedKey;
+    private bool _secretCopied;
+
+    // Two-step confirm token, e.g. "revoke:rk_..." / "rotate:rk_...", null when nothing is pending.
+    private string? _confirming;
+
+    private string _actionFilter = string.Empty;
+    private string _outcomeFilter = string.Empty;
+
+    private IReadOnlyList<ReportApiKeyDto> _keys = [];
+    private IReadOnlyList<ReportAuditEventDto> _auditEvents = [];
+
+    private string TenantId => Session.CurrentTenantId;
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private void OnApplicationInput(ChangeEventArgs args)
+        => _applicationId = args.Value?.ToString() ?? string.Empty;
+
+    private void OnExpiryInput(ChangeEventArgs args)
+        => _expiryDays = int.TryParse(args.Value?.ToString(), out var days) && days > 0 ? days : null;
+
+    private void ToggleScope(ReportPermissionsDto permission, ChangeEventArgs args)
+    {
+        if (args.Value is bool isChecked && isChecked)
+        {
+            _scopes.Add(permission);
+        }
+        else
+        {
+            _scopes.Remove(permission);
+        }
+    }
+
+    private async Task CreateKeyAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_applicationId))
+        {
+            return;
+        }
+
+        var permissions = _scopes.Aggregate(ReportPermissionsDto.None, (current, scope) => current | scope);
+        var expiresAt = _expiryDays is { } days ? DateTimeOffset.UtcNow.AddDays(days) : (DateTimeOffset?)null;
+        _issuedKey = await Client.CreateApiKeyAsync(new CreateReportApiKeyRequestDto
+        {
+            TenantId = TenantId,
+            ApplicationId = _applicationId.Trim(),
+            Permissions = permissions,
+            ExpiresAt = expiresAt,
+        });
+        _secretCopied = false;
+        await ReloadAsync();
+    }
+
+    private void BeginRevoke(string keyId) => _confirming = $"revoke:{keyId}";
+
+    private void BeginRotate(string keyId) => _confirming = $"rotate:{keyId}";
+
+    private void CancelConfirm() => _confirming = null;
+
+    private async Task RotateKeyAsync(string keyId)
+    {
+        _confirming = null;
+        var expiresAt = _expiryDays is { } days ? DateTimeOffset.UtcNow.AddDays(days) : (DateTimeOffset?)null;
+        _issuedKey = await Client.RotateApiKeyAsync(keyId, new RotateReportApiKeyRequestDto
+        {
+            TenantId = TenantId,
+            ExpiresAt = expiresAt,
+        });
+        _secretCopied = false;
+        await ReloadAsync();
+    }
+
+    private async Task RevokeKeyAsync(string keyId)
+    {
+        _confirming = null;
+        await Client.RevokeApiKeyAsync(keyId, new RevokeReportApiKeyRequestDto { TenantId = TenantId });
+        await ReloadAsync();
+    }
+
+    private async Task CopySecretAsync()
+    {
+        if (_issuedKey is null)
+        {
+            return;
+        }
+
+        await JS.InvokeVoidAsync("tempoReportServer.copyToClipboard", _issuedKey.PlainTextKey);
+        _secretCopied = true;
+    }
+
+    private void OnActionFilterChanged(ChangeEventArgs args)
+    {
+        _actionFilter = args.Value?.ToString() ?? string.Empty;
+        _ = ReloadAuditAsync();
+    }
+
+    private void OnOutcomeFilterChanged(ChangeEventArgs args)
+    {
+        _outcomeFilter = args.Value?.ToString() ?? string.Empty;
+        _ = ReloadAuditAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _keys = await Client.GetApiKeysAsync(TenantId);
+        await ReloadAuditAsync();
+    }
+
+    private async Task ReloadAuditAsync()
+    {
+        ReportAuditActionDto? action = Enum.TryParse<ReportAuditActionDto>(_actionFilter, out var parsedAction) ? parsedAction : null;
+        ReportAuditOutcomeDto? outcome = Enum.TryParse<ReportAuditOutcomeDto>(_outcomeFilter, out var parsedOutcome) ? parsedOutcome : null;
+        _auditEvents = await Client.QueryAuditAsync(TenantId, action, outcome);
+        StateHasChanged();
+    }
+
+    private string StatusText(ReportApiKeyDto key)
+        => key.RevokedAt is not null
+            ? Loc["ReportServer_ApiKeys_StatusRevoked"]
+            : key.IsActive ? Loc["ReportServer_ApiKeys_StatusActive"] : Loc["ReportServer_ApiKeys_StatusExpired"];
+
+    private static string StatusClass(ReportApiKeyDto key)
+        => key.IsActive ? "rs-status rs-status--ok" : "rs-status rs-status--deny";
+
+    private string FormatExpiry(ReportApiKeyDto key)
+        => key.ExpiresAt is { } expiry
+            ? expiry.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)
+            : Loc["ReportServer_ApiKeys_Never"];
+
+    private string FormatPermissions(ReportPermissionsDto permissions)
+        => permissions == ReportPermissionsDto.None ? Loc["ReportServer_None"] : permissions.ToString();
+}

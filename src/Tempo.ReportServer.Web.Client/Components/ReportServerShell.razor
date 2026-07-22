@@ -1,0 +1,177 @@
+@namespace Tempo.ReportServer.Web.Components
+@using Tempo.ReportServer.Web.Services
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject IPortalIdentity Session
+
+<div class="rs-shell" data-testid="report-server-shell">
+    <aside class="rs-sidebar">
+        <a class="rs-brand" href="/reports" data-testid="report-server-brand">
+            <TmIcon Name="@IconNames.BarChart2" Size="IconSize.Md" />
+            <span>Tempo Report Server</span>
+        </a>
+        <nav class="rs-nav" aria-label="@Loc["ReportServer_Nav_AriaLabel"]">
+            @if (Session.CanAccess(PortalRole.Viewer))
+            {
+                <a class="@NavClass("reports")" href="/reports" data-testid="nav-reports">
+                    <TmIcon Name="@IconNames.FolderOpen" Size="IconSize.Sm" />
+                    <span>@Loc["ReportServer_Nav_Reports"]</span>
+                </a>
+            }
+            @if (Session.CanAccess(PortalRole.Viewer))
+            {
+                <a class="@NavClass("favorites")" href="/favorites" data-testid="nav-favorites">
+                    <TmIcon Name="@IconNames.Star" Size="IconSize.Sm" />
+                    <span>@Loc["ReportServer_Nav_Favorites"]</span>
+                </a>
+            }
+            @if (Session.CanAccess(PortalRole.Viewer))
+            {
+                <a class="@NavClass("history")" href="/history" data-testid="nav-history">
+                    <TmIcon Name="@IconNames.Clock" Size="IconSize.Sm" />
+                    <span>@Loc["ReportServer_Nav_History"]</span>
+                </a>
+            }
+            @if (Session.CanAccess(PortalRole.Author))
+            {
+                <a class="@NavClass("designer")" href="/designer/sales-register" data-testid="nav-designer">
+                    <TmIcon Name="@IconNames.Pencil" Size="IconSize.Sm" />
+                    <span>@Loc["ReportServer_Nav_Designer"]</span>
+                </a>
+            }
+            @if (Session.CanAccess(PortalRole.Admin))
+            {
+                <a class="@NavClass("datasources")" href="/admin/datasources" data-testid="nav-datasources">
+                    <TmIcon Name="@IconNames.Database" Size="IconSize.Sm" />
+                    <span>@Loc["ReportServer_Nav_DataSources"]</span>
+                </a>
+            }
+            @if (Session.CanAccess(PortalRole.Author))
+            {
+                <a class="@NavClass("schedules")" href="/admin/schedules" data-testid="nav-schedules">
+                    <TmIcon Name="@IconNames.Calendar" Size="IconSize.Sm" />
+                    <span>@Loc["ReportServer_Nav_Schedules"]</span>
+                </a>
+            }
+            @if (Session.CanAccess(PortalRole.Admin))
+            {
+                <a class="@NavClass("permissions")" href="/admin/permissions" data-testid="nav-permissions">
+                    <TmIcon Name="@IconNames.Shield" Size="IconSize.Sm" />
+                    <span>@Loc["ReportServer_Nav_Permissions"]</span>
+                </a>
+            }
+            @if (Session.CanAccess(PortalRole.Author))
+            {
+                <a class="@NavClass("revisions")" href="/admin/revisions" data-testid="nav-revisions">
+                    <TmIcon Name="@IconNames.FileDiff" Size="IconSize.Sm" />
+                    <span>@Loc["ReportServer_Nav_Revisions"]</span>
+                </a>
+            }
+            @if (Session.CanAccess(PortalRole.Admin))
+            {
+                <a class="@NavClass("apikeys")" href="/admin/api-keys" data-testid="nav-apikeys">
+                    <TmIcon Name="@IconNames.Key" Size="IconSize.Sm" />
+                    <span>@Loc["ReportServer_Nav_ApiKeys"]</span>
+                </a>
+            }
+        </nav>
+    </aside>
+
+    <main class="rs-main">
+        <header class="rs-topbar">
+            <div>
+                <p class="rs-kicker">@Session.CurrentTenantName</p>
+                <h1>@Title</h1>
+            </div>
+            <div class="rs-topbar__actions">
+                @if (Session.CanSwitchTenant)
+                {
+                    <label class="rs-tenant">
+                        <span>@Loc["ReportServer_Tenant"]</span>
+                        <select data-testid="tenant-switcher" value="@Session.CurrentTenantId" @onchange="SwitchTenant">
+                            @foreach (var tenant in Session.Tenants)
+                            {
+                                <option value="@tenant.Id">@tenant.Name</option>
+                            }
+                        </select>
+                    </label>
+                }
+                else
+                {
+                    <div class="rs-tenant rs-tenant--fixed" data-testid="tenant-display">
+                        <span>@Loc["ReportServer_Tenant"]</span>
+                        <strong>@Session.CurrentTenantName</strong>
+                    </div>
+                }
+                <div class="rs-user" data-testid="signed-in-user">
+                    <TmIcon Name="@IconNames.UserCheck" Size="IconSize.Sm" />
+                    <span>@Session.UserName</span>
+                </div>
+                <button type="button" class="rs-icon-button" aria-label="@Loc["ReportServer_SignOut"]" @onclick="SignOut">
+                    <TmIcon Name="@IconNames.LogOut" Size="IconSize.Sm" />
+                </button>
+            </div>
+        </header>
+
+        <section class="rs-content">
+            @ChildContent
+        </section>
+    </main>
+</div>
+
+@code {
+    /// <summary>Title rendered in the top bar.</summary>
+    [Parameter] public string Title { get; set; } = "Reports";
+
+    /// <summary>Active navigation section.</summary>
+    [Parameter] public string ActiveSection { get; set; } = "reports";
+
+    /// <summary>Shell body content.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        Session.Changed += HandleSessionChanged;
+        RedirectIfSignedOut();
+    }
+
+    private void RedirectIfSignedOut()
+    {
+        if (!Session.IsAuthenticated)
+        {
+            Navigation.NavigateTo(Session.SignInPath, forceLoad: Session.UsesExternalAuthNavigation);
+        }
+    }
+
+    private string NavClass(string section)
+        => string.Equals(section, ActiveSection, StringComparison.Ordinal)
+            ? "rs-nav__item rs-nav__item--active"
+            : "rs-nav__item";
+
+    private void SwitchTenant(ChangeEventArgs args)
+        => Session.SwitchTenant(args.Value?.ToString() ?? Session.CurrentTenantId);
+
+    private void SignOut()
+    {
+        Session.SignOut();
+        Navigation.NavigateTo(Session.SignOutPath, forceLoad: Session.UsesExternalAuthNavigation);
+    }
+
+    private void HandleSessionChanged()
+    {
+        // Auth state may resolve asynchronously after the first render (async AuthenticationStateProvider):
+        // when it settles to "not signed in", honour the redirect that OnInitialized could not yet make.
+        if (!Session.IsAuthenticated)
+        {
+            RedirectIfSignedOut();
+            return;
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+        => Session.Changed -= HandleSessionChanged;
+}

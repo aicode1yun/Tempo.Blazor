@@ -20,6 +20,24 @@ public interface IReportPermissionStore
     Task<IReadOnlyList<ReportFolderAclEntry>> ListInheritedAclEntriesAsync(
         string? folderId,
         ReportExecutionContext context);
+
+    /// <summary>Grants (or replaces) a single ACL entry for a subject on a folder.</summary>
+    Task GrantAclEntryAsync(
+        string folderId,
+        ReportFolderAclEntry entry,
+        ReportExecutionContext context);
+
+    /// <summary>Lists the ACL entries defined directly on a folder (not inherited from ancestors).</summary>
+    Task<IReadOnlyList<ReportFolderAclEntry>> ListFolderAclEntriesAsync(
+        string folderId,
+        ReportExecutionContext context);
+
+    /// <summary>Revokes a subject's ACL grant on a folder.</summary>
+    Task RevokeAclEntryAsync(
+        string folderId,
+        ReportAclSubjectKind subjectKind,
+        string subjectId,
+        ReportExecutionContext context);
 }
 
 /// <summary>In-memory permission store for tests and single-node development.</summary>
@@ -75,6 +93,71 @@ public sealed class InMemoryReportPermissionStore : IReportPermissionStore
                 .ToArray();
             return Task.FromResult((IReadOnlyList<ReportFolderAclEntry>)entries);
         }
+    }
+
+    /// <inheritdoc />
+    public Task GrantAclEntryAsync(
+        string folderId,
+        ReportFolderAclEntry entry,
+        ReportExecutionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        context.CancellationToken.ThrowIfCancellationRequested();
+        lock (_gate)
+        {
+            var state = State(context.TenantId);
+            var normalized = entry with { TenantId = context.TenantId, FolderId = folderId };
+            var current = state.Acls.TryGetValue(folderId, out var existing)
+                ? existing.ToList()
+                : [];
+            current.RemoveAll(candidate =>
+                candidate.SubjectKind == normalized.SubjectKind &&
+                string.Equals(candidate.SubjectId, normalized.SubjectId, StringComparison.Ordinal) &&
+                candidate.Effect == normalized.Effect);
+            current.Add(normalized);
+            state.Acls[folderId] = current.ToArray();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<ReportFolderAclEntry>> ListFolderAclEntriesAsync(
+        string folderId,
+        ReportExecutionContext context)
+    {
+        context.CancellationToken.ThrowIfCancellationRequested();
+        lock (_gate)
+        {
+            var state = State(context.TenantId);
+            var entries = state.Acls.TryGetValue(folderId, out var existing)
+                ? existing.ToArray()
+                : [];
+            return Task.FromResult((IReadOnlyList<ReportFolderAclEntry>)entries);
+        }
+    }
+
+    /// <inheritdoc />
+    public Task RevokeAclEntryAsync(
+        string folderId,
+        ReportAclSubjectKind subjectKind,
+        string subjectId,
+        ReportExecutionContext context)
+    {
+        context.CancellationToken.ThrowIfCancellationRequested();
+        lock (_gate)
+        {
+            var state = State(context.TenantId);
+            if (state.Acls.TryGetValue(folderId, out var existing))
+            {
+                state.Acls[folderId] = existing
+                    .Where(entry => !(entry.SubjectKind == subjectKind &&
+                        string.Equals(entry.SubjectId, subjectId, StringComparison.Ordinal)))
+                    .ToArray();
+            }
+        }
+
+        return Task.CompletedTask;
     }
 
     private static IReadOnlyList<string> ResolveFolderPath(TenantPermissions state, string? folderId)
