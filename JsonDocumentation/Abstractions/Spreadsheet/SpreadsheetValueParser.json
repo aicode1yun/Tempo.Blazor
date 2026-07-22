@@ -11,7 +11,7 @@
       "name": "Parse",
       "kind": "Method",
       "type": "SpreadsheetParsedValue",
-      "description": "Parses using for number/date conventions.",
+      "description": "Parses input using culture for number/date conventions.",
       "parameters": [
         {
           "name": "input",

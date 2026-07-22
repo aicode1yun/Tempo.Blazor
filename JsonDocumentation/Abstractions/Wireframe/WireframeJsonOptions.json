@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Wireframe",
   "namespace": "Tempo.Blazor.Components.Wireframe.Models",
-  "description": "Shared used across all wireframe serialization.",
+  "description": "Shared JsonSerializerOptions used across all wireframe serialization.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Models/WireframeJsonOptions.cs",
   "documentationStatus": "generated",

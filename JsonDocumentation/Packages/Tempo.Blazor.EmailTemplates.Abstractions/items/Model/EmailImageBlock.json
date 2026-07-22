@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Model",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
-  "description": "An image (mj-image). is required; matters for a11y.",
+  "description": "An image (mj-image). Src is required; Alt matters for a11y.",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailImageBlock.cs",
   "documentationStatus": "generated",

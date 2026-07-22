@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Models",
   "namespace": "Tempo.Blazor.Models",
-  "description": "Per-user, per-table column layout: pixel widths and pin state keyed by column key. Persisted through an IDataTableLayoutStore.",
+  "description": "Per-user, per-table column layout: pixel widths and pin state keyed by column key. Persisted through an IDataTableLayoutStore so the table can restore a user's resized and pinned columns across sessions.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableLayout.cs",
   "documentationStatus": "generated",

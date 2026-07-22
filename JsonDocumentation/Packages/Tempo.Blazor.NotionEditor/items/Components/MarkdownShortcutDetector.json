@@ -11,7 +11,7 @@
       "name": "Detect",
       "kind": "Method",
       "type": "MarkdownShortcutResult?",
-      "description": "Analyses and returns the conversion suggestion, or null when no known shortcut is recognised.",
+      "description": "Analyses lineText and returns the conversion suggestion, or null when no known shortcut is recognised.",
       "parameters": [
         {
           "name": "lineText",
@@ -23,7 +23,7 @@
       "name": "FromJsShortcutKey",
       "kind": "Method",
       "type": "BlockType?",
-      "description": "Converts the shortcut string emitted by notion-editor.js (e.g. \"heading1\", \"bullet\") into the corresponding , or null when the string is unrecognised. This bridges the existing JS-side detection with the C# type system.",
+      "description": "Converts the shortcut string emitted by notion-editor.js (e.g. \"heading1\", \"bullet\") into the corresponding BlockType, or null when the string is unrecognised. This bridges the existing JS-side detection with the C# type system.",
       "parameters": [
         {
           "name": "shortcutKey",
@@ -35,7 +35,7 @@
       "name": "IsCheckedTodo",
       "kind": "Method",
       "type": "bool",
-      "description": "Returns true if represents a checked todo shortcut (\"todo_checked\" / \"[x] \" pattern).",
+      "description": "Returns true if jsShortcutKey represents a checked todo shortcut (\"todo_checked\" / \"[x] \" pattern).",
       "parameters": [
         {
           "name": "jsShortcutKey",

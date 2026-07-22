@@ -42,7 +42,7 @@
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Output format. Default is ."
+      "description": "Whether to show the alpha channel. Default true."
     },
     {
       "name": "ShowClearButton",

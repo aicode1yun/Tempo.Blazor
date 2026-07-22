@@ -2,7 +2,7 @@
   "kind": "Record",
   "category": "Models",
   "namespace": "Tempo.Blazor.Abstractions.Models",
-  "description": "Placeholder metadata type for . Contains no properties — used when no metadata is needed.",
+  "description": "Placeholder metadata type for TmFileManager. Contains no properties — used when no metadata is needed.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Models/EmptyMetadata.cs",
   "documentationStatus": "generated",

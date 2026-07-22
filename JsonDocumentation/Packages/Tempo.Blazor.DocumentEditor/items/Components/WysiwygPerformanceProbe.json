@@ -24,7 +24,7 @@
       "name": "NoteInteropCallAsync",
       "kind": "Method",
       "type": "ValueTask",
-      "description": "Notes an out-of-band JS interop call so the next capture's reflects it.",
+      "description": "Notes an out-of-band JS interop call so the next capture's JsInteropCallCount reflects it.",
       "parameters": [
         {
           "name": "count",

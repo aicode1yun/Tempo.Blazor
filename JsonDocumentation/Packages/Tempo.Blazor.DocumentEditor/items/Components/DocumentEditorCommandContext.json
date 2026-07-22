@@ -65,7 +65,7 @@
       "name": "IsInEditableRegion",
       "kind": "Property",
       "type": "bool",
-      "description": "When is true, indicates that the caret / selection anchor is currently inside one of the document's editable markers. false means the caret is outside all markers, so data-affecting commands must be disabled."
+      "description": "When IsProtected is true, indicates that the caret / selection anchor is currently inside one of the document's editable markers. false means the caret is outside all markers, so data-affecting commands must be disabled."
     },
     {
       "name": "IsProtected",

@@ -2,7 +2,7 @@
   "itemName": "TmDiagramCanvas",
   "kind": "Component",
   "category": "Diagram",
-  "description": "Unified SVG diagram canvas (draw.io‑inspired 4‑pane architecture: backgroundPane / drawPane / overlayPane / decoratorPane). Renders nodes and edges as native SVG primitives and labels, and communicates with diagram-editor.js for pan, zoom, drag, and selection.",
+  "description": "Unified SVG diagram canvas (draw.io‑inspired 4‑pane architecture: backgroundPane / drawPane / overlayPane / decoratorPane). Renders DiagramDocument nodes and edges as native SVG primitives and foreignObject labels, and communicates with diagram-editor.js for pan, zoom, drag, and selection.",
   "packageId": "Tempo.Blazor.DiagramEditor",
   "namespace": "Tempo.Blazor.Components.Diagram",
   "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/TmDiagramCanvas.razor",

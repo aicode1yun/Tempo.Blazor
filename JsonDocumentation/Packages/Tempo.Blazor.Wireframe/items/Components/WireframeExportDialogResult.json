@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Wireframe",
-  "description": "Result emitted by when the user confirms export.",
+  "description": "Result emitted by TmWireframeExportDialog when the user confirms export.",
   "packageId": "Tempo.Blazor.Wireframe",
   "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeExportDialogResult.cs",
   "documentationStatus": "generated",

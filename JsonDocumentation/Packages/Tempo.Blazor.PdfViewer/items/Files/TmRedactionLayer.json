@@ -36,14 +36,14 @@
       "type": "RedactionCategory",
       "isRequired": false,
       "default": "RedactionCategory.Other",
-      "description": "Category assigned to newly drawn areas."
+      "description": "Category assigned to newly drawn areas. Default is Other."
     },
     {
       "name": "ShowPanel",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Whether the area panel is shown."
+      "description": "Whether the area panel is shown. Default is true."
     },
     {
       "name": "Height",
@@ -55,7 +55,7 @@
       "name": "ExportFileName",
       "type": "string?",
       "isRequired": false,
-      "description": "Export file name. Defaults to redacted.pdf / redacted.png by mode."
+      "description": "Export file name. Defaults to \"redacted.pdf\" / \"redacted.png\" by mode."
     },
     {
       "name": "OnAreasChanged",

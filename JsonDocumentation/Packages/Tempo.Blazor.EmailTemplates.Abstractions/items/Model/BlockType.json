@@ -2,7 +2,7 @@
   "kind": "Enum",
   "category": "Model",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
-  "description": "Identifies the kind of an . Each value maps to one MJML body component and is used as the JSON polymorphic discriminator token.",
+  "description": "Identifies the kind of an EmailBlockBase. Each value maps to one MJML body component and is used as the JSON polymorphic discriminator token.",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/BlockType.cs",
   "documentationStatus": "generated",

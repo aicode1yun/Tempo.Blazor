@@ -11,7 +11,7 @@
       "name": "Sanitize",
       "kind": "Method",
       "type": "string",
-      "description": "Returns a sanitized copy of safe to embed in generated markup.",
+      "description": "Returns a sanitized copy of html safe to embed in generated markup.",
       "parameters": [
         {
           "name": "html",

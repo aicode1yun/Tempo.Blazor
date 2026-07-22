@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
-  "description": "Default keyboard shortcut catalog for .",
+  "description": "Default keyboard shortcut catalog for TmNotionShortcutsPanel.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/NotionShortcutCatalog.cs",
   "documentationStatus": "generated",

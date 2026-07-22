@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Pivot Table",
   "namespace": "Tempo.Blazor.Abstractions.PivotTable",
-  "description": "Context passed to . Contains the aggregated cell value and its position in the pivot matrix.",
+  "description": "Context passed to DataCellTemplate. Contains the aggregated cell value and its position in the pivot matrix.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotCellContext.cs",
   "documentationStatus": "generated",

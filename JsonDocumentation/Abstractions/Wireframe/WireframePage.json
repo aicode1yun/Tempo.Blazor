@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Wireframe",
   "namespace": "Tempo.Blazor.Components.Wireframe.Models",
-  "description": "A single page within a . Each page has its own canvas dimensions, elements, and connectors.",
+  "description": "A single page within a WireframeDocument. Each page has its own canvas dimensions, elements, and connectors.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Models/WireframePage.cs",
   "documentationStatus": "generated",

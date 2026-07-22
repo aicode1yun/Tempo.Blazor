@@ -17,7 +17,7 @@
       "name": "ConnectorType",
       "kind": "Property",
       "type": "string",
-      "description": "Connector semantic type. Supported values match ."
+      "description": "Connector semantic type. Supported values match ConnectorType."
     },
     {
       "name": "CubicBezier",
@@ -29,7 +29,7 @@
       "name": "EndArrow",
       "kind": "Property",
       "type": "string",
-      "description": "End arrowhead style. Supported values match ."
+      "description": "End arrowhead style. Supported values match EndArrow."
     },
     {
       "name": "EndArrowFill",
@@ -53,19 +53,19 @@
       "name": "Routing",
       "kind": "Property",
       "type": "string",
-      "description": "Edge routing type. Supported values match ."
+      "description": "Edge routing type. Supported values match Routing."
     },
     {
       "name": "Shape",
       "kind": "Property",
       "type": "string",
-      "description": "Edge shape type. Supported values match ."
+      "description": "Edge shape type. Supported values match Shape."
     },
     {
       "name": "StartArrow",
       "kind": "Property",
       "type": "string",
-      "description": "Start arrowhead style. Supported values match ."
+      "description": "Start arrowhead style. Supported values match StartArrow."
     },
     {
       "name": "StartArrowFill",

@@ -17,7 +17,7 @@
       "name": "Optional",
       "kind": "Method",
       "type": "JsonDiagramStencilLibrarySource",
-      "description": "Creates a source that is loaded only after .",
+      "description": "Creates a source that is loaded only after LoadOptionalLibrary.",
       "parameters": [
         {
           "name": "sourceId",

@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Html",
   "namespace": "Tempo.Blazor.DocumentFormats.Html",
-  "description": "Exports a to safe, semantic HTML.",
+  "description": "Exports a DocumentEditorDocument to safe, semantic HTML.",
   "packageId": "Tempo.Blazor.DocumentFormats",
   "sourcePath": "src/Tempo.Blazor.DocumentFormats/Html/DocumentHtmlExporter.cs",
   "documentationStatus": "generated",

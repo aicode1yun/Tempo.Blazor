@@ -17,13 +17,13 @@
       "name": "Html",
       "kind": "Property",
       "type": "string?",
-      "description": "HTML content from the clipboard, or if not present."
+      "description": "HTML content from the clipboard, or null if not present."
     },
     {
       "name": "PlainText",
       "kind": "Property",
       "type": "string?",
-      "description": "Plain-text content from the clipboard, or if not present."
+      "description": "Plain-text content from the clipboard, or null if not present."
     },
     {
       "name": "Source",

@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Configuration",
   "namespace": "Tempo.Blazor.Configuration",
-  "description": "Extension methods for registering Tempo.Blazor modeling services.",
+  "description": "Extension methods for registering Tempo.Blazor modeling editor services.",
   "packageId": "Tempo.Blazor.Modeling",
   "sourcePath": "src/Tempo.Blazor.Modeling/Configuration/ModelingServiceCollectionExtensions.cs",
   "documentationStatus": "generated",

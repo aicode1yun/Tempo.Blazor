@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Model",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
-  "description": "A single image within an (mj-carousel-image).",
+  "description": "A single image within an EmailCarouselBlock (mj-carousel-image).",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailCarouselImage.cs",
   "documentationStatus": "generated",

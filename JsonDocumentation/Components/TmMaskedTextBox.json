@@ -26,7 +26,7 @@
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Whether the value includes literal characters from the mask. When false, only user-typed characters are stored."
+      "description": "Whether the value includes literal characters from the mask. When false, only user-typed characters are stored. Defaults to true."
     },
     {
       "name": "Value",

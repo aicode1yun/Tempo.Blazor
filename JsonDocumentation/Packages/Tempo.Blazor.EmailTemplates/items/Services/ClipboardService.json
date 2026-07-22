@@ -29,7 +29,7 @@
       "name": "Paste",
       "kind": "Method",
       "type": "EmailBlockBase?",
-      "description": "Returns a fresh copy (with new ids) of the clipboard block, or if empty."
+      "description": "Returns a fresh copy (with new ids) of the clipboard block, or null if empty."
     }
   ],
   "itemName": "ClipboardService"

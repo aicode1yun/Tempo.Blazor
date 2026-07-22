@@ -17,7 +17,7 @@
       "name": "Percent",
       "kind": "Property",
       "type": "int",
-      "description": "Explicit zoom percentage used when is ."
+      "description": "Explicit zoom percentage used when Mode is Percent."
     }
   ],
   "itemName": "ReportViewerZoom"

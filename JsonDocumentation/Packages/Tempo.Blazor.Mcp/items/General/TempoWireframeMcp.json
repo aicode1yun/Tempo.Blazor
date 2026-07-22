@@ -11,7 +11,7 @@
       "name": "AddTempoWireframeMcpTools",
       "kind": "Method",
       "type": "IServiceCollection",
-      "description": "Registers the dependencies the wireframe MCP tools resolve from DI (the component schema registry). The host must additionally supply an ITempoDocumentLibraryProvider and an IWireframeDocumentProvider, and register the tools with its MCP server via .",
+      "description": "Registers the dependencies the wireframe MCP tools resolve from DI (the component schema registry). The host must additionally supply an ITempoDocumentLibraryProvider and an IWireframeDocumentProvider, and register the tools with its MCP server via ToolTypes.",
       "parameters": [
         {
           "name": "services",

@@ -61,7 +61,7 @@
       "name": "TransactionScope",
       "kind": "Method",
       "type": "IDisposable",
-      "description": "Returns an wrapper that begins and commits/rolls back a transaction.",
+      "description": "Returns an IDisposable wrapper that begins and commits/rolls back a transaction.",
       "parameters": [
         {
           "name": "name",

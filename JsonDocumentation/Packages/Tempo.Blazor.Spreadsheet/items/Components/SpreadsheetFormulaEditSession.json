@@ -65,13 +65,13 @@
       "name": "SelectionEnd",
       "kind": "Property",
       "type": "int",
-      "description": "The current selection end within ."
+      "description": "The current selection end within Text."
     },
     {
       "name": "SelectionStart",
       "kind": "Property",
       "type": "int",
-      "description": "The current selection start within ."
+      "description": "The current selection start within Text."
     },
     {
       "name": "Suggestions",

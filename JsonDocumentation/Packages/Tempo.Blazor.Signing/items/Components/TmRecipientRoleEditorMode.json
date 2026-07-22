@@ -2,7 +2,7 @@
   "kind": "Enum",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Signing",
-  "description": "Editing mode for .",
+  "description": "Editing mode for TmRecipientRoleEditor.",
   "packageId": "Tempo.Blazor.Signing",
   "sourcePath": "src/Tempo.Blazor.Signing/Components/Signing/TmRecipientRoleEditorMode.cs",
   "documentationStatus": "generated",

@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Model",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
-  "description": "A single link within an (mj-navbar-link).",
+  "description": "A single link within an EmailNavbarBlock (mj-navbar-link).",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailNavbarLink.cs",
   "documentationStatus": "generated",

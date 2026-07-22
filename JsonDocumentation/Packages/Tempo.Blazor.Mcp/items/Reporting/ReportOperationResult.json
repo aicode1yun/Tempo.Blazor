@@ -11,7 +11,7 @@
     {
       "name": "Apply",
       "type": "static ReportOperationResult Apply()",
-      "description": "Applies report edit operations to a copy of ."
+      "description": "Applies report edit operations to a copy of definition."
     }
   ]
 }

@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
-  "description": "Removes duplicate rows from a range, keeping the first occurrence of each distinct key-column combination and compacting the surviving rows upward within the range. Only the columns inside the range are touched (Excel/OnlyOffice semantics); cells outside the range stay put. The whole operation is a single atomic step: restores the original layout exactly. Ranges that intersect a merged cell are rejected.",
+  "description": "Removes duplicate rows from a range, keeping the first occurrence of each distinct key-column combination and compacting the surviving rows upward within the range. Only the columns inside the range are touched (Excel/OnlyOffice semantics); cells outside the range stay put. The whole operation is a single atomic step: Undo restores the original layout exactly. Ranges that intersect a merged cell are rejected.",
   "packageId": "Tempo.Blazor.Spreadsheet",
   "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/RemoveDuplicatesCommand.cs",
   "documentationStatus": "generated",
@@ -21,13 +21,13 @@
       "name": "RemainingCount",
       "kind": "Property",
       "type": "int",
-      "description": "The number of unique data rows that remained after the last ."
+      "description": "The number of unique data rows that remained after the last Execute."
     },
     {
       "name": "RemovedCount",
       "kind": "Property",
       "type": "int",
-      "description": "The number of duplicate rows removed by the last ."
+      "description": "The number of duplicate rows removed by the last Execute."
     }
   ],
   "itemName": "RemoveDuplicatesCommand"

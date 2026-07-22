@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Model",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
-  "description": "Structural edit operations over an : finding, adding, moving, removing and duplicating blocks, sections and columns. All operations work across nested hero/group/wrapper containers via .",
+  "description": "Structural edit operations over an EmailTemplateDocument: finding, adding, moving, removing and duplicating blocks, sections and columns. All operations work across nested hero/group/wrapper containers via DocumentTree.",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/DocumentEditing.cs",
   "documentationStatus": "generated",
@@ -11,7 +11,7 @@
       "name": "AddBlock",
       "kind": "Method",
       "type": "bool",
-      "description": "Inserts a block into the column with the given id at (clamped). Returns if no such column exists.",
+      "description": "Inserts a block into the column with the given id at index (clamped). Returns false if no such column exists.",
       "parameters": [
         {
           "name": "document",
@@ -51,7 +51,7 @@
       "name": "AddSection",
       "kind": "Method",
       "type": "void",
-      "description": "Inserts a top-level section at (clamped).",
+      "description": "Inserts a top-level section at index (clamped).",
       "parameters": [
         {
           "name": "document",
@@ -71,7 +71,7 @@
       "name": "DuplicateBlock",
       "kind": "Method",
       "type": "EmailBlockBase?",
-      "description": "Inserts a deep copy (with fresh ids) of the block immediately after the original, in the same container. Returns the copy, or if the block was not found.",
+      "description": "Inserts a deep copy (with fresh ids) of the block immediately after the original, in the same container. Returns the copy, or null if the block was not found.",
       "parameters": [
         {
           "name": "document",
@@ -87,7 +87,7 @@
       "name": "DuplicateSection",
       "kind": "Method",
       "type": "EmailSection?",
-      "description": "Inserts a deep copy (with fresh ids) of a top-level section immediately after the original. Returns the copy, or if the section was not found.",
+      "description": "Inserts a deep copy (with fresh ids) of a top-level section immediately after the original. Returns the copy, or null if the section was not found.",
       "parameters": [
         {
           "name": "document",
@@ -103,7 +103,7 @@
       "name": "FindBlock",
       "kind": "Method",
       "type": "EmailBlockBase?",
-      "description": "Finds a block anywhere in the document by id, or returns .",
+      "description": "Finds a block anywhere in the document by id, or returns null.",
       "parameters": [
         {
           "name": "document",
@@ -119,7 +119,7 @@
       "name": "FindParentColumn",
       "kind": "Method",
       "type": "EmailColumn?",
-      "description": "Returns the column that directly contains the given block, or when the block is held by a non-column container (e.g. a hero) or does not exist.",
+      "description": "Returns the column that directly contains the given block, or null when the block is held by a non-column container (e.g. a hero) or does not exist.",
       "parameters": [
         {
           "name": "document",
@@ -135,7 +135,7 @@
       "name": "MoveBlock",
       "kind": "Method",
       "type": "bool",
-      "description": "Moves a block to the target column at (clamped, evaluated after removal). Returns if the block or target column is missing.",
+      "description": "Moves a block to the target column at targetIndex (clamped, evaluated after removal). Returns false if the block or target column is missing.",
       "parameters": [
         {
           "name": "document",
@@ -159,7 +159,7 @@
       "name": "MoveSection",
       "kind": "Method",
       "type": "bool",
-      "description": "Moves a top-level section to (clamped after removal).",
+      "description": "Moves a top-level section to index (clamped after removal).",
       "parameters": [
         {
           "name": "document",

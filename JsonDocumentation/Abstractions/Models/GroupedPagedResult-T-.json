@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Models",
   "namespace": "Tempo.Blazor.Models",
-  "description": "Represents server-side grouped data with per-group pagination. Returned by .",
+  "description": "Represents server-side grouped data with per-group pagination. Returned by GetGroupedDataAsync.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Models/GroupedPagedResult.cs",
   "documentationStatus": "generated",

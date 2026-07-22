@@ -16,7 +16,7 @@
       "name": "LoadOptionalLibrary",
       "kind": "Method",
       "type": "void",
-      "description": "Loads an optional source and makes its stencils available from .",
+      "description": "Loads an optional source and makes its stencils available from GetStencilSets.",
       "parameters": [
         {
           "name": "sourceId",

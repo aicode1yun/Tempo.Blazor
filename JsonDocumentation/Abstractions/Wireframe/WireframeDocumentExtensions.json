@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Wireframe",
   "namespace": "Tempo.Blazor.Components.Wireframe.Models",
-  "description": "Extension and factory helpers for and related models.",
+  "description": "Extension and factory helpers for WireframeDocument and related models.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Wireframe/Models/WireframeDocumentExtensions.cs",
   "documentationStatus": "generated",
@@ -23,7 +23,7 @@
       "name": "GetBool",
       "kind": "Method",
       "type": "bool",
-      "description": "Returns the boolean value of a prop, or .",
+      "description": "Returns the boolean value of a prop, or fallback.",
       "parameters": [
         {
           "name": "Dictionary<string",
@@ -48,7 +48,7 @@
       "name": "GetDouble",
       "kind": "Method",
       "type": "double",
-      "description": "Returns the double value of a prop, or .",
+      "description": "Returns the double value of a prop, or fallback.",
       "parameters": [
         {
           "name": "Dictionary<string",
@@ -73,7 +73,7 @@
       "name": "GetInt",
       "kind": "Method",
       "type": "int",
-      "description": "Returns the integer value of a prop, or .",
+      "description": "Returns the integer value of a prop, or fallback.",
       "parameters": [
         {
           "name": "Dictionary<string",
@@ -98,7 +98,7 @@
       "name": "GetString",
       "kind": "Method",
       "type": "string",
-      "description": "Returns the string value of a prop, or when the key is absent or the value is not a JSON string.",
+      "description": "Returns the string value of a prop, or fallback when the key is absent or the value is not a JSON string.",
       "parameters": [
         {
           "name": "Dictionary<string",

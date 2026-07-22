@@ -71,7 +71,7 @@
       "name": "Width",
       "kind": "Property",
       "type": "string?",
-      "description": "Gets or sets the column width (width), e.g. \"50%\" or \"200px\". means MJML splits the section width equally between columns."
+      "description": "Gets or sets the column width (width), e.g. \"50%\" or \"200px\". null means MJML splits the section width equally between columns."
     }
   ],
   "itemName": "EmailColumn"

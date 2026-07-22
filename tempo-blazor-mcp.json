@@ -1033,7 +1033,7 @@
           "name": "AddTempoWireframeMcpTools",
           "kind": "Method",
           "type": "IServiceCollection",
-          "description": "Registers the dependencies the wireframe MCP tools resolve from DI (the component schema registry). The host must additionally supply an ITempoDocumentLibraryProvider and an IWireframeDocumentProvider, and register the tools with its MCP server via .",
+          "description": "Registers the dependencies the wireframe MCP tools resolve from DI (the component schema registry). The host must additionally supply an ITempoDocumentLibraryProvider and an IWireframeDocumentProvider, and register the tools with its MCP server via ToolTypes.",
           "parameters": [
             {
               "name": "services",
@@ -1315,7 +1315,7 @@
         {
           "name": "Apply",
           "type": "static ReportOperationResult Apply()",
-          "description": "Applies report edit operations to a copy of ."
+          "description": "Applies report edit operations to a copy of definition."
         }
       ]
     },
@@ -1332,7 +1332,7 @@
         {
           "name": "Apply",
           "type": "static ReportOperationResult Apply()",
-          "description": "Applies report edit operations to a copy of ."
+          "description": "Applies report edit operations to a copy of definition."
         }
       ]
     },
@@ -1604,7 +1604,7 @@
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Mcp.Wireframe",
-      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "description": "MCP tool that turns a wireframe into an implementation brief for downstream planning.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeBriefTools.cs",
       "documentationStatus": "merged"
@@ -1614,7 +1614,7 @@
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Mcp.Wireframe",
-      "description": "Pure helpers that project entries into LLM-friendly shapes and suggest the nearest type name for typos. Used by the catalog MCP tools.",
+      "description": "Pure helpers that project WireframeSchemaRegistry entries into LLM-friendly shapes and suggest the nearest type name for typos. Used by the catalog MCP tools.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeCatalog.cs",
       "documentationStatus": "merged",
@@ -1736,7 +1736,7 @@
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Mcp.Wireframe",
-      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "description": "MCP tools for listing, reading and creating stored wireframe documents. Persistence (and therefore live-change notification) is delegated to the host-supplied providers.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeDocumentTools.cs",
       "documentationStatus": "merged"
@@ -1868,7 +1868,7 @@
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Mcp.Wireframe",
-      "description": "Validates a against the , producing precise, actionable messages with JSON-style paths — the main feedback loop that lets an LLM correct a design instead of silently producing a broken one.",
+      "description": "Validates a WireframeDocument against the WireframeSchemaRegistry, producing precise, actionable messages with JSON-style paths — the main feedback loop that lets an LLM correct a design instead of silently producing a broken one.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeValidationEngine.cs",
       "documentationStatus": "merged"
@@ -1888,7 +1888,7 @@
       "kind": "Class",
       "category": "Wireframe",
       "namespace": "Tempo.Blazor.Mcp.Wireframe",
-      "description": "Public class defined by Tempo.Blazor.Mcp.",
+      "description": "MCP tool for validating a wireframe document against the component schema registry.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeValidationTools.cs",
       "documentationStatus": "merged",

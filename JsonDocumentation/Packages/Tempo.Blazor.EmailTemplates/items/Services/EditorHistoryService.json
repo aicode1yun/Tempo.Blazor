@@ -23,7 +23,7 @@
       "name": "Push",
       "kind": "Method",
       "type": "void",
-      "description": "Records a new document state. When matches the previous push and falls within the coalesce window, it replaces the current state instead of adding a new step.",
+      "description": "Records a new document state. When coalesceKey matches the previous push and falls within the coalesce window, it replaces the current state instead of adding a new step.",
       "parameters": [
         {
           "name": "document",
@@ -40,13 +40,13 @@
       "name": "Redo",
       "kind": "Method",
       "type": "EmailTemplateDocument?",
-      "description": "Moves one step forward and returns an independent copy of that state, or ."
+      "description": "Moves one step forward and returns an independent copy of that state, or null."
     },
     {
       "name": "Undo",
       "kind": "Method",
       "type": "EmailTemplateDocument?",
-      "description": "Moves one step back and returns an independent copy of that state, or ."
+      "description": "Moves one step back and returns an independent copy of that state, or null."
     }
   ],
   "itemName": "EditorHistoryService"

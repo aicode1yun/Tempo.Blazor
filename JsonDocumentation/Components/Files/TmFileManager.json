@@ -93,7 +93,7 @@
       "name": "ViewModeChanged",
       "type": "EventCallback<FileManagerViewMode>",
       "isRequired": false,
-      "description": "Display mode (List or Grid). Default is ."
+      "description": "Event fired when the view mode changes."
     }
   ]
 }

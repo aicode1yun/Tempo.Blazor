@@ -35,13 +35,13 @@
       "name": "Name",
       "kind": "Property",
       "type": "required string",
-      "description": "camelCase property key – matches the key in ."
+      "description": "camelCase property key – matches the key in Props."
     },
     {
       "name": "Options",
       "kind": "Property",
       "type": "string[]?",
-      "description": "Allowed values for properties."
+      "description": "Allowed values for Enum properties."
     },
     {
       "name": "Type",

@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
-  "description": "Splits the text of a single source column into several columns using , writing the produced fields starting at the source column and overwriting cells to its right. Each produced column gets a target format (general → value parser, text → literal, skip → dropped). The whole region is snapshotted so restores the original single column exactly.",
+  "description": "Splits the text of a single source column into several columns using SpreadsheetTextToColumns, writing the produced fields starting at the source column and overwriting cells to its right. Each produced column gets a target format (general → value parser, text → literal, skip → dropped). The whole region is snapshotted so Undo restores the original single column exactly.",
   "packageId": "Tempo.Blazor.Spreadsheet",
   "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/TextToColumnsCommand.cs",
   "documentationStatus": "generated",
@@ -21,7 +21,7 @@
       "name": "ColumnsProduced",
       "kind": "Property",
       "type": "int",
-      "description": "The number of output columns produced by the last ."
+      "description": "The number of output columns produced by the last Execute."
     }
   ],
   "itemName": "TextToColumnsCommand"

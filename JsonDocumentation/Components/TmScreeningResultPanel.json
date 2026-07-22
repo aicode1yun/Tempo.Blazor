@@ -12,20 +12,20 @@
       "name": "Provider",
       "type": "IScreeningProvider",
       "isRequired": true,
-      "description": "Data source of the findings and the resolution workflow."
+      "description": "Data source of the findings and the resolution workflow. Required."
     },
     {
       "name": "SubjectId",
       "type": "string",
       "isRequired": true,
-      "description": "Identifier of the screened subject."
+      "description": "Identifier of the screened subject. Required."
     },
     {
       "name": "ReadOnly",
       "type": "bool",
       "isRequired": false,
       "default": "false",
-      "description": "Hides the confirm/dismiss actions when true."
+      "description": "Hides the confirm/dismiss actions when true. Default is false."
     },
     {
       "name": "CurrentUserName",
@@ -38,7 +38,7 @@
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Whether the confidence indicator is shown."
+      "description": "Whether the confidence indicator is shown. Default is true."
     },
     {
       "name": "OnFindingResolved",

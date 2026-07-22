@@ -36,7 +36,7 @@
     {
       "name": "IsScopedType",
       "type": "static bool IsScopedType()",
-      "description": "Returns true when is an app-scoped component type."
+      "description": "Returns true when type is an app-scoped component type."
     },
     {
       "name": "TryGetAppId",
@@ -56,12 +56,12 @@
     {
       "name": "MatchesAppId",
       "type": "bool MatchesAppId()",
-      "description": "Returns true when identifies the same scope."
+      "description": "Returns true when appId identifies the same scope."
     },
     {
       "name": "ContainsType",
       "type": "bool ContainsType()",
-      "description": "Returns true when belongs to this app scope."
+      "description": "Returns true when type belongs to this app scope."
     },
     {
       "name": "AppPackId",

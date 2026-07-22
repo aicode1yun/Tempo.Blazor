@@ -597,7 +597,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
-      "description": "Pastes the internal clipboard into a target range with paste-special semantics: selectable content (values / formulas / formats / all / all-except-borders), an optional arithmetic operation against the existing target values, skip-blanks, and transpose. Relative formula references are shifted by the paste offset (except when transposing, where formulas are flattened to their computed value to avoid producing wrong references). restores the overwritten cells exactly.",
+      "description": "Pastes the internal clipboard into a target range with paste-special semantics: selectable content (values / formulas / formats / all / all-except-borders), an optional arithmetic operation against the existing target values, skip-blanks, and transpose. Relative formula references are shifted by the paste offset (except when transposing, where formulas are flattened to their computed value to avoid producing wrong references). Undo restores the overwritten cells exactly.",
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/PasteSpecialCommand.cs",
       "documentationStatus": "merged",
@@ -625,7 +625,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
-      "description": "Removes duplicate rows from a range, keeping the first occurrence of each distinct key-column combination and compacting the surviving rows upward within the range. Only the columns inside the range are touched (Excel/OnlyOffice semantics); cells outside the range stay put. The whole operation is a single atomic step: restores the original layout exactly. Ranges that intersect a merged cell are rejected.",
+      "description": "Removes duplicate rows from a range, keeping the first occurrence of each distinct key-column combination and compacting the surviving rows upward within the range. Only the columns inside the range are touched (Excel/OnlyOffice semantics); cells outside the range stay put. The whole operation is a single atomic step: Undo restores the original layout exactly. Ranges that intersect a merged cell are rejected.",
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/RemoveDuplicatesCommand.cs",
       "documentationStatus": "merged",
@@ -715,7 +715,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
-      "description": "Replaces matched text within a single cell and supports undo. The cell's searchable text (displayed value or formula, per ) is rewritten and re-parsed through . In mode formula cells are skipped so their formulas are never destroyed.",
+      "description": "Replaces matched text within a single cell and supports undo. The cell's searchable text (displayed value or formula, per SearchIn) is rewritten and re-parsed through SpreadsheetValueParser. In Values mode formula cells are skipped so their formulas are never destroyed.",
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/ReplaceCommand.cs",
       "documentationStatus": "merged",
@@ -831,7 +831,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
-      "description": "Sets the value and/or formula of a single cell and supports undo. Optionally applies a typed data type and an implied number format (the latter only when the cell still uses the General format), as produced by .",
+      "description": "Sets the value and/or formula of a single cell and supports undo. Optionally applies a typed data type and an implied number format (the latter only when the cell still uses the General format), as produced by SpreadsheetValueParser.",
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/SetCellValueCommand.cs",
       "documentationStatus": "merged",
@@ -897,7 +897,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
-      "description": "Sorts a range by reordering whole rows (or columns when is set). Cell values, formulas and styles move with their row; relative formula references are shifted by the row delta of the move so they keep pointing at the same logical data. Undo restores the original cell layout exactly. Ranges that intersect merged cells are rejected.",
+      "description": "Sorts a range by reordering whole rows (or columns when ByRows is set). Cell values, formulas and styles move with their row; relative formula references are shifted by the row delta of the move so they keep pointing at the same logical data. Undo restores the original cell layout exactly. Ranges that intersect merged cells are rejected.",
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/SortRangeCommand.cs",
       "documentationStatus": "merged",
@@ -1338,7 +1338,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
-      "description": "Splits the text of a single source column into several columns using , writing the produced fields starting at the source column and overwriting cells to its right. Each produced column gets a target format (general → value parser, text → literal, skip → dropped). The whole region is snapshotted so restores the original single column exactly.",
+      "description": "Splits the text of a single source column into several columns using SpreadsheetTextToColumns, writing the produced fields starting at the source column and overwriting cells to its right. Each produced column gets a target format (general → value parser, text → literal, skip → dropped). The whole region is snapshotted so Undo restores the original single column exactly.",
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/TextToColumnsCommand.cs",
       "documentationStatus": "merged",
@@ -1434,7 +1434,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
-      "description": "Applies, replaces or clears the filter of a single column and recomputes which rows are hidden. Pass a null or inactive to clear that column. Undo restores the previous column filters and the previous row visibility.",
+      "description": "Applies, replaces or clears the filter of a single column and recomputes which rows are hidden. Pass a null or inactive columnFilter to clear that column. Undo restores the previous column filters and the previous row visibility.",
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/UpdateColumnFilterCommand.cs",
       "documentationStatus": "merged",
@@ -1456,7 +1456,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Spreadsheet.Xlsx",
-      "description": "Exports a to an XLSX file.",
+      "description": "Exports a SpreadsheetWorkbook to an XLSX file.",
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Xlsx/XlsxExporter.cs",
       "documentationStatus": "merged",
@@ -1480,7 +1480,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Spreadsheet.Xlsx",
-      "description": "Imports an XLSX file into a .",
+      "description": "Imports an XLSX file into a SpreadsheetWorkbook.",
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Xlsx/XlsxImporter.cs",
       "documentationStatus": "merged",
@@ -1607,14 +1607,14 @@
           "type": "int",
           "isRequired": false,
           "default": "50",
-          "description": "The initial number of columns to render."
+          "description": "The initial number of columns to render. Defaults to 50."
         },
         {
           "name": "ColumnWidth",
           "type": "double",
           "isRequired": false,
           "default": "64",
-          "description": "The default column width in pixels."
+          "description": "The default column width in pixels. Defaults to 64."
         },
         {
           "name": "CustomTools",
@@ -1663,7 +1663,7 @@
           "type": "string?",
           "isRequired": false,
           "default": "\"600px\"",
-          "description": "The CSS height of the spreadsheet container."
+          "description": "The CSS height of the spreadsheet container. Defaults to 600px."
         },
         {
           "name": "InitialWorkbook",
@@ -1748,7 +1748,7 @@
           "type": "SpreadsheetMode",
           "isRequired": false,
           "default": "SpreadsheetMode.Full",
-          "description": "Controls the display and interaction mode of the spreadsheet."
+          "description": "Controls the display and interaction mode of the spreadsheet. Defaults to Full."
         },
         {
           "name": "OnActiveSheetChanged",
@@ -2360,14 +2360,14 @@
           "type": "double",
           "isRequired": false,
           "default": "20",
-          "description": "The default row height in pixels."
+          "description": "The default row height in pixels. Defaults to 20."
         },
         {
           "name": "RowsCount",
           "type": "int",
           "isRequired": false,
           "default": "200",
-          "description": "The initial number of rows to render."
+          "description": "The initial number of rows to render. Defaults to 200."
         },
         {
           "name": "SelectedFontFamily",
@@ -2433,7 +2433,7 @@
           "type": "string?",
           "isRequired": false,
           "default": "\"100%\"",
-          "description": "The CSS width of the spreadsheet container."
+          "description": "The CSS width of the spreadsheet container. Defaults to 100%."
         },
         {
           "name": "Zoom",
@@ -2815,7 +2815,7 @@
       "category": "Spreadsheet",
       "subcategory": "Dialogs",
       "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
-      "description": "The custom filter dialog: an operator with up to two operands, combined with a second optional condition via AND/OR. The operator list is adapted to the column kind (text/number/date). Applying produces a with the matching criteria. All text is localized.",
+      "description": "The custom filter dialog: an operator with up to two operands, combined with a second optional condition via AND/OR. The operator list is adapted to the column kind (text/number/date). Applying produces a SpreadsheetColumnFilter with the matching criteria. All text is localized.",
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetCustomFilterDialog.razor",
       "documentationStatus": "merged",
@@ -2961,7 +2961,7 @@
       "category": "Spreadsheet",
       "subcategory": "Dialogs",
       "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
-      "description": "Find & replace panel for the spreadsheet. Owns the query/replacement text and search options locally and bubbles changes to the host, which performs the actual search/replace and reports the current match position back via / .",
+      "description": "Find & replace panel for the spreadsheet. Owns the query/replacement text and search options locally and bubbles changes to the host, which performs the actual search/replace and reports the current match position back via MatchIndex / MatchCount.",
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetFindReplaceDialog.razor",
       "documentationStatus": "merged",
@@ -3265,7 +3265,7 @@
       "category": "Spreadsheet",
       "subcategory": "Dialogs",
       "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
-      "description": "The Remove Duplicates dialog. Lists every column in the range with a checkbox, offers a \"my data has headers\" toggle (which switches the column labels between header text and the column letter), select-all / deselect-all helpers and a case-sensitivity option. Applying yields a . All text is localized.",
+      "description": "The Remove Duplicates dialog. Lists every column in the range with a checkbox, offers a \"my data has headers\" toggle (which switches the column labels between header text and the column letter), select-all / deselect-all helpers and a case-sensitivity option. Applying yields a SpreadsheetRemoveDuplicatesOptions. All text is localized.",
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetRemoveDuplicatesDialog.razor",
       "documentationStatus": "merged",
@@ -3376,7 +3376,7 @@
       "category": "Spreadsheet",
       "subcategory": "Dialogs",
       "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
-      "description": "The multi-level sort dialog. Each level chooses a column key, what to sort on (value / cell colour / font colour) and the order. Supports add/remove of levels, a \"my data has headers\" toggle and a case-sensitivity option. Applying produces a . All text is localized.",
+      "description": "The multi-level sort dialog. Each level chooses a column key, what to sort on (value / cell colour / font colour) and the order. Supports add/remove of levels, a \"my data has headers\" toggle and a case-sensitivity option. Applying produces a SpreadsheetSortSpec. All text is localized.",
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetSortDialog.razor",
       "documentationStatus": "merged",
@@ -3412,7 +3412,7 @@
       "category": "Spreadsheet",
       "subcategory": "Dialogs",
       "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
-      "description": "The Paste Special dialog. Radio options choose what to paste (all / values / formulas / formats / values+formats / all-except-borders), a dropdown picks an arithmetic operation, and checkboxes toggle transpose and skip-blanks. Applying yields a . All text is localized.",
+      "description": "The Paste Special dialog. Radio options choose what to paste (all / values / formulas / formats / values+formats / all-except-borders), a dropdown picks an arithmetic operation, and checkboxes toggle transpose and skip-blanks. Applying yields a SpreadsheetPasteSpecialOptions. All text is localized.",
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetSpecialPasteDialog.razor",
       "documentationStatus": "merged",
@@ -3474,7 +3474,7 @@
       "category": "Spreadsheet",
       "subcategory": "Dialogs",
       "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
-      "description": "The multi-step Text to Columns wizard. Step 1 picks the split type (delimited / fixed width), step 2 configures the delimiters (or break positions) with a live preview, and step 3 chooses the target format of each produced column. The preview updates live as options change. Applying yields a . All text is localized.",
+      "description": "The multi-step Text to Columns wizard. Step 1 picks the split type (delimited / fixed width), step 2 configures the delimiters (or break positions) with a live preview, and step 3 chooses the target format of each produced column. The preview updates live as options change. Applying yields a SpreadsheetTextToColumnsResult. All text is localized.",
       "packageId": "Tempo.Blazor.Spreadsheet",
       "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetTextToColumnsDialog.razor",
       "documentationStatus": "merged",

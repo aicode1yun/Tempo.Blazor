@@ -2,7 +2,7 @@
   "kind": "Enum",
   "category": "Document Library",
   "namespace": "Tempo.Blazor.DocumentLibrary",
-  "description": "Public enum defined by Tempo.Blazor.Abstractions.",
+  "description": "Optional management operations a ITempoDocumentLibraryProvider supports. The open dialog reads these to decide which affordances to render — a read-only store advertises None and shows only browse/open.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentLibrary/DocumentLibraryCapabilities.cs",
   "documentationStatus": "generated",

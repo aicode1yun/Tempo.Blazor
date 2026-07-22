@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Spreadsheet.Xlsx",
-  "description": "Imports an XLSX file into a .",
+  "description": "Imports an XLSX file into a SpreadsheetWorkbook.",
   "packageId": "Tempo.Blazor.Spreadsheet",
   "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Xlsx/XlsxImporter.cs",
   "documentationStatus": "generated",

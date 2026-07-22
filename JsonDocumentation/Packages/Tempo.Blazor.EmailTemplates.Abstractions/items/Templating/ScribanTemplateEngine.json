@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Templating",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
-  "description": "A sandboxed built on Scriban. Rendering is bounded by (loops, recursion, output size, time), include is disabled (no template loader) and no .NET reflection is exposed.",
+  "description": "A sandboxed ITemplateEngine built on Scriban. Rendering is bounded by TemplateSecurityOptions (loops, recursion, output size, time), include is disabled (no template loader) and no .NET reflection is exposed.",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/ScribanTemplateEngine.cs",
   "documentationStatus": "generated",

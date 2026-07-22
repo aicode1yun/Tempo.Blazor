@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
-  "description": "Replaces matched text within a single cell and supports undo. The cell's searchable text (displayed value or formula, per ) is rewritten and re-parsed through . In mode formula cells are skipped so their formulas are never destroyed.",
+  "description": "Replaces matched text within a single cell and supports undo. The cell's searchable text (displayed value or formula, per SearchIn) is rewritten and re-parsed through SpreadsheetValueParser. In Values mode formula cells are skipped so their formulas are never destroyed.",
   "packageId": "Tempo.Blazor.Spreadsheet",
   "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/ReplaceCommand.cs",
   "documentationStatus": "generated",
@@ -21,7 +21,7 @@
       "name": "DidReplace",
       "kind": "Property",
       "type": "bool",
-      "description": "Whether the last actually changed the cell."
+      "description": "Whether the last Execute actually changed the cell."
     }
   ],
   "itemName": "ReplaceCommand"

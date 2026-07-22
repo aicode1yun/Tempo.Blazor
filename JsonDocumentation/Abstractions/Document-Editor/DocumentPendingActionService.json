@@ -11,7 +11,7 @@
       "name": "Add",
       "kind": "Method",
       "type": "void",
-      "description": "Registers or updates a pending action. If an action with already exists its message is replaced.",
+      "description": "Registers or updates a pending action. If an action with id already exists its message is replaced.",
       "parameters": [
         {
           "name": "id",
@@ -45,7 +45,7 @@
       "name": "Remove",
       "kind": "Method",
       "type": "void",
-      "description": "Removes the pending action with the given . No-op if not found.",
+      "description": "Removes the pending action with the given id. No-op if not found.",
       "parameters": [
         {
           "name": "id",

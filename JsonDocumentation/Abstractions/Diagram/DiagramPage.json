@@ -59,7 +59,7 @@
       "name": "PageSize",
       "kind": "Property",
       "type": "DiagramPageSize",
-      "description": "Predefined page size. Changing this updates and ."
+      "description": "Predefined page size. Changing this updates Width and Height."
     },
     {
       "name": "RulerUnit",

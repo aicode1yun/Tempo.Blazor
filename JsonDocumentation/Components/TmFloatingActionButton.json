@@ -18,7 +18,7 @@
       "type": "FabPosition",
       "isRequired": false,
       "default": "BottomRight",
-      "description": "The position of the button on the screen."
+      "description": "The position of the button on the screen. Defaults to BottomRight."
     },
     {
       "name": "Disabled",

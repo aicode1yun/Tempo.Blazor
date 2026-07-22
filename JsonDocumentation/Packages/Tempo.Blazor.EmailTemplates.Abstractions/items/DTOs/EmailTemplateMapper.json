@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "DTOs",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Dtos",
-  "description": "Maps between the editable and transport DTOs.",
+  "description": "Maps between the editable EmailTemplateDocument and transport DTOs.",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Dtos/EmailTemplateMapper.cs",
   "documentationStatus": "generated",

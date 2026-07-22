@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Spreadsheet",
   "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
-  "description": "Options that drive : the split mode, which delimiters to use, the optional text qualifier (quote) character, whether to collapse consecutive delimiters, and the break positions for fixed-width mode.",
+  "description": "Options that drive Split: the split mode, which delimiters to use, the optional text qualifier (quote) character, whether to collapse consecutive delimiters, and the break positions for fixed-width mode.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetTextToColumns.cs",
   "documentationStatus": "generated",

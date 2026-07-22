@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Validation",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Validation",
-  "description": "Validates with localized messages.",
+  "description": "Validates CreateEmailTemplateRequest with localized messages.",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Validation/CreateEmailTemplateRequestValidator.cs",
   "documentationStatus": "generated",

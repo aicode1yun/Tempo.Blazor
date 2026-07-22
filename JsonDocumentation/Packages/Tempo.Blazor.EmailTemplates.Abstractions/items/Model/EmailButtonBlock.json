@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Model",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
-  "description": "A call-to-action button (mj-button). is the label.",
+  "description": "A call-to-action button (mj-button). Text is the label.",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailButtonBlock.cs",
   "documentationStatus": "generated",

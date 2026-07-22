@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Diagram",
   "namespace": "Tempo.Blazor.Components.Diagram.Models",
-  "description": "Public class defined by Tempo.Blazor.Abstractions.",
+  "description": "Root document of a diagram. Serializes to/from JSON for persistence and AI-friendly editing.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramDocument.cs",
   "documentationStatus": "generated",
@@ -11,7 +11,7 @@
       "name": "EnsurePages",
       "kind": "Method",
       "type": "void",
-      "description": "Guarantees that contains at least one page."
+      "description": "Guarantees that Pages contains at least one page."
     },
     {
       "name": "SnapToGrid",

@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Work Items",
   "namespace": "Tempo.Blazor.Abstractions.WorkItems",
-  "description": "Canonical, unified task / work-item model shared by every task-bearing component (Gantt, Notion tasks, external work-item blocks, scheduler). A single supplies these so the same item can appear consistently across components within one application.",
+  "description": "Canonical, unified task / work-item model shared by every task-bearing component (Gantt, Notion tasks, external work-item blocks, scheduler). A single ITmWorkItemProvider supplies these so the same item can appear consistently across components within one application.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/TmWorkItem.cs",
   "documentationStatus": "generated",
@@ -11,7 +11,7 @@
       "name": "Duration",
       "kind": "Field",
       "type": "TimeSpan",
-      "description": "Computed duration ( − )."
+      "description": "Computed duration (End − Start)."
     },
     {
       "name": "HasParent",
@@ -53,7 +53,7 @@
       "name": "Comments",
       "kind": "Property",
       "type": "List<GanttComment>",
-      "description": "Comments on this item."
+      "description": "Comment entries on this item."
     },
     {
       "name": "CreatedAt",
@@ -83,7 +83,7 @@
       "name": "End",
       "kind": "Property",
       "type": "DateTime",
-      "description": "Planned end. Defaults to for unscheduled sources."
+      "description": "Planned end. Defaults to MinValue for unscheduled sources."
     },
     {
       "name": "EstimationHours",
@@ -185,7 +185,7 @@
       "name": "Start",
       "kind": "Property",
       "type": "DateTime",
-      "description": "Planned start. Defaults to for unscheduled sources (e.g. Notion tasks, which use instead)."
+      "description": "Planned start. Defaults to MinValue for unscheduled sources (e.g. Notion tasks, which use DueDate instead)."
     },
     {
       "name": "Status",
@@ -209,7 +209,7 @@
       "name": "Tags",
       "kind": "Property",
       "type": "List<string>",
-      "description": "Free-form tags / labels."
+      "description": "Free-form tags / labels captured as shared tag references."
     },
     {
       "name": "TimeLog",

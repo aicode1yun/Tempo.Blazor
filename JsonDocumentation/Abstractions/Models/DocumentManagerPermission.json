@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Models",
   "namespace": "Tempo.Blazor.Abstractions.Models",
-  "description": "Defines access permissions for a document or folder in .",
+  "description": "Defines access permissions for a document or folder in TmDocumentManager{TMetadata}.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentManagerPermission.cs",
   "documentationStatus": "generated",

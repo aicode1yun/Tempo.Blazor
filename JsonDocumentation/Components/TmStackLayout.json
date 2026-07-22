@@ -19,7 +19,7 @@
       "type": "int",
       "isRequired": false,
       "default": "2",
-      "description": "The gap between items in space units (1-8)."
+      "description": "The gap between items in space units (1-8). Defaults to 2."
     },
     {
       "name": "AlignItems",

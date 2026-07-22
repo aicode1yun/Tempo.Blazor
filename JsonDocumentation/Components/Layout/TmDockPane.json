@@ -2,7 +2,7 @@
   "itemName": "TmDockPane",
   "kind": "Component",
   "category": "Layout",
-  "description": "Declares a dockable pane inside a . The pane registers itself via cascading parameter and its content is rendered by the manager in the appropriate docking zone.",
+  "description": "Declares a dockable pane inside a TmDockManager. The pane registers itself via cascading parameter and its content is rendered by the manager in the appropriate docking zone.",
   "packageId": "Tempo.Blazor",
   "namespace": "Tempo.Blazor.Components.Layout",
   "sourcePath": "src/Tempo.Blazor/Components/Layout/TmDockPane.razor",

@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "General",
   "namespace": "Tempo.Blazor.FluentValidation",
-  "description": "Extension methods for to enable FluentValidation without using the component. Useful for programmatic validation scenarios.",
+  "description": "Extension methods for EditContext to enable FluentValidation without using the FluentValidationValidator component. Useful for programmatic validation scenarios.",
   "packageId": "Tempo.Blazor.FluentValidation",
   "sourcePath": "src/Tempo.Blazor.FluentValidation/EditContextFluentValidationExtensions.cs",
   "documentationStatus": "generated",

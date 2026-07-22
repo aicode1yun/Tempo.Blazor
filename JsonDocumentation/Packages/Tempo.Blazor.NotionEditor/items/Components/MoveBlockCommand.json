@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Commands",
-  "description": "Reorders a block within the page by moving it from to in the local list and persisting the new order. Undo restores the original order.",
+  "description": "Reorders a block within the page by moving it from sourceIndex to targetIndex in the local list and persisting the new order. Undo restores the original order.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Commands/MoveBlockCommand.cs",
   "documentationStatus": "generated",

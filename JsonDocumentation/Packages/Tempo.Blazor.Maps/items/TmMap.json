@@ -68,7 +68,7 @@
       "name": "DataProvider",
       "type": "IMapDataProvider?",
       "isRequired": false,
-      "description": "Optional data source: when set, the component requests fresh points after the viewport settles (debounced), cancelling the superseded request. The component stays fully usable without a provider."
+      "description": "Optional data source: when set, the component requests fresh points after the viewport settles (debounced by DataRequestDebounceMs), cancelling the superseded request. The component stays fully usable without a provider (imperative mode)."
     },
     {
       "name": "DataRequestDebounceMs",

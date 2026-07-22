@@ -2,7 +2,7 @@
   "kind": "Enum",
   "category": "Diagram",
   "namespace": "Tempo.Blazor.Components.Diagram.Models",
-  "description": "Categorises a stencil's background into a native SVG primitive that the unified-SVG canvas () can render as an <rect>, <ellipse>, <polygon> or <path> directly inside the node <g>. Stencils whose background cannot be cleanly expressed as a single SVG primitive (e.g. cylinder, cloud, actor, sticky-note, cube, complex component/package outlines …) map to . For those the canvas keeps the existing HTML/CSS fallback (inside the node's <foreignObject>) and does not emit a native SVG primitive.",
+  "description": "Categorises a stencil's background into a native SVG primitive that the unified-SVG canvas (TmDiagramCanvas) can render as an <rect>, <ellipse>, <polygon> or <path> directly inside the node <g>. Stencils whose background cannot be cleanly expressed as a single SVG primitive (e.g. cylinder, cloud, actor, sticky-note, cube, complex component/package outlines …) map to Custom. For those the canvas keeps the existing HTML/CSS fallback (inside the node's <foreignObject>) and does not emit a native SVG primitive.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramShapeKind.cs",
   "documentationStatus": "generated",

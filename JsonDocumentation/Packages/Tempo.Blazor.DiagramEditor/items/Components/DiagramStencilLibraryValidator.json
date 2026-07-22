@@ -11,7 +11,7 @@
       "name": "Validate",
       "kind": "Method",
       "type": "DiagramStencilLibraryValidationResult",
-      "description": "Validates and returns stable error codes.",
+      "description": "Validates library and returns stable error codes.",
       "parameters": [
         {
           "name": "library",

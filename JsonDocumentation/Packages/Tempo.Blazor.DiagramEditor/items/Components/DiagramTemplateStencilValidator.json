@@ -11,7 +11,7 @@
       "name": "Validate",
       "kind": "Method",
       "type": "DiagramTemplateStencilValidationResult",
-      "description": "Validates node stencil ids and edge connector types in .",
+      "description": "Validates node stencil ids and edge connector types in template.",
       "parameters": [
         {
           "name": "template",

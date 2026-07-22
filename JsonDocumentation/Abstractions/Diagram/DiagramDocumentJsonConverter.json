@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Diagram",
   "namespace": "Tempo.Blazor.Components.Diagram.Serialization",
-  "description": "Custom JSON converter for that supports reading both the legacy v1.0 format (flat Nodes/Edges/Layers/Width/Height) and the modern v2.0 multi-page format.",
+  "description": "Custom JSON converter for DiagramDocument that supports reading both the legacy v1.0 format (flat Nodes/Edges/Layers/Width/Height) and the modern v2.0 multi-page format.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Serialization/DiagramDocumentJsonConverter.cs",
   "documentationStatus": "generated",

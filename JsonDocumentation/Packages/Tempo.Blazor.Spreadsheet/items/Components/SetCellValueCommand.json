@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Spreadsheet.Commands",
-  "description": "Sets the value and/or formula of a single cell and supports undo. Optionally applies a typed data type and an implied number format (the latter only when the cell still uses the General format), as produced by .",
+  "description": "Sets the value and/or formula of a single cell and supports undo. Optionally applies a typed data type and an implied number format (the latter only when the cell still uses the General format), as produced by SpreadsheetValueParser.",
   "packageId": "Tempo.Blazor.Spreadsheet",
   "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Commands/SetCellValueCommand.cs",
   "documentationStatus": "generated",

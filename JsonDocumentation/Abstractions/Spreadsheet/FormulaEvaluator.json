@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Spreadsheet",
   "namespace": "Tempo.Blazor.Components.Spreadsheet.Formula",
-  "description": "Evaluates a AST against a .",
+  "description": "Evaluates a FormulaNode AST against a FormulaContext.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Formula/FormulaEvaluator.cs",
   "documentationStatus": "generated",

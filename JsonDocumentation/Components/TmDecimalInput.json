@@ -23,7 +23,7 @@
       "name": "ValueExpression",
       "type": "Expression<Func<decimal?>>?",
       "isRequired": false,
-      "description": "Expression identifying the bound model field. Blazor supplies it automatically when you use @bind-Value; it links the input to DataAnnotationsValidator messages inside an EditForm."
+      "description": "Expression identifying the bound model field. Blazor supplies it automatically when you use @bind-Value; it is what links the input to DataAnnotationsValidator messages inside an EditForm."
     },
     {
       "name": "DecimalPlaces",
@@ -37,7 +37,7 @@
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Show thousands separators while the field is not being edited."
+      "description": "Show thousands separators while the field is not being edited (default true)."
     },
     {
       "name": "Culture",
@@ -62,7 +62,7 @@
       "type": "decimal",
       "isRequired": false,
       "default": "1",
-      "description": "Amount added or removed by the steppers and the arrow keys, on the displayed scale (in percent mode, one percentage point)."
+      "description": "Amount added or removed by the steppers and the arrow keys, on the displayed scale (default 1 — in percent mode, one percentage point)."
     },
     {
       "name": "ShowButtons",

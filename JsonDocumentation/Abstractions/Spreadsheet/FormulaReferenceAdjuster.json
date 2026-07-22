@@ -31,7 +31,7 @@
       "name": "AdjustFormula",
       "kind": "Method",
       "type": "string",
-      "description": "Adjusts all relative cell references in by rows and columns. Returns the adjusted formula string, or the original if parsing fails.",
+      "description": "Adjusts all relative cell references in formula by dRow rows and dCol columns. Returns the adjusted formula string, or the original if parsing fails.",
       "parameters": [
         {
           "name": "formula",
@@ -51,7 +51,7 @@
       "name": "CycleLastAbsoluteRef",
       "kind": "Method",
       "type": "string",
-      "description": "Cycles the absolute/relative mode of the last cell reference in through: A1 → $A$1 → A$1 → $A1 → A1. Returns the original formula if no cell reference is found.",
+      "description": "Cycles the absolute/relative mode of the last cell reference in formula through: A1 → $A$1 → A$1 → $A1 → A1. Returns the original formula if no cell reference is found.",
       "parameters": [
         {
           "name": "formula",
@@ -63,7 +63,7 @@
       "name": "InsertOrReplaceLastRef",
       "kind": "Method",
       "type": "string",
-      "description": "Inserts into : replaces the last CellRef/RangeRef token when present (user picked a new cell), otherwise appends.",
+      "description": "Inserts cellRef into formula: replaces the last CellRef/RangeRef token when present (user picked a new cell), otherwise appends.",
       "parameters": [
         {
           "name": "formula",
@@ -79,7 +79,7 @@
       "name": "ParseFormulaReferences",
       "kind": "Method",
       "type": "IReadOnlyList<string>",
-      "description": "Returns the unique raw cell/range references from in order of first appearance. Used to assign highlight colours in formula-point mode.",
+      "description": "Returns the unique raw cell/range references from formula in order of first appearance. Used to assign highlight colours in formula-point mode.",
       "parameters": [
         {
           "name": "formula",

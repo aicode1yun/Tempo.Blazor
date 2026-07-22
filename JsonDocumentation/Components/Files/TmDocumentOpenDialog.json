@@ -2,7 +2,7 @@
   "itemName": "TmDocumentOpenDialog",
   "kind": "Component",
   "category": "Files",
-  "description": "A Word-like \"Open document\" dialog over an : a folder tree, breadcrumb, searchable list/grid of documents, optional folder/document management, and a link-or-copy choice. Emits a on confirm.",
+  "description": "A Word-like \"Open document\" dialog over an ITempoDocumentLibraryProvider: a folder tree, breadcrumb, searchable list/grid of documents, optional folder/document management, and a link-or-copy choice. Emits a DocumentOpenResult on confirm.",
   "packageId": "Tempo.Blazor",
   "namespace": "Tempo.Blazor.Components.Files",
   "sourcePath": "src/Tempo.Blazor/Components/Files/TmDocumentOpenDialog.razor",
@@ -35,7 +35,7 @@
       "name": "OnSelected",
       "type": "EventCallback<DocumentOpenResult>",
       "isRequired": false,
-      "description": "Initial insert mode. Defaults to ."
+      "description": "Raised with the chosen document when the user confirms."
     },
     {
       "name": "Open",

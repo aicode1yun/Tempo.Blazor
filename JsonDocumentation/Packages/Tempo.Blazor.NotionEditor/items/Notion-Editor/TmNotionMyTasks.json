@@ -2,7 +2,7 @@
   "itemName": "TmNotionMyTasks",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "Aggregated task panel for Notion action items.",
+  "description": "Aggregated task panel for Notion action items, backed by the unified work-item provider.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.UI",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/UI/TmNotionMyTasks.razor",

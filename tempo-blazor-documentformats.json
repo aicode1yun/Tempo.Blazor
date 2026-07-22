@@ -782,7 +782,7 @@
       "kind": "Class",
       "category": "Html",
       "namespace": "Tempo.Blazor.DocumentFormats.Html",
-      "description": "Exports a to safe, semantic HTML.",
+      "description": "Exports a DocumentEditorDocument to safe, semantic HTML.",
       "packageId": "Tempo.Blazor.DocumentFormats",
       "sourcePath": "src/Tempo.Blazor.DocumentFormats/Html/DocumentHtmlExporter.cs",
       "documentationStatus": "merged"
@@ -802,7 +802,7 @@
       "kind": "Class",
       "category": "Html",
       "namespace": "Tempo.Blazor.DocumentFormats.Html",
-      "description": "Imports a safe subset of semantic HTML into a .",
+      "description": "Imports a safe subset of semantic HTML into a DocumentEditorDocument.",
       "packageId": "Tempo.Blazor.DocumentFormats",
       "sourcePath": "src/Tempo.Blazor.DocumentFormats/Html/DocumentHtmlImporter.cs",
       "documentationStatus": "merged"
@@ -822,7 +822,7 @@
       "kind": "Class",
       "category": "Markdown",
       "namespace": "Tempo.Blazor.DocumentFormats.Markdown",
-      "description": "Exports a to Markdown.",
+      "description": "Exports a DocumentEditorDocument to Markdown.",
       "packageId": "Tempo.Blazor.DocumentFormats",
       "sourcePath": "src/Tempo.Blazor.DocumentFormats/Markdown/DocumentMarkdownExporter.cs",
       "documentationStatus": "merged",
@@ -846,7 +846,7 @@
       "kind": "Class",
       "category": "Markdown",
       "namespace": "Tempo.Blazor.DocumentFormats.Markdown",
-      "description": "Imports common safe Markdown document structures into a .",
+      "description": "Imports common safe Markdown document structures into a DocumentEditorDocument.",
       "packageId": "Tempo.Blazor.DocumentFormats",
       "sourcePath": "src/Tempo.Blazor.DocumentFormats/Markdown/DocumentMarkdownImporter.cs",
       "documentationStatus": "merged"

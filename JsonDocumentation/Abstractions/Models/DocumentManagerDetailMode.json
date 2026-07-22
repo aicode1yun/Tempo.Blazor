@@ -2,7 +2,7 @@
   "kind": "Enum",
   "category": "Models",
   "namespace": "Tempo.Blazor.Abstractions.Models",
-  "description": "Display mode for the detail / properties panel in .",
+  "description": "Display mode for the detail / properties panel in TmDocumentManager{TMetadata}.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentManagerDetailMode.cs",
   "documentationStatus": "generated",

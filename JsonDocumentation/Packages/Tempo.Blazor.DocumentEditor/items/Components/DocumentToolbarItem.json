@@ -53,7 +53,7 @@
       "name": "Group",
       "kind": "Property",
       "type": "string?",
-      "description": "Logical toolbar group. Prefer this over for new code."
+      "description": "Logical toolbar group. Prefer this over GroupId for new code."
     },
     {
       "name": "GroupId",

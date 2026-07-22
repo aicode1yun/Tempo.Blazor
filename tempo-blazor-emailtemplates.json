@@ -476,7 +476,7 @@
           "name": "DocumentChanged",
           "type": "EventCallback<EmailTemplateDocument>",
           "isRequired": false,
-          "description": "Gets or sets the edited document. Two-way bindable via ."
+          "description": "Raised when the document changes (for @bind-Document)."
         },
         {
           "name": "OnAutoSave",

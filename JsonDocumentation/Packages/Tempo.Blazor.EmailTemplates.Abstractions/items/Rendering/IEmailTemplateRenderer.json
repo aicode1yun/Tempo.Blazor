@@ -2,7 +2,7 @@
   "kind": "Interface",
   "category": "Rendering",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
-  "description": "Renders an with a data model into HTML and text.",
+  "description": "Renders an EmailTemplateDocument with a data model into HTML and text.",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/IEmailTemplateRenderer.cs",
   "documentationStatus": "generated",

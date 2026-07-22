@@ -16,7 +16,7 @@
     {
       "name": "SearchTokensAsync",
       "returnType": "Task<IEnumerable<IToken>>",
-      "description": "Returns tokens whose Key, DisplayName, Description, or Category contain the query string. Called each time the user types after {{ . An empty query returns all tokens.",
+      "description": "Returns tokens whose Key, DisplayName, Description, or Category contain the query string. Called each time the user types after {{. An empty query returns all tokens.",
       "parameters": [
         {
           "name": "query",

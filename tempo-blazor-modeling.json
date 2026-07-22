@@ -168,7 +168,7 @@
       "kind": "Class",
       "category": "Configuration",
       "namespace": "Tempo.Blazor.Configuration",
-      "description": "Extension methods for registering Tempo.Blazor modeling services.",
+      "description": "Extension methods for registering Tempo.Blazor modeling editor services.",
       "packageId": "Tempo.Blazor.Modeling",
       "sourcePath": "src/Tempo.Blazor.Modeling/Configuration/ModelingServiceCollectionExtensions.cs",
       "documentationStatus": "merged",
@@ -473,7 +473,7 @@
           "name": "SelectedElement",
           "type": "ModelingElementDto?",
           "isRequired": false,
-          "description": "Elements rendered by the tree. They are grouped by ."
+          "description": "Currently selected element."
         },
         {
           "name": "SelectedElementChanged",

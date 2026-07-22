@@ -38,7 +38,7 @@
       "type": "bool",
       "isRequired": false,
       "default": "false",
-      "description": "Whether positive amounts carry an explicit plus sign."
+      "description": "Whether positive amounts carry an explicit plus sign. Default is false."
     },
     {
       "name": "Class",

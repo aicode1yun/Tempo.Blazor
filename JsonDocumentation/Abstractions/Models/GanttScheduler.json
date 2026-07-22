@@ -11,7 +11,7 @@
       "name": "Schedule",
       "kind": "Method",
       "type": "void",
-      "description": "Adjusts task start/end dates so all dependency constraints are satisfied. Modifies in place.",
+      "description": "Adjusts task start/end dates so all dependency constraints are satisfied. Modifies tasks in place.",
       "parameters": [
         {
           "name": "tasks",

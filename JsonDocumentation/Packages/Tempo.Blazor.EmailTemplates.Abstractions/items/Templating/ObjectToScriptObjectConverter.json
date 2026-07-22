@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Templating",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Templating",
-  "description": "Converts an arbitrary model into a Scriban . Dictionaries become script objects keyed by their entries (so JSON-derived models work), lists are converted element-wise, and POCO/anonymous objects are imported with the default snake_case member renamer.",
+  "description": "Converts an arbitrary model into a Scriban ScriptObject. Dictionaries become script objects keyed by their entries (so JSON-derived models work), lists are converted element-wise, and POCO/anonymous objects are imported with the default snake_case member renamer.",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Templating/ObjectToScriptObjectConverter.cs",
   "documentationStatus": "generated",

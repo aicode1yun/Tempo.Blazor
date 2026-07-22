@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Commands",
-  "description": "Changes a block's while preserving its position. Undo restores the original type and content.",
+  "description": "Changes a block's BlockType while preserving its position. Undo restores the original type and content.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Commands/ConvertBlockCommand.cs",
   "documentationStatus": "generated",

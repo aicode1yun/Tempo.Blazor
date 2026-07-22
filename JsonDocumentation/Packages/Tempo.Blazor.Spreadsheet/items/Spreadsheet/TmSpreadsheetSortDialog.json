@@ -2,7 +2,7 @@
   "itemName": "TmSpreadsheetSortDialog",
   "kind": "Component",
   "category": "Spreadsheet",
-  "description": "The multi-level sort dialog. Each level chooses a column key, what to sort on (value / cell colour / font colour) and the order. Supports add/remove of levels, a \"my data has headers\" toggle and a case-sensitivity option. Applying produces a . All text is localized.",
+  "description": "The multi-level sort dialog. Each level chooses a column key, what to sort on (value / cell colour / font colour) and the order. Supports add/remove of levels, a \"my data has headers\" toggle and a case-sensitivity option. Applying produces a SpreadsheetSortSpec. All text is localized.",
   "packageId": "Tempo.Blazor.Spreadsheet",
   "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
   "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetSortDialog.razor",

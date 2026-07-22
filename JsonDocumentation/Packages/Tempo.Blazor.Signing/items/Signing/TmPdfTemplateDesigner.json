@@ -82,7 +82,7 @@
       "name": "PageIndexChanged",
       "type": "EventCallback<int>",
       "isRequired": false,
-      "description": "Current page index used when is ."
+      "description": "Callback invoked when the current page index changes."
     },
     {
       "name": "Scale",

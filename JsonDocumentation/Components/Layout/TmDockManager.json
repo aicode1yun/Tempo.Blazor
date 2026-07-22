@@ -51,7 +51,7 @@
       "name": "PaneTemplate",
       "type": "RenderFragment<DockPane>?",
       "isRequired": false,
-      "description": "Optional data-bound pane list. When set, panes are rendered from this list instead of ."
+      "description": "Template used to render each DockPane when Items is set."
     }
   ]
 }

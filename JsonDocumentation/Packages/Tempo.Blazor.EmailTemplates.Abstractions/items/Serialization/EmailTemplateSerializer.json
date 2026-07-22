@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Serialization",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Serialization",
-  "description": "Serializes to and from JSON. Block polymorphism uses the type discriminator declared on . Unknown properties are ignored (forward compatibility); unknown block types and malformed JSON surface as .",
+  "description": "Serializes EmailTemplateDocument to and from JSON. Block polymorphism uses the type discriminator declared on EmailBlockBase. Unknown properties are ignored (forward compatibility); unknown block types and malformed JSON surface as EmailTemplateSerializationException.",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Serialization/EmailTemplateSerializer.cs",
   "documentationStatus": "generated",

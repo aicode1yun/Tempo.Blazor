@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Wireframe",
   "namespace": "Tempo.Blazor.Mcp.Wireframe",
-  "description": "Pure helpers that project entries into LLM-friendly shapes and suggest the nearest type name for typos. Used by the catalog MCP tools.",
+  "description": "Pure helpers that project WireframeSchemaRegistry entries into LLM-friendly shapes and suggest the nearest type name for typos. Used by the catalog MCP tools.",
   "packageId": "Tempo.Blazor.Mcp",
   "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeCatalog.cs",
   "documentationStatus": "generated",
@@ -35,7 +35,7 @@
       "name": "SuggestType",
       "kind": "Method",
       "type": "string?",
-      "description": "Returns the registered type whose name is closest to , if reasonably near.",
+      "description": "Returns the registered type whose name is closest to unknown, if reasonably near.",
       "parameters": [
         {
           "name": "registry",

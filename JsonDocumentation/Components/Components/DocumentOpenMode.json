@@ -2,7 +2,7 @@
   "kind": "Enum",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Files",
-  "description": "How a document picked in should be consumed.",
+  "description": "How a document picked in TmDocumentOpenDialog should be consumed.",
   "packageId": "Tempo.Blazor",
   "sourcePath": "src/Tempo.Blazor/Components/Files/DocumentOpenMode.cs",
   "documentationStatus": "generated",

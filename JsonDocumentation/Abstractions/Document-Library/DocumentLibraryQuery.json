@@ -29,7 +29,7 @@
       "name": "Search",
       "kind": "Property",
       "type": "string?",
-      "description": "Free-text search across document names. Null or empty returns the folder contents unfiltered. Only honoured when the provider advertises ."
+      "description": "Free-text search across document names. Null or empty returns the folder contents unfiltered. Only honoured when the provider advertises Search."
     },
     {
       "name": "Skip",
@@ -41,7 +41,7 @@
       "name": "SortField",
       "kind": "Property",
       "type": "DocumentLibrarySortField",
-      "description": "Field to order results by. Defaults to ."
+      "description": "Field to order results by. Defaults to Name."
     },
     {
       "name": "Take",

@@ -2,7 +2,7 @@
   "kind": "Interface",
   "category": "Pivot Table",
   "namespace": "Tempo.Blazor.Abstractions.PivotTable",
-  "description": "Abstract provider for XMLA (XML for Analysis) / OLAP cube data sources. Implementations are responsible for the actual SOAP/HTTP communication with the XMLA endpoint; this interface defines the contract consumed by .",
+  "description": "Abstract provider for XMLA (XML for Analysis) / OLAP cube data sources. Implementations are responsible for the actual SOAP/HTTP communication with the XMLA endpoint; this interface defines the contract consumed by TmPivotTable{TItem}.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/IXmlaPivotDataProvider.cs",
   "documentationStatus": "generated",

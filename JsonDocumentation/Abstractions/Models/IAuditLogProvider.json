@@ -2,7 +2,7 @@
   "kind": "Interface",
   "category": "Models",
   "namespace": "Tempo.Blazor.Abstractions.Models",
-  "description": "Data source contract of TmAuditLogViewer: filtered paged queries with count aggregation, filter facets, and timeline bucketing.",
+  "description": "Data source contract of TmAuditLogViewer: filtered paged queries with count aggregation, filter facets, and timeline bucketing. Implementations back the viewer with a database, API, or an in-memory store.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Models/AuditLogModels.cs",
   "documentationStatus": "generated",

@@ -15,7 +15,7 @@
       "name": "AllowMultipleAttachments",
       "type": "bool",
       "isRequired": false,
-      "description": "How the detail panel is displayed. Default is ."
+      "description": "When true, allows one logical item to hold multiple physical file attachments."
     },
     {
       "name": "AttachmentListTemplate",
@@ -194,7 +194,7 @@
       "name": "ViewModeChanged",
       "type": "EventCallback<DocumentManagerViewMode>",
       "isRequired": false,
-      "description": "Display mode (List or Grid). Default is ."
+      "description": "Event fired when the view mode changes."
     }
   ],
   "typeParameters": [

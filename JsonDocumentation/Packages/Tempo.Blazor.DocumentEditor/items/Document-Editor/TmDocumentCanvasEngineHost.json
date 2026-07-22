@@ -57,7 +57,7 @@
       "name": "OnAnnotationSelected",
       "type": "EventCallback<CanvasEngineAnnotationSelection>",
       "isRequired": false,
-      "description": "Raised with the small primitives-only UI snapshot (formatting pressed-state, dirty, undo/redo availability, page count) the engine pushes alongside a deliberate selection change (B2). Lets the parent update the toolbar immediately without a follow-up interop pull. A plain delegate for the same reason as ."
+      "description": "Raised when a canvas comment or revision marker is selected."
     },
     {
       "name": "OnChanged",

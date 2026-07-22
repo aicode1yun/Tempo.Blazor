@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Wireframe.Commands",
-  "description": "Changes the of a single element. Supports undo/redo through the command stack.",
+  "description": "Changes the ZIndex of a single element. Supports undo/redo through the command stack.",
   "packageId": "Tempo.Blazor.Wireframe",
   "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Commands/ZIndexCommand.cs",
   "documentationStatus": "generated",

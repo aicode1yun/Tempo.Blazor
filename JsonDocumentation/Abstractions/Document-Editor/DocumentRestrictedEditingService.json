@@ -23,7 +23,7 @@
       "name": "IsInsideEditableRegion",
       "kind": "Method",
       "type": "bool",
-      "description": "Returns true if the position (, ) falls inside at least one editable marker.",
+      "description": "Returns true if the position (blockId, offset) falls inside at least one editable marker.",
       "parameters": [
         {
           "name": "blockId",
@@ -39,7 +39,7 @@
       "name": "RemoveMarker",
       "kind": "Method",
       "type": "bool",
-      "description": "Remove the marker with the given .",
+      "description": "Remove the marker with the given markerId.",
       "parameters": [
         {
           "name": "markerId",
@@ -51,7 +51,7 @@
       "name": "UpdateForDelete",
       "kind": "Method",
       "type": "void",
-      "description": "Update marker offsets after text is deleted at / spanning characters.",
+      "description": "Update marker offsets after text is deleted at blockId / offset spanning length characters.",
       "parameters": [
         {
           "name": "blockId",
@@ -71,7 +71,7 @@
       "name": "UpdateForInsert",
       "kind": "Method",
       "type": "void",
-      "description": "Update marker offsets after text is inserted at / with characters.",
+      "description": "Update marker offsets after text is inserted at blockId / offset with length characters.",
       "parameters": [
         {
           "name": "blockId",

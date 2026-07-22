@@ -2,7 +2,7 @@
   "kind": "Record",
   "category": "Rendering",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
-  "description": "A single document validation finding (reuses ).",
+  "description": "A single document validation finding (reuses LayoutSeverity).",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/DocumentValidationMessage.cs",
   "documentationStatus": "generated",

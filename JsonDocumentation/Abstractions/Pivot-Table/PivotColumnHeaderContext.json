@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Pivot Table",
   "namespace": "Tempo.Blazor.Abstractions.PivotTable",
-  "description": "Context passed to . Contains the column dimension header text and its position in the hierarchy.",
+  "description": "Context passed to ColumnHeaderTemplate. Contains the column dimension header text and its position in the hierarchy.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/PivotTable/PivotColumnHeaderContext.cs",
   "documentationStatus": "generated",

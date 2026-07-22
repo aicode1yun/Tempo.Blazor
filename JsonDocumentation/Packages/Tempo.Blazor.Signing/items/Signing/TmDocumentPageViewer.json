@@ -252,7 +252,7 @@
       "name": "ScaleChanged",
       "type": "EventCallback<double>",
       "isRequired": false,
-      "description": "Current visual scale. Values are clamped between and ."
+      "description": "Callback invoked when the visual scale changes."
     },
     {
       "name": "SelectedCommentThreadId",
@@ -308,7 +308,7 @@
       "name": "ViewModeChanged",
       "type": "EventCallback<DocumentPageViewMode>",
       "isRequired": false,
-      "description": "Current page view mode for parent tools. Defaults to ."
+      "description": "Callback invoked when the page view mode changes."
     },
     {
       "name": "ZoomMode",
@@ -321,7 +321,7 @@
       "name": "ZoomModeChanged",
       "type": "EventCallback<DocumentPageZoomMode>",
       "isRequired": false,
-      "description": "Current zoom behavior. Defaults to ."
+      "description": "Callback invoked when the zoom behavior changes."
     }
   ]
 }

@@ -60,7 +60,7 @@
       "type": "PivotDataProviderType",
       "isRequired": false,
       "default": "PivotDataProviderType.Client",
-      "description": "XMLA (OLAP) data provider. Used when is ."
+      "description": "Determines which data provider backs the pivot table. Default: Client."
     },
     {
       "name": "EmptyTitle",

@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Diagram",
   "namespace": "Tempo.Blazor.Components.Diagram.Serialization",
-  "description": "Serializes and deserializes to/from JSON.",
+  "description": "Serializes and deserializes DiagramDocument to/from JSON.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Serialization/DiagramSerializer.cs",
   "documentationStatus": "generated",
@@ -11,7 +11,7 @@
       "name": "Deserialize",
       "kind": "Method",
       "type": "DiagramDocument",
-      "description": "Deserializes a JSON string to a .",
+      "description": "Deserializes a JSON string to a DiagramDocument.",
       "parameters": [
         {
           "name": "json",
@@ -23,7 +23,7 @@
       "name": "Serialize",
       "kind": "Method",
       "type": "string",
-      "description": "Serializes to an indented JSON string. Also updates to UTC now.",
+      "description": "Serializes document to an indented JSON string. Also updates ModifiedAt to UTC now.",
       "parameters": [
         {
           "name": "document",

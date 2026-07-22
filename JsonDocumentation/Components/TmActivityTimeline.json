@@ -12,7 +12,7 @@
       "type": "IEnumerable<ITimelineEntry>",
       "isRequired": false,
       "default": "[]",
-      "description": "Timeline entries to display. Sorted newest-first."
+      "description": "Timeline entries to display. Sorted newest-first. Ignored when DataProvider is set."
     },
     {
       "name": "IsLoading",

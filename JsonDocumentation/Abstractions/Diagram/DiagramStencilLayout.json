@@ -41,7 +41,7 @@
       "name": "ShapeSvg",
       "kind": "Property",
       "type": "string?",
-      "description": "Optional SVG content rendered as the stencil background. When provided, the component renders an SVG element with this content instead of using the CSS-based BackgroundShape fallback. The SVG should be designed for a 100x100 viewBox and will be stretched to fill the node unless is set."
+      "description": "Optional SVG content rendered as the stencil background. When provided, the component renders an SVG element with this content instead of using the CSS-based BackgroundShape fallback. The SVG should be designed for a 100x100 viewBox and will be stretched to fill the node unless PreserveAspectRatio is set."
     },
     {
       "name": "Stroke",

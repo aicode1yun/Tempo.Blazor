@@ -2,7 +2,7 @@
   "type": "IWireframeSchemaSource",
   "namespace": "Tempo.Blazor.Components.Wireframe",
   "assembly": "Tempo.Blazor.Abstractions",
-  "description": "Provides a set of WireframeComponentSchema entries to the WireframeSchemaRegistry. Implement this interface to supply component schemas from any source (database, configuration, external API) and register it via services.AddWireframeSchemaSource<T>(). The built-in implementation is BuiltInComponentSchemas with Priority=0.",
+  "description": "Provides a set of WireframeComponentSchema entries to the WireframeSchemaRegistry. Implement this interface to supply component schemas from any source (database, configuration, external API) and register it via services.AddWireframeSchemaSource<T>().",
   "members": [
     {
       "name": "SourceId",

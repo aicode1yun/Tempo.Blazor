@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Markdown",
   "namespace": "Tempo.Blazor.DocumentFormats.Markdown",
-  "description": "Exports a to Markdown.",
+  "description": "Exports a DocumentEditorDocument to Markdown.",
   "packageId": "Tempo.Blazor.DocumentFormats",
   "sourcePath": "src/Tempo.Blazor.DocumentFormats/Markdown/DocumentMarkdownExporter.cs",
   "documentationStatus": "generated",

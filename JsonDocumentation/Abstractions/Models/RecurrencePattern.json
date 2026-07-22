@@ -2,7 +2,7 @@
   "kind": "Enum",
   "category": "Models",
   "namespace": "Tempo.Blazor.Abstractions.Models",
-  "description": "Specifies the recurrence pattern type for a .",
+  "description": "Specifies the recurrence pattern type for a RecurrenceRule.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Models/RecurrencePattern.cs",
   "documentationStatus": "generated",

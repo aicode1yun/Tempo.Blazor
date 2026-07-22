@@ -2,7 +2,7 @@
   "kind": "Interface",
   "category": "Models",
   "namespace": "Tempo.Blazor.Abstractions.Models",
-  "description": "Persistence contract for PDF viewer annotations (comment threads anchored to page points, areas, or text ranges). Implementations load, create, reply to, edit, delete, resolve, and reopen threads for a document.",
+  "description": "Persistence contract for PDF viewer annotations (comment threads anchored to page points, areas, or text ranges). Implementations load, create, reply to, edit, delete, resolve, and reopen threads for a given document.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Models/IPdfAnnotationProvider.cs",
   "documentationStatus": "generated",

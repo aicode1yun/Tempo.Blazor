@@ -1327,7 +1327,7 @@
           "type": "IEnumerable<ITimelineEntry>",
           "isRequired": false,
           "default": "[]",
-          "description": "Timeline entries to display. Sorted newest-first."
+          "description": "Timeline entries to display. Sorted newest-first. Ignored when DataProvider is set."
         },
         {
           "name": "EntryTypeFilter",
@@ -2273,20 +2273,20 @@
           "type": "string",
           "isRequired": false,
           "default": "\"audit-log.csv\"",
-          "description": "File name of the CSV export."
+          "description": "File name of the CSV export. Default is \"audit-log.csv\"."
         },
         {
           "name": "ExportMaxRows",
           "type": "int",
           "isRequired": false,
           "default": "100_000",
-          "description": "Maximum number of rows included in the CSV export."
+          "description": "Maximum number of rows included in the CSV export. Default is 100000."
         },
         {
           "name": "Height",
           "type": "string?",
           "isRequired": false,
-          "description": "Height of the entry list (CSS value).",
+          "description": "Height of the entry list (CSS value). Default is \"480px\".",
           "default": "\"480px\""
         },
         {
@@ -2294,14 +2294,14 @@
           "type": "float",
           "isRequired": false,
           "default": "44f",
-          "description": "Pixel height of one row used by virtualization."
+          "description": "Pixel height of one row used by virtualization. Default is 44."
         },
         {
           "name": "NonVirtualizedMaxItems",
           "type": "int",
           "isRequired": false,
           "default": "500",
-          "description": "Maximum rows rendered when Virtualized is false."
+          "description": "Maximum rows rendered when Virtualized is false. Default is 500."
         },
         {
           "name": "OnEntrySelected",
@@ -2321,7 +2321,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether the CSV export action is offered."
+          "description": "Whether the CSV export action is offered. Default is true."
         },
         {
           "name": "ShowFilters",
@@ -2335,7 +2335,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether the hash-chain integrity indicator is shown when the provider implements IAuditLogIntegrityProvider."
+          "description": "Whether the hash-chain integrity indicator is shown when the provider implements IAuditLogIntegrityProvider. Default is true."
         },
         {
           "name": "ShowSearch",
@@ -2356,7 +2356,7 @@
           "type": "int",
           "isRequired": false,
           "default": "40",
-          "description": "Number of timeline buckets."
+          "description": "Number of timeline buckets. Default is 40."
         },
         {
           "name": "Virtualized",
@@ -2761,7 +2761,7 @@
           "type": "FabPosition",
           "isRequired": false,
           "default": "FabPosition.BottomRight",
-          "description": "The position of the button on the screen."
+          "description": "The position of the button on the screen. Defaults to BottomRight."
         }
       ],
       "cssClasses": [
@@ -3324,7 +3324,7 @@
           "name": "Provider",
           "type": "IKycProvider",
           "isRequired": true,
-          "description": "Persistence backend for drafts and the final submission.",
+          "description": "Persistence backend for drafts and the final submission. Required.",
           "editorRequired": true
         },
         {
@@ -3371,14 +3371,14 @@
           "name": "Provider",
           "type": "IScreeningProvider",
           "isRequired": true,
-          "description": "Data source of the findings and the resolution workflow.",
+          "description": "Data source of the findings and the resolution workflow. Required.",
           "editorRequired": true
         },
         {
           "name": "ReadOnly",
           "type": "bool",
           "isRequired": false,
-          "description": "Hides the confirm/dismiss actions when true.",
+          "description": "Hides the confirm/dismiss actions when true. Default is false.",
           "default": "false"
         },
         {
@@ -3386,14 +3386,14 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether the confidence indicator is shown."
+          "description": "Whether the confidence indicator is shown. Default is true."
         },
         {
           "name": "SubjectId",
           "type": "string",
           "isRequired": true,
           "default": "\"\"",
-          "description": "Identifier of the screened subject.",
+          "description": "Identifier of the screened subject. Required.",
           "editorRequired": true
         }
       ]
@@ -3907,7 +3907,7 @@
       "kind": "Enum",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.DataTable",
-      "description": "High-level preset that controls which chrome elements are rendered by data components such as TmDataTable and TmMultiViewList.",
+      "description": "High-level preset that controls which chrome elements are rendered by data components such as TmDataTable{TItem} and TmMultiViewList{TItem}.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/DataTable/DataTableEnums.cs",
       "documentationStatus": "merged"
@@ -3937,7 +3937,7 @@
       "kind": "Enum",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Files",
-      "description": "How a document picked in should be consumed.",
+      "description": "How a document picked in TmDocumentOpenDialog should be consumed.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Files/DocumentOpenMode.cs",
       "documentationStatus": "merged"
@@ -3947,7 +3947,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Files",
-      "description": "The outcome of confirming a selection in .",
+      "description": "The outcome of confirming a selection in TmDocumentOpenDialog.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Files/DocumentOpenResult.cs",
       "documentationStatus": "merged",
@@ -4806,7 +4806,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Icons",
-      "description": "Static registry for custom SVG icons. Consuming applications call or in their Program.cs before the app starts. // Program.cs IconRegistry.Register(\"my-logo\", \"<svg viewBox='0 0 24 24'>...</svg>\"); // or IconRegistry.RegisterProvider(new MyFontIconProvider());",
+      "description": "Static registry for custom SVG icons. Consuming applications call Register or RegisterProvider in their Program.cs before the app starts. // Program.cs IconRegistry.Register(\"my-logo\", \"<svg viewBox='0 0 24 24'>...</svg>\"); // or IconRegistry.RegisterProvider(new MyFontIconProvider());",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Icons/IconRegistry.cs",
       "documentationStatus": "merged",
@@ -4964,7 +4964,7 @@
       "kind": "Class",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Scheduler",
-      "description": "Client-side that filters an in-memory event list by date range and optionally by resource.",
+      "description": "Client-side IScheduleDataProvider that filters an in-memory event list by date range and optionally by resource.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Scheduler/InMemoryScheduleDataProvider.cs",
       "documentationStatus": "merged"
@@ -5576,7 +5576,7 @@
       "kind": "Record",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Inputs",
-      "description": "Value and metadata emitted by .",
+      "description": "Value and metadata emitted by TmSignatureCapture.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmSignatureCaptureChangedEventArgs.cs",
       "documentationStatus": "merged"
@@ -5586,7 +5586,7 @@
       "kind": "Enum",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Inputs",
-      "description": "Export formats produced by .",
+      "description": "Export formats produced by TmSignatureCapture.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmSignatureCaptureExportFormat.cs",
       "documentationStatus": "merged"
@@ -5596,7 +5596,7 @@
       "kind": "Enum",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.Inputs",
-      "description": "Capture modes supported by .",
+      "description": "Capture modes supported by TmSignatureCapture.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmSignatureCaptureMode.cs",
       "documentationStatus": "merged"
@@ -6699,7 +6699,7 @@
           "name": "Swimlanes",
           "type": "IReadOnlyList<KanbanSwimlane>?",
           "isRequired": false,
-          "description": "Explicit swimlane definitions (order and titles). When null the lanes are derived from SwimlaneSelector in order of first appearance."
+          "description": "Explicit swimlane definitions (order and titles). When null the lanes are derived from SwimlaneSelector in order of first appearance. Ignored when SwimlaneSelector is null."
         },
         {
           "name": "SwimlanesCollapsible",
@@ -6812,7 +6812,7 @@
           "name": "ShowSign",
           "type": "bool",
           "isRequired": false,
-          "description": "Whether positive amounts carry an explicit plus sign.",
+          "description": "Whether positive amounts carry an explicit plus sign. Default is false.",
           "default": "false"
         }
       ]
@@ -6914,7 +6914,7 @@
           "type": "List<FilterDefinition>",
           "isRequired": false,
           "default": "[]",
-          "description": "Filter definitions for the inline external filter builder (shown above the list when ViewProvider is set). When the page owns filtering, leave this empty and set ShowExternalFilterBuilder to false or use ToolbarMode=ContentOnly."
+          "description": "Filter definitions for the inline external filter builder (shown above the list when ViewProvider is set). When the page owns filtering, leave this empty and set ShowExternalFilterBuilder to false or use ToolbarMode = ContentOnly."
         },
         {
           "name": "GroupableFields",
@@ -7007,7 +7007,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "When true and a ViewProvider is set, shows the inline FilterBuilder for external filtering. Set to false when the surrounding page owns the filtering UI to avoid duplicate filters."
+          "description": "When true and a ViewProvider is set, shows the inline FilterBuilder for external filtering. Default: true. Set to false when the surrounding page owns the filtering UI to avoid duplicate filters."
         },
         {
           "name": "ShowPagination",
@@ -7028,7 +7028,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "When true, renders the toolbar container with search, view switcher, group picker, and view manager. Default: true."
+          "description": "When true, renders the toolbar container with search, view switcher, group picker, and view manager. Default: true. The toolbar is not rendered when no visible control would be shown (see ToolbarMode). For a page-owned filter surface, set ToolbarMode to ContentOnly and supply filtered data via Items or DataProvider."
         },
         {
           "name": "ShowViewManager",
@@ -7118,7 +7118,7 @@
           "name": "ViewProvider",
           "type": "IDataTableViewProvider?",
           "isRequired": false,
-          "description": "Optional view persistence provider. When set, enables saved views and (by default) the external filter builder. Use ShowExternalFilterBuilder=false to keep saved views without the inline filter builder, or ToolbarMode=ContentOnly when the page owns the filtering UI."
+          "description": "Optional view persistence provider. When set, enables saved views and (by default) the external filter builder. Use ShowExternalFilterBuilder = false to keep saved views without rendering the inline filter builder, or ToolbarMode = ContentOnly when the page owns the filtering UI."
         },
         {
           "name": "VirtualCardHeight",
@@ -7537,7 +7537,7 @@
           "type": "List<FilterDefinition>",
           "isRequired": false,
           "default": "[]",
-          "description": "Filter definitions for the inline external filter builder (shown above the table when ViewProvider is set). When the page owns filtering, leave this empty and set ShowExternalFilterBuilder to false or use ToolbarMode=ContentOnly."
+          "description": "Filter definitions for the inline external filter builder (shown above the table when ViewProvider is set). When the page owns filtering, leave this empty and set ShowExternalFilterBuilder to false or use ToolbarMode = ContentOnly."
         },
         {
           "name": "GroupsCollapsedByDefault",
@@ -7675,7 +7675,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "When true and a ViewProvider is set, shows the inline FilterBuilder for external filtering. Set to false when the surrounding page owns the filtering UI to avoid duplicate filters."
+          "description": "When true and a ViewProvider is set, shows the inline FilterBuilder for external filtering. Default: true. Set to false when the surrounding page owns the filtering UI to avoid duplicate filters."
         },
         {
           "name": "ShowGrouping",
@@ -7702,7 +7702,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "When true, renders the toolbar container with search, column picker, and view manager. Default: true."
+          "description": "When true, renders the toolbar container with search, column picker, and view manager. Default: true. The toolbar is not rendered when no visible control would be shown (see ToolbarMode). For a page-owned filter surface, set ToolbarMode to ContentOnly and supply filtered data via Items or DataProvider."
         },
         {
           "name": "ShowViewManager",
@@ -7728,7 +7728,7 @@
           "name": "ViewContext",
           "type": "string",
           "isRequired": true,
-          "description": "Unique identifier for this table instance. Used to scope saved views to specific tables (e.g. \"employees\", \"projects\").",
+          "description": "Unique identifier for this table instance. Used to scope saved views to specific tables (e.g., \"employees\", \"projects\").",
           "editorRequired": true
         },
         {
@@ -7742,7 +7742,7 @@
           "name": "ViewProvider",
           "type": "IDataTableViewProvider?",
           "isRequired": false,
-          "description": "Optional view persistence provider. When set, enables saved views and (by default) the external filter builder. Use ShowExternalFilterBuilder=false to keep saved views without the inline filter builder, or ToolbarMode=ContentOnly when the page owns the filtering UI."
+          "description": "Optional view persistence provider. When set, enables saved views and (by default) the external filter builder. Use ShowExternalFilterBuilder = false to keep saved views without rendering the inline filter builder, or ToolbarMode = ContentOnly when the page owns the filtering UI."
         },
         {
           "name": "VirtualItemSize",
@@ -8365,7 +8365,7 @@
           "name": "Width",
           "type": "string?",
           "isRequired": false,
-          "description": "Template rendered when the row is in edit mode. Replaces and ."
+          "description": "Column width CSS value (e.g. \"200px\", \"20%\")."
         }
       ]
     },
@@ -9983,7 +9983,7 @@
           "name": "AllowMultipleAttachments",
           "type": "bool",
           "isRequired": false,
-          "description": "How the detail panel is displayed. Default is ."
+          "description": "When true, allows one logical item to hold multiple physical file attachments."
         },
         {
           "name": "AttachmentListTemplate",
@@ -10200,7 +10200,7 @@
           "name": "ViewModeChanged",
           "type": "EventCallback<DocumentManagerViewMode>",
           "isRequired": false,
-          "description": "Display mode (List or Grid). Default is ."
+          "description": "Event fired when the view mode changes."
         }
       ]
     },
@@ -10209,7 +10209,7 @@
       "kind": "Component",
       "category": "Files",
       "namespace": "Tempo.Blazor.Components.Files",
-      "description": "A Word-like \"Open document\" dialog over an : a folder tree, breadcrumb, searchable list/grid of documents, optional folder/document management, and a link-or-copy choice. Emits a on confirm.",
+      "description": "A Word-like \"Open document\" dialog over an ITempoDocumentLibraryProvider: a folder tree, breadcrumb, searchable list/grid of documents, optional folder/document management, and a link-or-copy choice. Emits a DocumentOpenResult on confirm.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Files/TmDocumentOpenDialog.razor",
       "documentationStatus": "merged",
@@ -10241,7 +10241,7 @@
           "name": "OnSelected",
           "type": "EventCallback<DocumentOpenResult>",
           "isRequired": false,
-          "description": "Initial insert mode. Defaults to ."
+          "description": "Raised with the chosen document when the user confirms."
         },
         {
           "name": "Open",
@@ -10509,7 +10509,7 @@
           "name": "ViewModeChanged",
           "type": "EventCallback<FileManagerViewMode>",
           "isRequired": false,
-          "description": "Display mode (List or Grid). Default is ."
+          "description": "Event fired when the view mode changes."
         }
       ]
     },
@@ -11844,7 +11844,7 @@
           "type": "int",
           "isRequired": false,
           "default": "500",
-          "description": "Rows per provider batch for validation and import."
+          "description": "Rows per provider batch for validation and import. Default is 500."
         },
         {
           "name": "Class",
@@ -11875,13 +11875,13 @@
           "type": "int",
           "isRequired": false,
           "default": "10",
-          "description": "Rows shown in the upload preview."
+          "description": "Rows shown in the upload preview. Default is 10."
         },
         {
           "name": "Target",
           "type": "IDataImportTarget",
           "isRequired": true,
-          "description": "Destination of the import: target schema, validation, batches, rollback.",
+          "description": "Destination of the import: target schema, validation, batches, rollback. Required.",
           "editorRequired": true
         }
       ]
@@ -12490,14 +12490,14 @@
           "type": "int",
           "isRequired": false,
           "default": "8",
-          "description": "Number of visible rows."
+          "description": "Number of visible rows. Defaults to 8."
         },
         {
           "name": "ShowCopyButton",
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Shows a copy-to-clipboard button in the top-right corner."
+          "description": "Shows a copy-to-clipboard button in the top-right corner. Defaults to true."
         },
         {
           "name": "ShowFormatButton",
@@ -12609,7 +12609,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Output format. Default is ."
+          "description": "Whether to show the alpha slider and input. Default true."
         },
         {
           "name": "Value",
@@ -13087,7 +13087,7 @@
           "type": "decimal",
           "isRequired": false,
           "default": "1m",
-          "description": "Amount added or removed by the steppers and the arrow keys, on the displayed scale (in percent mode, one percentage point)."
+          "description": "Amount added or removed by the steppers and the arrow keys, on the displayed scale (default 1 — in percent mode, one percentage point)."
         },
         {
           "name": "Suffix",
@@ -13100,7 +13100,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Show thousands separators while the field is not being edited."
+          "description": "Show thousands separators while the field is not being edited (default true)."
         },
         {
           "name": "Value",
@@ -13118,7 +13118,7 @@
           "name": "ValueExpression",
           "type": "Expression<Func<decimal?>>?",
           "isRequired": false,
-          "description": "Expression identifying the bound model field. Blazor supplies it automatically when you use @bind-Value; it links the input to DataAnnotationsValidator messages inside an EditForm."
+          "description": "Expression identifying the bound model field. Blazor supplies it automatically when you use @bind-Value; it is what links the input to DataAnnotationsValidator messages inside an EditForm."
         }
       ],
       "cssClasses": [
@@ -13283,13 +13283,13 @@
           "name": "Value",
           "type": "TValue?",
           "isRequired": false,
-          "description": "Current selected value."
+          "description": "Current selected value (single-select mode)."
         },
         {
           "name": "ValueChanged",
           "type": "EventCallback<TValue?>",
           "isRequired": false,
-          "description": "Fires when value changes."
+          "description": "Fires when the single-select value changes."
         },
         {
           "name": "ValueSelector",
@@ -13453,7 +13453,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Output format. Default is ."
+          "description": "Whether to show the alpha channel. Default true."
         },
         {
           "name": "ShowClearButton",
@@ -13540,7 +13540,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether the value includes literal characters from the mask. When false, only user-typed characters are stored."
+          "description": "Whether the value includes literal characters from the mask. When false, only user-typed characters are stored. Defaults to true."
         },
         {
           "name": "Label",
@@ -14293,7 +14293,7 @@
           "type": "int",
           "isRequired": false,
           "default": "200",
-          "description": "Debounce (ms) before querying SuggestionsProvider."
+          "description": "Debounce (ms) before querying SuggestionsProvider. Defaults to 200."
         },
         {
           "name": "Disabled",
@@ -14318,7 +14318,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Render with a monospace font."
+          "description": "Render with a monospace font (default). Set false for a proportional font."
         },
         {
           "name": "OnSubmit",
@@ -14606,13 +14606,13 @@
           "type": "int",
           "isRequired": false,
           "default": "100",
-          "description": "The maximum value of the slider."
+          "description": "The maximum value of the slider. Defaults to 100."
         },
         {
           "name": "Min",
           "type": "int",
           "isRequired": false,
-          "description": "The minimum value of the slider.",
+          "description": "The minimum value of the slider. Defaults to 0.",
           "default": "0"
         },
         {
@@ -14638,7 +14638,7 @@
           "type": "int",
           "isRequired": false,
           "default": "1",
-          "description": "The step increment."
+          "description": "The step increment. Defaults to 1."
         }
       ],
       "cssClasses": [
@@ -15356,13 +15356,13 @@
           "type": "int",
           "isRequired": false,
           "default": "100",
-          "description": "The maximum value of the slider."
+          "description": "The maximum value of the slider. Defaults to 100."
         },
         {
           "name": "Min",
           "type": "int",
           "isRequired": false,
-          "description": "The minimum value of the slider.",
+          "description": "The minimum value of the slider. Defaults to 0.",
           "default": "0"
         },
         {
@@ -15370,7 +15370,7 @@
           "type": "SliderOrientation",
           "isRequired": false,
           "default": "SliderOrientation.Horizontal",
-          "description": "The orientation of the slider."
+          "description": "The orientation of the slider. Defaults to Horizontal."
         },
         {
           "name": "ShowLabels",
@@ -15395,7 +15395,7 @@
           "type": "int",
           "isRequired": false,
           "default": "1",
-          "description": "The step increment."
+          "description": "The step increment. Defaults to 1."
         },
         {
           "name": "TickInterval",
@@ -15958,7 +15958,7 @@
           "type": "int",
           "isRequired": false,
           "default": "300",
-          "description": "Debounce delay in ms before a search fires."
+          "description": "Debounce delay in ms before a search fires. Default 300."
         },
         {
           "name": "Disabled",
@@ -16003,7 +16003,7 @@
           "type": "int",
           "isRequired": false,
           "default": "3",
-          "description": "Minimum characters before a search fires."
+          "description": "Minimum characters before a search fires. Default 3."
         },
         {
           "name": "NoResultsText",
@@ -16292,7 +16292,7 @@
           "name": "PaneTemplate",
           "type": "RenderFragment<DockPane>?",
           "isRequired": false,
-          "description": "Optional data-bound pane list. When set, panes are rendered from this list instead of ."
+          "description": "Template used to render each DockPane when Items is set."
         }
       ]
     },
@@ -16301,7 +16301,7 @@
       "kind": "Component",
       "category": "Layout",
       "namespace": "Tempo.Blazor.Components.Layout",
-      "description": "Declares a dockable pane inside a . The pane registers itself via cascading parameter and its content is rendered by the manager in the appropriate docking zone.",
+      "description": "Declares a dockable pane inside a TmDockManager. The pane registers itself via cascading parameter and its content is rendered by the manager in the appropriate docking zone.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Layout/TmDockPane.razor",
       "documentationStatus": "merged",
@@ -16974,7 +16974,7 @@
           "type": "int",
           "isRequired": false,
           "default": "2",
-          "description": "The gap between items in space units (1-8)."
+          "description": "The gap between items in space units (1-8). Defaults to 2."
         },
         {
           "name": "Wrap",
@@ -17139,7 +17139,7 @@
           "type": "bool",
           "isRequired": false,
           "default": "true",
-          "description": "Whether the search and filter controls are shown."
+          "description": "Whether the search and filter controls are shown. Default is true."
         },
         {
           "name": "ShowFooter",
@@ -19010,7 +19010,7 @@
           "type": "PivotDataProviderType",
           "isRequired": false,
           "default": "PivotDataProviderType.Client",
-          "description": "XMLA (OLAP) data provider. Used when is ."
+          "description": "Determines which data provider backs the pivot table. Default: Client."
         },
         {
           "name": "EmptyTitle",
@@ -21583,7 +21583,7 @@
       "kind": "Class",
       "category": "Services",
       "namespace": "Tempo.Blazor.Services",
-      "description": "Injectable service for showing toast notifications. Register as Scoped in DI. Use in layout to render.",
+      "description": "Injectable service for showing toast notifications. Register as Scoped in DI. Use TmToastContainer in layout to render. Toasts with Duration > 0 auto-dismiss on a server-side timer (no JS interop required, works under any Blazor render mode). A duration of 0 (or negative) makes the toast sticky.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Services/ToastService.cs",
       "documentationStatus": "merged"
@@ -22109,7 +22109,7 @@
           "name": "Entries",
           "type": "IEnumerable<ITimelineEntry>?",
           "isRequired": false,
-          "description": "Timeline entries to display."
+          "description": "Timeline entries to display (client-side path). Ignored when DataProvider is set."
         },
         {
           "name": "EntryTypeFilter",

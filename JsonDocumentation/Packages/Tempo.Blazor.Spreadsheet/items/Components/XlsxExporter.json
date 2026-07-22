@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Spreadsheet.Xlsx",
-  "description": "Exports a to an XLSX file.",
+  "description": "Exports a SpreadsheetWorkbook to an XLSX file.",
   "packageId": "Tempo.Blazor.Spreadsheet",
   "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Xlsx/XlsxExporter.cs",
   "documentationStatus": "generated",

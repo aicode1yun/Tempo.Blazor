@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Import",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Import",
-  "description": "Imports MJML markup into an . Parsing is XML-based with an mj-raw shim (raw content may be non-well-formed HTML), tolerates comments, preserves unknown elements as raw blocks and unknown attributes in , and never throws — failures are returned as s.",
+  "description": "Imports MJML markup into an EmailTemplateDocument. Parsing is XML-based with an mj-raw shim (raw content may be non-well-formed HTML), tolerates comments, preserves unknown elements as raw blocks and unknown attributes in ExtraAttributes, and never throws — failures are returned as ImportMessages.",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Import/MjmlImporter.cs",
   "documentationStatus": "generated",

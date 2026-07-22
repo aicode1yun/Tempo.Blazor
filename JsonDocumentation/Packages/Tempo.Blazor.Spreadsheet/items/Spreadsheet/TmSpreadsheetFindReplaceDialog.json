@@ -2,7 +2,7 @@
   "itemName": "TmSpreadsheetFindReplaceDialog",
   "kind": "Component",
   "category": "Spreadsheet",
-  "description": "Find & replace panel for the spreadsheet. Owns the query/replacement text and search options locally and bubbles changes to the host, which performs the actual search/replace and reports the current match position back via / .",
+  "description": "Find & replace panel for the spreadsheet. Owns the query/replacement text and search options locally and bubbles changes to the host, which performs the actual search/replace and reports the current match position back via MatchIndex / MatchCount.",
   "packageId": "Tempo.Blazor.Spreadsheet",
   "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
   "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetFindReplaceDialog.razor",

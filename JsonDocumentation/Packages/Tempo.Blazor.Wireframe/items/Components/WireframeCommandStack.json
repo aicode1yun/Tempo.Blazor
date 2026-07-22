@@ -17,7 +17,7 @@
       "name": "Push",
       "kind": "Method",
       "type": "void",
-      "description": "Executes and pushes it onto the undo stack. Clears the redo stack. Move coalescing: if the previous command is a targeting the same element ids and was pushed within 100 ms, the new command is merged into it (keeps the original \"before\" positions, updates \"after\").",
+      "description": "Executes command and pushes it onto the undo stack. Clears the redo stack. Move coalescing: if the previous command is a MoveElementsCommand targeting the same element ids and was pushed within 100 ms, the new command is merged into it (keeps the original \"before\" positions, updates \"after\").",
       "parameters": [
         {
           "name": "command",

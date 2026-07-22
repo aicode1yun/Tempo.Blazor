@@ -17,7 +17,7 @@
       "name": "DataKey",
       "kind": "Property",
       "type": "string?",
-      "description": "Data key referencing (e.g. \"name\", \"attributes\")."
+      "description": "Data key referencing Data (e.g. \"name\", \"attributes\")."
     },
     {
       "name": "DefaultText",

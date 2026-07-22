@@ -11,7 +11,7 @@
       "name": "EqualWidths",
       "kind": "Method",
       "type": "string[]",
-      "description": "Computes equal column widths as percentage strings that always total exactly 100% (the last column absorbs any rounding remainder).",
+      "description": "Computes count equal column widths as percentage strings that always total exactly 100% (the last column absorbs any rounding remainder).",
       "parameters": [
         {
           "name": "count",

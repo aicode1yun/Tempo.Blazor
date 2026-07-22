@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Wireframe.Models",
-  "description": "Describes a component that can be placed on the wireframe canvas. Each Tempo.Blazor component (TmButton, TmDataTable, …) has exactly one definition. Custom components register their own via .",
+  "description": "Describes a component that can be placed on the wireframe canvas. Each Tempo.Blazor component (TmButton, TmDataTable, …) has exactly one definition. Custom components register their own via IWireframeComponentProvider.",
   "packageId": "Tempo.Blazor.Wireframe",
   "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/Models/WireframeComponentDef.cs",
   "documentationStatus": "generated",
@@ -53,7 +53,7 @@
       "name": "RenderSvg",
       "kind": "Property",
       "type": "required Action<WireframeElement, RenderTreeBuilder>",
-      "description": "Renders the wireframe SVG shape into . Coordinates inside the render are relative to the element's top-left (0, 0). The outer <g> transform is applied by the canvas."
+      "description": "Renders the wireframe SVG shape into builder. Coordinates inside the render are relative to the element's top-left (0, 0). The outer <g> transform is applied by the canvas."
     },
     {
       "name": "SizePresets",
@@ -65,7 +65,7 @@
       "name": "Type",
       "kind": "Property",
       "type": "required string",
-      "description": "Unique type identifier – must match . Examples: \"TmButton\", \"TmDataTable\", \"MyProductCard\"."
+      "description": "Unique type identifier – must match Type. Examples: \"TmButton\", \"TmDataTable\", \"MyProductCard\"."
     }
   ],
   "itemName": "WireframeComponentDef"

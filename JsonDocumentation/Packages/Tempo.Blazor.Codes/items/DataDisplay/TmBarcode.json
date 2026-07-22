@@ -26,14 +26,14 @@
       "type": "int",
       "isRequired": false,
       "default": "200",
-      "description": "The width in pixels."
+      "description": "The width in pixels. Default is 200."
     },
     {
       "name": "Height",
       "type": "int",
       "isRequired": false,
       "default": "100",
-      "description": "The height in pixels."
+      "description": "The height in pixels. Default is 100."
     },
     {
       "name": "DisplayValue",

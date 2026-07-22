@@ -11,7 +11,7 @@
       "name": "AddTmWorkItems",
       "kind": "Method",
       "type": "IServiceCollection",
-      "description": "Registers the . Call for each source. Safe to call multiple times.",
+      "description": "Registers the TmWorkItemProviderRegistry. Call AddTmWorkItemProvider{T} for each source. Safe to call multiple times.",
       "parameters": [
         {
           "name": "services",

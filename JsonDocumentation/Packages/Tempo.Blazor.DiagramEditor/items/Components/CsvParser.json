@@ -11,7 +11,7 @@
       "name": "Parse",
       "kind": "Method",
       "type": "CsvParseResult",
-      "description": "Parses CSV text and returns headers + rows. Throws if no valid delimiter is found or validation fails.",
+      "description": "Parses CSV text and returns headers + rows. Throws InvalidOperationException if no valid delimiter is found or validation fails.",
       "parameters": [
         {
           "name": "csvText",

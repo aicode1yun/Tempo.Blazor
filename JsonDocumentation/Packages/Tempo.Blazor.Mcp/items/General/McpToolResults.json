@@ -11,7 +11,7 @@
       "name": "Success",
       "kind": "Method",
       "type": "string",
-      "description": "A successful result. The properties of are merged at the top level next to success: true.",
+      "description": "A successful result. The properties of data are merged at the top level next to success: true.",
       "parameters": [
         {
           "name": "data",

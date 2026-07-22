@@ -1208,7 +1208,7 @@
       "kind": "Enum",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.DocumentEditor",
-      "description": "Keyboard commands supported by .",
+      "description": "Keyboard commands supported by TmDocumentEditor.",
       "packageId": "Tempo.Blazor.DocumentEditor",
       "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/DocumentEditorKeyboardManager.cs",
       "documentationStatus": "merged"
@@ -2353,7 +2353,7 @@
       "kind": "Interface",
       "category": "Components",
       "namespace": "Tempo.Blazor.Components.DocumentEditor.Registry",
-      "description": "A named command registered in the .",
+      "description": "A named command registered in the DocumentEditorCommandRegistry.",
       "packageId": "Tempo.Blazor.DocumentEditor",
       "sourcePath": "src/Tempo.Blazor.DocumentEditor/Components/DocumentEditor/Registry/IDocumentEditorCommandEntry.cs",
       "documentationStatus": "merged"
@@ -3760,7 +3760,7 @@
           "name": "OnAnnotationSelected",
           "type": "EventCallback<CanvasEngineAnnotationSelection>",
           "isRequired": false,
-          "description": "Raised with the small primitives-only UI snapshot (formatting pressed-state, dirty, undo/redo availability, page count) the engine pushes alongside a deliberate selection change (B2). Lets the parent update the toolbar immediately without a follow-up interop pull. A plain delegate for the same reason as ."
+          "description": "Raised when a canvas comment or revision marker is selected."
         },
         {
           "name": "OnChanged",

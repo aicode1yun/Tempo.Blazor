@@ -17,7 +17,7 @@
       "name": "ConnectionPoints",
       "kind": "Property",
       "type": "List<DiagramStencilConnectionPoint>",
-      "description": "Predefined fixed connection points on the stencil perimeter, draw.io style. When populated, these render as hover dots and create edges with instead of floating port snapping."
+      "description": "Predefined fixed connection points on the stencil perimeter, draw.io style. When populated, these render as hover dots and create edges with DiagramConnectionConstraint instead of floating port snapping."
     },
     {
       "name": "DefaultData",
@@ -41,7 +41,7 @@
       "name": "EdgeDefaults",
       "kind": "Property",
       "type": "DiagramEdgeStencilDefaults?",
-      "description": "Default edge values when is ."
+      "description": "Default edge values when Kind is Edge."
     },
     {
       "name": "ExternalAssetSourceId",

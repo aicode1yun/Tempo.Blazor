@@ -72,7 +72,7 @@
       "name": "RefreshAllAsync",
       "kind": "Method",
       "type": "Task",
-      "description": "Recomputes and caches the state of every registered command against the given context.",
+      "description": "Recomputes and caches the state of every registered command against the given context. When contextSignature is provided and matches the previous refresh's signature, the rebuild is skipped entirely (perf plan N7.3) — the caller guarantees the signature covers every input its command lambdas read. A null signature always refreshes.",
       "parameters": [
         {
           "name": "context",

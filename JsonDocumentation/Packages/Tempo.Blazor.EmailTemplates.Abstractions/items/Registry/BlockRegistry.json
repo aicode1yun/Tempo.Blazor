@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Registry",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Registry",
-  "description": "Default seeded with the 14 built-in MJML block kinds.",
+  "description": "Default IBlockRegistry seeded with the 14 built-in MJML block kinds.",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Registry/BlockRegistry.cs",
   "documentationStatus": "generated",

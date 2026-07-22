@@ -11,7 +11,7 @@
     {
       "name": "ValidateRoles",
       "type": "static IReadOnlyList<StencilPackValidationWarning> ValidateRoles()",
-      "description": "Validates component role references against . Unknown roles are reported as warnings so packs can be loaded before new role definitions are added to the vocabulary."
+      "description": "Validates component role references against vocabulary. Unknown roles are reported as warnings so packs can be loaded before new role definitions are added to the vocabulary."
     }
   ]
 }

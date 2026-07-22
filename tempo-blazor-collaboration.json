@@ -429,7 +429,7 @@
       "kind": "Class",
       "category": "General",
       "namespace": "Tempo.Blazor.DocumentLibrary.Collaboration",
-      "description": "SignalR-backed . A client subscribes to the specific documents it displays; the server broadcasts to the matching group so open editors and embedded blocks refresh without polling.",
+      "description": "SignalR-backed ITempoDocumentChangeNotifier. A client subscribes to the specific documents it displays; the server broadcasts TempoDocumentChange to the matching group so open editors and embedded blocks refresh without polling.",
       "packageId": "Tempo.Blazor.Collaboration",
       "sourcePath": "src/Tempo.Blazor.Collaboration/SignalRTempoDocumentChangeNotifier.cs",
       "documentationStatus": "merged",

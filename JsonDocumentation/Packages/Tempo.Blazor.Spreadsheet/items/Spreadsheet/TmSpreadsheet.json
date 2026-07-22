@@ -28,49 +28,49 @@
       "type": "SpreadsheetMode",
       "isRequired": false,
       "default": "SpreadsheetMode.Full",
-      "description": "Controls the display and interaction mode of the spreadsheet."
+      "description": "Controls the display and interaction mode of the spreadsheet. Defaults to Full."
     },
     {
       "name": "Height",
       "type": "string?",
       "isRequired": false,
       "default": "\"600px\"",
-      "description": "The CSS height of the spreadsheet container."
+      "description": "The CSS height of the spreadsheet container. Defaults to 600px."
     },
     {
       "name": "Width",
       "type": "string?",
       "isRequired": false,
       "default": "\"100%\"",
-      "description": "The CSS width of the spreadsheet container."
+      "description": "The CSS width of the spreadsheet container. Defaults to 100%."
     },
     {
       "name": "RowsCount",
       "type": "int",
       "isRequired": false,
       "default": "200",
-      "description": "The initial number of rows to render."
+      "description": "The initial number of rows to render. Defaults to 200."
     },
     {
       "name": "ColumnsCount",
       "type": "int",
       "isRequired": false,
       "default": "50",
-      "description": "The initial number of columns to render."
+      "description": "The initial number of columns to render. Defaults to 50."
     },
     {
       "name": "RowHeight",
       "type": "double",
       "isRequired": false,
       "default": "20",
-      "description": "The default row height in pixels."
+      "description": "The default row height in pixels. Defaults to 20."
     },
     {
       "name": "ColumnWidth",
       "type": "double",
       "isRequired": false,
       "default": "64",
-      "description": "The default column width in pixels."
+      "description": "The default column width in pixels. Defaults to 64."
     },
     {
       "name": "Class",

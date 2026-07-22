@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Wireframe",
   "namespace": "Tempo.Blazor.Mcp.Wireframe",
-  "description": "Public class defined by Tempo.Blazor.Mcp.",
+  "description": "MCP tool that turns a wireframe into an implementation brief for downstream planning.",
   "packageId": "Tempo.Blazor.Mcp",
   "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeBriefTools.cs",
   "documentationStatus": "generated",

@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Diagram.Commands",
-  "description": "Updates edge waypoints after a segment drag. Semantically equivalent to but named to reflect that the change originated from dragging an orthogonal/elbow segment rather than an individual waypoint.",
+  "description": "Updates edge waypoints after a segment drag. Semantically equivalent to UpdateEdgeWaypointsCommand but named to reflect that the change originated from dragging an orthogonal/elbow segment rather than an individual waypoint.",
   "packageId": "Tempo.Blazor.DiagramEditor",
   "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/UpdateEdgeSegmentOffsetCommand.cs",
   "documentationStatus": "generated",

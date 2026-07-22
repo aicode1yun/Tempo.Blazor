@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Wireframe",
-  "description": "Deep-copy extension for .",
+  "description": "Deep-copy extension for WireframeElement.",
   "packageId": "Tempo.Blazor.Wireframe",
   "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/WireframeElementCopyExtensions.cs",
   "documentationStatus": "generated",

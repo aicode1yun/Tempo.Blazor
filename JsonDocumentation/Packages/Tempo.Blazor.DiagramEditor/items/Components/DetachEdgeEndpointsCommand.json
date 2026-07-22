@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Diagram.Commands",
-  "description": "Detaches the terminal connections of an edge while preserving its current visible geometry: the current source/target screen position becomes the edge's floating / , and all node/port/edge/constraint references are cleared. Useful for converting a node-connected edge into a free line (Phase 3.8).",
+  "description": "Detaches the terminal connections of an edge while preserving its current visible geometry: the current source/target screen position becomes the edge's floating SourcePoint / TargetPoint, and all node/port/edge/constraint references are cleared. Useful for converting a node-connected edge into a free line (Phase 3.8).",
   "packageId": "Tempo.Blazor.DiagramEditor",
   "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Commands/DetachEdgeEndpointsCommand.cs",
   "documentationStatus": "generated",

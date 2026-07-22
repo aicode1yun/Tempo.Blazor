@@ -32,7 +32,7 @@
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "When true, renders the toolbar container with search, view switcher, group picker, and view manager. Default: true."
+      "description": "When true, renders the toolbar container with search, view switcher, group picker, and view manager. Default: true. The toolbar is not rendered when no visible control would be shown (see ToolbarMode). For a page-owned filter surface, set ToolbarMode to ContentOnly and supply filtered data via Items or DataProvider."
     },
     {
       "name": "ToolbarMode",
@@ -265,7 +265,7 @@
       "name": "ViewProvider",
       "type": "IDataTableViewProvider?",
       "isRequired": false,
-      "description": "Optional view persistence provider. When set, enables saved views and (by default) the external filter builder. Use ShowExternalFilterBuilder=false to keep saved views without the inline filter builder, or ToolbarMode=ContentOnly when the page owns the filtering UI."
+      "description": "Optional view persistence provider. When set, enables saved views and (by default) the external filter builder. Use ShowExternalFilterBuilder = false to keep saved views without rendering the inline filter builder, or ToolbarMode = ContentOnly when the page owns the filtering UI."
     },
     {
       "name": "ViewFilterDefinitions",
@@ -279,14 +279,14 @@
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "When true and a ViewProvider is set, shows the inline FilterBuilder for external filtering. Set to false when the surrounding page owns the filtering UI to avoid duplicate filters."
+      "description": "When true and a ViewProvider is set, shows the inline FilterBuilder for external filtering. Default: true. Set to false when the surrounding page owns the filtering UI to avoid duplicate filters."
     },
     {
       "name": "ExternalFilterDefinitions",
       "type": "List<FilterDefinition>",
       "isRequired": false,
       "default": "[]",
-      "description": "Filter definitions for the inline external filter builder (shown above the list when ViewProvider is set). When the page owns filtering, leave this empty and set ShowExternalFilterBuilder to false or use ToolbarMode=ContentOnly."
+      "description": "Filter definitions for the inline external filter builder (shown above the list when ViewProvider is set). When the page owns filtering, leave this empty and set ShowExternalFilterBuilder to false or use ToolbarMode = ContentOnly."
     },
     {
       "name": "DisplayResolver",

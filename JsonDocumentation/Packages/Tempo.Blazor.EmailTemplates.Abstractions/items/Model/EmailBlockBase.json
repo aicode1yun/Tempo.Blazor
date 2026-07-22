@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Model",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
-  "description": "Public class defined by Tempo.Blazor.EmailTemplates.Abstractions.",
+  "description": "Base type for every content block placed inside a column (or a block container such as a hero). Carries the identity and the cross-cutting attributes shared by all MJML body components (see docs/email-templates/MJML_ATTRIBUTE_PARITY.md).",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailBlockBase.cs",
   "documentationStatus": "generated",

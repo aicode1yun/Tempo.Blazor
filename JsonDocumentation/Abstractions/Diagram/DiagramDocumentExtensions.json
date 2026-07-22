@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Diagram",
   "namespace": "Tempo.Blazor.Components.Diagram.Models",
-  "description": "Extension methods for .",
+  "description": "Extension methods for DiagramDocument.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramDocumentExtensions.cs",
   "documentationStatus": "generated",

@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "General",
   "namespace": "Tempo.Blazor.FluentValidation",
-  "description": "Extension methods for to register FluentValidation validators via assembly scanning.",
+  "description": "Extension methods for IServiceCollection to register FluentValidation validators via assembly scanning.",
   "packageId": "Tempo.Blazor.FluentValidation",
   "sourcePath": "src/Tempo.Blazor.FluentValidation/ServiceCollectionExtensions.cs",
   "documentationStatus": "generated",

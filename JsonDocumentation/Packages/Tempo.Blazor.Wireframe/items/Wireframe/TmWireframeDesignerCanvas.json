@@ -11,13 +11,13 @@
       "name": "Document",
       "type": "WireframeDocument?",
       "isRequired": false,
-      "description": "Document to display and edit."
+      "description": "Document to display and edit. Mutated in-place; bind with @bind-Document."
     },
     {
       "name": "DocumentChanged",
       "type": "EventCallback<WireframeDocument>",
       "isRequired": false,
-      "description": "Raised after every mutation."
+      "description": "Raised after every mutation so callers can persist the document."
     },
     {
       "name": "ShowGrid",
@@ -31,7 +31,7 @@
       "type": "int",
       "isRequired": false,
       "defaultValue": "8",
-      "description": "Snap-to-grid cell size in pixels. 0 = disabled."
+      "description": "Snap-to-grid cell size in SVG units (pixels). 0 = disabled."
     },
     {
       "name": "ReadOnly",

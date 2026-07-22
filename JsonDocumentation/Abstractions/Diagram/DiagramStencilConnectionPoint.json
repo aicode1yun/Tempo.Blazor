@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Diagram",
   "namespace": "Tempo.Blazor.Components.Diagram.Models",
-  "description": "A predefined connection point on a stencil, similar to draw.io constraints. When an edge connects to this point, it uses a fixed instead of floating port snapping.",
+  "description": "A predefined connection point on a stencil, similar to draw.io constraints. When an edge connects to this point, it uses a fixed DiagramConnectionConstraint instead of floating port snapping.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Models/DiagramStencilConnectionPoint.cs",
   "documentationStatus": "generated",

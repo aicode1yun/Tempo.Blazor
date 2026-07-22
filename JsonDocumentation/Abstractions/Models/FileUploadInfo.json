@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Models",
   "namespace": "Tempo.Blazor.Abstractions.Models",
-  "description": "Represents a file being uploaded through .",
+  "description": "Represents a file being uploaded through UploadAsync.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Models/FileUploadInfo.cs",
   "documentationStatus": "generated",

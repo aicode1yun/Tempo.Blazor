@@ -2,7 +2,7 @@
   "itemName": "TmSpreadsheetRemoveDuplicatesDialog",
   "kind": "Component",
   "category": "Spreadsheet",
-  "description": "The Remove Duplicates dialog. Lists every column in the range with a checkbox, offers a \"my data has headers\" toggle (which switches the column labels between header text and the column letter), select-all / deselect-all helpers and a case-sensitivity option. Applying yields a . All text is localized.",
+  "description": "The Remove Duplicates dialog. Lists every column in the range with a checkbox, offers a \"my data has headers\" toggle (which switches the column labels between header text and the column letter), select-all / deselect-all helpers and a case-sensitivity option. Applying yields a SpreadsheetRemoveDuplicatesOptions. All text is localized.",
   "packageId": "Tempo.Blazor.Spreadsheet",
   "namespace": "Tempo.Blazor.Components.Spreadsheet.Dialogs",
   "sourcePath": "src/Tempo.Blazor.Spreadsheet/Components/Spreadsheet/Dialogs/TmSpreadsheetRemoveDuplicatesDialog.razor",

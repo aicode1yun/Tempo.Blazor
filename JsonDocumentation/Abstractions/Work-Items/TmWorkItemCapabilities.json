@@ -2,7 +2,7 @@
   "kind": "Enum",
   "category": "Work Items",
   "namespace": "Tempo.Blazor.Abstractions.WorkItems",
-  "description": "Public enum defined by Tempo.Blazor.Abstractions.",
+  "description": "Declares which operations a ITmWorkItemProvider supports so consumers can enable/disable UI affordances (e.g. drag to reschedule, create, link dependencies).",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/TmWorkItemCapabilities.cs",
   "documentationStatus": "generated",

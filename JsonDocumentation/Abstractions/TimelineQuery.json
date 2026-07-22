@@ -17,7 +17,7 @@
       "name": "EntryType",
       "kind": "Property",
       "type": "string?",
-      "description": "Optional entry-type filter (e.g. \"comment\", \"status_change\"). Null/empty means all types."
+      "description": "Optional entry-type filter (e.g. \"comment\", \"status_change\"). Null/empty means \"all types\"."
     },
     {
       "name": "IncludeInternal",

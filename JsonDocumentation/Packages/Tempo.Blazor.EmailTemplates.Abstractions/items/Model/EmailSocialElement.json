@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Model",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
-  "description": "A single icon within an (mj-social-element).",
+  "description": "A single icon within an EmailSocialBlock (mj-social-element).",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailSocialElement.cs",
   "documentationStatus": "generated",
@@ -41,7 +41,7 @@
       "name": "Src",
       "kind": "Property",
       "type": "string?",
-      "description": "Gets or sets a custom icon URL overriding (src)."
+      "description": "Gets or sets a custom icon URL overriding Name (src)."
     },
     {
       "name": "Target",

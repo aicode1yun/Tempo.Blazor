@@ -17,7 +17,7 @@
       "name": "Style",
       "kind": "Property",
       "type": "SpreadsheetBorderStyle",
-      "description": "The line style of the border. Defaults to ."
+      "description": "The line style of the border. Defaults to None."
     }
   ],
   "itemName": "SpreadsheetBorder"

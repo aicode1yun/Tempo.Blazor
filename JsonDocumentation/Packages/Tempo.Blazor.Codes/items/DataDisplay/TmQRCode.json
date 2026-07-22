@@ -33,14 +33,14 @@
       "type": "string",
       "isRequired": false,
       "default": "#000000",
-      "description": "Foreground color in hex format."
+      "description": "Foreground color in hex format. Default is #000000."
     },
     {
       "name": "BackgroundColor",
       "type": "string",
       "isRequired": false,
       "default": "#ffffff",
-      "description": "Background color in hex format."
+      "description": "Background color in hex format. Default is #ffffff."
     },
     {
       "name": "CssClass",

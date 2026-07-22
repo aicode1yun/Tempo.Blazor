@@ -12,21 +12,21 @@
       "type": "int",
       "isRequired": false,
       "default": "0",
-      "description": "The minimum value of the slider."
+      "description": "The minimum value of the slider. Defaults to 0."
     },
     {
       "name": "Max",
       "type": "int",
       "isRequired": false,
       "default": "100",
-      "description": "The maximum value of the slider."
+      "description": "The maximum value of the slider. Defaults to 100."
     },
     {
       "name": "Step",
       "type": "int",
       "isRequired": false,
       "default": "1",
-      "description": "The step increment."
+      "description": "The step increment. Defaults to 1."
     },
     {
       "name": "StartValue",

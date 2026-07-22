@@ -2,7 +2,7 @@
   "kind": "Enum",
   "category": "Shared",
   "namespace": "Tempo.Blazor.Abstractions.Shared",
-  "description": "Public enum defined by Tempo.Blazor.Abstractions.",
+  "description": "Operations supported by an ITmCommentProvider.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Shared/TmCommentProviderCapabilities.cs",
   "documentationStatus": "generated",

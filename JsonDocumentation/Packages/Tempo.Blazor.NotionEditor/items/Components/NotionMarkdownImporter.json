@@ -26,7 +26,7 @@
       "name": "InlineMarkdownToHtml",
       "kind": "Method",
       "type": "string",
-      "description": "Converts CommonMark inline elements to HTML for storage in block content.",
+      "description": "Converts CommonMark inline elements to HTML for storage in block content. Everything that is not generated markup is HTML-encoded, and link/image URLs are restricted to http, https, mailto and relative targets.",
       "parameters": [
         {
           "name": "text",

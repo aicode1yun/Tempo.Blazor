@@ -11,7 +11,7 @@
       "name": "Entries",
       "type": "IEnumerable<ITimelineEntry>?",
       "isRequired": false,
-      "description": "Timeline entries to display."
+      "description": "Timeline entries to display (client-side path). Ignored when DataProvider is set."
     },
     {
       "name": "ShowInternal",

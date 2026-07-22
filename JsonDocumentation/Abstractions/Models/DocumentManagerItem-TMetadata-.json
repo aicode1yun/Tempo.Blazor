@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Models",
   "namespace": "Tempo.Blazor.Abstractions.Models",
-  "description": "Represents a file or folder in .",
+  "description": "Represents a file or folder in TmDocumentManager{TMetadata}.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DocumentManagerItem.cs",
   "documentationStatus": "generated",

@@ -17,7 +17,7 @@
       "name": "GetByCategory",
       "kind": "Method",
       "type": "IEnumerable<DiagramTemplate>",
-      "description": "Returns templates belonging to .",
+      "description": "Returns templates belonging to category.",
       "parameters": [
         {
           "name": "category",
@@ -35,7 +35,7 @@
       "name": "GetTemplate",
       "kind": "Method",
       "type": "DiagramTemplate?",
-      "description": "Returns the template for , or null if not found.",
+      "description": "Returns the template for templateId, or null if not found.",
       "parameters": [
         {
           "name": "templateId",
@@ -65,7 +65,7 @@
       "name": "RegisterTemplate",
       "kind": "Method",
       "type": "void",
-      "description": "Registers a single template. If a template with the same id already exists, the one with higher wins (ties keep the existing entry).",
+      "description": "Registers a single template. If a template with the same id already exists, the one with higher priority wins (ties keep the existing entry).",
       "parameters": [
         {
           "name": "template",

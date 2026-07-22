@@ -29,7 +29,7 @@
       "name": "StrictVariables",
       "kind": "Property",
       "type": "bool",
-      "description": "When , referencing an undefined variable is an error; otherwise it renders as empty (the default, lenient behaviour)."
+      "description": "When true, referencing an undefined variable is an error; otherwise it renders as empty (the default, lenient behaviour)."
     },
     {
       "name": "Timeout",

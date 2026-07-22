@@ -2,7 +2,7 @@
   "kind": "Interface",
   "category": "Diagram",
   "namespace": "Tempo.Blazor.Components.Diagram.Commands",
-  "description": "An undoable/redoable mutation of a .",
+  "description": "An undoable/redoable mutation of a DiagramDocument.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Commands/IDiagramCommand.cs",
   "documentationStatus": "generated",

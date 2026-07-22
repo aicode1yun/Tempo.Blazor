@@ -61,6 +61,7 @@ internal static class PackageDocumentationGenerator
             GeneratorCommand.Validate => Validate(results, repoRoot, config.Packages, failOnManualDrift: cli.FailOnDrift),
             GeneratorCommand.ListMissing => ListMissing(results),
             GeneratorCommand.Enrich => EnrichSourceJson(results),
+            GeneratorCommand.Repair => RepairDescriptions(results),
             _ => 1
         };
     }
@@ -291,6 +292,222 @@ internal static class PackageDocumentationGenerator
         return 0;
     }
 
+    /// <summary>
+    /// Rewrites overlay descriptions that an older, buggier parse produced, using the current parse of
+    /// the same source. Only descriptions that are provably machine-made are touched: either the
+    /// generator's own fallback sentence, or text that is a strict subsequence of the freshly parsed
+    /// summary (the old parse could only ever delete characters — it dropped whole
+    /// <c>&lt;see cref&gt;</c> references, leaving holes such as "Severity of an ."). A hand-written
+    /// description fails both tests and is left alone.
+    /// </summary>
+    private static int RepairDescriptions(IReadOnlyList<PackageDocumentationResult> results)
+    {
+        var repaired = 0;
+        var unfixable = new List<string>();
+
+        foreach (var result in results)
+        {
+            foreach (var pair in result.OverlayPairs)
+            {
+                var overlay = JsonNode.Parse(File.ReadAllText(pair.OverlayFile)) as JsonObject;
+                if (overlay is null)
+                {
+                    continue;
+                }
+
+                var changes = 0;
+                var current = pair.Overlay.GetString("description");
+                var fresh = pair.Generated.GetString("description");
+                if (!string.IsNullOrWhiteSpace(current))
+                {
+                    if (pair.GeneratedIsFallback || string.IsNullOrWhiteSpace(fresh))
+                    {
+                        if (LooksMachineGenerated(current))
+                        {
+                            unfixable.Add($"{result.Config.PackageId}: {pair.Overlay.GetString("itemName")} (no summary in source)");
+                        }
+                    }
+                    else if (!string.Equals(current, fresh, StringComparison.Ordinal) && IsStaleGeneratedDescription(current, fresh))
+                    {
+                        overlay["description"] = fresh;
+                        changes++;
+                    }
+                }
+
+                // Parameter and member descriptions come from the same parse and the overlay copy wins
+                // in the merge, so a stale reference hole survives there too.
+                var sourceFile = ResolveSourceFile(result.BaseDir, pair.Overlay.GetString("sourcePath"));
+                changes += RepairNamedDescriptions(overlay, pair.Generated, "parameters", sourceFile);
+                changes += RepairNamedDescriptions(overlay, pair.Generated, "members", sourceFile);
+
+                if (changes == 0)
+                {
+                    continue;
+                }
+
+                WriteOverlay(pair.OverlayFile, overlay);
+                repaired += changes;
+                Console.WriteLine($"Repaired {changes}: {Path.GetFileName(pair.OverlayFile)}");
+            }
+        }
+
+        Console.WriteLine($"Repaired {repaired} description(s).");
+
+        var orphans = results.SelectMany(r => r.OrphanOverlays.Select(o => $"{r.Config.PackageId}: {Path.GetFileName(o)}")).ToList();
+        if (orphans.Count > 0)
+        {
+            Console.WriteLine($"{orphans.Count} overlay file(s) document a type that no longer exists in source:");
+            foreach (var entry in orphans.OrderBy(e => e, StringComparer.Ordinal))
+            {
+                Console.WriteLine($"  {entry}");
+            }
+        }
+
+        if (unfixable.Count > 0)
+        {
+            Console.WriteLine($"{unfixable.Count} placeholder description(s) still need human prose (the source type has no XML summary):");
+            foreach (var entry in unfixable.OrderBy(e => e, StringComparer.Ordinal))
+            {
+                Console.WriteLine($"  {entry}");
+            }
+        }
+
+        return 0;
+    }
+
+    /// <summary>
+    /// Repairs stale descriptions inside a named array (<c>parameters</c> / <c>members</c>), matching
+    /// entries by name and applying the same provably-machine-made rule as the type description.
+    /// </summary>
+    private static int RepairNamedDescriptions(JsonObject overlay, JsonObject generated, string arrayName, string? sourceFile)
+    {
+        if (overlay[arrayName] is not JsonArray overlayEntries)
+        {
+            return 0;
+        }
+
+        var freshByName = generated[arrayName] is JsonArray generatedEntries
+            ? generatedEntries.OfType<JsonObject>()
+                .Where(e => !string.IsNullOrWhiteSpace(e.GetString("name")))
+                .GroupBy(e => e.GetString("name")!, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First().GetString("description"), StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+
+        var changes = 0;
+        foreach (var entry in overlayEntries.OfType<JsonObject>())
+        {
+            var name = entry.GetString("name");
+            var current = entry.GetString("description");
+            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(current))
+            {
+                continue;
+            }
+
+            // Members are only generated for single-type files, so fall back to re-reading the
+            // declaring source. Ambiguous names (several declarations with different docs) are left
+            // alone rather than guessed at.
+            if (!freshByName.TryGetValue(name, out var fresh) || string.IsNullOrWhiteSpace(fresh))
+            {
+                fresh = UnambiguousMemberDescription(sourceFile, name);
+            }
+
+            if (string.IsNullOrWhiteSpace(fresh)
+                || string.Equals(current, fresh, StringComparison.Ordinal)
+                || !IsStaleGeneratedDescription(current, fresh))
+            {
+                continue;
+            }
+
+            entry["description"] = fresh;
+            changes++;
+        }
+
+        return changes;
+    }
+
+    private static string? ResolveSourceFile(string baseDir, string? sourcePath)
+    {
+        if (string.IsNullOrWhiteSpace(sourcePath))
+        {
+            return null;
+        }
+
+        var repoRoot = Path.GetFullPath(Path.Combine(baseDir, ".."));
+        var full = Path.Combine(repoRoot, sourcePath.Replace('/', Path.DirectorySeparatorChar));
+        return File.Exists(full) ? full : null;
+    }
+
+    /// <summary>
+    /// The XML summary of a member, read straight from source. Returns <see langword="null"/> when the
+    /// file declares the name more than once with differing documentation, so a multi-type file never
+    /// donates another type's sentence.
+    /// </summary>
+    private static string? UnambiguousMemberDescription(string? sourceFile, string memberName)
+    {
+        if (sourceFile is null)
+        {
+            return null;
+        }
+
+        var candidates = SourceDocParser.ExtractMembers(File.ReadAllText(sourceFile), string.Empty)
+            .Where(m => string.Equals(m.Name, memberName, StringComparison.Ordinal))
+            .Select(m => m.Description)
+            .Where(d => !string.IsNullOrWhiteSpace(d))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        return candidates.Count == 1 ? candidates[0] : null;
+    }
+
+    /// <summary>Whether text is one of the generator's own fallback sentences.</summary>
+    private static bool LooksMachineGenerated(string text)
+        => Regex.IsMatch(text, @"^Public (class|record|interface|struct|enum|recordstruct) defined by ")
+        || Regex.IsMatch(text, @"^\S+ Blazor component in the .+ category\.$");
+
+    private static bool IsStaleGeneratedDescription(string current, string fresh)
+    {
+        if (LooksMachineGenerated(current))
+        {
+            return true;
+        }
+
+        // A dropped reference leaves a hole no author would type: whitespace before sentence
+        // punctuation, empty parentheses that are not a method call (including a generic one such as
+        // AddThing<T>()), a doubled space, or a trailing space. Its presence alone proves the text
+        // came from the old parse.
+        if (Regex.IsMatch(current, @"\s[.,;](?:\s|$)|(?<![\w\])>])\(\s*\)|\s{2,}|\s$"))
+        {
+            return true;
+        }
+
+        // No visible hole, so only accept the text if it is literally the fresh summary with
+        // characters deleted — which is all the old parse could ever produce.
+        return IsSubsequence(Regex.Replace(current, @"\s+", ""), Regex.Replace(fresh, @"\s+", ""));
+    }
+
+    /// <summary>Whether <paramref name="candidate"/> can be obtained from <paramref name="full"/> by deletions only.</summary>
+    private static bool IsSubsequence(string candidate, string full)
+    {
+        var i = 0;
+        foreach (var c in full)
+        {
+            if (i < candidate.Length && candidate[i] == c)
+            {
+                i++;
+            }
+        }
+
+        return i == candidate.Length;
+    }
+
+    /// <summary>Writes an overlay back, keeping the file's existing trailing-newline convention.</summary>
+    private static void WriteOverlay(string path, JsonObject overlay)
+    {
+        var hadTrailingNewline = File.ReadAllText(path).EndsWith('\n');
+        var json = overlay.ToJsonString(JsonOptions);
+        File.WriteAllText(path, hadTrailingNewline ? json + "\n" : json);
+    }
+
     private static string? ResolveJsonDocumentationDir(string? explicitDir)
     {
         if (!string.IsNullOrWhiteSpace(explicitDir))
@@ -381,12 +598,15 @@ internal sealed class PackageDocumentationComposer
 
         var finalItems = new List<JsonObject>();
         var generatedOnly = new List<GeneratedDocumentationItem>();
+        var overlayPairs = new List<OverlayItemPair>();
 
         foreach (var generatedItem in generatedByName.Values)
         {
             var key = GeneratedKey(generatedItem);
             if (existingItems.TryGetValue(key, out var existing))
             {
+                overlayPairs.Add(new OverlayItemPair(
+                    existing.SourceFile, existing.Json, generatedItem.Json, generatedItem.IsFallbackDescription));
                 finalItems.Add(DocumentJsonMerger.Merge(generatedItem.Json, existing.Json, generatedItem.IsFallbackDescription));
             }
             else
@@ -396,10 +616,12 @@ internal sealed class PackageDocumentationComposer
             }
         }
 
+        var orphanOverlays = new List<string>();
         foreach (var existing in existingItems.Values)
         {
             if (!generatedByName.ContainsKey(existing.BaseItemName))
             {
+                orphanOverlays.Add(existing.SourceFile);
                 finalItems.Add(existing.Json);
             }
         }
@@ -455,7 +677,11 @@ internal sealed class PackageDocumentationComposer
             generatedOnly.Count,
             generatedByName.Values.Count(i => i.Kind == "Component"),
             generatedByName.Values.Count(i => i.Kind != "Component"),
-            generatedOnly);
+            generatedOnly)
+        {
+            OverlayPairs = overlayPairs,
+            OrphanOverlays = orphanOverlays
+        };
     }
 
     private static string GeneratedKey(GeneratedDocumentationItem item)
@@ -1750,10 +1976,11 @@ internal sealed record CliOptions(
                 "validate" => GeneratorCommand.Validate,
                 "list-missing" => GeneratorCommand.ListMissing,
                 "enrich" or "--enrich" => GeneratorCommand.Enrich,
+                "repair" => GeneratorCommand.Repair,
                 _ => command
             };
 
-            if (remaining[0] is "generate" or "validate" or "list-missing" or "enrich" or "--enrich")
+            if (remaining[0] is "generate" or "validate" or "list-missing" or "enrich" or "--enrich" or "repair")
             {
                 remaining.RemoveAt(0);
             }
@@ -1797,7 +2024,8 @@ internal enum GeneratorCommand
     Generate,
     Validate,
     ListMissing,
-    Enrich
+    Enrich,
+    Repair
 }
 
 internal sealed record PackageDocumentationConfig
@@ -1833,9 +2061,19 @@ internal sealed record PackageDocumentationResult(
     int GeneratedOnlyCount,
     int DiscoveredComponentCount,
     int DiscoveredTypeCount,
-    IReadOnlyList<GeneratedDocumentationItem> GeneratedOnlyItems);
+    IReadOnlyList<GeneratedDocumentationItem> GeneratedOnlyItems)
+{
+    /// <summary>Overlay files matched with their freshly parsed counterpart. Used by <c>repair</c>.</summary>
+    public IReadOnlyList<OverlayItemPair> OverlayPairs { get; init; } = [];
+
+    /// <summary>Overlay files whose documented type no longer exists in source.</summary>
+    public IReadOnlyList<string> OrphanOverlays { get; init; } = [];
+}
 
 internal sealed record ExistingDocumentationItem(string BaseItemName, JsonObject Json, string SourceFile);
+
+/// <summary>An overlay file paired with the item freshly parsed from source, for <c>repair</c>.</summary>
+internal sealed record OverlayItemPair(string OverlayFile, JsonObject Overlay, JsonObject Generated, bool GeneratedIsFallback);
 
 internal sealed record GeneratedDocumentationItem(
     string ItemName,

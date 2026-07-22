@@ -35,7 +35,7 @@
       "name": "Swimlanes",
       "type": "IReadOnlyList<KanbanSwimlane>?",
       "isRequired": false,
-      "description": "Explicit swimlane definitions (order and titles). When null the lanes are derived from SwimlaneSelector in order of first appearance."
+      "description": "Explicit swimlane definitions (order and titles). When null the lanes are derived from SwimlaneSelector in order of first appearance. Ignored when SwimlaneSelector is null."
     },
     {
       "name": "SwimlaneHeaderTemplate",

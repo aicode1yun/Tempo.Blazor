@@ -18,7 +18,7 @@
       "type": "string?",
       "isRequired": false,
       "default": "\"480px\"",
-      "description": "Height of the entry list (CSS value)."
+      "description": "Height of the entry list (CSS value). Default is \"480px\"."
     },
     {
       "name": "Virtualized",
@@ -32,14 +32,14 @@
       "type": "float",
       "isRequired": false,
       "default": "44",
-      "description": "Pixel height of one row used by virtualization."
+      "description": "Pixel height of one row used by virtualization. Default is 44."
     },
     {
       "name": "NonVirtualizedMaxItems",
       "type": "int",
       "isRequired": false,
       "default": "500",
-      "description": "Maximum rows rendered when Virtualized is false."
+      "description": "Maximum rows rendered when Virtualized is false. Default is 500."
     },
     {
       "name": "ShowTimeline",
@@ -53,7 +53,7 @@
       "type": "int",
       "isRequired": false,
       "default": "40",
-      "description": "Number of timeline buckets."
+      "description": "Number of timeline buckets. Default is 40."
     },
     {
       "name": "ShowFilters",
@@ -74,28 +74,28 @@
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Whether the CSV export action is offered."
+      "description": "Whether the CSV export action is offered. Default is true."
     },
     {
       "name": "ExportFileName",
       "type": "string",
       "isRequired": false,
       "default": "\"audit-log.csv\"",
-      "description": "File name of the CSV export."
+      "description": "File name of the CSV export. Default is \"audit-log.csv\"."
     },
     {
       "name": "ExportMaxRows",
       "type": "int",
       "isRequired": false,
       "default": "100000",
-      "description": "Maximum number of rows included in the CSV export."
+      "description": "Maximum number of rows included in the CSV export. Default is 100000."
     },
     {
       "name": "ShowIntegrity",
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Whether the hash-chain integrity indicator is shown when the provider implements IAuditLogIntegrityProvider."
+      "description": "Whether the hash-chain integrity indicator is shown when the provider implements IAuditLogIntegrityProvider. Default is true."
     },
     {
       "name": "OnEntrySelected",

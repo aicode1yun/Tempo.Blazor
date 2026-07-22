@@ -60,7 +60,7 @@
       "name": "LevelText",
       "kind": "Property",
       "type": "string?",
-      "description": "Optional numbering text template override, for example %1.%2."
+      "description": "Optional numbering text template override, for example %1.%2.."
     },
     {
       "name": "Suffix",

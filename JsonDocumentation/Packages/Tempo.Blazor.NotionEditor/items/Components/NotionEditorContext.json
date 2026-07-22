@@ -23,7 +23,7 @@
       "name": "RaiseBlockConverted",
       "kind": "Method",
       "type": "void",
-      "description": "Invokes if any subscriber is attached.",
+      "description": "Invokes BlockConverted if any subscriber is attached.",
       "parameters": [
         {
           "name": "block",
@@ -35,7 +35,7 @@
       "name": "RaiseBlockCreatedAsync",
       "kind": "Method",
       "type": "Task",
-      "description": "Invokes if the active page subscribed to sibling creation events.",
+      "description": "Invokes BlockCreated if the active page subscribed to sibling creation events.",
       "parameters": [
         {
           "name": "block",

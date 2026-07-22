@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Diagram",
   "namespace": "Tempo.Blazor.Components.Diagram.Services",
-  "description": "Generates a lightweight SVG thumbnail from a . Used for template previews when no static PNG thumbnail is available.",
+  "description": "Generates a lightweight SVG thumbnail from a DiagramDocument. Used for template previews when no static PNG thumbnail is available.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/DiagramThumbnailSvgGenerator.cs",
   "documentationStatus": "generated",

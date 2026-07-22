@@ -15,7 +15,7 @@
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Fallback culture used when a field label is missing for ."
+      "description": "Additional CSS classes for the root element."
     },
     {
       "name": "Culture",

@@ -228,7 +228,7 @@
           "type": "int",
           "isRequired": false,
           "default": "100",
-          "description": "The height in pixels."
+          "description": "The height in pixels. Default is 100."
         },
         {
           "name": "Value",
@@ -242,7 +242,7 @@
           "type": "int",
           "isRequired": false,
           "default": "200",
-          "description": "The width in pixels."
+          "description": "The width in pixels. Default is 200."
         }
       ],
       "cssClasses": [
@@ -278,7 +278,7 @@
           "type": "string",
           "isRequired": false,
           "default": "\"#ffffff\"",
-          "description": "Background color in hex format."
+          "description": "Background color in hex format. Default is #ffffff."
         },
         {
           "name": "CssClass",
@@ -298,7 +298,7 @@
           "type": "string",
           "isRequired": false,
           "default": "\"#000000\"",
-          "description": "Foreground color in hex format."
+          "description": "Foreground color in hex format. Default is #000000."
         },
         {
           "name": "Size",

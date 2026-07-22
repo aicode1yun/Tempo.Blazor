@@ -11,7 +11,7 @@
       "name": "Resolve",
       "kind": "Method",
       "type": "string?",
-      "description": "Resolves the head-level value of an attribute for a component, following MJML precedence: referenced classes (later class wins) > per-tag default > mj-all. Returns when no head rule supplies the attribute (the block's own value or the MJML built-in default then applies). The block's own inline value is not considered here.",
+      "description": "Resolves the head-level value of an attribute for a component, following MJML precedence: referenced classes (later class wins) > per-tag default > mj-all. Returns null when no head rule supplies the attribute (the block's own value or the MJML built-in default then applies). The block's own inline value is not considered here.",
       "parameters": [
         {
           "name": "tag",

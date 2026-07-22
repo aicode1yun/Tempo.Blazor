@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Model",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model",
-  "description": "The root of an email template: subject/preheader metadata, global and the ordered list of . This is the canonical editable model that the generator turns into MJML and the importer produces from MJML.",
+  "description": "The root of an email template: subject/preheader metadata, global Styles and the ordered list of Sections. This is the canonical editable model that the generator turns into MJML and the importer produces from MJML.",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/EmailTemplateDocument.cs",
   "documentationStatus": "generated",

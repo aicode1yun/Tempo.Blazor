@@ -2,7 +2,7 @@
   "itemName": "TmNotionHeadingBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "Self-contained contenteditable heading (H1 / H2 / H3). Owns its JS keyboard-handler lifecycle. Renders the correct semantic element based on . Supports optional toggle (collapse/expand) controlled by . [JSInvokable] method names must match strings called in notion-editor.js — hence EventCallback parameter names differ to avoid C# naming conflicts.",
+  "description": "Self-contained contenteditable heading (H1 / H2 / H3). Owns its JS keyboard-handler lifecycle. Renders the correct semantic element based on Level. Supports optional toggle (collapse/expand) controlled by IsToggleable. [JSInvokable] method names must match strings called in notion-editor.js — hence EventCallback parameter names differ to avoid C# naming conflicts.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Text",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Text/TmNotionHeadingBlock.razor",

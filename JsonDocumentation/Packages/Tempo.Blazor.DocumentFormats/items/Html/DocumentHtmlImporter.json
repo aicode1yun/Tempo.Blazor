@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Html",
   "namespace": "Tempo.Blazor.DocumentFormats.Html",
-  "description": "Imports a safe subset of semantic HTML into a .",
+  "description": "Imports a safe subset of semantic HTML into a DocumentEditorDocument.",
   "packageId": "Tempo.Blazor.DocumentFormats",
   "sourcePath": "src/Tempo.Blazor.DocumentFormats/Html/DocumentHtmlImporter.cs",
   "documentationStatus": "generated",

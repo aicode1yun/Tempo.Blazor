@@ -12,7 +12,7 @@
       "name": "Target",
       "type": "IDataImportTarget",
       "isRequired": true,
-      "description": "Destination of the import: target schema, validation, batches, rollback."
+      "description": "Destination of the import: target schema, validation, batches, rollback. Required."
     },
     {
       "name": "Parsers",
@@ -31,14 +31,14 @@
       "type": "int",
       "isRequired": false,
       "default": "500",
-      "description": "Rows per provider batch for validation and import."
+      "description": "Rows per provider batch for validation and import. Default is 500."
     },
     {
       "name": "PreviewRowCount",
       "type": "int",
       "isRequired": false,
       "default": "10",
-      "description": "Rows shown in the upload preview."
+      "description": "Rows shown in the upload preview. Default is 10."
     },
     {
       "name": "OnCompleted",

@@ -64,7 +64,7 @@
       "name": "Width",
       "type": "string?",
       "isRequired": false,
-      "description": "Template rendered when the row is in edit mode. Replaces and ."
+      "description": "Column width CSS value (e.g. \"200px\", \"20%\")."
     }
   ],
   "typeParameters": [

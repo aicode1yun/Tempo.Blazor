@@ -17,7 +17,7 @@
       "name": "Ids",
       "kind": "Property",
       "type": "IReadOnlyList<string>",
-      "description": "Specific user ids to resolve."
+      "description": "Specific user ids to resolve. When non-empty, providers should return these users regardless of SearchText."
     },
     {
       "name": "IncludeVirtual",

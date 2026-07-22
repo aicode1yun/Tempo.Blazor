@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Spreadsheet",
   "namespace": "Tempo.Blazor.Components.Spreadsheet.Data",
-  "description": "Pure engine that computes the new order of rows (or columns) for a . The sort is stable across levels and follows Excel's type ordering via ; blanks always sort last. Colour sorts pin the chosen colour to the active end.",
+  "description": "Pure engine that computes the new order of rows (or columns) for a SpreadsheetSortSpec. The sort is stable across levels and follows Excel's type ordering via SpreadsheetCellValueComparer; blanks always sort last. Colour sorts pin the chosen colour to the active end.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Spreadsheet/Data/SpreadsheetSortEngine.cs",
   "documentationStatus": "generated",
@@ -11,7 +11,7 @@
       "name": "ComputeOrder",
       "kind": "Method",
       "type": "IReadOnlyList<int>",
-      "description": "Computes the sorted order of the primary axis. With false (default) it returns the data row indices in their new order; with it true it returns the data column indices. The header row/column, when present, is excluded from the result.",
+      "description": "Computes the sorted order of the primary axis. With ByRows false (default) it returns the data row indices in their new order; with it true it returns the data column indices. The header row/column, when present, is excluded from the result.",
       "parameters": [
         {
           "name": "sheet",

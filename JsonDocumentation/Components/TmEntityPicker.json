@@ -11,13 +11,13 @@
       "name": "Value",
       "type": "TValue?",
       "isRequired": false,
-      "description": "Current selected value."
+      "description": "Current selected value (single-select mode)."
     },
     {
       "name": "ValueChanged",
       "type": "EventCallback<TValue?>",
       "isRequired": false,
-      "description": "Fires when value changes."
+      "description": "Fires when the single-select value changes."
     },
     {
       "name": "Label",

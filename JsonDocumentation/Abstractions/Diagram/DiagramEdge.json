@@ -173,7 +173,7 @@
       "name": "SourcePoint",
       "kind": "Property",
       "type": "DiagramPoint?",
-      "description": "Absolute position of the free-floating source point. Used when is null."
+      "description": "Absolute position of the free-floating source point. Used when SourceNodeId is null."
     },
     {
       "name": "SourcePortId",
@@ -245,7 +245,7 @@
       "name": "TargetPoint",
       "kind": "Property",
       "type": "DiagramPoint?",
-      "description": "Absolute position of the free-floating target point. Used when is null."
+      "description": "Absolute position of the free-floating target point. Used when TargetNodeId is null."
     },
     {
       "name": "TargetPortId",

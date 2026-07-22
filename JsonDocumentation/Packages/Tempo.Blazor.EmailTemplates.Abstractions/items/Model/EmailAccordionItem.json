@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Model",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Model.Blocks",
-  "description": "A single item within an (mj-accordion-element).",
+  "description": "A single item within an EmailAccordionBlock (mj-accordion-element).",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Model/Blocks/EmailAccordionItem.cs",
   "documentationStatus": "generated",

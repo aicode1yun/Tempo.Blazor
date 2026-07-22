@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
-  "description": "Scoped service that centralises all Notion-editor keyboard shortcuts. Usage: // In a Blazor component: [Inject] private NotionKeyboardManager KeyboardManager { get; set; } = default!; private Task OnKeyDown(KeyboardEventArgs e) { var action = KeyboardManager.HandleKeyDown(e); if (action is NotionEditorAction.Bold) { ... } return Task.CompletedTask; } Subscribers may also listen to for a decoupled, event-driven integration.",
+  "description": "Scoped service that centralises all Notion-editor keyboard shortcuts. Usage: // In a Blazor component: [Inject] private NotionKeyboardManager KeyboardManager { get; set; } = default!; private Task OnKeyDown(KeyboardEventArgs e) { var action = KeyboardManager.HandleKeyDown(e); if (action is NotionEditorAction.Bold) { ... } return Task.CompletedTask; } Subscribers may also listen to ActionTriggered for a decoupled, event-driven integration.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionKeyboardManager.cs",
   "documentationStatus": "generated",
@@ -11,13 +11,13 @@
       "name": "GetShortcutCategories",
       "kind": "Method",
       "type": "IReadOnlyList<TmShortcutCategory>",
-      "description": "Returns all shortcuts grouped into instances, ready for display in a help panel."
+      "description": "Returns all shortcuts grouped into TmShortcutCategory instances, ready for display in a help panel."
     },
     {
       "name": "HandleKeyDown",
       "kind": "Method",
       "type": "NotionEditorAction?",
-      "description": "Processes a event, fires if a matching shortcut is found, and returns the matched action. Returns null when no binding matches.",
+      "description": "Processes a KeyboardEventArgs event, fires ActionTriggered if a matching shortcut is found, and returns the matched action. Returns null when no binding matches.",
       "parameters": [
         {
           "name": "e",

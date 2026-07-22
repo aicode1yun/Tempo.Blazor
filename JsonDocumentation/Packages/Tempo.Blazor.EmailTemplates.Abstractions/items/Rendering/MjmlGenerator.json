@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Rendering",
   "namespace": "Tempo.Blazor.EmailTemplates.Abstractions.Rendering",
-  "description": "Generates MJML markup from an . Default attribute values are omitted for clean output, attribute values are escaped, text-block HTML is sanitized, and a block's wraps it in a Scriban condition.",
+  "description": "Generates MJML markup from an EmailTemplateDocument. Default attribute values are omitted for clean output, attribute values are escaped, text-block HTML is sanitized, and a block's VisibleWhen wraps it in a Scriban condition.",
   "packageId": "Tempo.Blazor.EmailTemplates.Abstractions",
   "sourcePath": "src/Tempo.Blazor.EmailTemplates.Abstractions/Rendering/MjmlGenerator.cs",
   "documentationStatus": "generated",

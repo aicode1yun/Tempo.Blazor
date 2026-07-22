@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Models",
-  "description": "Builds a tree from a flat list of comment entries using .",
+  "description": "Builds a tree from a flat list of comment entries using ParentEntryId.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Models/CommentThreadNode.cs",
   "documentationStatus": "generated",

@@ -126,7 +126,7 @@
       "name": "InitialPageId",
       "type": "string?",
       "isRequired": false,
-      "description": "Page ID to open on first render."
+      "description": "Page ID to open on first render. Supports @bind-InitialPageId."
     },
     {
       "name": "ShowSidebar",

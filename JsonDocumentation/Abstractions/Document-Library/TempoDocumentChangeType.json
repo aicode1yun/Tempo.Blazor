@@ -2,7 +2,7 @@
   "kind": "Enum",
   "category": "Document Library",
   "namespace": "Tempo.Blazor.DocumentLibrary",
-  "description": "The nature of a .",
+  "description": "The nature of a TempoDocumentChange.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/DocumentLibrary/TempoDocumentChangeType.cs",
   "documentationStatus": "generated",

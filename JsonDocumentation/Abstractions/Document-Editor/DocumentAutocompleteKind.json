@@ -236,7 +236,7 @@
       "name": "Sequence",
       "kind": "Property",
       "type": "long",
-      "description": "Sequence assigned by ."
+      "description": "Sequence assigned by DocumentAutocompleteProviderRunner."
     },
     {
       "name": "StartOffset",

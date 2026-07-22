@@ -2,7 +2,7 @@
   "kind": "Interface",
   "category": "Diagram",
   "namespace": "Tempo.Blazor.Components.Diagram.Templates",
-  "description": "Provides diagram template categories to the .",
+  "description": "Provides diagram template categories to the DiagramTemplateRegistry.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Templates/IDiagramTemplateProvider.cs",
   "documentationStatus": "generated",

@@ -39,7 +39,7 @@
       "name": "SelectedElement",
       "type": "ModelingElementDto?",
       "isRequired": false,
-      "description": "Elements rendered by the tree. They are grouped by ."
+      "description": "Currently selected element."
     },
     {
       "name": "SelectedElementChanged",

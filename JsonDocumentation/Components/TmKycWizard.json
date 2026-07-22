@@ -12,7 +12,7 @@
       "name": "Provider",
       "type": "IKycProvider",
       "isRequired": true,
-      "description": "Persistence backend for drafts and the final submission."
+      "description": "Persistence backend for drafts and the final submission. Required."
     },
     {
       "name": "StepValidator",

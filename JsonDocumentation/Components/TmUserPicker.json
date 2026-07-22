@@ -60,14 +60,14 @@
       "type": "int",
       "isRequired": false,
       "default": "3",
-      "description": "Minimum characters before a search fires."
+      "description": "Minimum characters before a search fires. Default 3."
     },
     {
       "name": "DebounceMs",
       "type": "int",
       "isRequired": false,
       "default": "300",
-      "description": "Debounce delay in ms before a search fires."
+      "description": "Debounce delay in ms before a search fires. Default 300."
     },
     {
       "name": "Disabled",

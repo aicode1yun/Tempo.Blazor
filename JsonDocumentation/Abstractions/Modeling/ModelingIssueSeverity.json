@@ -2,7 +2,7 @@
   "kind": "Enum",
   "category": "Modeling",
   "namespace": "Tempo.Blazor.Modeling",
-  "description": "Public enum defined by Tempo.Blazor.Abstractions.",
+  "description": "Severity of an issue discovered while loading or generating a modeling model.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Modeling/ModelingDtos.cs",
   "documentationStatus": "generated",

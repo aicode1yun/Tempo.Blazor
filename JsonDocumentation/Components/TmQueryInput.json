@@ -43,7 +43,7 @@
       "type": "int",
       "isRequired": false,
       "default": "200",
-      "description": "Debounce (ms) before querying SuggestionsProvider."
+      "description": "Debounce (ms) before querying SuggestionsProvider. Defaults to 200."
     },
     {
       "name": "Placeholder",
@@ -68,7 +68,7 @@
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Render with a monospace font."
+      "description": "Render with a monospace font (default). Set false for a proportional font."
     },
     {
       "name": "Class",

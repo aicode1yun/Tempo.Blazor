@@ -2,7 +2,7 @@
   "kind": "Interface",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Wireframe",
-  "description": "An IWireframeComponentProvider whose custom component types are namespaced to a single application. Register it with services.AddWireframeComponentProvider<T>(); when two providers register the same WireframeComponentDef.Type, the higher Priority wins.",
+  "description": "Marker interface for providers whose definitions belong to a single application scope. Registry entries are exposed under app:{ScopeAppId}:{Type}.",
   "packageId": "Tempo.Blazor.Wireframe",
   "sourcePath": "src/Tempo.Blazor.Wireframe/Components/Wireframe/IWireframeComponentProvider.cs",
   "documentationStatus": "generated",

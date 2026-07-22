@@ -2,7 +2,7 @@
   "kind": "Interface",
   "category": "Interfaces",
   "namespace": "Tempo.Blazor.Abstractions.Interfaces",
-  "description": "Optional data source for TmMap: the component asks for fresh points whenever the viewport settles (pan/zoom, debounced), cancelling the previous request first. Implementations typically aggregate on the server and switch between clusters and individual markers by zoom.",
+  "description": "Optional data source for TmMap: the component asks for fresh points whenever the viewport settles (pan/zoom, debounced), cancelling the previous request first. Implementations typically aggregate on the server and switch between clusters and individual markers by zoom. The component stays fully usable without a provider (imperative SetMarkersAsync mode).",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/Interfaces/IMapDataProvider.cs",
   "documentationStatus": "generated",

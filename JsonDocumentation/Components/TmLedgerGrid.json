@@ -25,7 +25,7 @@
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "Whether the search and filter controls are shown."
+      "description": "Whether the search and filter controls are shown. Default is true."
     },
     {
       "name": "ShowFooter",

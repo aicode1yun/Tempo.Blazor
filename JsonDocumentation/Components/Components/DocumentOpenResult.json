@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Components",
   "namespace": "Tempo.Blazor.Components.Files",
-  "description": "The outcome of confirming a selection in .",
+  "description": "The outcome of confirming a selection in TmDocumentOpenDialog.",
   "packageId": "Tempo.Blazor",
   "sourcePath": "src/Tempo.Blazor/Components/Files/DocumentOpenResult.cs",
   "documentationStatus": "generated",

@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Wireframe",
   "namespace": "Tempo.Blazor.Mcp.Wireframe",
-  "description": "Public class defined by Tempo.Blazor.Mcp.",
+  "description": "MCP tools for listing, reading and creating stored wireframe documents. Persistence (and therefore live-change notification) is delegated to the host-supplied providers.",
   "packageId": "Tempo.Blazor.Mcp",
   "sourcePath": "src/Tempo.Blazor.Mcp/Wireframe/WireframeDocumentTools.cs",
   "documentationStatus": "generated",

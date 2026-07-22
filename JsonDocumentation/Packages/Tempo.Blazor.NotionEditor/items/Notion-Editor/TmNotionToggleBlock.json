@@ -2,7 +2,7 @@
   "itemName": "TmNotionToggleBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "Self-contained toggle block. Owns the header contenteditable JS lifecycle and manages child blocks (lazy-loaded from ). Arrow click fires OnOpenChanged so the parent can persist the new IsOpen state. Enter on an empty header fires OnTypeConvert(\"paragraph\") to escape the toggle. Enter on a non-empty header fires OnEnterSplit to create a new sibling block after.",
+  "description": "Self-contained toggle block. Owns the header contenteditable JS lifecycle and manages child blocks (lazy-loaded from BlockProvider). Arrow click fires OnOpenChanged so the parent can persist the new IsOpen state. Enter on an empty header fires OnTypeConvert(\"paragraph\") to escape the toggle. Enter on a non-empty header fires OnEnterSplit to create a new sibling block after.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Lists",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Lists/TmNotionToggleBlock.razor",

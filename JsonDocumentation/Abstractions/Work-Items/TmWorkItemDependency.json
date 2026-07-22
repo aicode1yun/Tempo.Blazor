@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Work Items",
   "namespace": "Tempo.Blazor.Abstractions.WorkItems",
-  "description": "Describes a dependency relationship between two s.",
+  "description": "Describes a dependency relationship between two TmWorkItems.",
   "packageId": "Tempo.Blazor.Abstractions",
   "sourcePath": "src/Tempo.Blazor.Abstractions/WorkItems/TmWorkItemDependency.cs",
   "documentationStatus": "generated",
