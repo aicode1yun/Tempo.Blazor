@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.5.5 - 2026-07-22
+
+### TmCodeEditor — leaving the editor with Tab, and wrapping long lines
+
+The editor swallowed every Tab and never wrapped. That is right for source code, but wrong for an
+editor placed among ordinary form fields (a Gherkin step, a note): keyboard users could not reach
+the next control, and a long sentence scrolled sideways instead of wrapping. Two opt-in parameters,
+both defaulting to today's behaviour, so upgrading changes nothing until you ask for it.
+
+- **New parameter `TrapTab` (default `true`)** — keeps Tab/Shift+Tab inside the editor as
+  indent/outdent. It stays `true` on purpose: existing hosts use the component as a source editor,
+  and flipping the default would silently change their keyboard behaviour on upgrade. Set it to
+  `false` and Tab moves focus to the next control (no `preventDefault`), at the cost of losing
+  keyboard indentation. The flag reaches the script through `tmCodeEditor.init` and can be changed
+  later through the new `tmCodeEditor.setTrapTab`; a caller that omits it keeps trapping Tab.
+- **New parameter `Wrap` (default `false`)** — wraps long lines instead of scrolling horizontally.
+  It adds the `tm-code-editor--wrap` modifier, which switches the textarea AND the highlight
+  overlay to `white-space: pre-wrap` together (wrapping only one of them would drift the highlight
+  against the caret), breaks over-long tokens and drops the now-pointless horizontal scroll.
+- The wireframe stencil exposes `wrap` as a component prop, so a wireframe can state whether an
+  editor wraps prose or scrolls code sideways.
+
 ## 2.5.4 - 2026-07-22
 
 ### Selection controls — non-text contrast (WCAG 2.2 SC 1.4.11) in both themes
