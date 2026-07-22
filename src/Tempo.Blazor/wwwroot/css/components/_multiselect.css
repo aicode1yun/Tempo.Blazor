@@ -270,7 +270,9 @@
     justify-content: center;
     width: 1rem;
     height: 1rem;
-    border: 1.5px solid var(--tm-border-color);
+    /* Hand-cloned checkbox: it carries the same state in the same way, so it takes the same
+       control-boundary token (3:1) and the same fallback as .tm-checkbox-custom. */
+    border: 1.5px solid var(--tm-border-color-control, var(--tm-border-color));
     border-radius: var(--tm-radius-sm);
     flex-shrink: 0;
     transition: background-color var(--tm-transition-fast), border-color var(--tm-transition-fast);
@@ -278,7 +280,10 @@
 .tm-multiselect__option-checkbox--checked {
     background: var(--tm-color-primary);
     border-color: var(--tm-color-primary);
-    color: white;
+    /* Was a hardcoded `white`, which bypassed the token graph and so kept 2.54:1 on the dark fill
+       (see the dark override for this class below). Shared token = one dark flip for every
+       selection control. */
+    color: var(--tm-control-glyph-color, var(--tm-color-white));
 }
 
 /* ── Group header ────────────────────────────────────── */

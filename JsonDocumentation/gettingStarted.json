@@ -280,18 +280,20 @@
           }
         },
         "borders": {
-          "description": "Border colors",
+          "description": "Border colors. --tm-border-color is the decorative divider tone; the boundary of a selection control (checkbox, radio, multiselect option), which conveys the control's state, uses --tm-border-color-control so it stays above the WCAG 1.4.11 3:1 minimum. Retheming a control must go through the -control token, not through --tm-border-color.",
           "tokens": {
             "--tm-border-color": "var(--tm-color-gray-200)",
-            "--tm-border-color-focus": "var(--tm-color-primary)"
+            "--tm-border-color-control": "var(--tm-color-gray-500)",
+            "--tm-border-color-focus": "var(--tm-color-primary)",
+            "--tm-control-glyph-color": "var(--tm-color-white)"
           }
         },
         "text": {
           "description": "Text colors",
           "tokens": {
             "--tm-text-primary": "var(--tm-color-gray-900)",
-            "--tm-text-secondary": "var(--tm-color-gray-500)",
-            "--tm-text-tertiary": "var(--tm-color-gray-400)",
+            "--tm-text-secondary": "var(--tm-color-gray-600)",
+            "--tm-text-tertiary": "var(--tm-color-gray-500)",
             "--tm-text-disabled": "var(--tm-color-gray-400)",
             "--tm-text-inverse": "var(--tm-color-white)",
             "--tm-text-link": "var(--tm-color-primary)"

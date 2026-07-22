@@ -110,4 +110,53 @@ public class TmCheckboxTests : LocalizationTestBase
         cut.Find("input[type='checkbox']").HasAttribute("aria-required").Should().BeFalse();
         cut.Find(".tm-checkbox-text").ClassList.Should().NotContain("tm-input-label-required");
     }
+
+    // ── Indeterminate (mixed) state ──────────────────────────────
+    // The box used to be styled through `.tm-checkbox-input:indeterminate`, a pseudo-class that can
+    // only match when someone sets the input's indeterminate DOM PROPERTY — nobody ever does. The
+    // box therefore stayed unfilled and the white dash was invisible on the light surface, and the
+    // state was indistinguishable from unchecked for assistive technology.
+
+    [Fact]
+    public void TmCheckbox_Indeterminate_RendersTheDashGlyph()
+    {
+        var cut = Render<TmCheckbox>(p => p.Add(c => c.Indeterminate, true));
+        cut.FindAll(".tm-checkbox-indeterminate").Should().ContainSingle();
+    }
+
+    [Fact]
+    public void TmCheckbox_Indeterminate_MarksTheBoxSoItGetsTheFilledStyling()
+    {
+        var cut = Render<TmCheckbox>(p => p.Add(c => c.Indeterminate, true));
+        cut.Find(".tm-checkbox-custom").ClassList.Should().Contain("tm-checkbox-custom-indeterminate");
+    }
+
+    [Fact]
+    public void TmCheckbox_Indeterminate_SetsAriaCheckedMixed()
+    {
+        var cut = Render<TmCheckbox>(p => p.Add(c => c.Indeterminate, true));
+        cut.Find("input[type='checkbox']").GetAttribute("aria-checked").Should().Be("mixed");
+    }
+
+    [Fact]
+    public void TmCheckbox_Checked_WinsOverIndeterminate()
+    {
+        var cut = Render<TmCheckbox>(p => p
+            .Add(c => c.Value, true)
+            .Add(c => c.Indeterminate, true));
+
+        cut.FindAll(".tm-checkbox-check").Should().ContainSingle("a real check beats the mixed state");
+        cut.FindAll(".tm-checkbox-indeterminate").Should().BeEmpty();
+        cut.Find(".tm-checkbox-custom").ClassList.Should().NotContain("tm-checkbox-custom-indeterminate");
+        cut.Find("input[type='checkbox']").HasAttribute("aria-checked").Should().BeFalse(
+            "aria-checked=mixed would contradict the checked input");
+    }
+
+    [Fact]
+    public void TmCheckbox_NotIndeterminate_HasNoMixedMarkers()
+    {
+        var cut = Render<TmCheckbox>();
+        cut.Find(".tm-checkbox-custom").ClassList.Should().NotContain("tm-checkbox-custom-indeterminate");
+        cut.Find("input[type='checkbox']").HasAttribute("aria-checked").Should().BeFalse();
+    }
 }

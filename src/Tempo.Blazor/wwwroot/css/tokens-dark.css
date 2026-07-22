@@ -14,6 +14,13 @@
 
   /* Border */
   --tm-border-color:         #334155;
+  /* Control boundary — see tokens.css. #334155 is 1.41:1 on --tm-bg-surface and 1.00:1 on
+     --tm-bg-muted (the same colour), so it cannot mark an unchecked control. The dark scale's
+     gray-400 (#94a3b8) is 5.71:1 on the surface and 4.04:1 on the muted panel. */
+  --tm-border-color-control: var(--tm-color-gray-400);
+  /* Filled selection controls use the lighter primary-400 on dark, where a white glyph is 2.54:1.
+     Dark text on that fill is 7.02:1 — the rule the filled button and badge already follow. */
+  --tm-control-glyph-color:  var(--tm-text-inverse);
 
   /* Text — lightened so muted text stays WCAG AA on dark muted surfaces (--tm-bg-muted #334155). */
   --tm-text-primary:         #f1f5f9;

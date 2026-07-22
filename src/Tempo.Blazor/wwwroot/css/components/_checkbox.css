@@ -10,14 +10,21 @@
   width: 1rem;
   height: 1rem;
   background-color: var(--tm-bg-surface);
-  border: 1.5px solid var(--tm-border-color);
+  /* An unchecked box is nothing BUT its outline, so it takes the control-boundary token
+     (WCAG 1.4.11, 3:1) instead of the decorative divider tone. The fallback keeps the shorthand
+     valid for a consumer still on an older token file — without it the whole `border` declaration
+     would be invalid at computed-value time and the box would lose its outline altogether. */
+  border: 1.5px solid var(--tm-border-color-control, var(--tm-border-color));
   border-radius: var(--tm-radius-sm);
   transition: background-color var(--tm-transition-fast),
               border-color var(--tm-transition-fast),
               box-shadow var(--tm-transition-fast);
 }
+/* The mixed state is keyed off the class the component renders, NOT off `:indeterminate`: nothing
+   ever sets that DOM property, so the pseudo-class never matched and the dash was painted on an
+   unfilled box — white on white in the light theme. */
 .tm-checkbox-input:checked ~ .tm-checkbox-custom,
-.tm-checkbox-input:indeterminate ~ .tm-checkbox-custom {
+.tm-checkbox-custom-indeterminate {
   background-color: var(--tm-color-primary);
   border-color: var(--tm-color-primary);
 }
@@ -27,8 +34,11 @@
 .tm-checkbox-input:focus-visible ~ .tm-checkbox-custom {
   box-shadow: var(--tm-shadow-focus);
 }
+/* Both glyphs sit on the primary fill, so both take the shared control-glyph token; the dark theme
+   flips it once in tokens-dark.css (which covers [data-theme="dark"] AND .tm-dark) instead of every
+   component repeating a dark block. */
 .tm-checkbox-check, .tm-checkbox-indeterminate {
-  color: var(--tm-color-white);
+  color: var(--tm-control-glyph-color, var(--tm-color-white));
 }
 .tm-checkbox-text { font-size: var(--tm-font-size-sm); color: var(--tm-text-primary); line-height: var(--tm-line-height-tight); }
 .tm-checkbox-help { font-size: var(--tm-font-size-xs); color: var(--tm-text-secondary); padding-left: 1.5rem; }

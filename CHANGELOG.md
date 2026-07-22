@@ -1,5 +1,51 @@
 # Changelog
 
+## 2.5.4 - 2026-07-22
+
+### Selection controls — non-text contrast (WCAG 2.2 SC 1.4.11) in both themes
+
+**The appearance of three components changes**: `TmCheckbox`, `TmRadio`/`TmRadioGroup` and the
+`TmMultiSelect` option checkbox. A selection control carries its whole state in two graphical
+objects — the outline when nothing is selected, the glyph on the filled box when something is —
+and both were below the 3:1 minimum. Measured from the token graph, before → after. The outline
+numbers are identical for all three — they shared the same declaration. The glyph rows apply to the
+checkbox and the multiselect option; a radio marks its state with a filled dot, not a glyph, and
+that dot is unchanged (5.17:1 light / 5.75:1 dark against the box):
+
+| | before | after |
+|---|---|---|
+| outline vs. its own surface (dark) | 1.41:1 | **5.71:1** |
+| outline vs. its own surface (light) | 1.24:1 | **4.83:1** |
+| outline on `--tm-bg-muted` (dark / light) | 1.00:1 / 1.13:1 | **4.04:1 / 4.39:1** |
+| glyph on the filled box (dark) | 2.54:1 | **7.02:1** |
+| glyph on the filled box (light) | 5.17:1 | 5.17:1 (unchanged) |
+| indeterminate dash (light / dark) | 1.00:1 / 14.63:1 on an unfilled box | **5.17:1 / 7.02:1** |
+
+- **New token `--tm-border-color-control`** (`--tm-color-gray-500` light, `--tm-color-gray-400`
+  dark) — the boundary of a control whose STATE that boundary conveys. `--tm-border-color` keeps
+  its meaning as the decorative divider tone and is unchanged, so nothing outside these three
+  controls moves. Both use sites carry the fallback `var(--tm-border-color-control,
+  var(--tm-border-color))`, so a stale token file cannot turn the whole `border` shorthand invalid
+  and leave the control with no outline at all.
+- **New token `--tm-control-glyph-color`** (white light, `--tm-text-inverse` dark) — the glyph on a
+  filled selection control. On dark the fill is the lighter `primary-400`, on which white is
+  2.54:1; dark ink on it is 7.02:1, the rule the filled primary button and the filled badge already
+  follow. Flipping it in `tokens-dark.css` covers both theming APIs (`[data-theme="dark"]` and
+  `.tm-dark`) and all three components at once. The multiselect option checkbox previously
+  hardcoded `color: white`, which bypassed the token graph entirely.
+- **`TmCheckbox` indeterminate state fixed.** The mixed state was styled through
+  `.tm-checkbox-input:indeterminate`, a pseudo-class that only matches when something sets the
+  input's `indeterminate` DOM property — nothing ever did. The box therefore stayed unfilled and
+  the white dash was invisible in the light theme (1.00:1). The fill is now keyed off a class the
+  component renders, and the input carries `aria-checked="mixed"`, without which the state was
+  indistinguishable from unchecked for assistive technology.
+- Guarded by `SelectionControlContrastTests`, which resolves the `var()` chains out of the token
+  files and recomputes the ratios for all three controls, so reintroducing a failing colour further
+  up the graph fails the build too.
+- **Known gap, not covered here**: these ratios are Tempo's own tokens. An application that
+  repoints the primary scale (per-accent themes) has to re-measure the glyph against ITS fills —
+  the dark glyph token is what makes that possible, but no test in this repo can see those tokens.
+
 ## 2.5.1 - 2026-07-19
 
 ### Applier convergence follow-up: `table.cell.text` + content-control children

@@ -8,9 +8,10 @@
                disabled="@Disabled"
                required="@Required"
                aria-required="@(Required ? "true" : null)"
+               aria-checked="@(IsIndeterminate ? "mixed" : null)"
                class="tm-checkbox-input"
                @onchange="HandleChangeAsync" />
-        <span class="tm-checkbox-custom">
+        <span class="tm-checkbox-custom @(IsIndeterminate ? "tm-checkbox-custom-indeterminate" : "")">
             @if (Value)
             {
                 <svg class="tm-checkbox-check" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -18,7 +19,7 @@
                     <polyline points="20 6 9 17 4 12" />
                 </svg>
             }
-            else if (Indeterminate)
+            else if (IsIndeterminate)
             {
                 <svg class="tm-checkbox-indeterminate" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                      stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -64,6 +65,16 @@
 
     /// <summary>Shows an indeterminate (dash) state when true and Value is false.</summary>
     [Parameter] public bool Indeterminate { get; set; }
+
+    /// <summary>
+    /// The mixed state as it is actually rendered: <see cref="Indeterminate"/> loses to a real
+    /// check. The box carries a modifier class for it because the CSS cannot key off the
+    /// <c>:indeterminate</c> pseudo-class — that DOM property is never set, so the dash used to be
+    /// drawn on an unfilled box (invisible in the light theme). It also drives
+    /// <c>aria-checked="mixed"</c>, without which the state is indistinguishable from unchecked
+    /// for a screen reader.
+    /// </summary>
+    private bool IsIndeterminate => Indeterminate && !Value;
 
     private async Task HandleChangeAsync(ChangeEventArgs e)
     {

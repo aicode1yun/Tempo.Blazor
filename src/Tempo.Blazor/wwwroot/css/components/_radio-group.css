@@ -17,7 +17,10 @@
   height: 1rem;
   border-radius: 50%;
   background-color: var(--tm-bg-surface);
-  border: 1.5px solid var(--tm-border-color);
+  /* Same reasoning as the checkbox box: an unselected radio is only its outline, so it needs the
+     control-boundary token (3:1) rather than the decorative divider tone. Fallback keeps the
+     shorthand valid against an older token file. */
+  border: 1.5px solid var(--tm-border-color-control, var(--tm-border-color));
   margin-top: 0.125rem;
   transition: border-color var(--tm-transition-fast), box-shadow var(--tm-transition-fast);
 }

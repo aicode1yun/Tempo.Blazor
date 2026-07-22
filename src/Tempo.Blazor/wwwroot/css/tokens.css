@@ -100,7 +100,16 @@
 
   /* ── Border ─────────────────────────────────────────────────── */
   --tm-border-color:           var(--tm-color-gray-200);
+  /* Boundary of an interactive control whose STATE that boundary conveys (e.g. an unchecked
+     checkbox). --tm-border-color is the decorative divider tone — only 1.24:1 on white — so it
+     fails WCAG 1.4.11 (3:1 for non-text contrast) in that role. gray-500 is 4.83:1 on the surface
+     and 4.39:1 on --tm-bg-muted. Decorative separators keep using --tm-border-color. */
+  --tm-border-color-control:   var(--tm-color-gray-500);
   --tm-border-color-focus:     var(--tm-color-primary);
+  /* Glyph drawn ON a selection control's filled state (checkbox tick and indeterminate dash,
+     multiselect option tick). It is a token, not a per-component rule, because the dark theme has
+     to flip it in one place: dark fills with the lighter primary-400, on which white is 2.54:1. */
+  --tm-control-glyph-color:    var(--tm-color-white);
 
   /* ── Text ───────────────────────────────────────────────────── */
   --tm-text-primary:           var(--tm-color-gray-900);
