@@ -605,6 +605,8 @@ to{transform:translateX(0);}
 .tm-code-editor--error .tm-code-editor__body{border-color:var(--tm-color-danger);}
 .tm-code-editor--disabled .tm-code-editor__body{opacity:0.6;background:var(--tm-bg-muted);}
 .tm-code-editor__textarea,.tm-code-editor__highlight{margin:0;padding:var(--tm-space-3,0.75rem);font-family:var(--tm-font-mono,ui-monospace,monospace);font-size:var(--tm-font-size-sm,0.875rem);line-height:1.6;tab-size:2;white-space:pre;word-wrap:normal;overflow-wrap:normal;}
+.tm-code-editor--wrap .tm-code-editor__textarea,.tm-code-editor--wrap .tm-code-editor__highlight{white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere;}
+.tm-code-editor--wrap .tm-code-editor__textarea{overflow-x:hidden;}
 .tm-code-editor__textarea{position:relative;z-index:1;display:block;width:100%;border:none;outline:none;resize:vertical;background:transparent;color:var(--tm-text-primary);overflow:auto;}
 .tm-code-editor__textarea::placeholder{color:var(--tm-text-secondary);}
 .tm-code-editor__textarea:disabled{cursor:not-allowed;}

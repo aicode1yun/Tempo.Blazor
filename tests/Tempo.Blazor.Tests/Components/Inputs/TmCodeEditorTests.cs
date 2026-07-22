@@ -209,6 +209,45 @@ public class TmCodeEditorTests : LocalizationTestBase
         captured.Should().BeNull();
     }
 
+    // ── Tab trapping and wrapping ────────────────────────────────
+
+    [Fact]
+    public void TmCodeEditor_TrapTab_Defaults_To_True()
+    {
+        // Existing hosts rely on Tab indenting the code — the upgrade must not change that.
+        var cut = Render<TmCodeEditor>();
+        cut.Instance.TrapTab.Should().BeTrue();
+    }
+
+    [Fact]
+    public void TmCodeEditor_Wrap_Defaults_To_False()
+    {
+        var cut = Render<TmCodeEditor>();
+        cut.Instance.Wrap.Should().BeFalse();
+        cut.Find("[data-testid='code-editor']").ClassList.Should().NotContain("tm-code-editor--wrap");
+    }
+
+    [Fact]
+    public void TmCodeEditor_Wrap_Adds_Modifier_Class()
+    {
+        // The modifier flips white-space on the textarea AND the overlay at once — they must keep
+        // identical metrics, otherwise the highlight drifts against the caret.
+        var cut = Render<TmCodeEditor>(p => p.Add(c => c.Wrap, true));
+        cut.Find("[data-testid='code-editor']").ClassList.Should().Contain("tm-code-editor--wrap");
+    }
+
+    [Fact]
+    public void TmCodeEditor_Wrap_KeepsCustomClass()
+    {
+        var cut = Render<TmCodeEditor>(p => p
+            .Add(c => c.Wrap, true)
+            .Add(c => c.Class, "host-editor"));
+
+        var classes = cut.Find("[data-testid='code-editor']").ClassList;
+        classes.Should().Contain("tm-code-editor--wrap");
+        classes.Should().Contain("host-editor");
+    }
+
     // ── TestIdPrefix ─────────────────────────────────────────────
 
     [Fact]

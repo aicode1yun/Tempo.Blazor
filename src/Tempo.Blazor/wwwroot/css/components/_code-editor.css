@@ -52,6 +52,22 @@
     overflow-wrap: normal;
 }
 
+/* ── Wrap variant (opt-in via the Wrap parameter) ───────────────── */
+
+/* Prose-like content (Gherkin steps, notes) reads better wrapped than scrolled sideways.
+   Both layers switch together — wrapping one of them alone drifts the overlay against the
+   caret. With no horizontal overflow left, syncScroll only ever copies scrollTop. */
+.tm-code-editor--wrap .tm-code-editor__textarea,
+.tm-code-editor--wrap .tm-code-editor__highlight {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+}
+
+.tm-code-editor--wrap .tm-code-editor__textarea {
+    overflow-x: hidden;
+}
+
 /* ── Textarea (the real input, on top) ──────────────────────────── */
 
 .tm-code-editor__textarea {

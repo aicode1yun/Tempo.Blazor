@@ -3,7 +3,7 @@
 @inject IJSRuntime JS
 @implements IAsyncDisposable
 
-<div class="tm-code-editor @(Disabled ? "tm-code-editor--disabled" : "") @(HasError ? "tm-code-editor--error" : "") @Class"
+<div class="tm-code-editor @(Disabled ? "tm-code-editor--disabled" : "") @(HasError ? "tm-code-editor--error" : "") @(Wrap ? "tm-code-editor--wrap" : "") @Class"
      data-testid="@RootTestId("code-editor")"
      @attributes="AdditionalAttributes">
 
@@ -101,6 +101,21 @@
     /// </summary>
     [Parameter] public bool ValidateJson { get; set; }
 
+    /// <summary>
+    /// Keeps Tab and Shift+Tab inside the editor as indent/outdent. Defaults to true, which is how
+    /// a source editor is expected to behave. Set it to false when the editor sits among ordinary
+    /// form fields (a Gherkin step, a note): keyboard users then tab out to the next control instead
+    /// of being trapped, at the cost of losing keyboard indentation.
+    /// </summary>
+    [Parameter] public bool TrapTab { get; set; } = true;
+
+    /// <summary>
+    /// Wraps long lines instead of scrolling horizontally. Defaults to false, which suits source
+    /// code where indentation carries meaning. Turn it on for prose-like content (Gherkin steps,
+    /// descriptions) so a long sentence stays readable without horizontal scrolling.
+    /// </summary>
+    [Parameter] public bool Wrap { get; set; }
+
     /// <summary>Shows a copy-to-clipboard button in the top-right corner. Defaults to true.</summary>
     [Parameter] public bool ShowCopyButton { get; set; } = true;
 
@@ -124,6 +139,7 @@
     private bool _isInitialized;
     private string _lastSyncedValue = string.Empty;
     private string? _lastSyncedLanguage;
+    private bool _lastSyncedTrapTab = true;
     private string? _jsonError;
 
     private bool IsJson => string.Equals(Language, "json", StringComparison.OrdinalIgnoreCase);
@@ -149,9 +165,10 @@
         {
             try
             {
-                await JS.InvokeVoidAsync("tmCodeEditor.init", _bodyRef, _textareaRef, _codeRef, Language);
+                await JS.InvokeVoidAsync("tmCodeEditor.init", _bodyRef, _textareaRef, _codeRef, Language, TrapTab);
                 _lastSyncedValue = Value;
                 _lastSyncedLanguage = Language;
+                _lastSyncedTrapTab = TrapTab;
                 _isInitialized = true;
             }
             catch { /* JS not available in SSR / tests */ }
@@ -169,6 +186,12 @@
             {
                 await JS.InvokeVoidAsync("tmCodeEditor.setLanguage", _textareaRef, Language);
                 _lastSyncedLanguage = Language;
+            }
+
+            if (TrapTab != _lastSyncedTrapTab)
+            {
+                await JS.InvokeVoidAsync("tmCodeEditor.setTrapTab", _textareaRef, TrapTab);
+                _lastSyncedTrapTab = TrapTab;
             }
 
             // Re-highlight after the Value parameter changed from outside (Blazor updates the

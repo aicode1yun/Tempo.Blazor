@@ -69,7 +69,9 @@ window.tmCodeEditor = window.tmCodeEditor || (function () {
     }
 
     function handleKeydown(state, e) {
-        if (e.key !== 'Tab' || state.textarea.disabled || state.textarea.readOnly) {
+        // trapTab === false lets Tab move focus to the next control (no preventDefault), which is
+        // what an editor embedded in an ordinary form needs — keyboard users must be able to leave.
+        if (e.key !== 'Tab' || !state.trapTab || state.textarea.disabled || state.textarea.readOnly) {
             return;
         }
         e.preventDefault();
@@ -94,7 +96,7 @@ window.tmCodeEditor = window.tmCodeEditor || (function () {
     }
 
     return {
-        init: function (body, textarea, code, language) {
+        init: function (body, textarea, code, language, trapTab) {
             if (!body || !textarea || !code || states.has(textarea)) {
                 return;
             }
@@ -104,6 +106,8 @@ window.tmCodeEditor = window.tmCodeEditor || (function () {
                 code: code,
                 pre: code.parentElement,
                 language: language || null,
+                // Undefined (older callers) keeps the original behaviour: Tab indents.
+                trapTab: trapTab !== false,
                 onInput: null,
                 onScroll: null,
                 onKeydown: null
@@ -128,6 +132,12 @@ window.tmCodeEditor = window.tmCodeEditor || (function () {
             state.language = language || null;
             state.code.className = language ? 'language-' + language : '';
             render(state);
+        },
+
+        setTrapTab: function (textarea, trapTab) {
+            var state = states.get(textarea);
+            if (!state) return;
+            state.trapTab = trapTab !== false;
         },
 
         setValue: function (textarea, value) {
