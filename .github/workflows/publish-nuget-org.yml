@@ -65,12 +65,17 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.version.outputs.VERSION }}
 
-      # E2E testy (Playwright) a smtp4dev integrační testy na CI vynecháváme -
-      # runner nemá prohlížeče, běžící demo hosty ani smtp4dev kontejner, takže
-      # by spadly na prostředí (NullReferenceException / Connection refused).
-      # Spouští se jen lokálně.
+      # E2E testy (Playwright), smtp4dev integrační testy a MsSql testy report serveru
+      # na CI vynecháváme - runner nemá prohlížeče, běžící demo hosty, smtp4dev kontejner
+      # ani SQL Server, takže by spadly na prostředí (NullReferenceException /
+      # Connection refused / SqlException error 26), nikoli na logiku.
+      # MsSql testy (tests/Tempo.ReportServer.Api.Tests/MsSql/*) potřebují buď
+      # localhost\SQLEXPRESS, nebo connection string v env REPORTSERVER_TEST_CONNECTION
+      # (viz MsSqlTestDatabase.cs) - lokálně se spouštět MAJÍ a spouštějí.
+      # POZOR: je to obcházka chybějící infrastruktury, ne řešení. Jakmile bude v CI
+      # SQL service container nebo REPORTSERVER_TEST_CONNECTION, filtr zase zužte.
       - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal --filter "FullyQualifiedName!~Tempo.Blazor.E2E&FullyQualifiedName!~Smtp4Dev"
+        run: dotnet test --no-build --configuration Release --verbosity normal --filter "FullyQualifiedName!~Tempo.Blazor.E2E&FullyQualifiedName!~Smtp4Dev&FullyQualifiedName!~MsSql"
 
   publish:
     needs: build-and-test

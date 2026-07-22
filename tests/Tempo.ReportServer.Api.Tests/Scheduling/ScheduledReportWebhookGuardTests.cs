@@ -77,4 +77,34 @@ public sealed class ScheduledReportWebhookGuardTests
 
         act.Should().Throw<InvalidOperationException>().WithMessage("*absolute URL*");
     }
+
+    /// <summary>
+    /// A bare filesystem path must lose to the STRUCTURAL gate on every platform. On Unix such a
+    /// path parses as an absolute <c>file://</c> URI, so it used to slip through to the scheme
+    /// allowlist — a configurable check — while Windows rejected it outright. Same input, same
+    /// branch, same message everywhere.
+    /// </summary>
+    [Theory]
+    [InlineData("/etc/passwd")]
+    [InlineData("//attacker.example.com/hook")]
+    [InlineData(@"\\attacker.example.com\share")]
+    public void Validate_FilesystemPath_LosesToTheStructuralGate_NotTheSchemeAllowlist(string target)
+    {
+        var act = () => ScheduledReportWebhookGuard.Validate(target, Default);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*absolute URL*");
+    }
+
+    /// <summary>
+    /// The counterpart: an EXPLICIT file: URL is a real absolute URL, so it must reach the scheme
+    /// allowlist and be rejected there. Without this the fix above could not be told apart from
+    /// "reject anything that smells of a file".
+    /// </summary>
+    [Fact]
+    public void Validate_ExplicitFileUrl_IsRejectedBySchemeAllowlist()
+    {
+        var act = () => ScheduledReportWebhookGuard.Validate("file:///etc/passwd", Default);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*scheme*");
+    }
 }

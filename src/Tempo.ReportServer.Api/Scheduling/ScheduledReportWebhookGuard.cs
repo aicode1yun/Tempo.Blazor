@@ -48,7 +48,14 @@ public static class ScheduledReportWebhookGuard
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        if (!Uri.TryCreate(target, UriKind.Absolute, out var uri))
+        // The absolute-URL gate must be STRUCTURAL and platform-independent. Uri.TryCreate alone is
+        // neither: on Unix a bare path ("/etc/passwd", or a UNC path) parses as an absolute
+        // file:// URI, so on Linux the target slipped past this gate and was only stopped by the
+        // configurable scheme allowlist below — the same input that Windows rejected outright.
+        // Requiring the caller's own string to carry the scheme keeps an implicit path out on every
+        // platform, while an EXPLICIT "file:" URL still reaches (and fails) the scheme check.
+        if (!Uri.TryCreate(target, UriKind.Absolute, out var uri)
+            || !target.StartsWith(uri.Scheme + ":", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException($"Webhook delivery target '{target}' is not an absolute URL.");
         }
