@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "Per-folder ACL grant projected for admin clients.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportFolderAclEntryDto"
+}

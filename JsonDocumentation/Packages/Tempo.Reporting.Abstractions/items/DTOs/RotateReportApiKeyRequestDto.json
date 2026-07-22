@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "Request to rotate an API key (revoke the old key, issue a replacement with the same scope).",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "RotateReportApiKeyRequestDto"
+}

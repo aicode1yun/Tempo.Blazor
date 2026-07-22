@@ -356,7 +356,7 @@
           "name": "Detect",
           "kind": "Method",
           "type": "MarkdownShortcutResult?",
-          "description": "Analyses and returns the conversion suggestion, or null when no known shortcut is recognised.",
+          "description": "Analyses lineText and returns the conversion suggestion, or null when no known shortcut is recognised.",
           "parameters": [
             {
               "name": "lineText",
@@ -368,7 +368,7 @@
           "name": "FromJsShortcutKey",
           "kind": "Method",
           "type": "BlockType?",
-          "description": "Converts the shortcut string emitted by notion-editor.js (e.g. \"heading1\", \"bullet\") into the corresponding , or null when the string is unrecognised. This bridges the existing JS-side detection with the C# type system.",
+          "description": "Converts the shortcut string emitted by notion-editor.js (e.g. \"heading1\", \"bullet\") into the corresponding BlockType, or null when the string is unrecognised. This bridges the existing JS-side detection with the C# type system.",
           "parameters": [
             {
               "name": "shortcutKey",
@@ -380,7 +380,7 @@
           "name": "IsCheckedTodo",
           "kind": "Method",
           "type": "bool",
-          "description": "Returns true if represents a checked todo shortcut (\"todo_checked\" / \"[x] \" pattern).",
+          "description": "Returns true if jsShortcutKey represents a checked todo shortcut (\"todo_checked\" / \"[x] \" pattern).",
           "parameters": [
             {
               "name": "jsShortcutKey",
@@ -608,7 +608,7 @@
           "name": "BatchScope",
           "kind": "Method",
           "type": "IAsyncDisposable",
-          "description": "Returns an that begins a batch now and commits it on disposal (or rolls it back if an exception is thrown).",
+          "description": "Returns an IAsyncDisposable that begins a batch now and commits it on disposal (or rolls it back if an exception is thrown).",
           "parameters": [
             {
               "name": "description",
@@ -649,7 +649,7 @@
           "name": "PushAsync",
           "kind": "Method",
           "type": "Task",
-          "description": "Executes and pushes it onto the undo stack. When a batch is open the command is appended to it instead of being pushed directly — it will be committed as part of .",
+          "description": "Executes command and pushes it onto the undo stack. When a batch is open the command is appended to it instead of being pushed directly — it will be committed as part of CommitBatchAsync.",
           "parameters": [
             {
               "name": "command",
@@ -661,7 +661,7 @@
           "name": "Record",
           "kind": "Method",
           "type": "void",
-          "description": "Pushes a command that has already been applied. Some provider calls perform the edit and return its result in one go — a block conversion, for instance — so executing the command again would apply it twice. Undo and redo behave exactly as for .",
+          "description": "Pushes a command that has already been applied. Some provider calls perform the edit and return its result in one go — a block conversion, for instance — so executing the command again would apply it twice. Undo and redo behave exactly as for PushAsync.",
           "parameters": [
             {
               "name": "command",
@@ -673,7 +673,7 @@
           "name": "RedoAsync",
           "kind": "Method",
           "type": "Task",
-          "description": "Re-applies the most recently undone command. No-op when is false."
+          "description": "Re-applies the most recently undone command. No-op when CanRedo is false."
         },
         {
           "name": "RollbackBatchAsync",
@@ -685,7 +685,7 @@
           "name": "UndoAsync",
           "kind": "Method",
           "type": "Task",
-          "description": "Undoes the most recent command. No-op when is false."
+          "description": "Undoes the most recent command. No-op when CanUndo is false."
         }
       ]
     },
@@ -719,7 +719,7 @@
           "name": "HasDeniedBlockTypes",
           "kind": "Field",
           "type": "bool",
-          "description": "True when restricts at least one block type."
+          "description": "True when DeniedBlockTypes restricts at least one block type."
         },
         {
           "name": "IsBlockTypeAllowed",
@@ -737,7 +737,7 @@
           "name": "RaiseBlockConverted",
           "kind": "Method",
           "type": "void",
-          "description": "Invokes if any subscriber is attached.",
+          "description": "Invokes BlockConverted if any subscriber is attached.",
           "parameters": [
             {
               "name": "block",
@@ -749,7 +749,7 @@
           "name": "RaiseBlockCreatedAsync",
           "kind": "Method",
           "type": "Task",
-          "description": "Invokes if the active page subscribed to sibling creation events.",
+          "description": "Invokes BlockCreated if the active page subscribed to sibling creation events.",
           "parameters": [
             {
               "name": "block",
@@ -855,7 +855,7 @@
           "name": "DeniedBlockTypes",
           "kind": "Property",
           "type": "IReadOnlySet<BlockType>?",
-          "description": "Block types that must never be created/converted-to regardless of . Used by single-page mode to hide multi-page blocks (child pages, linked pages/databases, etc.). When null, nothing extra is denied."
+          "description": "Block types that must never be created/converted-to regardless of AllowedBlockTypes. Used by single-page mode to hide multi-page blocks (child pages, linked pages/databases, etc.). When null, nothing extra is denied."
         },
         {
           "name": "DiagramDocumentProvider",
@@ -1099,13 +1099,13 @@
           "name": "GetShortcutCategories",
           "kind": "Method",
           "type": "IReadOnlyList<TmShortcutCategory>",
-          "description": "Returns all shortcuts grouped into instances, ready for display in a help panel."
+          "description": "Returns all shortcuts grouped into TmShortcutCategory instances, ready for display in a help panel."
         },
         {
           "name": "HandleKeyDown",
           "kind": "Method",
           "type": "NotionEditorAction?",
-          "description": "Processes a event, fires if a matching shortcut is found, and returns the matched action. Returns null when no binding matches.",
+          "description": "Processes a KeyboardEventArgs event, fires ActionTriggered if a matching shortcut is found, and returns the matched action. Returns null when no binding matches.",
           "parameters": [
             {
               "name": "e",
@@ -3988,7 +3988,7 @@
           "type": "string",
           "isRequired": false,
           "default": "\"\"",
-          "description": "Explicit current user identifier for collaboration, reactions, and user-scoped actions. When blank, the editor resolves from DI and falls back to demo."
+          "description": "Explicit current user identifier for collaboration, reactions, and user-scoped actions. When blank, the editor resolves ITmCurrentUser from DI and falls back to demo."
         },
         {
           "name": "DataProvider",

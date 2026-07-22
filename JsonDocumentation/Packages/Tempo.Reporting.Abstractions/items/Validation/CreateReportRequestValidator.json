@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Validation",
+  "namespace": "Tempo.Reporting.Abstractions.Validation",
+  "description": "Validates CreateReportRequestDto for the report-create endpoint and the portal's new-report form. Like the favorites validator, messages are TmResources KEYS (resolved by the caller/UI localizer, e.g. the localized report-server portal), so the validator is reusable by the Blazor front end without depending on a server-side string localizer. The API host reuses the same validator for a 400 response, so that body carries the resource key rather than English prose.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Validation/CreateReportRequestValidator.cs",
+  "documentationStatus": "generated",
+  "itemName": "CreateReportRequestValidator"
+}

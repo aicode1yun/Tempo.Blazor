@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "API key creation/rotation result. The PlainTextKey is returned exactly once and is never retrievable again — the store keeps only a hash.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "CreateReportApiKeyResultDto"
+}

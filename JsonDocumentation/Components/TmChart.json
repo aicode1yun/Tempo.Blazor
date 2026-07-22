@@ -132,6 +132,10 @@
     {
       "title": "Combo chart: bars with a line overlay (RenderAs)",
       "code": "<TmChart Type=\"ChartType.Bar\"\n         Data=\"@(new ChartData { Labels = months, Datasets = new[] {\n             new ChartDataset { Label = \"Rent\", Values = rent, Color = \"#22c55e\" },\n             new ChartDataset { Label = \"Costs\", Values = costs, Color = \"#ef4444\" },\n             new ChartDataset { Label = \"Cashflow\", Values = cashflow, Color = \"#3b82f6\", RenderAs = ChartDatasetRenderAs.Line }\n         } })\"\n         Height=\"320px\" />"
+    },
+    {
+      "title": "Stacked bar chart: revenue split per quarter",
+      "code": "<TmChart Type=\"ChartType.StackedBar\"\n         Data=\"@(new ChartData { Labels = quarters, Datasets = new[] {\n             new ChartDataset { Label = \"Licenses\", Values = licenses, Color = \"#3b82f6\" },\n             new ChartDataset { Label = \"Support\", Values = support, Color = \"#22c55e\" },\n             new ChartDataset { Label = \"Services\", Values = services, Color = \"#f59e0b\" }\n         } })\"\n         ShowLegend=\"true\" ShowValues=\"true\" Height=\"320px\" />"
     }
   ]
 }

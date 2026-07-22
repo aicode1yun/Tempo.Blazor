@@ -898,7 +898,7 @@
           "name": "Success",
           "kind": "Method",
           "type": "string",
-          "description": "A successful result. The properties of are merged at the top level next to success: true.",
+          "description": "A successful result. The properties of data are merged at the top level next to success: true.",
           "parameters": [
             {
               "name": "data",
@@ -1647,7 +1647,7 @@
           "name": "SuggestType",
           "kind": "Method",
           "type": "string?",
-          "description": "Returns the registered type whose name is closest to , if reasonably near.",
+          "description": "Returns the registered type whose name is closest to unknown, if reasonably near.",
           "parameters": [
             {
               "name": "registry",

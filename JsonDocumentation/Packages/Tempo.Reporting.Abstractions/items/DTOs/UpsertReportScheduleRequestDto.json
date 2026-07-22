@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "Create-or-update request for a report schedule.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportScheduleDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "UpsertReportScheduleRequestDto"
+}

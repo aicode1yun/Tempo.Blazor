@@ -2,7 +2,7 @@
   "kind": "Record",
   "category": "Definitions",
   "namespace": "Tempo.Reporting.Abstractions.Definitions",
-  "description": "Public record defined by Tempo.Reporting.Abstractions.",
+  "description": "Base type for absolutely positioned report elements.",
   "packageId": "Tempo.Reporting.Abstractions",
   "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
   "documentationStatus": "generated",

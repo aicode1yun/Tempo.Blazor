@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "Resource category protected by report server authorization (mirrors the server resource kind).",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportResourceKindDto"
+}

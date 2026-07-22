@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Auth",
+  "namespace": "Tempo.Reporting.Abstractions.Auth",
+  "description": "Base class for typed HTTP clients that call the Tempo Report Server API from either Blazor runtime. It attaches the bearer token per request, read from the consuming scope's IAccessTokenProvider, and performs the standard 401 → force-refresh → retry once step.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Auth/ApiClientBase.cs",
+  "documentationStatus": "generated",
+  "itemName": "ApiClientBase"
+}

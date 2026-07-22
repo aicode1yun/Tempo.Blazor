@@ -633,7 +633,7 @@
           "name": "Register",
           "kind": "Method",
           "type": "void",
-          "description": "Registers or replaces a native renderer for .",
+          "description": "Registers or replaces a native renderer for nativeType.",
           "parameters": [
             {
               "name": "nativeType",
@@ -1031,7 +1031,7 @@
           "name": "Evaluate",
           "kind": "Method",
           "type": "StencilValue",
-          "description": "Parses and evaluates ; malformed input returns the raw string and never throws.",
+          "description": "Parses and evaluates expression; malformed input returns the raw string and never throws.",
           "parameters": [
             {
               "name": "expression",
@@ -1082,7 +1082,7 @@
           "name": "Parse",
           "kind": "Method",
           "type": "StencilExpression",
-          "description": "Parses ; on failure returns a literal fallback and never throws.",
+          "description": "Parses text; on failure returns a literal fallback and never throws.",
           "parameters": [
             {
               "name": "text",
@@ -1142,7 +1142,7 @@
           "name": "TryParse",
           "kind": "Method",
           "type": "bool",
-          "description": "Parses and reports diagnostics without throwing.",
+          "description": "Parses text and reports diagnostics without throwing.",
           "parameters": [
             {
               "name": "text",
@@ -1518,7 +1518,7 @@
           "name": "Resolve",
           "kind": "Method",
           "type": "string",
-          "description": "First matching layer wins; returns or empty string if none; never throws.",
+          "description": "First matching layer wins; returns literalFallback or empty string if none; never throws.",
           "parameters": [
             {
               "name": "key",
@@ -2177,7 +2177,7 @@
           "name": "Push",
           "kind": "Method",
           "type": "void",
-          "description": "Executes and pushes it onto the undo stack. Clears the redo stack. Move coalescing: if the previous command is a targeting the same element ids and was pushed within 100 ms, the new command is merged into it (keeps the original \"before\" positions, updates \"after\").",
+          "description": "Executes command and pushes it onto the undo stack. Clears the redo stack. Move coalescing: if the previous command is a MoveElementsCommand targeting the same element ids and was pushed within 100 ms, the new command is merged into it (keeps the original \"before\" positions, updates \"after\").",
           "parameters": [
             {
               "name": "command",
@@ -2261,7 +2261,7 @@
           "name": "LocalType",
           "kind": "Property",
           "type": "string?",
-          "description": "Component type name without the app scope prefix. Defaults to for unscoped components and to the suffix of app:{id}:{name} for scoped components."
+          "description": "Component type name without the app scope prefix. Defaults to Type for unscoped components and to the suffix of app:{id}:{name} for scoped components."
         },
         {
           "name": "NativeType",
@@ -2285,7 +2285,7 @@
           "name": "RenderSvg",
           "kind": "Property",
           "type": "required Action<WireframeElement, RenderTreeBuilder>",
-          "description": "Renders the wireframe SVG shape into . Coordinates inside the render are relative to the element's top-left (0, 0). The outer <g> transform is applied by the canvas."
+          "description": "Renders the wireframe SVG shape into builder. Coordinates inside the render are relative to the element's top-left (0, 0). The outer <g> transform is applied by the canvas."
         },
         {
           "name": "Roles",
@@ -2297,7 +2297,7 @@
           "name": "ScopeAppId",
           "kind": "Property",
           "type": "string?",
-          "description": "Application id for an app-scoped custom component. When present, registries normalize to app:{ScopeAppId}:{LocalType}."
+          "description": "Application id for an app-scoped custom component. When present, registries normalize Type to app:{ScopeAppId}:{LocalType}."
         },
         {
           "name": "SizePresets",
@@ -2309,7 +2309,7 @@
           "name": "Type",
           "kind": "Property",
           "type": "required string",
-          "description": "Unique type identifier – must match . Examples: \"TmButton\", \"TmDataTable\", \"MyProductCard\"."
+          "description": "Unique type identifier – must match Type. Examples: \"TmButton\", \"TmDataTable\", \"MyProductCard\"."
         }
       ]
     },
@@ -2339,7 +2339,7 @@
           "name": "GetByCategory",
           "kind": "Method",
           "type": "IEnumerable<WireframeComponentDef>",
-          "description": "Returns definitions belonging to .",
+          "description": "Returns definitions belonging to category.",
           "parameters": [
             {
               "name": "category",
@@ -2357,7 +2357,7 @@
           "name": "GetDef",
           "kind": "Method",
           "type": "WireframeComponentDef?",
-          "description": "Returns the definition for , or null if not found.",
+          "description": "Returns the definition for type, or null if not found.",
           "parameters": [
             {
               "name": "type",
@@ -2369,7 +2369,7 @@
           "name": "RegisterDefinition",
           "kind": "Method",
           "type": "void",
-          "description": "Registers a single definition. If a definition with the same type already exists, the one with higher wins (ties keep the existing entry).",
+          "description": "Registers a single definition. If a definition with the same type already exists, the one with higher priority wins (ties keep the existing entry).",
           "parameters": [
             {
               "name": "def",
@@ -2386,7 +2386,7 @@
           "name": "RegisterProvider",
           "kind": "Method",
           "type": "void",
-          "description": "Loads all definitions from into the registry.",
+          "description": "Loads all definitions from provider into the registry.",
           "parameters": [
             {
               "name": "provider",

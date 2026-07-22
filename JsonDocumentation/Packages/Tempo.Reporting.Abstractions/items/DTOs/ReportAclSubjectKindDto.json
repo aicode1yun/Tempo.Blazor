@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "Subject type used by folder ACL grants (mirrors the server ACL subject kind).",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportAclSubjectKindDto"
+}

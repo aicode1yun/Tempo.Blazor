@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Auth",
+  "namespace": "Tempo.Reporting.Abstractions.Auth",
+  "description": "Supplies the current user's API access token in whichever runtime the calling component happens to execute (InteractiveServer circuit or InteractiveWebAssembly). Implemented once per host — ServerAccessTokenProvider on the Blazor host and WasmAccessTokenProvider in the WebAssembly leg — and consumed behind this single abstraction so typed API clients never know which runtime produced the token. This is the IdP-agnostic seam: how the token is obtained at login is app-specific; everything downstream only depends on this contract.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Auth/IAccessTokenProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "IAccessTokenProvider"
+}

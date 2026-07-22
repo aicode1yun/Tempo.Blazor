@@ -1153,7 +1153,16 @@ internal static class SourceDocParser
         var docs = new Stack<string>();
         for (var i = lineIndex - 1; i >= 0; i--)
         {
-            var trimmed = lines[i].TrimStart();
+            var trimmed = lines[i].Trim();
+
+            // Attributes sit between the doc block and the declaration ([Flags], [JsonPolymorphic],
+            // [Obsolete(...)], …). Walk past them instead of treating them as the end of the block —
+            // otherwise every attributed type silently falls back to a generated description.
+            if (docs.Count == 0 && trimmed.StartsWith('[') && trimmed.EndsWith(']'))
+            {
+                continue;
+            }
+
             if (!trimmed.StartsWith("///", StringComparison.Ordinal))
             {
                 break;
@@ -1182,11 +1191,40 @@ internal static class SourceDocParser
             text = summary.Groups[1].Value;
         }
 
-        text = Regex.Replace(text, @"<see\s+cref=""[^""]+""\s*/>", m => m.Value);
+        // Self-closing doc references carry their meaning in an attribute, so stripping the tag would
+        // leave a hole in the sentence ("Severity of an ."). Replace them with the text a human would
+        // have written instead.
+        text = Regex.Replace(text, @"<see\s+cref=""(?<target>[^""]+)""\s*/>", m => SimpleCrefName(m.Groups["target"].Value));
+        text = Regex.Replace(text, @"<(?:see|seealso)\s+langword=""(?<word>[^""]+)""\s*/>", m => m.Groups["word"].Value);
+        text = Regex.Replace(text, @"<(?:paramref|typeparamref)\s+name=""(?<name>[^""]+)""\s*/>", m => m.Groups["name"].Value);
         text = Regex.Replace(text, @"<[^>]+>", "");
         text = WebUtility.HtmlDecode(text);
         text = Regex.Replace(text, @"\s+", " ").Trim();
         return string.IsNullOrWhiteSpace(text) ? null : text;
+    }
+
+    /// <summary>
+    /// Turns a cref target into the bare name a reader expects in prose: drops the documentation-id
+    /// prefix, a parameter list and generic arity, then keeps the last dotted segment
+    /// (<c>Tempo.X.ReportDefinition</c> reads as <c>ReportDefinition</c>). Member ids keep their
+    /// declaring type, because <c>Read</c> alone would lose the meaning of <c>M:Permission.Read</c>.
+    /// </summary>
+    private static string SimpleCrefName(string target)
+    {
+        var trimmed = target.Trim();
+        var isMemberId = Regex.IsMatch(trimmed, @"^[MPFE]:");
+        var value = Regex.Replace(trimmed, @"^[A-Za-z]:", "");
+        value = Regex.Replace(value, @"\([^)]*\)", "");
+        value = Regex.Replace(value, @"`+\d+", "");
+        var segments = value.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length == 0)
+        {
+            return trimmed;
+        }
+
+        return isMemberId && segments.Length > 1
+            ? segments[^2] + "." + segments[^1]
+            : segments[^1];
     }
 
     private static string? ExtractClassNameWithGenerics(string source, string typeName)

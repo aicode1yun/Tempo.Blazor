@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions.Rdl",
+  "description": "Imports SSRS / Telerik RDL (Report Definition Language, an XML dialect) into the internal ReportDefinition model. The importer is namespace-agnostic: RDL elements are matched by their local name, so the SSRS 2008 / 2010 / 2016 schema namespaces (which differ only by year) and Telerik-namespaced RDL all parse where their element vocabulary overlaps.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Rdl/RdlReportImporter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Import",
+      "kind": "Method",
+      "type": "RdlImportResult",
+      "description": "Imports an RDL document supplied as a UTF-8/UTF-16 XML string.",
+      "parameters": [
+        {
+          "name": "rdlXml",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "itemName": "RdlReportImporter"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "Audit outcome (mirrors the server audit outcome).",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportAuditOutcomeDto"
+}

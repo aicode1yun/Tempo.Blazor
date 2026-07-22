@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "Latest observed schedule state.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportScheduleDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportScheduleRunStatus"
+}

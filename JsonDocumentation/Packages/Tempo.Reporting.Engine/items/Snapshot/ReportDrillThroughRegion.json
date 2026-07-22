@@ -1,0 +1,60 @@
+{
+  "kind": "Record",
+  "category": "Snapshot",
+  "namespace": "Tempo.Reporting.Engine.Snapshot",
+  "description": "A clickable region projected onto a rendered report page during layout. It anchors an element's ReportDrillThroughAction to the element's rectangle and carries the bound data-point field values so a Field-source parameter mapping resolves against the real clicked context.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Snapshot/ReportDrillThroughRegion.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Action",
+      "kind": "Property",
+      "type": "ReportDrillThroughAction",
+      "description": "Drill-through action navigated when the region is clicked."
+    },
+    {
+      "name": "Context",
+      "kind": "Property",
+      "type": "IReadOnlyDictionary<string, string?>",
+      "description": "Field values of the clicked data point, used to evaluate field-sourced parameter mappings."
+    },
+    {
+      "name": "Height",
+      "kind": "Property",
+      "type": "double",
+      "description": "Region height in page pixels."
+    },
+    {
+      "name": "Label",
+      "kind": "Property",
+      "type": "string?",
+      "description": "Optional accessible label describing the drill-through target."
+    },
+    {
+      "name": "PageNumber",
+      "kind": "Property",
+      "type": "int",
+      "description": "One-based page number the region belongs to."
+    },
+    {
+      "name": "Width",
+      "kind": "Property",
+      "type": "double",
+      "description": "Region width in page pixels."
+    },
+    {
+      "name": "X",
+      "kind": "Property",
+      "type": "double",
+      "description": "Left coordinate in page pixels."
+    },
+    {
+      "name": "Y",
+      "kind": "Property",
+      "type": "double",
+      "description": "Top coordinate in page pixels."
+    }
+  ],
+  "itemName": "ReportDrillThroughRegion"
+}

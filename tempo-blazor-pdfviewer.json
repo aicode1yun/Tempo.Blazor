@@ -373,7 +373,7 @@
           "name": "DocumentId",
           "type": "string?",
           "isRequired": false,
-          "description": "Stable document identifier used by the annotation provider. Falls back to ."
+          "description": "Stable document identifier used by the annotation provider. Falls back to Url."
         },
         {
           "name": "ExportFileName",
@@ -392,7 +392,7 @@
           "type": "PdfAnnotatorMode",
           "isRequired": false,
           "default": "PdfAnnotatorMode.Browse",
-          "description": "Active tool. Supports two-way binding. Default is ."
+          "description": "Active tool. Supports two-way binding. Default is Browse."
         },
         {
           "name": "ModeChanged",
@@ -667,13 +667,13 @@
           "name": "AnnotationProvider",
           "type": "IPdfAnnotationProvider?",
           "isRequired": false,
-          "description": "Provider used to load and persist annotation threads when is true. When omitted, an in-memory provider keeps annotations for the current session."
+          "description": "Provider used to load and persist annotation threads when EnableAnnotations is true. When omitted, an in-memory provider keeps annotations for the current session."
         },
         {
           "name": "Annotations",
           "type": "IReadOnlyList<DocumentCommentThread>?",
           "isRequired": false,
-          "description": "Optional seed threads used when no is supplied."
+          "description": "Optional seed threads used when no AnnotationProvider is supplied."
         },
         {
           "name": "AnnotationsChanged",
@@ -697,7 +697,7 @@
           "name": "DocumentId",
           "type": "string?",
           "isRequired": false,
-          "description": "Stable document identifier used by the annotation provider. Falls back to ."
+          "description": "Stable document identifier used by the annotation provider. Falls back to Url."
         },
         {
           "name": "EnableAnnotations",
@@ -709,7 +709,7 @@
           "name": "EnableTextSelectionEvents",
           "type": "bool",
           "isRequired": false,
-          "description": "Enables text selection events () without turning on the built-in annotation layer and panel. Default is false."
+          "description": "Enables text selection events (OnTextSelected) without turning on the built-in annotation layer and panel. Default is false."
         },
         {
           "name": "Height",

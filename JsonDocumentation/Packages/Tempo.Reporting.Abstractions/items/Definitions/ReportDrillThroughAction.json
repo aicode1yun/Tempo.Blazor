@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions",
+  "description": "Navigates the interactive viewer to another report when the owning element is clicked, passing parameter values derived from the clicked context. Target the report by path (preferred, resolved through /resolve) or by identifier.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Elements.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDrillThroughAction"
+}

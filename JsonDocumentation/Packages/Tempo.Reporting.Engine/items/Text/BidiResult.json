@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Text",
+  "namespace": "Tempo.Reporting.Engine.Text",
+  "description": "Result of running the Unicode Bidirectional Algorithm over a run of UTF-16 text. All arrays are indexed by UTF-16 code-unit position within the input span; both halves of a surrogate pair carry the values of their combined Unicode scalar value.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Text/BidiAlgorithm.cs",
+  "documentationStatus": "generated",
+  "itemName": "BidiResult"
+}

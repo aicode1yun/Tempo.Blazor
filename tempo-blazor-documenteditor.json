@@ -426,13 +426,13 @@
           "name": "Html",
           "kind": "Property",
           "type": "string?",
-          "description": "HTML content from the clipboard, or if not present."
+          "description": "HTML content from the clipboard, or null if not present."
         },
         {
           "name": "PlainText",
           "kind": "Property",
           "type": "string?",
-          "description": "Plain-text content from the clipboard, or if not present."
+          "description": "Plain-text content from the clipboard, or null if not present."
         },
         {
           "name": "Source",
@@ -777,7 +777,7 @@
           "name": "IsInEditableRegion",
           "kind": "Property",
           "type": "bool",
-          "description": "When is true, indicates that the caret / selection anchor is currently inside one of the document's editable markers. false means the caret is outside all markers, so data-affecting commands must be disabled."
+          "description": "When IsProtected is true, indicates that the caret / selection anchor is currently inside one of the document's editable markers. false means the caret is outside all markers, so data-affecting commands must be disabled."
         },
         {
           "name": "IsProtected",
@@ -898,7 +898,7 @@
           "name": "RefreshAllAsync",
           "kind": "Method",
           "type": "Task",
-          "description": "Recomputes and caches the state of every registered command against the given context. When is provided and matches the previous refresh's signature, the rebuild is skipped entirely (perf plan N7.3) — the caller guarantees the signature covers every input its command lambdas read. A null signature always refreshes.",
+          "description": "Recomputes and caches the state of every registered command against the given context. When contextSignature is provided and matches the previous refresh's signature, the rebuild is skipped entirely (perf plan N7.3) — the caller guarantees the signature covers every input its command lambdas read. A null signature always refreshes.",
           "parameters": [
             {
               "name": "context",
@@ -1810,7 +1810,7 @@
           "name": "Group",
           "kind": "Property",
           "type": "string?",
-          "description": "Logical toolbar group. Prefer this over for new code."
+          "description": "Logical toolbar group. Prefer this over GroupId for new code."
         },
         {
           "name": "GroupId",
@@ -3475,7 +3475,7 @@
           "name": "NoteInteropCallAsync",
           "kind": "Method",
           "type": "ValueTask",
-          "description": "Notes an out-of-band JS interop call so the next capture's reflects it.",
+          "description": "Notes an out-of-band JS interop call so the next capture's JsInteropCallCount reflects it.",
           "parameters": [
             {
               "name": "count",
@@ -4749,7 +4749,7 @@
           "name": "OfflineStore",
           "type": "IDocumentOfflineStore?",
           "isRequired": false,
-          "description": "Optional offline draft store used when is enabled."
+          "description": "Optional offline draft store used when OfflineMode is enabled."
         },
         {
           "name": "OnDocumentCompared",
@@ -4797,7 +4797,7 @@
           "name": "PdfForensicWatermark",
           "type": "DocumentPdfForensicWatermarkOptions?",
           "isRequired": false,
-          "description": "Optional forensic watermark stamped on every page of PDF exports (user name, export time, IP). The user name defaults to ; hosts should fill the IP address and timestamp server-side so the stamp cannot be spoofed by the client."
+          "description": "Optional forensic watermark stamped on every page of PDF exports (user name, export time, IP). The user name defaults to Author; hosts should fill the IP address and timestamp server-side so the stamp cannot be spoofed by the client."
         },
         {
           "name": "Permissions",
@@ -4816,7 +4816,7 @@
           "type": "TimeSpan",
           "isRequired": false,
           "default": "TimeSpan.FromMilliseconds(1200)",
-          "description": "Debounce between an edit and the follow-up pass."
+          "description": "Debounce between an edit and the follow-up ProofingProvider pass."
         },
         {
           "name": "ProofingOptions",
@@ -4828,7 +4828,7 @@
           "name": "ProofingProvider",
           "type": "ITempoProofingProvider?",
           "isRequired": false,
-          "description": "Optional asynchronous proofing provider (e.g. the LanguageTool reference implementation from Tempo.Blazor.Proofing.LanguageTool). The editor extracts the document plain text, calls the provider after load and after edits (debounced by ), and merges the findings over for the canvas squiggle overlay and spelling context menu. Provider failures are fail-open: the last known proofing state stays."
+          "description": "Optional asynchronous proofing provider (e.g. the LanguageTool reference implementation from Tempo.Blazor.Proofing.LanguageTool). The editor extracts the document plain text, calls the provider after load and after edits (debounced by ProofingCheckDebounce), and merges the findings over ProofingOptions for the canvas squiggle overlay and spelling context menu. Provider failures are fail-open: the last known proofing state stays."
         },
         {
           "name": "Provider",
@@ -4847,7 +4847,8 @@
           "name": "RenderEngine",
           "type": "DocumentEditorRenderEngine",
           "isRequired": false,
-          "default": "DocumentEditorRenderEngine.CanvasEnginePreview"
+          "default": "DocumentEditorRenderEngine.CanvasEnginePreview",
+          "description": "Legacy compatibility parameter. The editor is canvas-only and ignores this value."
         },
         {
           "name": "RequireMajorVersionDescription",

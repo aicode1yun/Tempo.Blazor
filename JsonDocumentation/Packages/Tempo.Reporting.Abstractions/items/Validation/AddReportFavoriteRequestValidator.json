@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Validation",
+  "namespace": "Tempo.Reporting.Abstractions.Validation",
+  "description": "Validates AddReportFavoriteRequestDto for the favorites endpoint. Messages are TmResources KEYS (resolved by the caller/UI localizer) so the validator is reusable by the Blazor front end without depending on a server-side string localizer.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Validation/AddReportFavoriteRequestValidator.cs",
+  "documentationStatus": "generated",
+  "itemName": "AddReportFavoriteRequestValidator"
+}

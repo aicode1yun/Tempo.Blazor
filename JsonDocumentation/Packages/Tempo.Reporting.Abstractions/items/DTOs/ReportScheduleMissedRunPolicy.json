@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "Behaviour when a schedule has missed one or more occurrences.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportScheduleDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportScheduleMissedRunPolicy"
+}

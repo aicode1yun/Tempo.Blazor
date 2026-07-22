@@ -694,7 +694,7 @@
           "name": "Document",
           "kind": "Property",
           "type": "EmailTemplateDocument?",
-          "description": "Gets the imported document, or on fatal error."
+          "description": "Gets the imported document, or null on fatal error."
         },
         {
           "name": "Errors",
@@ -957,7 +957,7 @@
           "name": "AddBlock",
           "kind": "Method",
           "type": "bool",
-          "description": "Inserts a block into the column with the given id at (clamped). Returns if no such column exists.",
+          "description": "Inserts a block into the column with the given id at index (clamped). Returns false if no such column exists.",
           "parameters": [
             {
               "name": "document",
@@ -997,7 +997,7 @@
           "name": "AddSection",
           "kind": "Method",
           "type": "void",
-          "description": "Inserts a top-level section at (clamped).",
+          "description": "Inserts a top-level section at index (clamped).",
           "parameters": [
             {
               "name": "document",
@@ -1017,7 +1017,7 @@
           "name": "DuplicateBlock",
           "kind": "Method",
           "type": "EmailBlockBase?",
-          "description": "Inserts a deep copy (with fresh ids) of the block immediately after the original, in the same container. Returns the copy, or if the block was not found.",
+          "description": "Inserts a deep copy (with fresh ids) of the block immediately after the original, in the same container. Returns the copy, or null if the block was not found.",
           "parameters": [
             {
               "name": "document",
@@ -1033,7 +1033,7 @@
           "name": "DuplicateSection",
           "kind": "Method",
           "type": "EmailSection?",
-          "description": "Inserts a deep copy (with fresh ids) of a top-level section immediately after the original. Returns the copy, or if the section was not found.",
+          "description": "Inserts a deep copy (with fresh ids) of a top-level section immediately after the original. Returns the copy, or null if the section was not found.",
           "parameters": [
             {
               "name": "document",
@@ -1049,7 +1049,7 @@
           "name": "FindBlock",
           "kind": "Method",
           "type": "EmailBlockBase?",
-          "description": "Finds a block anywhere in the document by id, or returns .",
+          "description": "Finds a block anywhere in the document by id, or returns null.",
           "parameters": [
             {
               "name": "document",
@@ -1065,7 +1065,7 @@
           "name": "FindParentColumn",
           "kind": "Method",
           "type": "EmailColumn?",
-          "description": "Returns the column that directly contains the given block, or when the block is held by a non-column container (e.g. a hero) or does not exist.",
+          "description": "Returns the column that directly contains the given block, or null when the block is held by a non-column container (e.g. a hero) or does not exist.",
           "parameters": [
             {
               "name": "document",
@@ -1081,7 +1081,7 @@
           "name": "MoveBlock",
           "kind": "Method",
           "type": "bool",
-          "description": "Moves a block to the target column at (clamped, evaluated after removal). Returns if the block or target column is missing.",
+          "description": "Moves a block to the target column at targetIndex (clamped, evaluated after removal). Returns false if the block or target column is missing.",
           "parameters": [
             {
               "name": "document",
@@ -1105,7 +1105,7 @@
           "name": "MoveSection",
           "kind": "Method",
           "type": "bool",
-          "description": "Moves a top-level section to (clamped after removal).",
+          "description": "Moves a top-level section to index (clamped after removal).",
           "parameters": [
             {
               "name": "document",
@@ -1459,7 +1459,8 @@
         {
           "name": "Type",
           "kind": "Property",
-          "type": "abstract BlockType"
+          "type": "abstract BlockType",
+          "description": "Gets the discriminator identifying this block's concrete type."
         },
         {
           "name": "VisibleWhen",
@@ -1811,7 +1812,7 @@
           "name": "Width",
           "kind": "Property",
           "type": "string?",
-          "description": "Gets or sets the column width (width), e.g. \"50%\" or \"200px\". means MJML splits the section width equally between columns."
+          "description": "Gets or sets the column width (width), e.g. \"50%\" or \"200px\". null means MJML splits the section width equally between columns."
         }
       ]
     },
@@ -2476,7 +2477,7 @@
           "name": "Src",
           "kind": "Property",
           "type": "string?",
-          "description": "Gets or sets a custom icon URL overriding (src)."
+          "description": "Gets or sets a custom icon URL overriding Name (src)."
         },
         {
           "name": "Target",
@@ -2914,7 +2915,7 @@
           "name": "EqualWidths",
           "kind": "Method",
           "type": "string[]",
-          "description": "Computes equal column widths as percentage strings that always total exactly 100% (the last column absorbs any rounding remainder).",
+          "description": "Computes count equal column widths as percentage strings that always total exactly 100% (the last column absorbs any rounding remainder).",
           "parameters": [
             {
               "name": "count",
@@ -2950,7 +2951,7 @@
           "name": "Resolve",
           "kind": "Method",
           "type": "string?",
-          "description": "Resolves the head-level value of an attribute for a component, following MJML precedence: referenced classes (later class wins) > per-tag default > mj-all. Returns when no head rule supplies the attribute (the block's own value or the MJML built-in default then applies). The block's own inline value is not considered here.",
+          "description": "Resolves the head-level value of an attribute for a component, following MJML precedence: referenced classes (later class wins) > per-tag default > mj-all. Returns null when no head rule supplies the attribute (the block's own value or the MJML built-in default then applies). The block's own inline value is not considered here.",
           "parameters": [
             {
               "name": "tag",
@@ -3257,7 +3258,7 @@
           "name": "Sanitize",
           "kind": "Method",
           "type": "string",
-          "description": "Returns a sanitized copy of safe to embed in generated markup.",
+          "description": "Returns a sanitized copy of html safe to embed in generated markup.",
           "parameters": [
             {
               "name": "html",
@@ -3746,7 +3747,7 @@
           "name": "StrictVariables",
           "kind": "Property",
           "type": "bool",
-          "description": "When , referencing an undefined variable is an error; otherwise it renders as empty (the default, lenient behaviour)."
+          "description": "When true, referencing an undefined variable is an error; otherwise it renders as empty (the default, lenient behaviour)."
         },
         {
           "name": "Timeout",

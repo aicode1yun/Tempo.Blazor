@@ -3,7 +3,7 @@
   "kind": "Component",
   "category": "Components",
   "namespace": "Tempo.Blazor.Reporting.Components",
-  "description": "Interactive Blazor report viewer with toolbar navigation, zoom modes, parameter panel integration, refresh, PDF/CSV/XLSX export callbacks, loading/empty/error states, and canvas snapshot rendering.",
+  "description": "Interactive Blazor report viewer with toolbar navigation, zoom modes, parameter panel integration, refresh, PDF/CSV/XLSX export callbacks, loading/empty/error states, and canvas snapshot rendering. Drill-through regions projected by the rendering engine are overlaid as clickable hotspots: clicking one resolves the target report reference and the parameter values mapped from the clicked context and raises OnDrillThrough, leaving the actual navigation to the host.",
   "packageId": "Tempo.Blazor.Reporting",
   "sourcePath": "src/Tempo.Blazor.Reporting/Components/TmReportViewer.razor",
   "documentationStatus": "manual",
@@ -20,6 +20,10 @@
     {
       "title": "Remote report",
       "code": "<TmReportViewer ReportSource=\"@new RemoteReportSource(Http, reportId)\" TenantId=\"tenant-a\" UserId=\"user-1\" />"
+    },
+    {
+      "title": "Handling drill-through navigation",
+      "code": "<TmReportViewer Source=\"@_source\" TenantId=\"acme\" UserId=\"@UserName\" CultureName=\"en-US\"\n                OnDrillThrough=\"HandleDrillThrough\" />\n\n@code {\n    private void HandleDrillThrough(ReportDrillThroughResolution resolution)\n    {\n        if (!resolution.HasTarget)\n        {\n            return;\n        }\n\n        // resolution.TargetReportPath / TargetReportId plus resolution.Parameters\n        // carry the mapped values; the host decides how to navigate.\n        Navigation.NavigateTo(ReportDeepLink.Build(resolution)!);\n    }\n}"
     }
   ],
   "relatedTypes": [

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions",
+  "description": "Base writing direction for text content. Controls the Unicode Bidirectional Algorithm paragraph embedding level used when shaping and drawing runs.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Styles.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportTextDirection"
+}

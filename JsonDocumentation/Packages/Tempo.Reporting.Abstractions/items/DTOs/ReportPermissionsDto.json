@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "Report server permission bits exposed over the wire. Mirrors the server-side Tempo.ReportServer.Api.Security.ReportPermission flags exactly (same bit layout) so an admin client can display and request API-key scopes and folder ACL grants without referencing the server assembly.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportServerAdminDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportPermissionsDto"
+}

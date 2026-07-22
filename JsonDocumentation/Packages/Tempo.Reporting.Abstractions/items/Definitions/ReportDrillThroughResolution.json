@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions",
+  "description": "Resolved drill-through target and mapped parameter values ready for viewer navigation.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/ReportDrillThroughEvaluator.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDrillThroughResolution"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions.Rdl",
+  "description": "Outcome of importing an RDL document into a ReportDefinition.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Rdl/RdlImportResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "RdlImportResult"
+}

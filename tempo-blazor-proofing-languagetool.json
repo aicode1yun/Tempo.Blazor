@@ -55,7 +55,7 @@
           "name": "BaseAddress",
           "kind": "Property",
           "type": "Uri?",
-          "description": "Base address of the LanguageTool server (self-hosted or hosted). The provider posts to {BaseAddress}/v2/check. When null, the of the injected client is used, falling back to the self-host default http://localhost:8010."
+          "description": "Base address of the LanguageTool server (self-hosted or hosted). The provider posts to {BaseAddress}/v2/check. When null, the BaseAddress of the injected client is used, falling back to the self-host default http://localhost:8010."
         },
         {
           "name": "CustomDictionary",

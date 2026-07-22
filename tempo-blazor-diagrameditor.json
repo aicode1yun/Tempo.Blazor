@@ -574,7 +574,7 @@
           "name": "Parse",
           "kind": "Method",
           "type": "CsvParseResult",
-          "description": "Parses CSV text and returns headers + rows. Throws if no valid delimiter is found or validation fails.",
+          "description": "Parses CSV text and returns headers + rows. Throws InvalidOperationException if no valid delimiter is found or validation fails.",
           "parameters": [
             {
               "name": "csvText",
@@ -996,7 +996,7 @@
           "name": "TransactionScope",
           "kind": "Method",
           "type": "IDisposable",
-          "description": "Returns an wrapper that begins and commits/rolls back a transaction.",
+          "description": "Returns an IDisposable wrapper that begins and commits/rolls back a transaction.",
           "parameters": [
             {
               "name": "name",
@@ -1240,7 +1240,7 @@
           "name": "Validate",
           "kind": "Method",
           "type": "DiagramStencilLibraryValidationResult",
-          "description": "Validates and returns stable error codes.",
+          "description": "Validates library and returns stable error codes.",
           "parameters": [
             {
               "name": "library",
@@ -1276,7 +1276,7 @@
           "name": "GetByCategory",
           "kind": "Method",
           "type": "IEnumerable<DiagramStencil>",
-          "description": "Returns stencils belonging to .",
+          "description": "Returns stencils belonging to category.",
           "parameters": [
             {
               "name": "category",
@@ -1294,7 +1294,7 @@
           "name": "GetStencil",
           "kind": "Method",
           "type": "DiagramStencil?",
-          "description": "Returns the stencil for , or null if not found.",
+          "description": "Returns the stencil for stencilId, or null if not found.",
           "parameters": [
             {
               "name": "stencilId",
@@ -1312,7 +1312,7 @@
           "name": "RegisterProvider",
           "kind": "Method",
           "type": "void",
-          "description": "Loads all stencil sets from into the registry.",
+          "description": "Loads all stencil sets from provider into the registry.",
           "parameters": [
             {
               "name": "provider",
@@ -1324,7 +1324,7 @@
           "name": "RegisterStencil",
           "kind": "Method",
           "type": "void",
-          "description": "Registers a single stencil. If a stencil with the same id already exists, the one with higher wins (ties keep the existing entry).",
+          "description": "Registers a single stencil. If a stencil with the same id already exists, the one with higher priority wins (ties keep the existing entry).",
           "parameters": [
             {
               "name": "stencil",
@@ -1377,7 +1377,7 @@
           "name": "GetByCategory",
           "kind": "Method",
           "type": "IEnumerable<DiagramTemplate>",
-          "description": "Returns templates belonging to .",
+          "description": "Returns templates belonging to category.",
           "parameters": [
             {
               "name": "category",
@@ -1395,7 +1395,7 @@
           "name": "GetTemplate",
           "kind": "Method",
           "type": "DiagramTemplate?",
-          "description": "Returns the template for , or null if not found.",
+          "description": "Returns the template for templateId, or null if not found.",
           "parameters": [
             {
               "name": "templateId",
@@ -1425,7 +1425,7 @@
           "name": "RegisterTemplate",
           "kind": "Method",
           "type": "void",
-          "description": "Registers a single template. If a template with the same id already exists, the one with higher wins (ties keep the existing entry).",
+          "description": "Registers a single template. If a template with the same id already exists, the one with higher priority wins (ties keep the existing entry).",
           "parameters": [
             {
               "name": "template",
@@ -1478,7 +1478,7 @@
           "name": "Validate",
           "kind": "Method",
           "type": "DiagramTemplateStencilValidationResult",
-          "description": "Validates node stencil ids and edge connector types in .",
+          "description": "Validates node stencil ids and edge connector types in template.",
           "parameters": [
             {
               "name": "template",
@@ -1772,7 +1772,7 @@
           "name": "Optional",
           "kind": "Method",
           "type": "JsonDiagramStencilLibrarySource",
-          "description": "Creates a source that is loaded only after .",
+          "description": "Creates a source that is loaded only after LoadOptionalLibrary.",
           "parameters": [
             {
               "name": "sourceId",
@@ -1833,7 +1833,7 @@
           "name": "LoadOptionalLibrary",
           "kind": "Method",
           "type": "void",
-          "description": "Loads an optional source and makes its stencils available from .",
+          "description": "Loads an optional source and makes its stencils available from GetStencilSets.",
           "parameters": [
             {
               "name": "sourceId",

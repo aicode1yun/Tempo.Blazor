@@ -247,7 +247,7 @@
           "name": "EnsurePages",
           "kind": "Method",
           "type": "void",
-          "description": "Guarantees that contains at least one page."
+          "description": "Guarantees that Pages contains at least one page."
         },
         {
           "name": "SnapToGrid",
@@ -599,7 +599,7 @@
           "name": "SourcePoint",
           "kind": "Property",
           "type": "DiagramPoint?",
-          "description": "Absolute position of the free-floating source point. Used when is null."
+          "description": "Absolute position of the free-floating source point. Used when SourceNodeId is null."
         },
         {
           "name": "SourcePortId",
@@ -671,7 +671,7 @@
           "name": "TargetPoint",
           "kind": "Property",
           "type": "DiagramPoint?",
-          "description": "Absolute position of the free-floating target point. Used when is null."
+          "description": "Absolute position of the free-floating target point. Used when TargetNodeId is null."
         },
         {
           "name": "TargetPortId",
@@ -719,7 +719,7 @@
           "name": "ConnectorType",
           "kind": "Property",
           "type": "string",
-          "description": "Connector semantic type. Supported values match ."
+          "description": "Connector semantic type. Supported values match ConnectorType."
         },
         {
           "name": "CubicBezier",
@@ -731,7 +731,7 @@
           "name": "EndArrow",
           "kind": "Property",
           "type": "string",
-          "description": "End arrowhead style. Supported values match ."
+          "description": "End arrowhead style. Supported values match EndArrow."
         },
         {
           "name": "EndArrowFill",
@@ -755,19 +755,19 @@
           "name": "Routing",
           "kind": "Property",
           "type": "string",
-          "description": "Edge routing type. Supported values match ."
+          "description": "Edge routing type. Supported values match Routing."
         },
         {
           "name": "Shape",
           "kind": "Property",
           "type": "string",
-          "description": "Edge shape type. Supported values match ."
+          "description": "Edge shape type. Supported values match Shape."
         },
         {
           "name": "StartArrow",
           "kind": "Property",
           "type": "string",
-          "description": "Start arrowhead style. Supported values match ."
+          "description": "Start arrowhead style. Supported values match StartArrow."
         },
         {
           "name": "StartArrowFill",
@@ -1275,7 +1275,7 @@
           "name": "PageSize",
           "kind": "Property",
           "type": "DiagramPageSize",
-          "description": "Predefined page size. Changing this updates and ."
+          "description": "Predefined page size. Changing this updates Width and Height."
         },
         {
           "name": "RulerUnit",
@@ -1395,7 +1395,7 @@
           "name": "Deserialize",
           "kind": "Method",
           "type": "DiagramDocument",
-          "description": "Deserializes a JSON string to a .",
+          "description": "Deserializes a JSON string to a DiagramDocument.",
           "parameters": [
             {
               "name": "json",
@@ -1407,7 +1407,7 @@
           "name": "Serialize",
           "kind": "Method",
           "type": "string",
-          "description": "Serializes to an indented JSON string. Also updates to UTC now.",
+          "description": "Serializes document to an indented JSON string. Also updates ModifiedAt to UTC now.",
           "parameters": [
             {
               "name": "document",
@@ -1457,7 +1457,7 @@
           "name": "GetNativeShapeKind",
           "kind": "Method",
           "type": "DiagramShapeKind",
-          "description": "Returns the native SVG primitive kind for this stencil layout, or when the background requires the HTML/CSS fallback (custom ShapeSvg, or a complex background like cylinder/cloud/actor).",
+          "description": "Returns the native SVG primitive kind for this stencil layout, or Custom when the background requires the HTML/CSS fallback (custom ShapeSvg, or a complex background like cylinder/cloud/actor).",
           "parameters": [
             {
               "name": "layout",
@@ -1487,7 +1487,7 @@
           "name": "ConnectionPoints",
           "kind": "Property",
           "type": "List<DiagramStencilConnectionPoint>",
-          "description": "Predefined fixed connection points on the stencil perimeter, draw.io style. When populated, these render as hover dots and create edges with instead of floating port snapping."
+          "description": "Predefined fixed connection points on the stencil perimeter, draw.io style. When populated, these render as hover dots and create edges with DiagramConnectionConstraint instead of floating port snapping."
         },
         {
           "name": "DefaultData",
@@ -1511,7 +1511,7 @@
           "name": "EdgeDefaults",
           "kind": "Property",
           "type": "DiagramEdgeStencilDefaults?",
-          "description": "Default edge values when is ."
+          "description": "Default edge values when Kind is Edge."
         },
         {
           "name": "ExternalAssetSourceId",
@@ -1725,7 +1725,7 @@
           "name": "ShapeSvg",
           "kind": "Property",
           "type": "string?",
-          "description": "Optional SVG content rendered as the stencil background. When provided, the component renders an SVG element with this content instead of using the CSS-based BackgroundShape fallback. The SVG should be designed for a 100x100 viewBox and will be stretched to fill the node unless is set."
+          "description": "Optional SVG content rendered as the stencil background. When provided, the component renders an SVG element with this content instead of using the CSS-based BackgroundShape fallback. The SVG should be designed for a 100x100 viewBox and will be stretched to fill the node unless PreserveAspectRatio is set."
         },
         {
           "name": "Stroke",
@@ -2011,7 +2011,7 @@
           "name": "DataKey",
           "kind": "Property",
           "type": "string?",
-          "description": "Data key referencing (e.g. \"name\", \"attributes\")."
+          "description": "Data key referencing Data (e.g. \"name\", \"attributes\")."
         },
         {
           "name": "DefaultText",
@@ -3373,7 +3373,7 @@
           "name": "Sequence",
           "kind": "Property",
           "type": "long",
-          "description": "Sequence assigned by ."
+          "description": "Sequence assigned by DocumentAutocompleteProviderRunner."
         },
         {
           "name": "StartOffset",
@@ -6679,7 +6679,7 @@
           "name": "Add",
           "kind": "Method",
           "type": "void",
-          "description": "Registers or updates a pending action. If an action with already exists its message is replaced.",
+          "description": "Registers or updates a pending action. If an action with id already exists its message is replaced.",
           "parameters": [
             {
               "name": "id",
@@ -6713,7 +6713,7 @@
           "name": "Remove",
           "kind": "Method",
           "type": "void",
-          "description": "Removes the pending action with the given . No-op if not found.",
+          "description": "Removes the pending action with the given id. No-op if not found.",
           "parameters": [
             {
               "name": "id",
@@ -7009,7 +7009,7 @@
           "name": "ReplaceAll",
           "kind": "Method",
           "type": "int",
-          "description": "Replaces all occurrences matching with . Returns the number of replacements made.",
+          "description": "Replaces all occurrences matching query with replacement. Returns the number of replacements made.",
           "parameters": [
             {
               "name": "document",
@@ -7029,7 +7029,7 @@
           "name": "ReplaceOne",
           "kind": "Method",
           "type": "void",
-          "description": "Replaces the single occurrence identified by with .",
+          "description": "Replaces the single occurrence identified by result with replacement.",
           "parameters": [
             {
               "name": "document",
@@ -7079,7 +7079,7 @@
           "name": "IsInsideEditableRegion",
           "kind": "Method",
           "type": "bool",
-          "description": "Returns true if the position (, ) falls inside at least one editable marker.",
+          "description": "Returns true if the position (blockId, offset) falls inside at least one editable marker.",
           "parameters": [
             {
               "name": "blockId",
@@ -7095,7 +7095,7 @@
           "name": "RemoveMarker",
           "kind": "Method",
           "type": "bool",
-          "description": "Remove the marker with the given .",
+          "description": "Remove the marker with the given markerId.",
           "parameters": [
             {
               "name": "markerId",
@@ -7107,7 +7107,7 @@
           "name": "UpdateForDelete",
           "kind": "Method",
           "type": "void",
-          "description": "Update marker offsets after text is deleted at / spanning characters.",
+          "description": "Update marker offsets after text is deleted at blockId / offset spanning length characters.",
           "parameters": [
             {
               "name": "blockId",
@@ -7127,7 +7127,7 @@
           "name": "UpdateForInsert",
           "kind": "Method",
           "type": "void",
-          "description": "Update marker offsets after text is inserted at / with characters.",
+          "description": "Update marker offsets after text is inserted at blockId / offset with length characters.",
           "parameters": [
             {
               "name": "blockId",
@@ -7289,7 +7289,7 @@
           "name": "Search",
           "kind": "Method",
           "type": "IReadOnlyList<DocumentSearchResult>",
-          "description": "Finds all occurrences of in .",
+          "description": "Finds all occurrences of query in document.",
           "parameters": [
             {
               "name": "document",
@@ -10257,7 +10257,7 @@
           "name": "Search",
           "kind": "Property",
           "type": "string?",
-          "description": "Free-text search across document names. Null or empty returns the folder contents unfiltered. Only honoured when the provider advertises ."
+          "description": "Free-text search across document names. Null or empty returns the folder contents unfiltered. Only honoured when the provider advertises Search."
         },
         {
           "name": "Skip",
@@ -10269,7 +10269,7 @@
           "name": "SortField",
           "kind": "Property",
           "type": "DocumentLibrarySortField",
-          "description": "Field to order results by. Defaults to ."
+          "description": "Field to order results by. Defaults to Name."
         },
         {
           "name": "Take",
@@ -11662,7 +11662,7 @@
           "name": "Take",
           "kind": "Property",
           "type": "int",
-          "description": "Maximum number of matching entries to return. means \"return everything that matches\" (used when no page size is configured)."
+          "description": "Maximum number of matching entries to return. MaxValue means \"return everything that matches\" (used when no page size is configured)."
         }
       ]
     },
@@ -12437,7 +12437,7 @@
           "name": "ReactedBy",
           "kind": "Method",
           "type": "bool",
-          "description": "Returns true when is among the reacting users.",
+          "description": "Returns true when userId is among the reacting users.",
           "parameters": [
             {
               "name": "userId",
@@ -13646,7 +13646,7 @@
           "name": "ScanStatus",
           "kind": "Property",
           "type": "FileScanStatus",
-          "description": "Anti-virus / content scan state for the item's primary content. When or , downloads are suppressed and the item is shown as unavailable."
+          "description": "Anti-virus / content scan state for the item's primary content. When Blocked or Pending, downloads are suppressed and the item is shown as unavailable."
         },
         {
           "name": "Size",
@@ -14278,7 +14278,7 @@
           "name": "ScanStatus",
           "kind": "Property",
           "type": "FileScanStatus",
-          "description": "Anti-virus / content scan state. When or , the item is shown as unavailable and downloads are suppressed."
+          "description": "Anti-virus / content scan state. When Blocked or Pending, the item is shown as unavailable and downloads are suppressed."
         },
         {
           "name": "Size",
@@ -14800,7 +14800,7 @@
           "name": "Schedule",
           "kind": "Method",
           "type": "void",
-          "description": "Adjusts task start/end dates so all dependency constraints are satisfied. Modifies in place.",
+          "description": "Adjusts task start/end dates so all dependency constraints are satisfied. Modifies tasks in place.",
           "parameters": [
             {
               "name": "tasks",
@@ -15862,7 +15862,7 @@
           "name": "FromRRule",
           "kind": "Method",
           "type": "RecurrenceRule",
-          "description": "Parses an iCal RRULE string into a .",
+          "description": "Parses an iCal RRULE string into a RecurrenceRule.",
           "parameters": [
             {
               "name": "rrule",
@@ -15879,7 +15879,7 @@
           "name": "ToRRule",
           "kind": "Method",
           "type": "string",
-          "description": "Converts a to an iCal RRULE string.",
+          "description": "Converts a RecurrenceRule to an iCal RRULE string.",
           "parameters": [
             {
               "name": "rule",
@@ -18301,7 +18301,7 @@
           "name": "DraggedIds",
           "kind": "Property",
           "type": "IReadOnlyList<string>",
-          "description": "IDs of the dragged items, as supplied by ."
+          "description": "IDs of the dragged items, as supplied by DragDropService."
         },
         {
           "name": "TargetNode",
@@ -18428,7 +18428,7 @@
           "name": "NewParent",
           "kind": "Property",
           "type": "ITreeNode<TKey>?",
-          "description": "The node onto which was dropped, becoming its new parent. null means the node was dropped on the root drop zone and should become a root node."
+          "description": "The node onto which MovedNode was dropped, becoming its new parent. null means the node was dropped on the root drop zone and should become a root node."
         }
       ],
       "properties": [
@@ -26165,7 +26165,7 @@
           "name": "ThreatName",
           "kind": "Property",
           "type": "string?",
-          "description": "Name of the detected threat when is ."
+          "description": "Name of the detected threat when Status is Blocked."
         }
       ]
     },
@@ -26800,7 +26800,7 @@
           "name": "ScanStatus",
           "kind": "Property",
           "type": "FileScanStatus",
-          "description": "Anti-virus / content scan state. When or , the file should be treated as unavailable."
+          "description": "Anti-virus / content scan state. When Blocked or Pending, the file should be treated as unavailable."
         },
         {
           "name": "SizeBytes",
@@ -27052,7 +27052,7 @@
           "name": "ChunkSizeBytes",
           "kind": "Property",
           "type": "int",
-          "description": "Chunk size in bytes. Defaults to ."
+          "description": "Chunk size in bytes. Defaults to DefaultChunkSizeBytes."
         },
         {
           "name": "ContentType",
@@ -28034,7 +28034,7 @@
           "name": "ErrorMessage",
           "kind": "Property",
           "type": "string?",
-          "description": "Error message when is false."
+          "description": "Error message when Success is false."
         },
         {
           "name": "Success",
@@ -28160,7 +28160,7 @@
           "name": "ErrorMessage",
           "kind": "Property",
           "type": "string?",
-          "description": "Error message when is false."
+          "description": "Error message when Success is false."
         },
         {
           "name": "ExpiresAt",
@@ -28286,7 +28286,7 @@
           "name": "ErrorMessage",
           "kind": "Property",
           "type": "string?",
-          "description": "Error message when is false."
+          "description": "Error message when Success is false."
         },
         {
           "name": "ExpiresAt",
@@ -28502,7 +28502,7 @@
           "name": "DeliveredAt",
           "kind": "Property",
           "type": "DateTimeOffset?",
-          "description": "UTC timestamp when the notification was delivered to the recipient's client (a push/realtime channel acknowledged receipt). Distinct from ."
+          "description": "UTC timestamp when the notification was delivered to the recipient's client (a push/realtime channel acknowledged receipt). Distinct from ReadAt."
         },
         {
           "name": "EntityRef",
@@ -28996,7 +28996,7 @@
           "name": "Ids",
           "kind": "Property",
           "type": "IReadOnlyList<string>",
-          "description": "Specific user ids to resolve. When non-empty, providers should return these users regardless of ."
+          "description": "Specific user ids to resolve. When non-empty, providers should return these users regardless of SearchText."
         },
         {
           "name": "IncludeVirtual",
@@ -29752,7 +29752,7 @@
           "name": "IsExpired",
           "kind": "Field",
           "type": "bool",
-          "description": "True when the subscription is gone (404/410) and the caller should remove it from the ."
+          "description": "True when the subscription is gone (404/410) and the caller should remove it from the IPushSubscriptionStore."
         },
         {
           "name": "Failed",
@@ -29788,7 +29788,7 @@
           "name": "Error",
           "kind": "Property",
           "type": "string?",
-          "description": "Error detail when is false."
+          "description": "Error detail when Success is false."
         },
         {
           "name": "StatusCode",
@@ -30128,7 +30128,7 @@
           "name": "AdjustFormula",
           "kind": "Method",
           "type": "string",
-          "description": "Adjusts all relative cell references in by rows and columns. Returns the adjusted formula string, or the original if parsing fails.",
+          "description": "Adjusts all relative cell references in formula by dRow rows and dCol columns. Returns the adjusted formula string, or the original if parsing fails.",
           "parameters": [
             {
               "name": "formula",
@@ -30148,7 +30148,7 @@
           "name": "CycleLastAbsoluteRef",
           "kind": "Method",
           "type": "string",
-          "description": "Cycles the absolute/relative mode of the last cell reference in through: A1 → $A$1 → A$1 → $A1 → A1. Returns the original formula if no cell reference is found.",
+          "description": "Cycles the absolute/relative mode of the last cell reference in formula through: A1 → $A$1 → A$1 → $A1 → A1. Returns the original formula if no cell reference is found.",
           "parameters": [
             {
               "name": "formula",
@@ -30160,7 +30160,7 @@
           "name": "InsertOrReplaceLastRef",
           "kind": "Method",
           "type": "string",
-          "description": "Inserts into : replaces the last CellRef/RangeRef token when present (user picked a new cell), otherwise appends.",
+          "description": "Inserts cellRef into formula: replaces the last CellRef/RangeRef token when present (user picked a new cell), otherwise appends.",
           "parameters": [
             {
               "name": "formula",
@@ -30176,7 +30176,7 @@
           "name": "ParseFormulaReferences",
           "kind": "Method",
           "type": "IReadOnlyList<string>",
-          "description": "Returns the unique raw cell/range references from in order of first appearance. Used to assign highlight colours in formula-point mode.",
+          "description": "Returns the unique raw cell/range references from formula in order of first appearance. Used to assign highlight colours in formula-point mode.",
           "parameters": [
             {
               "name": "formula",
@@ -30400,7 +30400,7 @@
           "name": "Style",
           "kind": "Property",
           "type": "SpreadsheetBorderStyle",
-          "description": "The line style of the border. Defaults to ."
+          "description": "The line style of the border. Defaults to None."
         }
       ]
     },
@@ -30536,7 +30536,7 @@
           "name": "GetEditText",
           "kind": "Method",
           "type": "string",
-          "description": "Returns the editable text for using .",
+          "description": "Returns the editable text for cell using culture.",
           "parameters": [
             {
               "name": "cell",
@@ -31388,7 +31388,7 @@
           "name": "Value",
           "kind": "Property",
           "type": "object?",
-          "description": "The typed value (e.g. , , , or ). Null for formulas and empty input."
+          "description": "The typed value (e.g. double, bool, DateTime, or string). Null for formulas and empty input."
         }
       ]
     },
@@ -31974,7 +31974,7 @@
           "name": "ComputeOrder",
           "kind": "Method",
           "type": "IReadOnlyList<int>",
-          "description": "Computes the sorted order of the primary axis. With false (default) it returns the data row indices in their new order; with it true it returns the data column indices. The header row/column, when present, is excluded from the result.",
+          "description": "Computes the sorted order of the primary axis. With ByRows false (default) it returns the data row indices in their new order; with it true it returns the data column indices. The header row/column, when present, is excluded from the result.",
           "parameters": [
             {
               "name": "sheet",
@@ -32106,7 +32106,7 @@
           "name": "Parse",
           "kind": "Method",
           "type": "SpreadsheetParsedValue",
-          "description": "Parses using for number/date conventions.",
+          "description": "Parses input using culture for number/date conventions.",
           "parameters": [
             {
               "name": "input",
@@ -32442,13 +32442,13 @@
           "name": "Name",
           "kind": "Property",
           "type": "required string",
-          "description": "camelCase property key – matches the key in ."
+          "description": "camelCase property key – matches the key in Props."
         },
         {
           "name": "Options",
           "kind": "Property",
           "type": "string[]?",
-          "description": "Allowed values for properties."
+          "description": "Allowed values for Enum properties."
         },
         {
           "name": "Type",
@@ -33235,13 +33235,14 @@
         {
           "name": "IsContainer",
           "kind": "Property",
-          "type": "bool"
+          "type": "bool",
+          "description": "True when the component is intended to visually contain other placed elements. Used by authoring/lint tools to distinguish parent-like containment from sibling overlap."
         },
         {
           "name": "LocalType",
           "kind": "Property",
           "type": "string?",
-          "description": "Component type name without the app scope prefix. Defaults to for unscoped components and to the suffix of app:{id}:{name} for scoped components."
+          "description": "Component type name without the app scope prefix. Defaults to Type for unscoped components and to the suffix of app:{id}:{name} for scoped components."
         },
         {
           "name": "Props",
@@ -33259,7 +33260,7 @@
           "name": "ScopeAppId",
           "kind": "Property",
           "type": "string?",
-          "description": "Application id for an app-scoped custom component. When present, registries normalize to app:{ScopeAppId}:{LocalType}."
+          "description": "Application id for an app-scoped custom component. When present, registries normalize Type to app:{ScopeAppId}:{LocalType}."
         },
         {
           "name": "SizePresets",
@@ -33371,7 +33372,7 @@
           "name": "ContainsType",
           "kind": "Method",
           "type": "bool",
-          "description": "Returns true when belongs to this app scope.",
+          "description": "Returns true when type belongs to this app scope.",
           "parameters": [
             {
               "name": "type",
@@ -33419,7 +33420,7 @@
           "name": "IsScopedType",
           "kind": "Method",
           "type": "bool",
-          "description": "Returns true when is an app-scoped component type.",
+          "description": "Returns true when type is an app-scoped component type.",
           "parameters": [
             {
               "name": "type",
@@ -33431,7 +33432,7 @@
           "name": "MatchesAppId",
           "kind": "Method",
           "type": "bool",
-          "description": "Returns true when identifies the same scope.",
+          "description": "Returns true when appId identifies the same scope.",
           "parameters": [
             {
               "name": "appId",
@@ -33604,7 +33605,7 @@
           "name": "EnsureActivePage",
           "kind": "Method",
           "type": "void",
-          "description": "Ensures the document has at least one page and a valid . Creates a default page when the list is empty."
+          "description": "Ensures the document has at least one page and a valid ActivePageId. Creates a default page when the list is empty."
         },
         {
           "name": "ActivePageId",
@@ -33633,7 +33634,8 @@
         {
           "name": "TargetPackIds",
           "kind": "Property",
-          "type": "List<string>"
+          "type": "List<string>",
+          "description": "Namespaced stencil pack ids this document renders against, e.g. tempo or app:{id}."
         },
         {
           "name": "TargetTheme",
@@ -33740,7 +33742,7 @@
           "name": "GetBool",
           "kind": "Method",
           "type": "bool",
-          "description": "Returns the boolean value of a prop, or .",
+          "description": "Returns the boolean value of a prop, or fallback.",
           "parameters": [
             {
               "name": "Dictionary<string",
@@ -33765,7 +33767,7 @@
           "name": "GetDouble",
           "kind": "Method",
           "type": "double",
-          "description": "Returns the double value of a prop, or .",
+          "description": "Returns the double value of a prop, or fallback.",
           "parameters": [
             {
               "name": "Dictionary<string",
@@ -33790,7 +33792,7 @@
           "name": "GetInt",
           "kind": "Method",
           "type": "int",
-          "description": "Returns the integer value of a prop, or .",
+          "description": "Returns the integer value of a prop, or fallback.",
           "parameters": [
             {
               "name": "Dictionary<string",
@@ -33815,7 +33817,7 @@
           "name": "GetString",
           "kind": "Method",
           "type": "string",
-          "description": "Returns the string value of a prop, or when the key is absent or the value is not a JSON string.",
+          "description": "Returns the string value of a prop, or fallback when the key is absent or the value is not a JSON string.",
           "parameters": [
             {
               "name": "Dictionary<string",
@@ -33910,7 +33912,7 @@
           "name": "IsLocked",
           "kind": "Property",
           "type": "bool",
-          "description": "When true, the element cannot be moved, resized, or deleted. Provides a local editing lock independent of ."
+          "description": "When true, the element cannot be moved, resized, or deleted. Provides a local editing lock independent of LockedBy."
         },
         {
           "name": "LayerId",
@@ -33928,7 +33930,7 @@
           "name": "Props",
           "kind": "Property",
           "type": "Dictionary<string, JsonElement>",
-          "description": "Component properties keyed by camelCase prop name. Values are stored as to support any JSON type (string, number, bool, array, object)."
+          "description": "Component properties keyed by camelCase prop name. Values are stored as JsonElement to support any JSON type (string, number, bool, array, object)."
         },
         {
           "name": "Role",
@@ -34255,7 +34257,8 @@
         {
           "name": "TargetPackIds",
           "kind": "Property",
-          "type": "List<string>?"
+          "type": "List<string>?",
+          "description": "Optional page-level target pack override. When null, the page inherits the document target packs."
         },
         {
           "name": "TargetTheme",
@@ -34372,7 +34375,7 @@
           "name": "AddWireframeSchemas",
           "kind": "Method",
           "type": "IServiceCollection",
-          "description": "Registers and plus the built-in UI role vocabulary so both registries can be injected anywhere.",
+          "description": "Registers BuiltInComponentSchemas and WireframeSchemaRegistry plus the built-in UI role vocabulary so both registries can be injected anywhere.",
           "parameters": [
             {
               "name": "services",
@@ -34396,7 +34399,7 @@
           "name": "Deserialize",
           "kind": "Method",
           "type": "WireframeDocument",
-          "description": "Deserializes a JSON string to a .",
+          "description": "Deserializes a JSON string to a WireframeDocument.",
           "parameters": [
             {
               "name": "json",
@@ -34408,7 +34411,7 @@
           "name": "Serialize",
           "kind": "Method",
           "type": "string",
-          "description": "Serializes to an indented JSON string. Also updates to UTC now.",
+          "description": "Serializes document to an indented JSON string. Also updates ModifiedAt to UTC now.",
           "parameters": [
             {
               "name": "document",
@@ -34551,7 +34554,7 @@
           "name": "Duration",
           "kind": "Field",
           "type": "TimeSpan",
-          "description": "Computed duration ( − )."
+          "description": "Computed duration (End − Start)."
         },
         {
           "name": "HasParent",
@@ -34641,7 +34644,7 @@
           "name": "End",
           "kind": "Property",
           "type": "DateTime",
-          "description": "Planned end. Defaults to for unscheduled sources."
+          "description": "Planned end. Defaults to MinValue for unscheduled sources."
         },
         {
           "name": "EstimationHours",
@@ -34743,7 +34746,7 @@
           "name": "Start",
           "kind": "Property",
           "type": "DateTime",
-          "description": "Planned start. Defaults to for unscheduled sources (e.g. Notion tasks, which use instead)."
+          "description": "Planned start. Defaults to MinValue for unscheduled sources (e.g. Notion tasks, which use DueDate instead)."
         },
         {
           "name": "Status",
@@ -35309,7 +35312,7 @@
           "name": "ScheduledEnd",
           "kind": "Method",
           "type": "DateTime",
-          "description": "Scheduled end (passthrough for ).",
+          "description": "Scheduled end (passthrough for End).",
           "parameters": [
             {
               "name": "item",
@@ -35321,7 +35324,7 @@
           "name": "ScheduledStart",
           "kind": "Method",
           "type": "DateTime",
-          "description": "Scheduled start (passthrough for ).",
+          "description": "Scheduled start (passthrough for Start).",
           "parameters": [
             {
               "name": "item",
@@ -35345,7 +35348,7 @@
           "name": "AddTmWorkItems",
           "kind": "Method",
           "type": "IServiceCollection",
-          "description": "Registers the . Call for each source. Safe to call multiple times.",
+          "description": "Registers the TmWorkItemProviderRegistry. Call AddTmWorkItemProvider{T} for each source. Safe to call multiple times.",
           "parameters": [
             {
               "name": "services",

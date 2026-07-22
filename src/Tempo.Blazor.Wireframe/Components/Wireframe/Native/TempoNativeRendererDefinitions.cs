@@ -59,7 +59,8 @@ internal static class TempoNativeRendererDefinitions
         var dataPoints = el.Props.GetInt("dataPoints", 6);
         var showLegend = el.Props.GetBool("showLegend", false);
         var showGrid = el.Props.GetBool("showGrid", false);
-        var horizontal = el.Props.GetBool("horizontal", false);
+        var stacked = type is "stackedBar" or "stackedHorizontalBar" or "stackedArea";
+        var horizontal = el.Props.GetBool("horizontal", false) || type is "horizontalBar" or "stackedHorizontalBar";
         var sb = new StringBuilder();
         sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 6));
         sb.Append(Text(title, el.W / 2, 16, 12, ColorText, "middle", "500"));
@@ -91,7 +92,7 @@ internal static class TempoNativeRendererDefinitions
             if (type == "donut")
                 sb.Append($"<circle cx='{F(cx)}' cy='{F(cy)}' r='{F(r * 0.5)}' fill='white'></circle>");
         }
-        else if (type == "line" || type == "area")
+        else if (type == "line" || type == "area" || type == "stackedArea")
         {
             sb.Append(VLine(chartX, chartY, chartY + chartH));
             sb.Append(HLine(chartX, chartX + chartW, chartY + chartH));
@@ -102,23 +103,49 @@ internal static class TempoNativeRendererDefinitions
             }
 
             var heights = new[] { 0.6, 0.8, 0.4, 0.9, 0.5, 0.7, 0.85 };
-            var pts = new List<string>();
-            for (var i = 0; i < dataPoints; i++)
+            if (type == "stackedArea")
             {
-                var px = chartX + (i + 0.5) * chartW / dataPoints;
-                var py = chartY + chartH - heights[i % heights.Length] * chartH;
-                pts.Add($"{F(px)},{F(py)}");
-            }
+                // Three series accumulating on a shared baseline: each band is drawn between the
+                // running total underneath it and its own cumulative top.
+                const int seriesCount = 3;
+                var lower = new double[dataPoints];
+                for (var s = 0; s < seriesCount; s++)
+                {
+                    var upper = new double[dataPoints];
+                    var top = new List<string>();
+                    var bottom = new List<string>();
+                    for (var i = 0; i < dataPoints; i++)
+                    {
+                        upper[i] = lower[i] + heights[(i + s) % heights.Length] * chartH / seriesCount;
+                        var px = chartX + (i + 0.5) * chartW / dataPoints;
+                        top.Add($"{F(px)},{F(chartY + chartH - upper[i])}");
+                        bottom.Insert(0, $"{F(px)},{F(chartY + chartH - lower[i])}");
+                    }
 
-            if (type == "area" && pts.Count > 0)
+                    sb.Append($"<polygon points='{string.Join(" ", top)} {string.Join(" ", bottom)}' fill='{fills[s % fills.Length]}' stroke='{Accent}' stroke-width='1'></polygon>");
+                    lower = upper;
+                }
+            }
+            else
             {
-                var firstX = chartX + 0.5 * chartW / dataPoints;
-                var lastX = chartX + (dataPoints - 0.5) * chartW / dataPoints;
-                var baseline = chartY + chartH;
-                sb.Append($"<polygon points='{string.Join(" ", pts)} {F(lastX)},{F(baseline)} {F(firstX)},{F(baseline)}' fill='{FillAccent}' stroke='none'></polygon>");
-            }
+                var pts = new List<string>();
+                for (var i = 0; i < dataPoints; i++)
+                {
+                    var px = chartX + (i + 0.5) * chartW / dataPoints;
+                    var py = chartY + chartH - heights[i % heights.Length] * chartH;
+                    pts.Add($"{F(px)},{F(py)}");
+                }
 
-            sb.Append($"<polyline points='{string.Join(" ", pts)}' fill='none' stroke='{Accent}' stroke-width='2'></polyline>");
+                if (type == "area" && pts.Count > 0)
+                {
+                    var firstX = chartX + 0.5 * chartW / dataPoints;
+                    var lastX = chartX + (dataPoints - 0.5) * chartW / dataPoints;
+                    var baseline = chartY + chartH;
+                    sb.Append($"<polygon points='{string.Join(" ", pts)} {F(lastX)},{F(baseline)} {F(firstX)},{F(baseline)}' fill='{FillAccent}' stroke='none'></polygon>");
+                }
+
+                sb.Append($"<polyline points='{string.Join(" ", pts)}' fill='none' stroke='{Accent}' stroke-width='2'></polyline>");
+            }
         }
         else
         {
@@ -143,7 +170,21 @@ internal static class TempoNativeRendererDefinitions
                 {
                     var bw = heights[i % heights.Length] * chartW;
                     var by = chartY + i * gap + gap * 0.175;
-                    sb.Append(Rect(chartX, by, bw, barH, FillAccent, "#93c5fd", 2));
+                    if (stacked)
+                    {
+                        // Each bar is split into three segments accumulating from the left baseline.
+                        var x = chartX;
+                        for (var s = 0; s < 3; s++)
+                        {
+                            var sw = bw / 3;
+                            sb.Append(Rect(x, by, sw, barH, fills[s % fills.Length], "#93c5fd", 0));
+                            x += sw;
+                        }
+                    }
+                    else
+                    {
+                        sb.Append(Rect(chartX, by, bw, barH, FillAccent, "#93c5fd", 2));
+                    }
                 }
             }
             else
@@ -154,7 +195,21 @@ internal static class TempoNativeRendererDefinitions
                 {
                     var bh = heights[i % heights.Length] * chartH;
                     var bx = chartX + i * gap + gap * 0.175;
-                    sb.Append(Rect(bx, chartY + chartH - bh, barW, bh, FillAccent, "#93c5fd", 2));
+                    if (stacked)
+                    {
+                        // Each bar is split into three segments accumulating on the zero baseline.
+                        var y = chartY + chartH;
+                        for (var s = 0; s < 3; s++)
+                        {
+                            var sh = bh / 3;
+                            y -= sh;
+                            sb.Append(Rect(bx, y, barW, sh, fills[s % fills.Length], "#93c5fd", 0));
+                        }
+                    }
+                    else
+                    {
+                        sb.Append(Rect(bx, chartY + chartH - bh, barW, bh, FillAccent, "#93c5fd", 2));
+                    }
                 }
             }
         }

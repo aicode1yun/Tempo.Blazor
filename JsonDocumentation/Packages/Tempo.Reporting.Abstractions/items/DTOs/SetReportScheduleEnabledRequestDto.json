@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "DTOs",
+  "namespace": "Tempo.Reporting.Abstractions.Dtos",
+  "description": "Toggle-enabled request for a schedule.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Dtos/ReportScheduleDtos.cs",
+  "documentationStatus": "generated",
+  "itemName": "SetReportScheduleEnabledRequestDto"
+}

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions.Rdl",
+  "description": "Severity of an RdlImportDiagnostic.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Rdl/RdlImportResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "RdlDiagnosticSeverity"
+}

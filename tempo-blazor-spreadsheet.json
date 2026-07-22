@@ -634,7 +634,7 @@
           "name": "AffectedCellRefs",
           "kind": "Field",
           "type": "IReadOnlyList<string>",
-          "description": "The cell references touched by the last (for renderer invalidation)."
+          "description": "The cell references touched by the last Execute (for renderer invalidation)."
         },
         {
           "name": "HasMergeConflict",
@@ -656,13 +656,13 @@
           "name": "RemainingCount",
           "kind": "Property",
           "type": "int",
-          "description": "The number of unique data rows that remained after the last ."
+          "description": "The number of unique data rows that remained after the last Execute."
         },
         {
           "name": "RemovedCount",
           "kind": "Property",
           "type": "int",
-          "description": "The number of duplicate rows removed by the last ."
+          "description": "The number of duplicate rows removed by the last Execute."
         }
       ]
     },
@@ -734,7 +734,7 @@
           "name": "DidReplace",
           "kind": "Property",
           "type": "bool",
-          "description": "Whether the last actually changed the cell."
+          "description": "Whether the last Execute actually changed the cell."
         }
       ]
     },
@@ -906,7 +906,7 @@
           "name": "AffectedCellRefs",
           "kind": "Field",
           "type": "IReadOnlyList<string>",
-          "description": "The cell references touched by the last (for renderer invalidation)."
+          "description": "The cell references touched by the last Execute (for renderer invalidation)."
         },
         {
           "name": "HasMergeConflict",
@@ -1110,13 +1110,13 @@
           "name": "SelectionEnd",
           "kind": "Property",
           "type": "int",
-          "description": "The current selection end within ."
+          "description": "The current selection end within Text."
         },
         {
           "name": "SelectionStart",
           "kind": "Property",
           "type": "int",
-          "description": "The current selection start within ."
+          "description": "The current selection start within Text."
         },
         {
           "name": "Suggestions",
@@ -1347,7 +1347,7 @@
           "name": "AffectedCellRefs",
           "kind": "Field",
           "type": "IReadOnlyList<string>",
-          "description": "The cell references touched by the last (for renderer invalidation)."
+          "description": "The cell references touched by the last Execute (for renderer invalidation)."
         },
         {
           "name": "Execute",
@@ -1363,7 +1363,7 @@
           "name": "ColumnsProduced",
           "kind": "Property",
           "type": "int",
-          "description": "The number of output columns produced by the last ."
+          "description": "The number of output columns produced by the last Execute."
         }
       ]
     },

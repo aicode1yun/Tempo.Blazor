@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions.Rdl",
+  "description": "A single diagnostic produced while importing an RDL document.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/Rdl/RdlImportResult.cs",
+  "documentationStatus": "generated",
+  "itemName": "RdlImportDiagnostic"
+}

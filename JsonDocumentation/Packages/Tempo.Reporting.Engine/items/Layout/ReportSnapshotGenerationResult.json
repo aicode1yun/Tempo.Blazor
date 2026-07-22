@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Layout",
+  "namespace": "Tempo.Reporting.Engine.Layout",
+  "description": "Snapshot plus the interactive drill-through regions projected during layout.",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Layout/ReportSnapshotGenerator.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportSnapshotGenerationResult"
+}

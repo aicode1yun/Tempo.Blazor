@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Text",
+  "namespace": "Tempo.Reporting.Engine.Text",
+  "description": "Self-contained implementation of the Unicode Bidirectional Algorithm (UAX#9), covering rules P2/P3, X1–X10 (explicit levels, directional overrides and isolates), W1–W7, N0 (paired brackets), N1–N2, I1–I2, and the line-based rules L1/L2. Character properties come from the Unicode Character Database 16.0.0 (see BidiCharacterData).",
+  "packageId": "Tempo.Reporting.Engine",
+  "sourcePath": "src/Tempo.Reporting.Engine/Text/BidiAlgorithm.cs",
+  "documentationStatus": "generated",
+  "itemName": "BidiAlgorithm"
+}

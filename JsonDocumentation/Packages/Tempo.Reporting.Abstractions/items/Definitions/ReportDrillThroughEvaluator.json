@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Definitions",
+  "namespace": "Tempo.Reporting.Abstractions.Definitions",
+  "description": "Evaluates ReportDrillThroughAction parameter mappings against a clicked context.",
+  "packageId": "Tempo.Reporting.Abstractions",
+  "sourcePath": "src/Tempo.Reporting.Abstractions/Definitions/ReportDrillThroughEvaluator.cs",
+  "documentationStatus": "generated",
+  "itemName": "ReportDrillThroughEvaluator"
+}

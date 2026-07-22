@@ -1759,7 +1759,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             [
                 P("title",      "Title",       PropType.String, "Chart Title", cat: "Content"),
                 P("type",       "Type",        PropType.Enum,   "bar",         cat: "Appearance",
-                    opts: ["bar","line","area","pie","donut","funnel","heatmap","treemap"]),
+                    opts: ["bar","horizontalBar","line","area","pie","donut","funnel","heatmap","treemap","stackedBar","stackedHorizontalBar","stackedArea"]),
                 P("dataPoints", "Data Points", PropType.Int,    6,             cat: "Appearance"),
             ]
         };
