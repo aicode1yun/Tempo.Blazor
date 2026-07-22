@@ -69,13 +69,17 @@ jobs:
       # na CI vynecháváme - runner nemá prohlížeče, běžící demo hosty, smtp4dev kontejner
       # ani SQL Server, takže by spadly na prostředí (NullReferenceException /
       # Connection refused / SqlException error 26), nikoli na logiku.
-      # MsSql testy (tests/Tempo.ReportServer.Api.Tests/MsSql/*) potřebují buď
+      # MsSql testy (Tempo.ReportServer.Api.Tests.MsSql.*) potřebují buď
       # localhost\SQLEXPRESS, nebo connection string v env REPORTSERVER_TEST_CONNECTION
       # (viz MsSqlTestDatabase.cs) - lokálně se spouštět MAJÍ a spouštějí.
+      # Vzor je ZAKOTVENÝ na jmenný prostor, ne holý substring: jinak by z CI tiše
+      # zmizel každý budoucí test se slovem MsSql v názvu, ať leží kdekoli.
       # POZOR: je to obcházka chybějící infrastruktury, ne řešení. Jakmile bude v CI
       # SQL service container nebo REPORTSERVER_TEST_CONNECTION, filtr zase zužte.
+      # Drženo v SYNCU s publish-nuget.yml - dva různé filtry = jedno CI trvale
+      # červené a tím pádem přestane být čtené jako signál.
       - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal --filter "FullyQualifiedName!~Tempo.Blazor.E2E&FullyQualifiedName!~Smtp4Dev&FullyQualifiedName!~MsSql"
+        run: dotnet test --no-build --configuration Release --verbosity normal --filter "FullyQualifiedName!~Tempo.Blazor.E2E&FullyQualifiedName!~Smtp4Dev&FullyQualifiedName!~Tempo.ReportServer.Api.Tests.MsSql"
 
   publish:
     needs: build-and-test

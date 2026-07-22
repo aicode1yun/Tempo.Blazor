@@ -85,14 +85,32 @@ public sealed class ScheduledReportWebhookGuardTests
     /// branch, same message everywhere.
     /// </summary>
     [Theory]
-    [InlineData("/etc/passwd")]
-    [InlineData("//attacker.example.com/hook")]
-    [InlineData(@"\\attacker.example.com\share")]
+    [InlineData("/etc/passwd")] // Unix absolute path — parses as file:// on Unix
+    [InlineData("//attacker.example.com/hook")] // protocol-relative
+    [InlineData(@"\\attacker.example.com\share")] // UNC
+    [InlineData(@"C:\x\y")] // DOS path — parses as file:///C:/x/y on BOTH platforms
+    [InlineData("relative/path")] // the control: rejected before AND after the fix
     public void Validate_FilesystemPath_LosesToTheStructuralGate_NotTheSchemeAllowlist(string target)
     {
         var act = () => ScheduledReportWebhookGuard.Validate(target, Default);
 
         act.Should().Throw<InvalidOperationException>().WithMessage("*absolute URL*");
+    }
+
+    /// <summary>
+    /// The scheme comparison must be case-insensitive: RFC 3986 makes a scheme case-insensitive and
+    /// <see cref="Uri"/> normalises it to lower case, so an ordinal comparison would start rejecting
+    /// a legitimate upper-case URL as "not absolute" — turning a hardening fix into a false negative.
+    /// </summary>
+    [Fact]
+    public void Validate_UpperCaseScheme_IsStillAllowed()
+    {
+        var uri = ScheduledReportWebhookGuard.Validate(
+            "HTTPS://hooks.example.com/report",
+            Default,
+            _ => [IPAddress.Parse("93.184.216.34")]);
+
+        uri.Host.Should().Be("hooks.example.com");
     }
 
     /// <summary>
