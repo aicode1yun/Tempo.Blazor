@@ -396,18 +396,20 @@
             }
           },
           "borders": {
-            "description": "Border colors",
+            "description": "Border colors. --tm-border-color is the decorative divider tone; the boundary of a selection control (checkbox, radio, multiselect option), which conveys the control's state, uses --tm-border-color-control so it stays above the WCAG 1.4.11 3:1 minimum. Retheming a control must go through the -control token, not through --tm-border-color.",
             "tokens": {
               "--tm-border-color": "var(--tm-color-gray-200)",
-              "--tm-border-color-focus": "var(--tm-color-primary)"
+              "--tm-border-color-control": "var(--tm-color-gray-500)",
+              "--tm-border-color-focus": "var(--tm-color-primary)",
+              "--tm-control-glyph-color": "var(--tm-color-white)"
             }
           },
           "text": {
             "description": "Text colors",
             "tokens": {
               "--tm-text-primary": "var(--tm-color-gray-900)",
-              "--tm-text-secondary": "var(--tm-color-gray-500)",
-              "--tm-text-tertiary": "var(--tm-color-gray-400)",
+              "--tm-text-secondary": "var(--tm-color-gray-600)",
+              "--tm-text-tertiary": "var(--tm-color-gray-500)",
               "--tm-text-disabled": "var(--tm-color-gray-400)",
               "--tm-text-inverse": "var(--tm-color-white)",
               "--tm-text-link": "var(--tm-color-primary)"
@@ -12416,7 +12418,7 @@
       "kind": "Component",
       "category": "Inputs",
       "namespace": "Tempo.Blazor.Components.Inputs",
-      "description": "Monospace source-code editor with an optional Prism syntax-highlight overlay, Tab/Shift+Tab indentation, copy-to-clipboard button and built-in JSON validation. Works without any JS/Prism as a plain monospace textarea; loading _content/Tempo.Blazor/js/code-editor.js enables the overlay and, when the host also loads Prism, syntax highlighting for the configured language.",
+      "description": "Monospace source-code editor with an optional Prism syntax-highlight overlay, Tab/Shift+Tab indentation (opt-out via TrapTab), copy-to-clipboard button and built-in JSON validation. Works without any JS/Prism as a plain monospace textarea; loading _content/Tempo.Blazor/js/code-editor.js enables the overlay and, when the host also loads Prism, syntax highlighting for the configured language. Long lines scroll horizontally unless Wrap is turned on.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Inputs/TmCodeEditor.razor",
       "documentationStatus": "merged",
@@ -12506,6 +12508,13 @@
           "description": "Shows a pretty-print button for JSON content. Only rendered when Language is \"json\"."
         },
         {
+          "name": "TrapTab",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Keeps Tab and Shift+Tab inside the editor as indent/outdent. Defaults to true, which is how a source editor is expected to behave. Set it to false when the editor sits among ordinary form fields (a Gherkin step, a note): keyboard users then tab out to the next control instead of being trapped, at the cost of losing keyboard indentation."
+        },
+        {
           "name": "ValidateJson",
           "type": "bool",
           "isRequired": false,
@@ -12523,6 +12532,13 @@
           "type": "EventCallback<string>",
           "isRequired": false,
           "description": "Fires on every keystroke with the new value."
+        },
+        {
+          "name": "Wrap",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Wraps long lines instead of scrolling horizontally. Defaults to false, which suits source code where indentation carries meaning. Turn it on for prose-like content (Gherkin steps, descriptions) so a long sentence stays readable without horizontal scrolling.",
+          "default": "false"
         },
         {
           "name": "DataTestId",
@@ -12556,6 +12572,7 @@
         "tm-code-editor--disabled",
         "tm-code-editor--error",
         "tm-code-editor--highlighted",
+        "tm-code-editor--wrap",
         "tm-code-editor__body",
         "tm-code-editor__highlight",
         "tm-code-editor__textarea",
@@ -12571,6 +12588,10 @@
         {
           "title": "Read-only snippet with copy button",
           "code": "<TmCodeEditor Value=\"@snippet\" Language=\"csharp\" ReadOnly=\"true\" Rows=\"6\" />"
+        },
+        {
+          "title": "Prose-like editor inside a form (tab-out + wrapping)",
+          "code": "<TmCodeEditor @bind-Value=\"gherkinStep\" Language=\"gherkin\" Label=\"Given\" TrapTab=\"false\" Wrap=\"true\" Rows=\"4\" />"
         },
         {
           "title": "Required script include (host page)",

@@ -1910,6 +1910,9 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("language",    "Language",    PropType.String, "json", cat: "Content"),
                 P("label",       "Label",       PropType.String,         cat: "Content"),
                 P("placeholder", "Placeholder", PropType.String,         cat: "Content"),
+                // Wrapping is a visible layout decision (prose wraps, source code scrolls sideways),
+                // so a wireframe has to be able to state it — mirrors TmCodeEditor.Wrap.
+                P("wrap",        "Wrap lines",  PropType.Bool,   false,   cat: "Appearance"),
             ]
         };
 
