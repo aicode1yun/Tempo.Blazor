@@ -49,6 +49,14 @@ internal static class DateTimeHelpers
         return result;
     }
 
+    /// <summary>Returns the start of the week containing <paramref name="date"/> for the supplied culture.</summary>
+    public static DateOnly GetStartOfWeek(DateOnly date, CultureInfo culture)
+    {
+        var firstDayOfWeek = culture.DateTimeFormat.FirstDayOfWeek;
+        var offset = ((int)date.DayOfWeek - (int)firstDayOfWeek + 7) % 7;
+        return date.AddDays(-offset);
+    }
+
     /// <summary>Returns <see langword="true"/> if <paramref name="date"/> is today.</summary>
     public static bool IsToday(DateOnly date)
         => date == DateOnly.FromDateTime(DateTime.Today);

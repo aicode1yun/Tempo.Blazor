@@ -71,6 +71,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
         new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
         {
             ["TmChart"] = ["chart"],
+            ["TmCalendarHeatmap"] = ["chart"],
             ["TmSparkline"] = ["sparkline"],
             ["TmGauge"] = ["gauge"],
             ["TmStockChart"] = ["chart"],
@@ -1761,6 +1762,17 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("type",       "Type",        PropType.Enum,   "bar",         cat: "Appearance",
                     opts: ["bar","horizontalBar","line","area","pie","donut","funnel","heatmap","treemap","stackedBar","stackedHorizontalBar","stackedArea"]),
                 P("dataPoints", "Data Points", PropType.Int,    6,             cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmCalendarHeatmap", Category = "Charts", DisplayName = "Calendar Heatmap",
+            DefaultWidth = 420, DefaultHeight = 140,
+            Props =
+            [
+                P("year", "Year", PropType.Int, 2025, cat: "Content"),
+                P("cellSize", "Cell Size", PropType.Int, 12, cat: "Appearance"),
             ]
         };
 

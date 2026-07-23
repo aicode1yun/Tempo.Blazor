@@ -1,0 +1,108 @@
+@namespace Tempo.Blazor.Components.Charts
+@using System.Globalization
+
+<div @attributes="AdditionalAttributes"
+     class="@CssClass"
+     style="@RootStyle">
+    <div class="tm-calendar-heatmap__grid"
+         role="grid"
+         style="--tm-heatmap-week-count: @_weekCount">
+        @foreach (var cell in _cells)
+        {
+            <button class="tm-calendar-heatmap__day"
+                    type="button"
+                    role="gridcell"
+                    data-date="@cell.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+                    aria-label="@cell.Date.ToString("d", _culture)"
+                    style="grid-column: @cell.Week; grid-row: @cell.Day">
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    private IReadOnlyList<CalendarHeatmapCell> _cells = [];
+    private CultureInfo _culture = CultureInfo.CurrentUICulture;
+    private int _weekCount;
+
+    /// <summary>Daily values displayed by the heatmap. Dates without an entry render as empty cells.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyDictionary<DateOnly, decimal> Values { get; set; } = default!;
+
+    /// <summary>
+    /// Optional calendar year to render. When specified, the entire year is rendered and
+    /// <see cref="From"/> and <see cref="To"/> are ignored.
+    /// </summary>
+    [Parameter]
+    public int? Year { get; set; }
+
+    /// <summary>Inclusive start of a custom date range. Defaults to the start of the current year.</summary>
+    [Parameter]
+    public DateOnly? From { get; set; }
+
+    /// <summary>Inclusive end of a custom date range. Defaults to the end of the current year.</summary>
+    [Parameter]
+    public DateOnly? To { get; set; }
+
+    /// <summary>Size of each day cell in pixels. Defaults to 12.</summary>
+    [Parameter]
+    public int CellSize { get; set; } = 12;
+
+    /// <summary>
+    /// Culture used for week alignment and date formatting.
+    /// Defaults to <see cref="CultureInfo.CurrentUICulture"/>.
+    /// </summary>
+    [Parameter]
+    public CultureInfo? Culture { get; set; }
+
+    /// <summary>Additional CSS classes applied to the root element.</summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>Additional attributes applied to the root element.</summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string CssClass => string.IsNullOrWhiteSpace(Class)
+        ? "tm-calendar-heatmap"
+        : $"tm-calendar-heatmap {Class}";
+
+    private string RootStyle => $"--tm-heatmap-cell-size: {Math.Max(1, CellSize)}px";
+
+    protected override void OnParametersSet()
+    {
+        _culture = Culture ?? CultureInfo.CurrentUICulture;
+
+        var currentYear = DateTime.Today.Year;
+        var rangeStart = Year.HasValue
+            ? new DateOnly(Year.Value, 1, 1)
+            : From ?? new DateOnly(currentYear, 1, 1);
+        var rangeEnd = Year.HasValue
+            ? new DateOnly(Year.Value, 12, 31)
+            : To ?? new DateOnly(currentYear, 12, 31);
+
+        if (rangeEnd < rangeStart)
+        {
+            _cells = [];
+            _weekCount = 0;
+            return;
+        }
+
+        var gridStart = DateTimeHelpers.GetStartOfWeek(rangeStart, _culture);
+        var dayCount = rangeEnd.DayNumber - rangeStart.DayNumber + 1;
+        var cells = new CalendarHeatmapCell[dayCount];
+
+        for (var index = 0; index < dayCount; index++)
+        {
+            var date = rangeStart.AddDays(index);
+            var gridOffset = date.DayNumber - gridStart.DayNumber;
+            cells[index] = new CalendarHeatmapCell(
+                date,
+                (gridOffset / 7) + 1,
+                (gridOffset % 7) + 1);
+        }
+
+        _cells = cells;
+        _weekCount = cells[^1].Week;
+    }
+}

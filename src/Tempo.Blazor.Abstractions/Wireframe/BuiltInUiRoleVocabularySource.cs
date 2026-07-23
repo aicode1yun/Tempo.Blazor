@@ -94,7 +94,7 @@ public sealed class BuiltInUiRoleVocabularySource : IUiRoleVocabularySource
         R("validation-message", "Validation message", "Displays validation feedback for a field.", "field error", "validacni zprava", "TmFormValidationMessage"),
         R("file-drop", "File drop", "Accepts files by browse or drag-and-drop.", "file upload", "upload", "nahrani souboru", "TmFileDropZone", "TmFileUpload"),
         R("attachment-manager", "Attachment manager", "Lists and manages file attachments.", "attachments", "sprava priloh", "TmAttachmentManager"),
-        R("chart", "Chart", "Visualizes data as a chart.", "graph", "graf", "TmChart", "TmStockChart"),
+        R("chart", "Chart", "Visualizes data as a chart.", "graph", "graf", "TmChart", "TmCalendarHeatmap", "TmStockChart"),
         R("sparkline", "Sparkline", "Shows a compact inline trend chart.", "mini chart", "minigraf", "TmSparkline"),
         R("gauge", "Gauge", "Shows a value within a bounded range.", "meter", "meric", "TmGauge"),
         R("timeline", "Timeline", "Shows ordered events over time.", "activity timeline", "casova osa", "TmTimeline", "TmActivityTimeline"),
