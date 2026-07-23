@@ -1,0 +1,26 @@
+@namespace Tempo.Blazor.Components.Charts
+@inherits Tempo.Blazor.Components.TmComponentBase
+
+<div class="@CssClass"
+     style="@WrapperStyle"
+     data-testid="@RootTestId("tm-sankey")">
+    @if (IsNoData)
+    {
+        <div class="tm-sankey__error" role="status">@Loc["TmSankeyChart_NoData"]</div>
+    }
+    else if (_layout is null || !_layout.IsValid)
+    {
+        <div class="tm-sankey__error" role="alert">@LayoutErrorText</div>
+    }
+    else
+    {
+        <svg viewBox="0 0 @SvgWidth @SvgHeight"
+             preserveAspectRatio="xMidYMid meet"
+             aria-label="@Loc["TmSankeyChart_AriaLabel"]"
+             role="img"
+             width="100%"
+             height="100%">
+            @ChartContent
+        </svg>
+    }
+</div>

@@ -21,6 +21,7 @@ public class StencilPackRegistryParityTests
         "TmImageGallery",
         "TmAIPrompt",
         "TmShareLinkPanel",
+        "TmSankeyChart",
         "TmSparkline",
         "TmDashboard",
         "TmScheduler"

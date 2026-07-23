@@ -365,6 +365,7 @@ public class WireframeSerializerTests
     [InlineData("TmSignature")]
     [InlineData("TmRecurrenceEditor")]
     // Phase 4 — Charts / Data Display
+    [InlineData("TmSankeyChart")]
     [InlineData("TmSparkline")]
     [InlineData("TmGauge")]
     [InlineData("TmQRCode")]

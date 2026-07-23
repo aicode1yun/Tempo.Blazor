@@ -71,6 +71,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
         new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
         {
             ["TmChart"] = ["chart"],
+            ["TmSankeyChart"] = ["chart"],
             ["TmCalendarHeatmap"] = ["chart"],
             ["TmSparkline"] = ["sparkline"],
             ["TmGauge"] = ["gauge"],
@@ -1762,6 +1763,21 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("type",       "Type",        PropType.Enum,   "bar",         cat: "Appearance",
                     opts: ["bar","horizontalBar","line","area","pie","donut","funnel","heatmap","treemap","stackedBar","stackedHorizontalBar","stackedArea"]),
                 P("dataPoints", "Data Points", PropType.Int,    6,             cat: "Appearance"),
+            ]
+        };
+
+        yield return new WireframeComponentSchema
+        {
+            Type = "TmSankeyChart", Category = "Charts", DisplayName = "Sankey Chart",
+            DefaultWidth = 400, DefaultHeight = 240,
+            Props =
+            [
+                P("showLabels", "Show Labels", PropType.Bool, true, cat: "Appearance"),
+                P("showValues", "Show Values", PropType.Bool, true, cat: "Appearance"),
+                P("nodeWidth", "Node Width", PropType.Double, 16.0, cat: "Appearance"),
+                P("nodePadding", "Node Padding", PropType.Double, 10.0, cat: "Appearance"),
+                P("minLinkWidth", "Minimum Link Width", PropType.Double, 1.0, cat: "Appearance"),
+                P("linkOpacity", "Link Opacity", PropType.Double, 0.4, cat: "Appearance"),
             ]
         };
 

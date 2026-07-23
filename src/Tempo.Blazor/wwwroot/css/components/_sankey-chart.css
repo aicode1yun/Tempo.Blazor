@@ -1,0 +1,51 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmSankeyChart — responsive inline SVG flow diagram
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-sankey {
+    position: relative;
+    display: block;
+    overflow: hidden;
+}
+
+.tm-sankey svg {
+    display: block;
+    overflow: hidden;
+}
+
+.tm-sankey__error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: calc((var(--tm-space-20) * 2) + var(--tm-space-10));
+    color: var(--tm-text-tertiary);
+    font-size: var(--tm-font-size-sm);
+    border: calc(var(--tm-border-width) * 2) dashed var(--tm-border-color);
+    border-radius: var(--tm-radius-md);
+}
+
+.tm-sankey__node {
+    stroke: var(--tm-bg-surface);
+    stroke-width: var(--tm-border-width);
+}
+
+.tm-sankey__link {
+    stroke-linecap: butt;
+    transition: opacity var(--tm-transition-fast);
+}
+
+.tm-sankey__label {
+    fill: var(--tm-text-primary);
+    font-family: var(--tm-font-sans);
+    font-size: var(--tm-font-size-xs);
+    font-weight: var(--tm-font-weight-medium);
+    pointer-events: none;
+    user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tm-sankey__link {
+        transition: none;
+    }
+}

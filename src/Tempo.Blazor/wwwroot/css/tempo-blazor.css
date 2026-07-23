@@ -154,6 +154,7 @@
 @import "components/_sparkline.css";
 @import "components/_gauge.css";
 @import "components/_calendar-heatmap.css";
+@import "components/_sankey-chart.css";
 @import "components/_workflow-designer.css";
 
 /* 15. Navigation & Views */
