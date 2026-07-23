@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "description": "Contains the nodes and directed links rendered by a Sankey chart.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/SankeyModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "SankeyData"
+}

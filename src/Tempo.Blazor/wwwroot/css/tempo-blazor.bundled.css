@@ -2636,10 +2636,18 @@ to{opacity:1;transform:translateY(0);}
 .tm-sankey{position:relative;display:block;overflow:hidden;}
 .tm-sankey svg{display:block;overflow:hidden;}
 .tm-sankey__error{display:flex;align-items:center;justify-content:center;height:100%;min-height:calc((var(--tm-space-20) * 2)+var(--tm-space-10));color:var(--tm-text-tertiary);font-size:var(--tm-font-size-sm);border:calc(var(--tm-border-width) * 2) dashed var(--tm-border-color);border-radius:var(--tm-radius-md);}
-.tm-sankey__node{stroke:var(--tm-bg-surface);stroke-width:var(--tm-border-width);}
-.tm-sankey__link{stroke-linecap:butt;transition:opacity var(--tm-transition-fast);}
-.tm-sankey__label{fill:var(--tm-text-primary);font-family:var(--tm-font-sans);font-size:var(--tm-font-size-xs);font-weight:var(--tm-font-weight-medium);pointer-events:none;user-select:none;}
-@media (prefers-reduced-motion:reduce){.tm-sankey__link{transition:none;}
+.tm-sankey__node{stroke:var(--tm-bg-surface);stroke-width:var(--tm-border-width);transition:opacity var(--tm-transition-fast);}
+.tm-sankey__link{stroke-linecap:butt;transition:opacity var(--tm-transition-fast),stroke-opacity var(--tm-transition-fast);}
+.tm-sankey__node--clickable,.tm-sankey__link--clickable{cursor:pointer;}
+.tm-sankey__node--clickable:focus-visible,.tm-sankey__link--clickable:focus-visible{outline:calc(var(--tm-border-width) * 2) solid var(--tm-border-color-focus);outline-offset:var(--tm-border-width);}
+.tm-sankey__node--highlight,.tm-sankey__link--highlight{opacity:1;}
+.tm-sankey__link--highlight{stroke-opacity:1;}
+.tm-sankey__label--highlight{opacity:1;}
+.tm-sankey__node--dimmed{opacity:0.3;}
+.tm-sankey__label--dimmed{opacity:0.3;}
+.tm-sankey__link--dimmed{opacity:0.15;}
+.tm-sankey__label{fill:var(--tm-text-primary);font-family:var(--tm-font-sans);font-size:var(--tm-font-size-xs);font-weight:var(--tm-font-weight-medium);pointer-events:none;user-select:none;transition:opacity var(--tm-transition-fast);}
+@media (prefers-reduced-motion:reduce){.tm-sankey__node,.tm-sankey__link,.tm-sankey__label{transition:none;}
 }
 .tm-wf-designer{display:flex;gap:var(--tm-space-2,0.5rem);width:100%;min-height:400px;}
 .tm-wf-canvas{position:relative;flex:1;min-width:0;border:1px solid var(--tm-border-color);border-radius:var(--tm-radius-lg,0.75rem);overflow:hidden;background-color:var(--tm-bg-surface);}

@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "description": "Identifies why Sankey layout could not be produced.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/SankeyModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "SankeyLayoutErrorKind"
+}

@@ -3236,6 +3236,115 @@
       ]
     },
     {
+      "itemName": "TmSankeyChart",
+      "kind": "Component",
+      "category": "Charts",
+      "namespace": "Tempo.Blazor.Components.Charts",
+      "description": "Renders a responsive Sankey flow diagram as pure inline SVG without JavaScript dependencies.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Charts/TmSankeyChart.razor",
+      "documentationStatus": "merged",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Charts"
+      ],
+      "parameters": [
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Gets or sets additional CSS classes applied to the chart container."
+        },
+        {
+          "name": "Data",
+          "type": "SankeyData",
+          "isRequired": true,
+          "description": "Gets or sets the nodes and directed value flows to render.",
+          "editorRequired": true
+        },
+        {
+          "name": "Height",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"400px\"",
+          "description": "Gets or sets the CSS height of the chart container."
+        },
+        {
+          "name": "HighlightOnHover",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Gets or sets whether hovering highlights connected nodes and links."
+        },
+        {
+          "name": "LinkOpacity",
+          "type": "double",
+          "isRequired": false,
+          "default": "0.4",
+          "description": "Gets or sets the base link opacity. Values outside zero to one are clamped."
+        },
+        {
+          "name": "MinLinkWidth",
+          "type": "double",
+          "isRequired": false,
+          "default": "1",
+          "description": "Gets or sets the minimum rendered link width in SVG view-box units."
+        },
+        {
+          "name": "NodePadding",
+          "type": "double",
+          "isRequired": false,
+          "default": "10",
+          "description": "Gets or sets the vertical gap between nodes in the same layer."
+        },
+        {
+          "name": "NodeWidth",
+          "type": "double",
+          "isRequired": false,
+          "default": "16",
+          "description": "Gets or sets the node width in SVG view-box units."
+        },
+        {
+          "name": "OnLinkClick",
+          "type": "EventCallback<SankeyLink>",
+          "isRequired": false,
+          "description": "Raised when a Sankey link is clicked."
+        },
+        {
+          "name": "OnNodeClick",
+          "type": "EventCallback<SankeyNode>",
+          "isRequired": false,
+          "description": "Raised when a Sankey node is clicked."
+        },
+        {
+          "name": "ShowLabels",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Gets or sets whether node labels are rendered."
+        },
+        {
+          "name": "ShowValues",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Gets or sets whether node values are appended to labels."
+        },
+        {
+          "name": "ValueFormatter",
+          "type": "Func<double, string>?",
+          "isRequired": false,
+          "description": "Gets or sets an optional value formatter. The default uses the current culture and the 0.## numeric format."
+        },
+        {
+          "name": "Width",
+          "type": "string",
+          "isRequired": false,
+          "default": "\"100%\"",
+          "description": "Gets or sets the CSS width of the chart container."
+        }
+      ]
+    },
+    {
       "itemName": "TmSparkline",
       "kind": "Component",
       "category": "Charts",
@@ -5454,6 +5563,46 @@
           "description": "Disables this specific option."
         }
       ]
+    },
+    {
+      "itemName": "SankeyData",
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Charts",
+      "description": "Contains the nodes and directed links rendered by a Sankey chart.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Charts/SankeyModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "SankeyLayoutErrorKind",
+      "kind": "Enum",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Charts",
+      "description": "Identifies why Sankey layout could not be produced.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Charts/SankeyModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "SankeyLink",
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Charts",
+      "description": "Represents a directed value flow between two Sankey nodes.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Charts/SankeyModels.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "SankeyNode",
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.Charts",
+      "description": "Represents a node in a Sankey flow diagram.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/Charts/SankeyModels.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "ScrollSpyNavItem",
@@ -23799,6 +23948,10 @@
       "kind": "Css"
     },
     {
+      "path": "src/Tempo.Blazor/wwwroot/css/components/_sankey-chart.css",
+      "kind": "Css"
+    },
+    {
       "path": "src/Tempo.Blazor/wwwroot/css/components/_scheduler-agenda.css",
       "kind": "Css"
     },
@@ -24060,11 +24213,11 @@
     }
   ],
   "summary": {
-    "itemCount": 334,
-    "manualItemCount": 334,
-    "generatedItemCount": 326,
+    "itemCount": 339,
+    "manualItemCount": 339,
+    "generatedItemCount": 331,
     "generatedOnlyItemCount": 0,
-    "componentCount": 193,
-    "publicApiTypeCount": 133
+    "componentCount": 194,
+    "publicApiTypeCount": 137
   }
 }

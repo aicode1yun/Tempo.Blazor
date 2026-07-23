@@ -1,6 +1,7 @@
 using System.Globalization;
 using Bunit;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components.Web;
 using Tempo.Blazor.Components.Charts;
 using Tempo.Blazor.Tests.Localization;
 
@@ -147,6 +148,148 @@ public class TmSankeyChartTests : LocalizationTestBase
     }
 
     [Fact]
+    public void SankeyChart_NodeClickReturnsOriginalNode()
+    {
+        var data = InteractionData();
+        SankeyNode? clicked = null;
+        var cut = Render<TmSankeyChart>(parameters => parameters
+            .Add(component => component.Data, data)
+            .Add(component => component.OnNodeClick, node => clicked = node));
+
+        FindNode(cut, "B").Click();
+
+        clicked.Should().BeSameAs(data.Nodes[1]);
+    }
+
+    [Fact]
+    public void SankeyChart_LinkClickReturnsOriginalLink()
+    {
+        var data = InteractionData();
+        SankeyLink? clicked = null;
+        var cut = Render<TmSankeyChart>(parameters => parameters
+            .Add(component => component.Data, data)
+            .Add(component => component.OnLinkClick, link => clicked = link));
+
+        FindLink(cut, 1).Click();
+
+        clicked.Should().BeSameAs(data.Links[1]);
+    }
+
+    [Fact]
+    public void SankeyChart_ClickableElementsAreKeyboardAccessible()
+    {
+        var data = InteractionData();
+        SankeyNode? clickedNode = null;
+        SankeyLink? clickedLink = null;
+        var cut = Render<TmSankeyChart>(parameters => parameters
+            .Add(component => component.Data, data)
+            .Add(component => component.OnNodeClick, node => clickedNode = node)
+            .Add(component => component.OnLinkClick, link => clickedLink = link));
+        var node = FindNode(cut, "B");
+        var link = FindLink(cut, 1);
+
+        node.GetAttribute("role").Should().Be("button");
+        node.GetAttribute("tabindex").Should().Be("0");
+        node.GetAttribute("aria-label").Should().Be("B — 10");
+        link.GetAttribute("role").Should().Be("button");
+        link.GetAttribute("tabindex").Should().Be("0");
+        link.GetAttribute("aria-label").Should().Be("B → C: 10");
+
+        node.TriggerEvent("onfocus", new FocusEventArgs());
+        FindNode(cut, "A").ClassList.Should().Contain("tm-sankey__node--highlight");
+        FindNode(cut, "D").ClassList.Should().Contain("tm-sankey__node--dimmed");
+        node.TriggerEvent("onblur", new FocusEventArgs());
+        cut.FindAll(".tm-sankey__node--highlight, .tm-sankey__node--dimmed")
+            .Should().BeEmpty();
+
+        node.TriggerEvent("onkeydown", new KeyboardEventArgs { Key = "Enter" });
+        link.TriggerEvent("onkeydown", new KeyboardEventArgs { Key = " " });
+
+        clickedNode.Should().BeSameAs(data.Nodes[1]);
+        clickedLink.Should().BeSameAs(data.Links[1]);
+    }
+
+    [Fact]
+    public void SankeyChart_NodeHoverHighlightsConnectedElementsAndDimsOthers()
+    {
+        var cut = RenderChart(InteractionData());
+
+        FindNode(cut, "B").TriggerEvent("onmouseover", new MouseEventArgs());
+
+        FindNode(cut, "A").ClassList.Should().Contain("tm-sankey__node--highlight");
+        FindNode(cut, "B").ClassList.Should().Contain("tm-sankey__node--highlight");
+        FindNode(cut, "C").ClassList.Should().Contain("tm-sankey__node--highlight");
+        FindNode(cut, "D").ClassList.Should().Contain("tm-sankey__node--dimmed");
+        FindLabel(cut, "A").ClassList.Should().Contain("tm-sankey__label--highlight");
+        FindLabel(cut, "B").ClassList.Should().Contain("tm-sankey__label--highlight");
+        FindLabel(cut, "C").ClassList.Should().Contain("tm-sankey__label--highlight");
+        FindLabel(cut, "D").ClassList.Should().Contain("tm-sankey__label--dimmed");
+        FindLink(cut, 0).ClassList.Should().Contain("tm-sankey__link--highlight");
+        FindLink(cut, 1).ClassList.Should().Contain("tm-sankey__link--highlight");
+        FindLink(cut, 2).ClassList.Should().Contain("tm-sankey__link--dimmed");
+    }
+
+    [Fact]
+    public void SankeyChart_LinkHoverHighlightsLinkAndEndpointsThenMouseoutRestoresClasses()
+    {
+        var cut = RenderChart(InteractionData());
+        var hoveredLink = FindLink(cut, 0);
+
+        hoveredLink.TriggerEvent("onmouseover", new MouseEventArgs());
+
+        FindLink(cut, 0).ClassList.Should().Contain("tm-sankey__link--highlight");
+        FindLink(cut, 1).ClassList.Should().Contain("tm-sankey__link--dimmed");
+        FindLink(cut, 2).ClassList.Should().Contain("tm-sankey__link--dimmed");
+        FindNode(cut, "A").ClassList.Should().Contain("tm-sankey__node--highlight");
+        FindNode(cut, "B").ClassList.Should().Contain("tm-sankey__node--highlight");
+        FindNode(cut, "C").ClassList.Should().Contain("tm-sankey__node--dimmed");
+        FindNode(cut, "D").ClassList.Should().Contain("tm-sankey__node--dimmed");
+        FindLabel(cut, "A").ClassList.Should().Contain("tm-sankey__label--highlight");
+        FindLabel(cut, "B").ClassList.Should().Contain("tm-sankey__label--highlight");
+        FindLabel(cut, "C").ClassList.Should().Contain("tm-sankey__label--dimmed");
+        FindLabel(cut, "D").ClassList.Should().Contain("tm-sankey__label--dimmed");
+
+        FindLink(cut, 0).TriggerEvent("onmouseout", new MouseEventArgs());
+
+        cut.FindAll(".tm-sankey__link--highlight, .tm-sankey__link--dimmed")
+            .Should().BeEmpty();
+        cut.FindAll(".tm-sankey__node--highlight, .tm-sankey__node--dimmed")
+            .Should().BeEmpty();
+    }
+
+    [Fact]
+    public void SankeyChart_HighlightOnHoverFalseIgnoresHover()
+    {
+        var cut = Render<TmSankeyChart>(parameters => parameters
+            .Add(component => component.Data, InteractionData())
+            .Add(component => component.HighlightOnHover, false));
+
+        FindNode(cut, "B").TriggerEvent("onmouseover", new MouseEventArgs());
+
+        cut.FindAll(".tm-sankey__link--highlight, .tm-sankey__link--dimmed")
+            .Should().BeEmpty();
+        cut.FindAll(".tm-sankey__node--highlight, .tm-sankey__node--dimmed")
+            .Should().BeEmpty();
+    }
+
+    [Fact]
+    public void SankeyChart_ReplacingDataClearsHoverState()
+    {
+        var cut = RenderChart(InteractionData());
+        FindNode(cut, "B").TriggerEvent("onmouseover", new MouseEventArgs());
+
+        cut.Render(parameters => parameters
+            .Add(component => component.Data, Data(
+                [Node("X"), Node("Y")],
+                [Link("X", "Y", 2)])));
+
+        cut.FindAll(".tm-sankey__link--highlight, .tm-sankey__link--dimmed")
+            .Should().BeEmpty();
+        cut.FindAll(".tm-sankey__node--highlight, .tm-sankey__node--dimmed")
+            .Should().BeEmpty();
+    }
+
+    [Fact]
     public void SankeyChart_EmptyDataRendersLocalizedNoDataState()
     {
         var cut = RenderChart(Data([], []));
@@ -193,6 +336,15 @@ public class TmSankeyChartTests : LocalizationTestBase
                 Link("income", "savings", 20),
             ]);
 
+    private static SankeyData InteractionData() =>
+        Data(
+            [Node("A"), Node("B"), Node("C"), Node("D")],
+            [
+                Link("A", "B", 10),
+                Link("B", "C", 10),
+                Link("D", "C", 5),
+            ]);
+
     private static SankeyData Data(
         IReadOnlyList<SankeyNode> nodes,
         IReadOnlyList<SankeyLink> links) =>
@@ -220,4 +372,19 @@ public class TmSankeyChartTests : LocalizationTestBase
 
     private static double AttributeAsDouble(AngleSharp.Dom.IElement element, string name) =>
         double.Parse(element.GetAttribute(name)!, CultureInfo.InvariantCulture);
+
+    private static AngleSharp.Dom.IElement FindNode(
+        IRenderedComponent<TmSankeyChart> cut,
+        string nodeId) =>
+        cut.Find($"rect.tm-sankey__node[data-node-id='{nodeId}']");
+
+    private static AngleSharp.Dom.IElement FindLink(
+        IRenderedComponent<TmSankeyChart> cut,
+        int linkIndex) =>
+        cut.Find($"path.tm-sankey__link[data-link-index='{linkIndex}']");
+
+    private static AngleSharp.Dom.IElement FindLabel(
+        IRenderedComponent<TmSankeyChart> cut,
+        string nodeId) =>
+        cut.Find($"text.tm-sankey__label[data-node-id='{nodeId}']");
 }

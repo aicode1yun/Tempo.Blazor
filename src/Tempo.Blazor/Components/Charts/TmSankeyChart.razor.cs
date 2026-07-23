@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
+using Microsoft.AspNetCore.Components.Web;
 
 namespace Tempo.Blazor.Components.Charts;
 
@@ -22,6 +23,9 @@ public partial class TmSankeyChart
 
     private SankeyLayoutResult? _layout;
     private Dictionary<string, int> _nodeIndexes = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _highlightedNodeIds = new(StringComparer.Ordinal);
+    private readonly HashSet<int> _highlightedLinkIndexes = [];
+    private SankeyData? _highlightedData;
 
     /// <summary>Gets or sets the nodes and directed value flows to render.</summary>
     [Parameter, EditorRequired]
@@ -58,6 +62,18 @@ public partial class TmSankeyChart
     /// <summary>Gets or sets the base link opacity. Values outside zero to one are clamped.</summary>
     [Parameter]
     public double LinkOpacity { get; set; } = 0.4;
+
+    /// <summary>Gets or sets whether hovering highlights connected nodes and links.</summary>
+    [Parameter]
+    public bool HighlightOnHover { get; set; } = true;
+
+    /// <summary>Raised when a Sankey node is clicked.</summary>
+    [Parameter]
+    public EventCallback<SankeyNode> OnNodeClick { get; set; }
+
+    /// <summary>Raised when a Sankey link is clicked.</summary>
+    [Parameter]
+    public EventCallback<SankeyLink> OnLinkClick { get; set; }
 
     /// <summary>
     /// Gets or sets an optional value formatter. The default uses the current culture and
@@ -103,6 +119,13 @@ public partial class TmSankeyChart
             .GroupBy(item => item.node.Id, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => group.First().index, StringComparer.Ordinal)
             ?? new Dictionary<string, int>(StringComparer.Ordinal);
+
+        if (!ReferenceEquals(_highlightedData, Data) || !HighlightOnHover)
+        {
+            ClearHighlight();
+        }
+
+        _highlightedData = Data;
     }
 
     private RenderFragment ChartContent => builder =>
@@ -121,12 +144,13 @@ public partial class TmSankeyChart
         for (var index = 0; index < links.Count; index++)
         {
             var layout = links[index];
+            var linkIndex = index;
             var sourceLabel = NodeLabel(layout.Link.SourceId);
             var targetLabel = NodeLabel(layout.Link.TargetId);
 
             builder.OpenElement(0, "path");
             builder.SetKey(layout.Link);
-            builder.AddAttribute(1, "class", "tm-sankey__link");
+            builder.AddAttribute(1, "class", LinkCssClass(index));
             builder.AddAttribute(2, "data-link-index", index.ToString(CultureInfo.InvariantCulture));
             builder.AddAttribute(3, "data-source-id", layout.Link.SourceId);
             builder.AddAttribute(4, "data-target-id", layout.Link.TargetId);
@@ -135,10 +159,52 @@ public partial class TmSankeyChart
             builder.AddAttribute(7, "stroke", LinkColor(layout.Link));
             builder.AddAttribute(8, "stroke-width", F(layout.Width));
             builder.AddAttribute(9, "stroke-opacity", F(NormalizedLinkOpacity));
+            if (OnLinkClick.HasDelegate)
+            {
+                builder.AddAttribute(10, "role", "button");
+                builder.AddAttribute(11, "tabindex", "0");
+                builder.AddAttribute(
+                    12,
+                    "aria-label",
+                    $"{sourceLabel} → {targetLabel}: {FormatValue(layout.Link.Value)}");
+                builder.AddAttribute(
+                    13,
+                    "onclick",
+                    EventCallback.Factory.Create<MouseEventArgs>(
+                        this,
+                        () => HandleLinkClickAsync(layout.Link)));
+                builder.AddAttribute(
+                    14,
+                    "onkeydown",
+                    EventCallback.Factory.Create<KeyboardEventArgs>(
+                        this,
+                        args => HandleLinkKeyDownAsync(args, layout.Link)));
+                builder.AddAttribute(
+                    15,
+                    "onfocus",
+                    EventCallback.Factory.Create<FocusEventArgs>(
+                        this,
+                        () => HighlightLink(linkIndex)));
+                builder.AddAttribute(
+                    16,
+                    "onblur",
+                    EventCallback.Factory.Create<FocusEventArgs>(this, ClearHighlight));
+            }
 
-            builder.OpenElement(10, "title");
+            builder.AddAttribute(
+                17,
+                "onmouseover",
+                EventCallback.Factory.Create<MouseEventArgs>(
+                    this,
+                    () => HighlightLink(linkIndex)));
+            builder.AddAttribute(
+                18,
+                "onmouseout",
+                EventCallback.Factory.Create<MouseEventArgs>(this, ClearHighlight));
+
+            builder.OpenElement(19, "title");
             builder.AddContent(
-                11,
+                20,
                 $"{sourceLabel} → {targetLabel}: {FormatValue(layout.Link.Value)}");
             builder.CloseElement();
             builder.CloseElement();
@@ -154,7 +220,7 @@ public partial class TmSankeyChart
 
             builder.OpenElement(0, "rect");
             builder.SetKey(layout.Node);
-            builder.AddAttribute(1, "class", "tm-sankey__node");
+            builder.AddAttribute(1, "class", NodeCssClass(layout.Node.Id));
             builder.AddAttribute(2, "data-node-id", layout.Node.Id);
             builder.AddAttribute(3, "x", F(layout.X));
             builder.AddAttribute(4, "y", F(layout.Y));
@@ -162,9 +228,51 @@ public partial class TmSankeyChart
             builder.AddAttribute(6, "height", F(layout.Height));
             builder.AddAttribute(7, "rx", "2");
             builder.AddAttribute(8, "fill", color);
+            if (OnNodeClick.HasDelegate)
+            {
+                builder.AddAttribute(9, "role", "button");
+                builder.AddAttribute(10, "tabindex", "0");
+                builder.AddAttribute(
+                    11,
+                    "aria-label",
+                    $"{layout.Node.Label} — {FormatValue(layout.Value)}");
+                builder.AddAttribute(
+                    12,
+                    "onclick",
+                    EventCallback.Factory.Create<MouseEventArgs>(
+                        this,
+                        () => HandleNodeClickAsync(layout.Node)));
+                builder.AddAttribute(
+                    13,
+                    "onkeydown",
+                    EventCallback.Factory.Create<KeyboardEventArgs>(
+                        this,
+                        args => HandleNodeKeyDownAsync(args, layout.Node)));
+                builder.AddAttribute(
+                    14,
+                    "onfocus",
+                    EventCallback.Factory.Create<FocusEventArgs>(
+                        this,
+                        () => HighlightNode(layout.Node.Id)));
+                builder.AddAttribute(
+                    15,
+                    "onblur",
+                    EventCallback.Factory.Create<FocusEventArgs>(this, ClearHighlight));
+            }
 
-            builder.OpenElement(9, "title");
-            builder.AddContent(10, $"{layout.Node.Label} — {FormatValue(layout.Value)}");
+            builder.AddAttribute(
+                16,
+                "onmouseover",
+                EventCallback.Factory.Create<MouseEventArgs>(
+                    this,
+                    () => HighlightNode(layout.Node.Id)));
+            builder.AddAttribute(
+                17,
+                "onmouseout",
+                EventCallback.Factory.Create<MouseEventArgs>(this, ClearHighlight));
+
+            builder.OpenElement(18, "title");
+            builder.AddContent(19, $"{layout.Node.Label} — {FormatValue(layout.Value)}");
             builder.CloseElement();
             builder.CloseElement();
 
@@ -184,12 +292,13 @@ public partial class TmSankeyChart
             : layout.Node.Label;
 
         builder.OpenElement(0, "text");
-        builder.AddAttribute(1, "class", "tm-sankey__label");
-        builder.AddAttribute(2, "x", F(x));
-        builder.AddAttribute(3, "y", F(layout.Y + (layout.Height / 2)));
-        builder.AddAttribute(4, "text-anchor", firstLayer ? "end" : "start");
-        builder.AddAttribute(5, "dominant-baseline", "middle");
-        builder.AddContent(6, label);
+        builder.AddAttribute(1, "class", LabelCssClass(layout.Node.Id));
+        builder.AddAttribute(2, "data-node-id", layout.Node.Id);
+        builder.AddAttribute(3, "x", F(x));
+        builder.AddAttribute(4, "y", F(layout.Y + (layout.Height / 2)));
+        builder.AddAttribute(5, "text-anchor", firstLayer ? "end" : "start");
+        builder.AddAttribute(6, "dominant-baseline", "middle");
+        builder.AddContent(7, label);
         builder.CloseElement();
     }
 
@@ -221,6 +330,118 @@ public partial class TmSankeyChart
 
     private double NormalizedLinkOpacity =>
         double.IsFinite(LinkOpacity) ? Math.Clamp(LinkOpacity, 0, 1) : 0.4;
+
+    private bool HasHighlight =>
+        _highlightedNodeIds.Count > 0 || _highlightedLinkIndexes.Count > 0;
+
+    private string NodeCssClass(string nodeId)
+    {
+        var classes = "tm-sankey__node";
+        if (OnNodeClick.HasDelegate)
+        {
+            classes += " tm-sankey__node--clickable";
+        }
+
+        if (HasHighlight)
+        {
+            classes += _highlightedNodeIds.Contains(nodeId)
+                ? " tm-sankey__node--highlight"
+                : " tm-sankey__node--dimmed";
+        }
+
+        return classes;
+    }
+
+    private string LinkCssClass(int linkIndex)
+    {
+        var classes = "tm-sankey__link";
+        if (OnLinkClick.HasDelegate)
+        {
+            classes += " tm-sankey__link--clickable";
+        }
+
+        if (HasHighlight)
+        {
+            classes += _highlightedLinkIndexes.Contains(linkIndex)
+                ? " tm-sankey__link--highlight"
+                : " tm-sankey__link--dimmed";
+        }
+
+        return classes;
+    }
+
+    private string LabelCssClass(string nodeId)
+    {
+        var classes = "tm-sankey__label";
+        if (HasHighlight)
+        {
+            classes += _highlightedNodeIds.Contains(nodeId)
+                ? " tm-sankey__label--highlight"
+                : " tm-sankey__label--dimmed";
+        }
+
+        return classes;
+    }
+
+    private Task HandleNodeClickAsync(SankeyNode node) =>
+        OnNodeClick.HasDelegate ? OnNodeClick.InvokeAsync(node) : Task.CompletedTask;
+
+    private Task HandleLinkClickAsync(SankeyLink link) =>
+        OnLinkClick.HasDelegate ? OnLinkClick.InvokeAsync(link) : Task.CompletedTask;
+
+    private Task HandleNodeKeyDownAsync(KeyboardEventArgs args, SankeyNode node) =>
+        IsActivationKey(args) ? HandleNodeClickAsync(node) : Task.CompletedTask;
+
+    private Task HandleLinkKeyDownAsync(KeyboardEventArgs args, SankeyLink link) =>
+        IsActivationKey(args) ? HandleLinkClickAsync(link) : Task.CompletedTask;
+
+    private static bool IsActivationKey(KeyboardEventArgs args) =>
+        args.Key is "Enter" or " " or "Spacebar" || args.Code == "Space";
+
+    private void HighlightNode(string nodeId)
+    {
+        if (!HighlightOnHover)
+        {
+            return;
+        }
+
+        ClearHighlight();
+        _highlightedNodeIds.Add(nodeId);
+
+        for (var index = 0; index < Data.Links.Count; index++)
+        {
+            var link = Data.Links[index];
+            if (!string.Equals(link.SourceId, nodeId, StringComparison.Ordinal) &&
+                !string.Equals(link.TargetId, nodeId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            _highlightedLinkIndexes.Add(index);
+            _highlightedNodeIds.Add(link.SourceId);
+            _highlightedNodeIds.Add(link.TargetId);
+        }
+    }
+
+    private void HighlightLink(int linkIndex)
+    {
+        if (!HighlightOnHover || linkIndex < 0 || linkIndex >= Data.Links.Count)
+        {
+            return;
+        }
+
+        ClearHighlight();
+        var link = Data.Links[linkIndex];
+        _highlightedLinkIndexes.Add(linkIndex);
+        _highlightedNodeIds.Add(link.SourceId);
+        _highlightedNodeIds.Add(link.TargetId);
+    }
+
+    private void ClearHighlight()
+    {
+        _highlightedNodeIds.Clear();
+        _highlightedLinkIndexes.Clear();
+    }
 
     private static string F(double value) =>
         value.ToString("0.###", CultureInfo.InvariantCulture);

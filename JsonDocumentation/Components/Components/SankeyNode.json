@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "description": "Represents a node in a Sankey flow diagram.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/SankeyModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "SankeyNode"
+}

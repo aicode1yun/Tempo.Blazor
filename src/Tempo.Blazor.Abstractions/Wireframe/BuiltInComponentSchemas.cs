@@ -1778,6 +1778,7 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("nodePadding", "Node Padding", PropType.Double, 10.0, cat: "Appearance"),
                 P("minLinkWidth", "Minimum Link Width", PropType.Double, 1.0, cat: "Appearance"),
                 P("linkOpacity", "Link Opacity", PropType.Double, 0.4, cat: "Appearance"),
+                P("highlightOnHover", "Highlight on Hover", PropType.Bool, true, cat: "Behavior"),
             ]
         };
 

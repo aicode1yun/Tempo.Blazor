@@ -146,6 +146,20 @@ public class StencilPackRegistryParityTests
     }
 
     [Fact]
+    public void SankeySchema_ExposesHoverHighlightBehavior()
+    {
+        var schema = new BuiltInComponentSchemas()
+            .GetSchemas()
+            .Single(candidate => candidate.Type == "TmSankeyChart");
+
+        schema.Props.Should().ContainSingle(prop =>
+            prop.Name == "highlightOnHover" &&
+            prop.Type == PropType.Bool &&
+            Equals(prop.Default, true) &&
+            prop.Category == "Behavior");
+    }
+
+    [Fact]
     public void BuiltInPack_MarksKnownLayoutContainers()
     {
         var pack = StencilPackSerializer.Deserialize(BuiltInStencilPackProvider.ReadPackJson());
