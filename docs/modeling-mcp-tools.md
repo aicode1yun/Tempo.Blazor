@@ -257,6 +257,39 @@ Sample outputs (committed golden files):
   the cross-package `AllToolNames_*` snapshot; registration test (`AddTempoModelingMcpTools` wiring).
 - All new tests are registered/recorded via the test MCP tools per the plan's app rules.
 
+## Worked example (agent walkthrough)
+
+A headless run — the model lives in the host (PromptHelper implements
+`IModelingModelDocumentProvider` + the library kind `Modeling`); the agent only sees JSON.
+
+1. **Discover the vocabulary** — `modeling_list_notations` → e.g. `archimate` with its supported
+   element/relationship/viewpoint types.
+2. **Read the model** — `modeling_get_model_tree { modelId }` → elements, relationships and a
+   `concurrencyToken`.
+3. **Extend it** — `modeling_apply_operations` with the token:
+
+   ```json
+   [
+     { "op": "add_element", "id": "billing", "name": "Billing", "semanticType": "ApplicationComponent", "notation": "archimate" },
+     { "op": "add_relationship", "relationshipType": "Serving", "sourceElementId": "billing", "targetElementId": "customer" }
+   ]
+   ```
+
+   A relationship the notation forbids (e.g. `Composition` between those types) fails the **whole
+   batch** — `{"success":false,"error":"validation_failed","validationErrors":["operations[1] add_relationship: 'Composition' from 'ApplicationComponent' to 'BusinessActor' is not valid for notation 'archimate'. …"]}` —
+   and nothing is saved.
+4. **Verify** — `modeling_validate { modelId }` → `{"valid":true,"issues":[]}`.
+5. **Render** — `modeling_get_view { modelId }` → `DiagramDocument` JSON, then
+   `diagram_render_svg { documentJson, theme:"dark" }` → an embeddable SVG string.
+
+Sample renderer output (committed): the light/dark golden files at
+`tests/Tempo.Blazor.Tests/Diagram/DiagramSvgGolden/diagram-svg-basic-{light,dark}.svg` show the
+exact `diagram_render_svg` output shape (nodes, edges, labels, arrow markers, theme palette). The
+renderer has no UI of its own — the SVG string **is** the deliverable.
+
+End-to-end coverage lives in `tests/Tempo.Blazor.Mcp.Tests/ModelingToolsTests.cs`,
+`DiagramRenderToolsTests.cs` and `tests/Tempo.Blazor.Tests/Diagram/DiagramSvgRendererTests.cs`.
+
 ## Related references
 
 - Existing MCP catalog & conventions: `docs/document-mcp-tools.md`
