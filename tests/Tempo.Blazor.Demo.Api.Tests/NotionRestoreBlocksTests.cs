@@ -99,6 +99,9 @@ public sealed class NotionRestoreBlocksTests
     private static PageBlock Row(Guid parentId, string cell) => new()
     {
         PageId = PageId, ParentBlockId = parentId, Type = BlockType.TableRow, Order = 0,
-        Content = new TableRowBlockContent { Cells = [cell] }
+        Content = new TableRowBlockContent
+        {
+            RichCells = [new NotionTableCell { Html = cell }]
+        }
     };
 }

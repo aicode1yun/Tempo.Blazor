@@ -65,6 +65,7 @@
       "Tempo.Blazor.NotionEditor.Interfaces",
       "Tempo.Blazor.NotionEditor.Models",
       "Tempo.Blazor.NotionEditor.Services",
+      "Tempo.Blazor.NotionEditor.Testing",
       "Tempo.Blazor.Services"
     ]
   },
@@ -19939,6 +19940,54 @@
       ]
     },
     {
+      "itemName": "FakeNotionAggregateProvider",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Testing",
+      "description": "In-memory reference implementation of the atomic Notion aggregate persistence contract.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Testing/FakeNotionAggregateProvider.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "GetSnapshot",
+          "kind": "Method",
+          "type": "NotionPageSnapshot",
+          "description": "Returns a defensive copy of a currently stored page snapshot.",
+          "parameters": [
+            {
+              "name": "pageId",
+              "type": "Guid"
+            }
+          ]
+        },
+        {
+          "name": "Seed",
+          "kind": "Method",
+          "type": "void",
+          "description": "Adds or replaces one seeded page without incrementing save counters.",
+          "parameters": [
+            {
+              "name": "snapshot",
+              "type": "NotionPageSnapshot"
+            }
+          ]
+        },
+        {
+          "name": "LoadCallCount",
+          "kind": "Property",
+          "type": "int",
+          "description": "Gets the number of aggregate load calls observed by this instance."
+        },
+        {
+          "name": "SaveCallCount",
+          "kind": "Property",
+          "type": "int",
+          "description": "Gets the number of atomic save calls observed by this instance."
+        }
+      ]
+    },
+    {
       "itemName": "FileBlockContent",
       "kind": "Class",
       "category": "Notion Editor",
@@ -25165,11 +25214,6 @@
       "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/TableRowBlockContent.cs",
       "documentationStatus": "merged",
       "members": [
-        {
-          "name": "Cells",
-          "kind": "Property",
-          "type": "IReadOnlyList<string>"
-        },
         {
           "name": "RichCells",
           "kind": "Property",
@@ -36071,11 +36115,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1469,
-    "manualItemCount": 1469,
-    "generatedItemCount": 1452,
+    "itemCount": 1470,
+    "manualItemCount": 1470,
+    "generatedItemCount": 1453,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1452
+    "publicApiTypeCount": 1453
   }
 }

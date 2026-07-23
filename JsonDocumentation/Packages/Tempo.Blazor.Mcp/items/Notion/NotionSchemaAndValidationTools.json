@@ -2,7 +2,7 @@
   "kind": "Class",
   "category": "Notion",
   "namespace": "Tempo.Blazor.Mcp.Notion",
-  "description": "MCP schema and validation tools for NotionEditor.",
+  "description": "Machine-readable NotionEditor discovery for strict block schemas, operation catalogs, limits, executable examples, recursive children, rich tables, concurrency, and idempotent retry.",
   "packageId": "Tempo.Blazor.Mcp",
   "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionSchemaAndValidationTools.cs",
   "documentationStatus": "generated",

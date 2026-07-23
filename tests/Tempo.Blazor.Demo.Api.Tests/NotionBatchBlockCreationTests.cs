@@ -42,7 +42,7 @@ public sealed class NotionBatchBlockCreationTests
         var children = (await store.GetChildBlocksAsync(table.Id.ToString())).ToList();
 
         children.Should().HaveCount(2);
-        children.Select(child => ((TableRowBlockContent)child.Content).Cells[0])
+        children.Select(child => ((TableRowBlockContent)child.Content).RichCells[0].Html)
             .Should().Equal("Name", "CF26");
     }
 
@@ -86,6 +86,9 @@ public sealed class NotionBatchBlockCreationTests
         ParentBlockId = parentId,
         Type = BlockType.TableRow,
         Order = order,
-        Content = new TableRowBlockContent { Cells = [cell] }
+        Content = new TableRowBlockContent
+        {
+            RichCells = [new NotionTableCell { Html = cell }]
+        }
     };
 }

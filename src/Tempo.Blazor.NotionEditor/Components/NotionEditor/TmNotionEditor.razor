@@ -23,6 +23,18 @@
             <aside class="tm-notion-sidebar @(_sidebarVisible ? "tm-notion-sidebar--visible" : "tm-notion-sidebar--hidden")"
                    aria-label="@Loc["TmNotionEditor_SidebarLabel"]"
                    role="navigation">
+                <button class="tm-notion-sidebar-close"
+                        type="button"
+                        aria-label="@Loc["TmNotionEditor_ToggleSidebar"]"
+                        title="@Loc["TmNotionEditor_ToggleSidebar"]"
+                        @onclick="ToggleSidebar">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M3 3l10 10M13 3L3 13"
+                              stroke="currentColor"
+                              stroke-width="1.5"
+                              stroke-linecap="round" />
+                    </svg>
+                </button>
                 <TmNotionSidebar ActivePageId="@_currentPageId"
                                  OnTrashRequested="OnTrashRequestedAsync" />
             </aside>

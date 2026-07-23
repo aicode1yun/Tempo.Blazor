@@ -33,7 +33,7 @@
 }
 
 .tm-notion-table-block__conflict-actions button {
-    min-height: var(--tm-control-height-sm);
+    min-height: var(--tm-input-height-sm);
     padding: 0 var(--tm-space-3);
     border: 1px solid var(--tm-color-border);
     border-radius: var(--tm-radius-sm);

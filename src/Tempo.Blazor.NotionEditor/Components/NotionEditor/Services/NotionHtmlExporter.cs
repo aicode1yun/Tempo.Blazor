@@ -296,7 +296,10 @@ public static class NotionHtmlExporter
     private static string RenderTableRow(IPageBlock block, bool isHeader)
     {
         if (block.Content is not ITableRowBlockContent tr) return string.Empty;
-        var row = RenderRowCells(tr.Cells, isHeader, []);
+        var row = RenderRowCells(
+            tr.RichCells.Select(cell => cell.Html).ToList(),
+            isHeader,
+            []);
         return isHeader ? $"<table class=\"notion-table\"><thead>{row}</thead><tbody>" : row;
     }
 
@@ -306,7 +309,9 @@ public static class NotionHtmlExporter
         var rows = rowBlocks
             .Select(row => row.Content as ITableRowBlockContent)
             .Where(row => row is not null)
-            .Select(row => row!.Cells)
+            .Select(row => (IReadOnlyList<string>)row!.RichCells
+                .Select(cell => cell.Html)
+                .ToList())
             .ToList();
 
         if (rows.Count == 0) return string.Empty;

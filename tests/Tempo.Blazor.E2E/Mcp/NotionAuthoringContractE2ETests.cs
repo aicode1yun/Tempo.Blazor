@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -145,6 +146,85 @@ public sealed class NotionAuthoringContractE2ETests : WasmTestBase
         TestContext.AddResultFile(screenshotPath);
     }
 
+    [TestMethod]
+    [TestCategory("NotionReleaseGate")]
+    [Description("Tempo.Blazor 2.7 release gate verifies the canonical MCP surface and normal plus narrow rich-table rendering over the live HTTPS API and WASM hosts.")]
+    public async Task Phase8_Notion270Contract_HasNoLegacyTools_AndRendersResponsiveRichTable()
+    {
+        var client = await ConnectAsync();
+        var tools = await client.ListToolsAsync();
+        var names = tools.Select(tool => tool.Name).ToHashSet(StringComparer.Ordinal);
+        CollectionAssert.IsSubsetOf(
+            new[]
+            {
+                "notion_get_block_tree",
+                "notion_apply_block_operations",
+                "notion_get_block_schema",
+                "notion_get_operation_catalog",
+                "notion_get_authoring_guide"
+            },
+            names.ToList());
+        CollectionAssert.DoesNotContain(names.ToList(), "notion_list_blocks");
+        CollectionAssert.DoesNotContain(names.ToList(), "notion_create_block");
+        CollectionAssert.DoesNotContain(names.ToList(), "notion_update_block");
+        CollectionAssert.DoesNotContain(names.ToList(), "notion_delete_block");
+        CollectionAssert.DoesNotContain(names.ToList(), "notion_move_block");
+
+        var guide = await client.CallToolAsync("notion_get_authoring_guide", new { });
+        Assert.IsTrue(guide.GetProperty("success").GetBoolean(), guide.GetRawText());
+        StringAssert.Contains(guide.GetRawText(), "idempotency");
+        StringAssert.Contains(guide.GetRawText(), "concurrency");
+        StringAssert.Contains(guide.GetRawText(), "createTable");
+
+        using var seedHttp = CreateHttpsClient();
+        using var seedResponse = await seedHttp.PostAsync(TableSeedEndpoint, null);
+        seedResponse.EnsureSuccessStatusCode();
+
+        var outputDirectory = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "__baseline__",
+            "notion",
+            "release-2.7"));
+        Directory.CreateDirectory(outputDirectory);
+
+        var context = await CreateContextAsync();
+        var page = await context.NewPageAsync();
+        await page.SetViewportSizeAsync(1440, 900);
+        await OpenAdvancedTableAsync(page);
+        var table = AdvancedTable(page);
+        var normalPath = Path.Combine(outputDirectory, "notion-2.7-rich-table-normal.png");
+        await table.ScreenshotAsync(new LocatorScreenshotOptions
+        {
+            Path = normalPath,
+            Type = ScreenshotType.Png,
+            OmitBackground = false
+        });
+        Assert.IsTrue(File.Exists(normalPath));
+        TestContext.AddResultFile(normalPath);
+
+        await page.SetViewportSizeAsync(390, 844);
+        await page.Locator(".tm-notion-sidebar-close").ClickAsync();
+        await Assertions.Expect(page.Locator(".tm-notion-sidebar"))
+            .ToHaveClassAsync(new Regex("tm-notion-sidebar--hidden"));
+        await table.ScrollIntoViewIfNeededAsync();
+        await Assertions.Expect(table).ToBeVisibleAsync();
+        var pageOverflows = await page.EvaluateAsync<bool>(
+            "() => document.documentElement.scrollWidth > document.documentElement.clientWidth");
+        Assert.IsFalse(pageOverflows, "the narrow Notion page must contain wide-table overflow locally");
+        var edgePath = Path.Combine(outputDirectory, "notion-2.7-rich-table-narrow.png");
+        await page.ScreenshotAsync(new PageScreenshotOptions
+        {
+            Path = edgePath,
+            Type = ScreenshotType.Png,
+            FullPage = false
+        });
+        Assert.IsTrue(File.Exists(edgePath));
+        TestContext.AddResultFile(edgePath);
+    }
+
     private static async Task<McpJsonRpcClient> ConnectAsync()
     {
         var client = new McpJsonRpcClient(CreateHttpsClient(), McpEndpoint);
@@ -186,4 +266,34 @@ public sealed class NotionAuthoringContractE2ETests : WasmTestBase
         => schema.GetProperty("fields")
             .EnumerateArray()
             .Single(field => field.GetProperty("name").GetString() == name);
+
+    private async Task OpenAdvancedTableAsync(IPage page)
+    {
+        await page.GotoAsync(
+            $"{BaseUrl}/notion-editor",
+            new PageGotoOptions
+            {
+                WaitUntil = WaitUntilState.DOMContentLoaded,
+                Timeout = 60000
+            });
+        await WaitForAppReadyAsync(page);
+        var table = AdvancedTable(page);
+        await table.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 60000
+        });
+        await table.ScrollIntoViewIfNeededAsync();
+        await Assertions.Expect(
+                table.Locator("[data-tm-row='0'][data-tm-col='0']").First)
+            .ToHaveAttributeAsync("colspan", "2");
+        await Assertions.Expect(
+                table.Locator("[data-tm-row='1'][data-tm-col='2']").First)
+            .ToHaveAttributeAsync("rowspan", "2");
+    }
+
+    private static ILocator AdvancedTable(IPage page)
+        => page
+            .Locator("[data-block-id='cf110000-0000-0000-0000-000000000010']")
+            .First;
 }

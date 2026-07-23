@@ -1,0 +1,20 @@
+{
+  "title": "Getting Started with Tempo.Blazor.Mcp",
+  "overview": "Tempo.Blazor.Mcp exposes discovery-first, machine-readable tools for Tempo editors. Notion authoring in 2.7 uses complete page aggregates, strict closed operation objects, optimistic page tokens, and one atomic save.",
+  "targetFramework": ".NET 8.0 / 9.0 / 10.0 (multi-target)",
+  "installation": {
+    "nuget": [
+      "dotnet add package Tempo.Blazor.Mcp --version 2.7.0"
+    ]
+  },
+  "namespaces": [
+    "Tempo.Blazor.Mcp",
+    "Tempo.Blazor.Mcp.Notion"
+  ],
+  "notes": [
+    "Call AddTempoNotionMcpTools and register an INotionDataProvider for page lifecycle plus an INotionAggregateProvider for canonical recursive reads and atomic authoring.",
+    "Read with notion_get_block_tree before writing and submit the returned opaque page token in expectedPageVersionsJson.",
+    "Use notion_get_block_schema, notion_get_operation_catalog, and notion_get_authoring_guide instead of guessing nested JSON payloads.",
+    "Tempo.Blazor 2.7 has no granular or sequential compatibility fallback for block authoring."
+  ]
+}

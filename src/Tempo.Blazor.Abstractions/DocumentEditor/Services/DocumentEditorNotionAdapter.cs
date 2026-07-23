@@ -184,7 +184,7 @@ public class DocumentEditorNotionAdapter
                 [
                     new TableRowContent
                     {
-                        Cells = row.Cells.Select(cell => new TableCellContent
+                        Cells = row.RichCells.Select(cell => new TableCellContent
                         {
                             Blocks =
                             [
@@ -193,7 +193,7 @@ public class DocumentEditorNotionAdapter
                                     Type = DocumentBlockType.Paragraph,
                                     Content = new ParagraphBlockContent
                                     {
-                                        Inlines = [new TextRun { Text = cell }]
+                                        Inlines = [new TextRun { Text = ToPlainText(cell.Html) }]
                                     }
                                 }
                             ]

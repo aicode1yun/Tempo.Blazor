@@ -98,7 +98,18 @@ public sealed class NotionBlockConversionTests
     {
         var store = new MockNotionBlockStore();
         var table = await AddBlockAsync(store, BlockType.Table, new TableBlockContent { ColumnCount = 2, HasHeaderRow = true });
-        var row = await AddChildAsync(store, table.Id, BlockType.TableRow, new TableRowBlockContent { Cells = ["a", "b"] });
+        var row = await AddChildAsync(
+            store,
+            table.Id,
+            BlockType.TableRow,
+            new TableRowBlockContent
+            {
+                RichCells =
+                [
+                    new NotionTableCell { Html = "a" },
+                    new NotionTableCell { Html = "b" }
+                ]
+            });
 
         await store.ConvertBlockTypeAsync(table.Id.ToString(), BlockType.Paragraph);
 
@@ -180,7 +191,7 @@ public sealed class NotionBlockConversionTests
         var rows = (await store.GetChildBlocksAsync(table.Id.ToString())).ToList();
         rows.Should().HaveCount(2);
         rows.Should().OnlyContain(r => r.ParentBlockId == table.Id);
-        ((ITableRowBlockContent)rows[0].Content).Cells[0].Should().Be("header");
+        ((ITableRowBlockContent)rows[0].Content).RichCells[0].Html.Should().Be("header");
     }
 
     [Fact]

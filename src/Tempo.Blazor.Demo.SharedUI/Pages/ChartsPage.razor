@@ -432,7 +432,7 @@
         Toggle an area in the legend to drop its whole subtree.
     </p>
     <div class="max-w-3xl">
-        <TmChart Type="ChartType.Treemap" TreeNodes="_treemapNodes" Height="360px"
+        <TmChart Type="ChartType.Treemap" Data="_emptyChartData" TreeNodes="_treemapNodes" Height="360px"
                  ShowValues="true" InteractiveLegend="true" OnSegmentClick="HandleSegmentClick" />
     </div>
     @if (_clickedSegment is not null)
@@ -706,7 +706,13 @@
                 new ChartTreeNode { Label = "Eta Fintech", Value = 60 }
             ]
         }
-    ];
+        ];
+
+    private static readonly ChartData _emptyChartData = new()
+    {
+        Labels = [],
+        Datasets = []
+    };
 
     private void HandleSegmentClick(ChartSegment segment)
     {

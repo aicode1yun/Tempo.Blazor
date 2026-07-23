@@ -174,6 +174,9 @@ public class NotionExporterTableTests
         ParentBlockId = parentId,
         Type = BlockType.TableRow,
         Order = order,
-        Content = new TableRowBlockContent { Cells = cells }
+        Content = new TableRowBlockContent
+        {
+            RichCells = cells.Select(cell => new NotionTableCell { Html = cell }).ToList()
+        }
     };
 }

@@ -165,7 +165,7 @@ public class NotionToDocumentModelConverterTests
             return
             [
                 Block(BlockType.Table, 0, new Nm.TableBlockContent { ColumnCount = 2, HasHeaderRow = true }),
-                Block(BlockType.TableRow, 1, new Nm.TableRowBlockContent { Cells = ["Key", "Value"] })
+                Block(BlockType.TableRow, 1, RichRow("Key", "Value"))
             ];
         }
 
@@ -205,7 +205,7 @@ public class NotionToDocumentModelConverterTests
         BlockType.NumberedList => new Nm.ListBlockContent { Html = "Numbered text" },
         BlockType.TodoItem => new Nm.TodoBlockContent { Html = "Todo text", IsChecked = true },
         BlockType.Toggle => new Nm.ToggleBlockContent { Html = "Toggle text" },
-        BlockType.TableRow => new Nm.TableRowBlockContent { Cells = ["Standalone", "Row"] },
+        BlockType.TableRow => RichRow("Standalone", "Row"),
         BlockType.Image => new Nm.ImageBlockContent { Url = "https://example.test/image.png", AltText = "Image text", Caption = "Image caption" },
         BlockType.Video => new Nm.VideoBlockContent { Url = "https://example.test/video.mp4", Caption = "Video caption" },
         BlockType.Audio => new Nm.AudioBlockContent { Url = "https://example.test/audio.mp3", Caption = "Audio caption" },

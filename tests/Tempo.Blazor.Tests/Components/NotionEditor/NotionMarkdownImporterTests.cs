@@ -163,5 +163,7 @@ public class NotionMarkdownImporterTests
         => blocks.Where(block => block.Type == BlockType.TableRow).OrderBy(block => block.Order).ToList();
 
     private static IReadOnlyList<string> Cells(IPageBlock row)
-        => ((ITableRowBlockContent)row.Content).Cells;
+        => ((ITableRowBlockContent)row.Content).RichCells
+            .Select(cell => cell.Html)
+            .ToList();
 }

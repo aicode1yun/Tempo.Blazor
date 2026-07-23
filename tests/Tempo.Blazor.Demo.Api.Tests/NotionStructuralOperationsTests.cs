@@ -115,7 +115,8 @@ public sealed class NotionStructuralOperationsTests
 
         var rows = (await store.GetChildBlocksAsync(copy.Id.ToString())).ToList();
         rows.Should().HaveCount(2, "a duplicated table without its rows renders empty");
-        rows.Select(row => ((TableRowBlockContent)row.Content).Cells[0]).Should().Equal("a", "b");
+        rows.Select(row => ((TableRowBlockContent)row.Content).RichCells[0].Html)
+            .Should().Equal("a", "b");
         rows.Should().OnlyContain(row => row.ParentBlockId == copy.Id);
     }
 
@@ -209,7 +210,10 @@ public sealed class NotionStructuralOperationsTests
             ParentBlockId = tableId,
             Type = BlockType.TableRow,
             Order = order,
-            Content = new TableRowBlockContent { Cells = [cell] }
+            Content = new TableRowBlockContent
+            {
+                RichCells = [new NotionTableCell { Html = cell }]
+            }
         };
         return await store.CreateBlockAsync(PageId.ToString(), row, null);
     }

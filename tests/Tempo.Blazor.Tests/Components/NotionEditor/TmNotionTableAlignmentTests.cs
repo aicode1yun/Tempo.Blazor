@@ -91,7 +91,10 @@ public sealed class TmNotionTableAlignmentTests : LocalizationTestBase
             ParentBlockId = Guid.NewGuid(),
             Type = BlockType.TableRow,
             Order = 0,
-            Content = new TableRowBlockContent { Cells = cells }
+            Content = new TableRowBlockContent
+            {
+                RichCells = cells.Select(cell => new NotionTableCell { Html = cell }).ToList()
+            }
         };
 
         return Render<TmNotionTableRowBlock>(parameters => parameters

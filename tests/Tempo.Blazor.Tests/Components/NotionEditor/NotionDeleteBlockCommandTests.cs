@@ -98,6 +98,9 @@ public sealed class NotionDeleteBlockCommandTests
     {
         Id = Guid.NewGuid(), PageId = PageId, ParentBlockId = parentId,
         Type = BlockType.TableRow, Order = order,
-        Content = new TableRowBlockContent { Cells = ["x"] }
+        Content = new TableRowBlockContent
+        {
+            RichCells = [new NotionTableCell { Html = "x" }]
+        }
     };
 }

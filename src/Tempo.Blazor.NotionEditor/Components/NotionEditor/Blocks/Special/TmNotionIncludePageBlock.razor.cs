@@ -389,7 +389,7 @@ public partial class TmNotionIncludePageBlock : ComponentBase
         var actual = rows
             .Select(row => row.Content as ITableRowBlockContent)
             .Where(content => content is not null)
-            .Select(content => Math.Max(content!.Cells.Count, content.RichCells.Count))
+            .Select(content => content!.RichCells.Count)
             .DefaultIfEmpty(0)
             .Max();
 
@@ -407,12 +407,9 @@ public partial class TmNotionIncludePageBlock : ComponentBase
             return string.Empty;
         }
 
-        if (index < row.RichCells.Count)
-        {
-            return row.RichCells[index].Html;
-        }
-
-        return index < row.Cells.Count ? row.Cells[index] : string.Empty;
+        return index < row.RichCells.Count
+            ? row.RichCells[index].Html
+            : string.Empty;
     }
 
     private sealed record PageChoice(Guid Id, string Title, int Depth);

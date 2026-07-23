@@ -1,5 +1,8 @@
 # Atomic Notion editor authoring
 
+This contract is the required authoring path in Tempo.Blazor 2.7. See the
+[2.7 migration guide](notion-2.7-migration.md) for breaking changes.
+
 `TmNotionEditor` can use `INotionAggregateProvider` as a canonical, optimistic
 persistence boundary for logical changes that span multiple blocks. This is
 required for editable tables and structured multi-block paste.
@@ -17,6 +20,11 @@ or structured paste is applied to a clone, validated with
 `NotionAggregateValidator`, and sent through exactly one
 `INotionAggregateProvider.SaveAsync` request. The MCP authoring tools use the
 same validator.
+
+For host and consumer tests,
+`Tempo.Blazor.NotionEditor.Testing.FakeNotionAggregateProvider` provides a
+reference all-or-nothing implementation. It checks every page token before
+committing any page and exposes save counters for idempotent-replay tests.
 
 ## Conflict behavior
 
@@ -40,9 +48,9 @@ sanitized or normalized before rendering. `DisplayHtml` is a transient,
 non-serialized view derived from structured inlines; canonical `Html` remains
 separate.
 
-When `AggregateProvider` is omitted, canonical tables still render, but their
-aggregate-only authoring controls are hidden to avoid falling back to partial
-sequential writes.
+When `AggregateProvider` is omitted, canonical tables still render read-only,
+but their aggregate-only authoring controls are hidden. There is no partial
+sequential-write fallback.
 
 ## DOCX and document-model table fidelity
 

@@ -294,7 +294,7 @@ public class MockNotionBlockStore
             parentBlockId: tableId,
             type:         BlockType.TableRow,
             order:        0,
-            content:      new TableRowBlockContent { Cells = ["Name", "Status", "Priority"] }
+            content:      new TableRowBlockContent { RichCells = ToRichCells("Name", "Status", "Priority") }
         );
 
         var tableRow2 = Guid.NewGuid();
@@ -304,7 +304,7 @@ public class MockNotionBlockStore
             parentBlockId: tableId,
             type:         BlockType.TableRow,
             order:        1,
-            content:      new TableRowBlockContent { Cells = ["Auth refactor", "In Progress", "High"] }
+            content:      new TableRowBlockContent { RichCells = ToRichCells("Auth refactor", "In Progress", "High") }
         );
 
         var tableRow3 = Guid.NewGuid();
@@ -314,7 +314,7 @@ public class MockNotionBlockStore
             parentBlockId: tableId,
             type:         BlockType.TableRow,
             order:        2,
-            content:      new TableRowBlockContent { Cells = ["Dark mode", "Done", "Low"] }
+            content:      new TableRowBlockContent { RichCells = ToRichCells("Dark mode", "Done", "Low") }
         );
 
         // ── Phase 3: Inline Database ──────────────────────────────────────────
@@ -714,11 +714,11 @@ public class MockNotionBlockStore
         });
         AddChildTo(Guid.Parse("cf250000-0000-0000-0000-000000000011"), MockNotionDataStore.Page1Id, tableId, BlockType.TableRow, 0, new TableRowBlockContent
         {
-            Cells = ["Format", "Status", "Evidence"]
+            RichCells = ToRichCells("Format", "Status", "Evidence")
         });
         AddChildTo(Guid.Parse("cf250000-0000-0000-0000-000000000012"), MockNotionDataStore.Page1Id, tableId, BlockType.TableRow, 1, new TableRowBlockContent
         {
-            Cells = ["DOCX", "Ready", "Table survives export"]
+            RichCells = ToRichCells("DOCX", "Ready", "Table survives export")
         });
 
         AddTo(Guid.Parse("cf250000-0000-0000-0000-000000000101"), MockNotionDataStore.Page2Id, BlockType.Heading2, 0, new HeadingBlockContent
@@ -1439,21 +1439,20 @@ public sealed class Eb1BaselineRenderer
         });
         AddChildTo(Guid.Parse("eb700000-0000-0000-0000-000000000011"), MockNotionDataStore.Page1Id, tableId, BlockType.TableRow, 0, new TableRowBlockContent
         {
-            Cells = ["Name", "Status", "Owner", "Notes"]
+            RichCells = ToRichCells("Name", "Status", "Owner", "Notes")
         });
         AddChildTo(Guid.Parse("eb700000-0000-0000-0000-000000000012"), MockNotionDataStore.Page1Id, tableId, BlockType.TableRow, 1, new TableRowBlockContent
         {
-            Cells = ["Customer import", "In progress", "Nora", "Validates rows and columns against production table interactions."]
+            RichCells = ToRichCells("Customer import", "In progress", "Nora", "Validates rows and columns against production table interactions.")
         });
         AddChildTo(Guid.Parse("eb700000-0000-0000-0000-000000000013"), MockNotionDataStore.Page1Id, tableId, BlockType.TableRow, 2, new TableRowBlockContent
         {
-            Cells =
-            [
+            RichCells = ToRichCells(
                 "Billing audit",
                 "Blocked",
                 "Ivan",
                 "The content in this cell is intentionally long enough to wrap onto multiple lines in a fixed-width table cell while staying readable and preserving row controls."
-            ]
+            )
         });
 
         AddTo(wideTableId, MockNotionDataStore.Page1Id, BlockType.Table, 1, new TableBlockContent
@@ -1464,15 +1463,15 @@ public sealed class Eb1BaselineRenderer
         });
         AddChildTo(Guid.Parse("eb700000-0000-0000-0000-000000000021"), MockNotionDataStore.Page1Id, wideTableId, BlockType.TableRow, 0, new TableRowBlockContent
         {
-            Cells = ["Metric", "Q1", "Q2", "Q3", "Q4", "Owner", "Risk", "Decision"]
+            RichCells = ToRichCells("Metric", "Q1", "Q2", "Q3", "Q4", "Owner", "Risk", "Decision")
         });
         AddChildTo(Guid.Parse("eb700000-0000-0000-0000-000000000022"), MockNotionDataStore.Page1Id, wideTableId, BlockType.TableRow, 1, new TableRowBlockContent
         {
-            Cells = ["Revenue", "$120k", "$144k", "$151k", "$172k", "Finance", "Low", "Scale"]
+            RichCells = ToRichCells("Revenue", "$120k", "$144k", "$151k", "$172k", "Finance", "Low", "Scale")
         });
         AddChildTo(Guid.Parse("eb700000-0000-0000-0000-000000000023"), MockNotionDataStore.Page1Id, wideTableId, BlockType.TableRow, 2, new TableRowBlockContent
         {
-            Cells = ["Support load", "42", "51", "58", "49", "Care", "Medium", "Watch"]
+            RichCells = ToRichCells("Support load", "42", "51", "58", "49", "Care", "Medium", "Watch")
         });
 
         AddTo(emptyTableId, MockNotionDataStore.Page1Id, BlockType.Table, 2, new TableBlockContent
@@ -2819,7 +2818,7 @@ public sealed class Eb1BaselineRenderer
                 ParentBlockId = block.Id,
                 Type          = BlockType.TableRow,
                 Order         = rowIndex,
-                Content       = new TableRowBlockContent { Cells = cells },
+                Content       = new TableRowBlockContent { RichCells = ToRichCells(cells) },
                 CreatedAt     = DateTime.UtcNow,
                 LastEditedAt  = DateTime.UtcNow
             };
@@ -2830,6 +2829,13 @@ public sealed class Eb1BaselineRenderer
     {
         return await Task.FromResult($"https://notion.demo/block/{blockId}");
     }
+
+    private static IReadOnlyList<NotionTableCell> ToRichCells(params string[] cells)
+        => ToRichCells((IEnumerable<string>)cells);
+
+    private static IReadOnlyList<NotionTableCell> ToRichCells(
+        IEnumerable<string> cells)
+        => cells.Select(cell => new NotionTableCell { Html = cell }).ToList();
 
     public Task SetTodoCompletedAsync(string taskId, bool completed, CancellationToken cancellationToken = default)
     {

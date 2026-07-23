@@ -443,7 +443,14 @@ public static class NotionMarkdownImporter
 
     private static IPageBlock MakeRowBlock(Guid pageId, Guid tableId, int order, List<string> cells)
     {
-        var row = (PageBlock)MakeBlock(pageId, order, BlockType.TableRow, new TableRowBlockContent { Cells = cells });
+        var row = (PageBlock)MakeBlock(
+            pageId,
+            order,
+            BlockType.TableRow,
+            new TableRowBlockContent
+            {
+                RichCells = cells.Select(cell => new NotionTableCell { Html = cell }).ToList()
+            });
         row.ParentBlockId = tableId;
         return row;
     }

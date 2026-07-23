@@ -1,0 +1,28 @@
+{
+  "examples": [
+    {
+      "title": "Register canonical Notion MCP authoring",
+      "category": "Notion",
+      "description": "Registers the MCP runtime while the host supplies page lifecycle and atomic aggregate persistence.",
+      "code": "builder.Services.AddSingleton<INotionDataProvider, AppNotionDataProvider>();\nbuilder.Services.AddSingleton<INotionAggregateProvider, AppNotionAggregateProvider>();\nbuilder.Services.AddTempoNotionMcpTools();"
+    },
+    {
+      "title": "Read before write",
+      "category": "Notion",
+      "description": "Loads the complete recursive tree and retains its opaque version before compiling a mutation.",
+      "code": "var read = await notion_get_block_tree(pageId: \"11111111-1111-1111-1111-111111111111\");\n// Retain read.concurrencyToken and read.digest; do not derive or parse the token."
+    },
+    {
+      "title": "Apply one strict rich-table operation",
+      "category": "Notion",
+      "description": "Creates a logical rich-cell table in one idempotent atomic request. The cells array contains origins only, never covered merge markers.",
+      "code": "operationsJson = \"\"\"\n[\n  {\n    \"op\": \"createTable\",\n    \"clientRef\": \"risk-table\",\n    \"pageId\": \"11111111-1111-1111-1111-111111111111\",\n    \"columnCount\": 2,\n    \"hasHeaderRow\": true,\n    \"columnAlignments\": [\"left\", \"right\"],\n    \"columnWidths\": [220, 120],\n    \"rows\": [\n      {\n        \"cells\": [\n          {\n            \"html\": \"<strong>Risk</strong>\",\n            \"backgroundColor\": \"#fef3c7\",\n            \"rowSpan\": 1,\n            \"columnSpan\": 1\n          },\n          {\n            \"inlines\": [{ \"text\": \"Impact\", \"bold\": true }],\n            \"rowSpan\": 1,\n            \"columnSpan\": 1\n          }\n        ]\n      }\n    ]\n  }\n]\n\"\"\";\nexpectedPageVersionsJson = \"\"\"\n[\n  {\n    \"pageId\": \"11111111-1111-1111-1111-111111111111\",\n    \"concurrencyToken\": \"opaque-token-from-read\"\n  }\n]\n\"\"\";\nvar result = await notion_apply_block_operations(\n    idempotencyKey: \"risk-table-v1\",\n    operationsJson,\n    expectedPageVersionsJson);"
+    },
+    {
+      "title": "Test provider atomicity and replay",
+      "category": "Notion",
+      "description": "Uses the reference fake to verify multi-page all-or-nothing persistence and that an identical engine replay reaches SaveAsync only once.",
+      "code": "var provider = new FakeNotionAggregateProvider([firstPage, secondPage]);\nvar engine = new NotionAtomicAuthoringEngine(\n    provider,\n    compiler,\n    new InMemoryNotionIdempotencyReceiptStore());\nawait engine.ExecuteAsync(request);\nawait engine.ExecuteAsync(request);\nDebug.Assert(provider.SaveCallCount == 1);"
+    }
+  ]
+}

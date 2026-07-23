@@ -298,18 +298,13 @@ public sealed class DemoNotionAggregateStore(
         };
 
     private static NotionAuthoringTableRow ToCanonicalRow(ITableRowBlockContent row)
-    {
-        var richCells = row.RichCells.Count > 0
-            ? row.RichCells
-            : row.Cells.Select(html => new NotionTableCell { Html = html }).ToList();
-        return new NotionAuthoringTableRow
+        => new()
         {
-            Cells = richCells
+            Cells = row.RichCells
                 .Where(cell => !cell.IsMergeHidden)
                 .Select(ToCanonicalCell)
                 .ToList()
         };
-    }
 
     private static NotionAuthoringTableCell ToCanonicalCell(NotionTableCell cell)
         => new()

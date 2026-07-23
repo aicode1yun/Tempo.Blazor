@@ -271,11 +271,12 @@ public static class NotionMarkdownExporter
     {
         if (block.Content is not ITableRowBlockContent tr) return string.Empty;
 
-        var row = RenderCells(tr.Cells, tr.Cells.Count);
+        var cells = tr.RichCells.Select(cell => cell.Html).ToList();
+        var row = RenderCells(cells, cells.Count);
 
         if (isFirst)
         {
-            var sep = $"| {string.Join(" | ", tr.Cells.Select(_ => "---"))} |";
+            var sep = $"| {string.Join(" | ", cells.Select(_ => "---"))} |";
             return row + Environment.NewLine + sep;
         }
 
@@ -288,7 +289,9 @@ public static class NotionMarkdownExporter
         var rows = rowBlocks
             .Select(row => row.Content as ITableRowBlockContent)
             .Where(row => row is not null)
-            .Select(row => row!.Cells)
+            .Select(row => (IReadOnlyList<string>)row!.RichCells
+                .Select(cell => cell.Html)
+                .ToList())
             .ToList();
 
         if (rows.Count == 0) return string.Empty;

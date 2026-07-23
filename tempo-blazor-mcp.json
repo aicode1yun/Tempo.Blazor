@@ -1014,7 +1014,7 @@
         {
           "name": "AddTempoNotionMcpTools",
           "type": "static IServiceCollection AddTempoNotionMcpTools()",
-          "description": "Registers dependencies required by the NotionEditor MCP tools. The host must supply INotionDataProvider and INotionBlockProvider."
+          "description": "Registers dependencies required by the NotionEditor MCP tools. The host must supply INotionDataProvider for page lifecycle and INotionAggregateProvider for canonical recursive reads and atomic block authoring."
         }
       ]
     },
@@ -1105,7 +1105,7 @@
       "kind": "Class",
       "category": "Notion",
       "namespace": "Tempo.Blazor.Mcp.Notion",
-      "description": "MCP block tools for NotionEditor.",
+      "description": "Canonical recursive read and strict atomic block-authoring tools for NotionEditor. Tempo.Blazor 2.7 exposes notion_get_block_tree and notion_apply_block_operations without granular write aliases.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionBlockTools.cs",
       "documentationStatus": "merged"
@@ -1125,7 +1125,7 @@
       "kind": "Class",
       "category": "Notion",
       "namespace": "Tempo.Blazor.Mcp.Notion",
-      "description": "MCP schema and validation tools for NotionEditor.",
+      "description": "Machine-readable NotionEditor discovery for strict block schemas, operation catalogs, limits, executable examples, recursive children, rich tables, concurrency, and idempotent retry.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionSchemaAndValidationTools.cs",
       "documentationStatus": "merged"

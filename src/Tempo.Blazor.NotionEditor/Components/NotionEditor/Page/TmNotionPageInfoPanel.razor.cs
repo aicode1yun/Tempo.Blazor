@@ -97,8 +97,7 @@ public partial class TmNotionPageInfoPanel : ComponentBase
         return content switch
         {
             ITextBlockContent text => [text.Html],
-            ITableRowBlockContent row when row.RichCells.Count > 0 => row.RichCells.Select(cell => cell.Html),
-            ITableRowBlockContent row => row.Cells,
+            ITableRowBlockContent row => row.RichCells.Select(cell => cell.Html),
             ICodeBlockContent code => [code.Code, code.Caption],
             IChildPageBlockContent child => [child.Title],
             ILinkedPageBlockContent linked => [linked.Title],

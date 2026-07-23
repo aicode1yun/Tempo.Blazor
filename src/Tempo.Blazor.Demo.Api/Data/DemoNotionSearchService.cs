@@ -402,7 +402,7 @@ public sealed partial class DemoNotionSearchService(
             IBookmarkBlockContent bookmark => string.Join(' ', bookmark.Title, bookmark.Description, bookmark.Caption, bookmark.Url),
             IFileBlockContent file => string.Join(' ', file.FileName, file.ContentType, file.Caption, file.Url),
             IMediaBlockContent media => string.Join(' ', media.Caption, media.Url),
-            ITableRowBlockContent row => string.Join(' ', row.Cells.Concat(row.RichCells.Select(cell => cell.Html))),
+            ITableRowBlockContent row => string.Join(' ', row.RichCells.Select(cell => cell.Html)),
             IChildPageBlockContent child => child.Title ?? string.Empty,
             ILinkedPageBlockContent linked => linked.Title ?? string.Empty,
             IInlineDatabaseBlockContent database => database.Title,

@@ -240,7 +240,12 @@ public sealed class TmNotionPageMergeTests : LocalizationTestBase
         var row = new PageBlock
         {
             Id = Guid.NewGuid(), PageId = PageId, ParentBlockId = table.Id,
-            Type = BlockType.TableRow, Order = 0, Content = new TableRowBlockContent { Cells = ["a"] }
+            Type = BlockType.TableRow,
+            Order = 0,
+            Content = new TableRowBlockContent
+            {
+                RichCells = [new NotionTableCell { Html = "a" }]
+            }
         };
 
         var (cut, provider) = RenderPage(table);

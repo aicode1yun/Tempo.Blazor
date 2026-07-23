@@ -381,7 +381,12 @@ public static class NotionHtmlImporter
         for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
         {
             var rowBlock = (PageBlock)MakeBlock(pageId, rowIndex, BlockType.TableRow,
-                new TableRowBlockContent { Cells = rows[rowIndex].Cells });
+                new TableRowBlockContent
+                {
+                    RichCells = rows[rowIndex].Cells
+                        .Select(cell => new NotionTableCell { Html = cell })
+                        .ToList()
+                });
             rowBlock.ParentBlockId = tableBlock.Id;
             blocks.Add(rowBlock);
         }

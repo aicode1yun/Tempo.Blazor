@@ -1,5 +1,9 @@
 # Notion MCP authoring contract
 
+This is the Tempo.Blazor 2.7 contract. See the
+[2.7 migration guide](notion-2.7-migration.md) before upgrading an existing
+provider or persisted table-row payload.
+
 This catalog documents the canonical Notion MCP surface. Read nested schemas through the discovery
 tools instead of embedding complex JSON Schema types in MCP arguments: tool arguments intentionally
 remain primitive strings, booleans, integers and timestamps.
@@ -67,6 +71,9 @@ opaque concurrency token, digest and provider load issues.
 
 Applies one strict operation array atomically. The request needs a stable `idempotencyKey`,
 `operationsJson`, and normally the latest `expectedPageVersionsJson`.
+The result includes the new page versions, deterministic reference mappings,
+structured issues, and canonical readback. No granular block-write alias or
+sequential compatibility path is available.
 
 ### `notion_list_block_types`
 

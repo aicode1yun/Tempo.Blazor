@@ -8,18 +8,17 @@ namespace Tempo.Blazor.Tests.Components.NotionEditor;
 
 /// <summary>
 /// Adding or removing a table column must carry canonical rich cells (merges, background colours)
-/// and per-column metadata without reading the removed legacy plain-cell list.
+/// and per-column metadata.
 /// </summary>
 public sealed class NotionTableEditTests
 {
     [Fact]
     public void AddColumn_KeepsTheRichCellsAndAppendsOne()
     {
-        var row = Row(["a", "b"], [Rich("a", "yellow"), Rich("b")]);
+        var row = Row([Rich("a", "yellow"), Rich("b")]);
 
         var updated = NotionTableEdit.AddColumn(row);
 
-        updated.Cells.Should().BeEmpty("canonical table edits never reconstruct legacy plain cells");
         updated.RichCells.Should().HaveCount(3);
         updated.RichCells[0].BackgroundColor.Should().Be("yellow", "the colour must survive the edit");
         updated.RichCells[2].Html.Should().BeEmpty();
@@ -28,9 +27,8 @@ public sealed class NotionTableEditTests
     [Fact]
     public void AddColumn_OnAnEmptyCanonicalRow_AppendsOneEmptyRichCell()
     {
-        var updated = NotionTableEdit.AddColumn(Row(["a"], []));
+        var updated = NotionTableEdit.AddColumn(Row([]));
 
-        updated.Cells.Should().BeEmpty();
         updated.RichCells.Should().ContainSingle();
         updated.RichCells[0].Html.Should().BeEmpty();
     }
@@ -38,11 +36,10 @@ public sealed class NotionTableEditTests
     [Fact]
     public void RemoveColumn_DropsThatColumnFromCanonicalRichCells()
     {
-        var row = Row(["a", "b", "c"], [Rich("a"), Rich("b", "green"), Rich("c")]);
+        var row = Row([Rich("a"), Rich("b", "green"), Rich("c")]);
 
         var updated = NotionTableEdit.RemoveColumn(row, 1);
 
-        updated.Cells.Should().BeEmpty("canonical table edits never write legacy plain cells");
         updated.RichCells.Should().HaveCount(2);
         updated.RichCells.Select(cell => cell.Html).Should().Equal("a", "c");
     }
@@ -52,7 +49,7 @@ public sealed class NotionTableEditTests
     {
         var merged = Rich("a");
         merged.ColSpan = 2;
-        var row = Row(["a", "b", "c"], [merged, Rich("b"), Rich("c")]);
+        var row = Row([merged, Rich("b"), Rich("c")]);
 
         var updated = NotionTableEdit.RemoveColumn(row, 2);
 
@@ -110,8 +107,8 @@ public sealed class NotionTableEditTests
 
     // ── Helpers ────────────────────────────────────────────────────────────
 
-    private static TableRowBlockContent Row(string[] cells, NotionTableCell[] rich) =>
-        new() { Cells = cells, RichCells = rich };
+    private static TableRowBlockContent Row(NotionTableCell[] rich) =>
+        new() { RichCells = rich };
 
     private static NotionTableCell Rich(string html, string? background = null) =>
         new() { Html = html, BackgroundColor = background };
