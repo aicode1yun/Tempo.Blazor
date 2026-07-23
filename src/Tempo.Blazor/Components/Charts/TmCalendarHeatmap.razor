@@ -9,12 +9,12 @@
          style="--tm-heatmap-week-count: @_weekCount">
         @foreach (var cell in _cells)
         {
-            <button class="tm-calendar-heatmap__day"
+            <button class="tm-calendar-heatmap__day tm-calendar-heatmap__day--level-@cell.Level"
                     type="button"
                     role="gridcell"
                     data-date="@cell.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
                     aria-label="@cell.Date.ToString("d", _culture)"
-                    style="grid-column: @cell.Week; grid-row: @cell.Day">
+                    style="@GetCellStyle(cell)">
             </button>
         }
     </div>
@@ -44,6 +44,24 @@
     [Parameter]
     public DateOnly? To { get; set; }
 
+    /// <summary>
+    /// Optional upper bound of the intensity scale. When omitted, the maximum positive
+    /// value inside the rendered date range is used.
+    /// </summary>
+    [Parameter]
+    public decimal? MaxValue { get; set; }
+
+    /// <summary>
+    /// Number of intensity levels, including the empty level. Values below 2 are
+    /// treated as 2. Defaults to 5.
+    /// </summary>
+    [Parameter]
+    public int Levels { get; set; } = 5;
+
+    /// <summary>Color scheme used for intensity levels. Defaults to Primary.</summary>
+    [Parameter]
+    public CalendarHeatmapColorScheme ColorScheme { get; set; } = CalendarHeatmapColorScheme.Primary;
+
     /// <summary>Size of each day cell in pixels. Defaults to 12.</summary>
     [Parameter]
     public int CellSize { get; set; } = 12;
@@ -63,9 +81,17 @@
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
-    private string CssClass => string.IsNullOrWhiteSpace(Class)
-        ? "tm-calendar-heatmap"
-        : $"tm-calendar-heatmap {Class}";
+    private int EffectiveLevels => Math.Max(Levels, 2);
+
+    private string CssClass
+    {
+        get
+        {
+            var scheme = ColorScheme.ToString().ToLowerInvariant();
+            var baseClass = $"tm-calendar-heatmap tm-calendar-heatmap--{scheme} tm-calendar-heatmap--levels-{EffectiveLevels}";
+            return string.IsNullOrWhiteSpace(Class) ? baseClass : $"{baseClass} {Class}";
+        }
+    }
 
     private string RootStyle => $"--tm-heatmap-cell-size: {Math.Max(1, CellSize)}px";
 
@@ -91,18 +117,69 @@
         var gridStart = DateTimeHelpers.GetStartOfWeek(rangeStart, _culture);
         var dayCount = rangeEnd.DayNumber - rangeStart.DayNumber + 1;
         var cells = new CalendarHeatmapCell[dayCount];
+        var scaleMaximum = ResolveScaleMaximum(rangeStart, rangeEnd);
 
         for (var index = 0; index < dayCount; index++)
         {
             var date = rangeStart.AddDays(index);
             var gridOffset = date.DayNumber - gridStart.DayNumber;
+            var value = Values is not null && Values.TryGetValue(date, out var storedValue)
+                ? storedValue
+                : 0m;
+            var level = GetLevel(value, scaleMaximum);
             cells[index] = new CalendarHeatmapCell(
                 date,
                 (gridOffset / 7) + 1,
-                (gridOffset % 7) + 1);
+                (gridOffset % 7) + 1,
+                level,
+                GetPaletteLevel(level));
         }
 
         _cells = cells;
         _weekCount = cells[^1].Week;
+    }
+
+    private decimal ResolveScaleMaximum(DateOnly rangeStart, DateOnly rangeEnd)
+    {
+        if (MaxValue.HasValue)
+        {
+            return MaxValue.Value;
+        }
+
+        return Values?
+            .Where(entry => entry.Key >= rangeStart && entry.Key <= rangeEnd && entry.Value > 0)
+            .Select(entry => entry.Value)
+            .DefaultIfEmpty(0m)
+            .Max() ?? 0m;
+    }
+
+    private int GetLevel(decimal value, decimal scaleMaximum)
+    {
+        if (value <= 0 || scaleMaximum <= 0)
+        {
+            return 0;
+        }
+
+        var normalizedValue = Math.Min(value / scaleMaximum, 1m);
+        return (int)decimal.Ceiling(normalizedValue * (EffectiveLevels - 1));
+    }
+
+    private int GetPaletteLevel(int level)
+    {
+        if (level == 0)
+        {
+            return 0;
+        }
+
+        var normalizedLevel = (decimal)level / (EffectiveLevels - 1);
+        return Math.Clamp((int)decimal.Ceiling(normalizedLevel * 4), 1, 4);
+    }
+
+    private static string GetCellStyle(CalendarHeatmapCell cell)
+    {
+        var gridPosition = $"grid-column: {cell.Week}; grid-row: {cell.Day}";
+        return cell.PaletteLevel == 0
+            ? gridPosition
+            : $"{gridPosition}; --tm-heatmap-day-color: var(--tm-heatmap-level-{cell.PaletteLevel})";
     }
 }

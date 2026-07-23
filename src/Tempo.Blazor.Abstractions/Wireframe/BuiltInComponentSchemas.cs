@@ -1772,6 +1772,10 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             Props =
             [
                 P("year", "Year", PropType.Int, 2025, cat: "Content"),
+                P("maxValue", "Maximum Value", PropType.Double, cat: "Behavior"),
+                P("levels", "Levels", PropType.Int, 5, cat: "Appearance"),
+                P("colorScheme", "Color Scheme", PropType.Enum, "Primary", cat: "Appearance",
+                    opts: ["Primary","Success","Danger","Neutral"]),
                 P("cellSize", "Cell Size", PropType.Int, 12, cat: "Appearance"),
             ]
         };

@@ -21,4 +21,9 @@ public enum CalendarHeatmapColorScheme
 /// <param name="Value">Value associated with the date, or <see langword="null"/> when no value exists.</param>
 public sealed record CalendarHeatmapDayClickEventArgs(DateOnly Date, decimal? Value);
 
-internal sealed record CalendarHeatmapCell(DateOnly Date, int Week, int Day);
+internal sealed record CalendarHeatmapCell(
+    DateOnly Date,
+    int Week,
+    int Day,
+    int Level,
+    int PaletteLevel);

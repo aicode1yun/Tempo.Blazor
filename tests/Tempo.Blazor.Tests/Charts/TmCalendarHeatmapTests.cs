@@ -94,6 +94,122 @@ public class TmCalendarHeatmapTests : LocalizationTestBase
             .Should().Contain("--tm-heatmap-cell-size: 18px");
     }
 
+    [Fact]
+    public void CalendarHeatmap_AssignsLevelsFromExplicitMaximum()
+    {
+        var values = new Dictionary<DateOnly, decimal>
+        {
+            [new(2025, 1, 2)] = 0m,
+            [new(2025, 1, 3)] = 25m,
+            [new(2025, 1, 4)] = 100m,
+        };
+
+        var cut = Render<TmCalendarHeatmap>(parameters => parameters
+            .Add(component => component.Values, values)
+            .Add(component => component.From, new DateOnly(2025, 1, 1))
+            .Add(component => component.To, new DateOnly(2025, 1, 4))
+            .Add(component => component.MaxValue, 100m));
+
+        cut.Find("[data-date='2025-01-01']").ClassList.Should()
+            .Contain("tm-calendar-heatmap__day--level-0");
+        cut.Find("[data-date='2025-01-02']").ClassList.Should()
+            .Contain("tm-calendar-heatmap__day--level-0");
+        cut.Find("[data-date='2025-01-03']").ClassList.Should()
+            .Contain("tm-calendar-heatmap__day--level-1");
+        cut.Find("[data-date='2025-01-04']").ClassList.Should()
+            .Contain("tm-calendar-heatmap__day--level-4");
+    }
+
+    [Fact]
+    public void CalendarHeatmap_InfersMaximumFromValuesInsideRenderedRange()
+    {
+        var values = new Dictionary<DateOnly, decimal>
+        {
+            [new(2024, 12, 31)] = 1_000m,
+            [new(2025, 1, 1)] = 2m,
+            [new(2025, 1, 2)] = 8m,
+        };
+
+        var cut = Render<TmCalendarHeatmap>(parameters => parameters
+            .Add(component => component.Values, values)
+            .Add(component => component.From, new DateOnly(2025, 1, 1))
+            .Add(component => component.To, new DateOnly(2025, 1, 2)));
+
+        cut.Find("[data-date='2025-01-01']").ClassList.Should()
+            .Contain("tm-calendar-heatmap__day--level-1");
+        cut.Find("[data-date='2025-01-02']").ClassList.Should()
+            .Contain("tm-calendar-heatmap__day--level-4");
+    }
+
+    [Fact]
+    public void CalendarHeatmap_AllZeroValuesStayAtLevelZero()
+    {
+        var values = new Dictionary<DateOnly, decimal>
+        {
+            [new(2025, 1, 1)] = 0m,
+            [new(2025, 1, 2)] = 0m,
+        };
+
+        var cut = Render<TmCalendarHeatmap>(parameters => parameters
+            .Add(component => component.Values, values)
+            .Add(component => component.From, new DateOnly(2025, 1, 1))
+            .Add(component => component.To, new DateOnly(2025, 1, 2)));
+
+        cut.FindAll(".tm-calendar-heatmap__day").Should()
+            .OnlyContain(day => day.ClassList.Contains("tm-calendar-heatmap__day--level-0"));
+    }
+
+    [Fact]
+    public void CalendarHeatmap_LevelsChangesHighestLevel()
+    {
+        var date = new DateOnly(2025, 1, 1);
+
+        var cut = Render<TmCalendarHeatmap>(parameters => parameters
+            .Add(component => component.Values, new Dictionary<DateOnly, decimal> { [date] = 10m })
+            .Add(component => component.From, date)
+            .Add(component => component.To, date)
+            .Add(component => component.Levels, 7));
+
+        cut.Find("[data-date='2025-01-01']").ClassList.Should()
+            .Contain("tm-calendar-heatmap__day--level-6");
+    }
+
+    [Fact]
+    public void CalendarHeatmap_DaysInSameBucketUseSamePaletteLevel()
+    {
+        var values = new Dictionary<DateOnly, decimal>
+        {
+            [new(2025, 1, 1)] = 75m,
+            [new(2025, 1, 2)] = 100m,
+        };
+
+        var cut = Render<TmCalendarHeatmap>(parameters => parameters
+            .Add(component => component.Values, values)
+            .Add(component => component.From, new DateOnly(2025, 1, 1))
+            .Add(component => component.To, new DateOnly(2025, 1, 2))
+            .Add(component => component.MaxValue, 100m)
+            .Add(component => component.Levels, 3));
+
+        var days = cut.FindAll(".tm-calendar-heatmap__day--level-2");
+        days.Should().HaveCount(2);
+        days.Should().OnlyContain(day =>
+            day.GetAttribute("style")!.Contains(
+                "--tm-heatmap-day-color: var(--tm-heatmap-level-4)",
+                StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void CalendarHeatmap_SuccessSchemeAddsRootModifier()
+    {
+        var cut = Render<TmCalendarHeatmap>(parameters => parameters
+            .Add(component => component.Values, NoValues)
+            .Add(component => component.Year, 2025)
+            .Add(component => component.ColorScheme, CalendarHeatmapColorScheme.Success));
+
+        cut.Find(".tm-calendar-heatmap").ClassList.Should()
+            .Contain("tm-calendar-heatmap--success");
+    }
+
     private static IDisposable UseCulture(string name)
     {
         var previousCulture = CultureInfo.CurrentCulture;
