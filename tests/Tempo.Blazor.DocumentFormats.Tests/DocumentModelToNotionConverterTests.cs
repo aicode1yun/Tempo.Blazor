@@ -31,7 +31,8 @@ public class DocumentModelToNotionConverterTests
         var rows = result.Blocks.Where(block => block.Type == BlockType.TableRow).OrderBy(block => block.Order).ToList();
         rows.Should().HaveCount(2);
         rows.Should().OnlyContain(row => row.ParentBlockId == table.Id);
-        ((TableRowBlockContent)rows[1].Content).Cells.Should().Contain("Ready");
+        ((TableRowBlockContent)rows[1].Content).RichCells
+            .Should().ContainSingle(cell => cell.Html == "Ready");
 
         var image = (ImageBlockContent)result.Blocks.Single(block => block.Type == BlockType.Image).Content;
         image.Url.Should().Be("https://example.test/diagram.png");
@@ -216,31 +217,39 @@ public class DocumentModelToNotionConverterTests
     }
 
     [Fact]
-    public void ConvertBlocks_LegacyFlatTableRowsWithoutTableParentStillConvert()
+    public void ConvertBlocks_StandaloneTableRowsDoNotActivateLegacyTableFallback()
     {
         var pageId = Guid.NewGuid();
         var blocks = new List<IPageBlock>
         {
-            LegacyRow(pageId, 0, "Name", "Status"),
-            LegacyRow(pageId, 1, "CF26", "Ready")
+            StandaloneRow(pageId, 0, "Name", "Status"),
+            StandaloneRow(pageId, 1, "CF26", "Ready")
         };
+        var warnings = new List<DocumentFormatCompatibilityWarning>();
 
-        var restored = NotionToDocumentModelConverter.ConvertBlocks(blocks);
+        var restored = NotionToDocumentModelConverter.ConvertBlocks(blocks, warnings);
 
-        var table = restored.Should().ContainSingle().Which.Content
-            .Should().BeOfType<Dm.TableBlockContent>().Subject;
-        table.Rows.Should().HaveCount(2);
-        table.ColumnAlignments.Should().BeEmpty();
+        restored.Should().HaveCount(2);
+        restored.Should().OnlyContain(block =>
+            block.Content is Dm.ParagraphBlockContent);
+        warnings.Should().HaveCount(2);
     }
 
-    private static IPageBlock LegacyRow(Guid pageId, int order, params string[] cells) => new PageBlock
+    private static IPageBlock StandaloneRow(
+        Guid pageId,
+        int order,
+        params string[] cells) => new PageBlock
     {
         Id = Guid.NewGuid(),
         PageId = pageId,
         ParentBlockId = null,
         Type = BlockType.TableRow,
         Order = order,
-        Content = new TableRowBlockContent { Cells = cells }
+        Content = new TableRowBlockContent
+        {
+            RichCells = cells.Select(cell =>
+                new NotionTableCell { Html = cell }).ToList()
+        }
     };
 
     private static Dm.DocumentBlock AlignedTableBlock() => new()

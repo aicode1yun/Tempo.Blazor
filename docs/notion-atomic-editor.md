@@ -43,3 +43,26 @@ separate.
 When `AggregateProvider` is omitted, canonical tables still render, but their
 aggregate-only authoring controls are hidden to avoid falling back to partial
 sequential writes.
+
+## DOCX and document-model table fidelity
+
+`DocumentModelToNotionConverter` writes table rows only through canonical
+`RichCells`. `NotionToDocumentModelConverter` reads the same representation and
+reconstructs physical continuation cells required by DOCX vertical merges.
+Across `DOCX → DocumentModel → Notion → DocumentModel → DOCX`, the conversion
+preserves cell content and order, inline marks and colors, cell fills,
+horizontal and vertical alignment, row/column spans, preferred widths, and
+supported per-side borders.
+
+The regression fixture
+`tests/Tempo.Blazor.DocumentFormats.Tests/TestData/KR.docx` is a byte-identical,
+immutable copy of the externally supplied source. Its provenance, SHA-256, and
+source location are recorded in `KR.provenance.json`. Tests pin both source
+tables, including the 8-column `7 × 4` merged region and the 2-column Impact
+color scale, and also verify the strict MCP `createTable` payloads.
+
+Notion has no table-level width or table-level border representation.
+Unsupported cell border syntax and other non-representable table details emit
+`document.table.compatibility` warnings with a precise `SourcePath`; unsupported
+DOCX cell-border styles emit `docx.tableBorderUnsupported`. Callers should
+surface or log these warnings instead of treating the conversion as lossless.

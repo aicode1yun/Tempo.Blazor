@@ -1325,7 +1325,10 @@ public sealed class DocxPackageReader
             return marks;
         }
 
-        if (properties.Bold is not null) marks.Add(new InlineMark { Type = InlineMarkType.Bold });
+        if (properties.Bold is not null || properties.BoldComplexScript is not null)
+        {
+            marks.Add(new InlineMark { Type = InlineMarkType.Bold });
+        }
         if (properties.Italic is not null) marks.Add(new InlineMark { Type = InlineMarkType.Italic });
         if (properties.Underline is not null) marks.Add(new InlineMark { Type = InlineMarkType.Underline });
         if (properties.Strike is not null) marks.Add(new InlineMark { Type = InlineMarkType.Strikethrough });
@@ -1367,9 +1370,14 @@ public sealed class DocxPackageReader
             BackgroundColor = FromDocxColor(tableProperties?.GetFirstChild<W.Shading>()?.Fill?.Value)
         };
         var rows = new List<TableRowContent>();
+        var activeVerticalMerges = new Dictionary<int, TableCellContent>();
+        var rowIndex = 0;
         foreach (var row in table.Elements<W.TableRow>())
         {
             var cells = new List<TableCellContent>();
+            var continuedVerticalMerges = new Dictionary<int, TableCellContent>();
+            var columnIndex = 0;
+            var cellIndex = 0;
             foreach (var cell in row.Elements<W.TableCell>())
             {
                 var cellId = ReadElementId(cell, "cell-id");
@@ -1377,7 +1385,6 @@ public sealed class DocxPackageReader
                 var properties = cell.TableCellProperties;
                 var columnSpan = Math.Max(1, properties?.GridSpan?.Val?.Value ?? 1);
                 var verticalMerge = properties?.VerticalMerge;
-                var rowSpan = verticalMerge?.Val?.Value == W.MergedCellValues.Restart ? 2 : 1;
                 var blocks = new List<DocumentBlock>();
                 foreach (var paragraph in cell.Elements<W.Paragraph>())
                 {
@@ -1387,26 +1394,63 @@ public sealed class DocxPackageReader
                         Id = ReadElementId(paragraph, "block-id"),
                         Type = DocumentBlockType.Paragraph,
                         Order = 0,
-                        Content = new ParagraphBlockContent { Inlines = inlines }
+                        Content = new ParagraphBlockContent { Inlines = inlines },
+                        ParagraphProperties = ReadParagraphFormatting(paragraph.ParagraphProperties)
+                            ?? new DocumentParagraphProperties()
                     };
                     NormalizeDrawingAnchors(block, inlines);
                     blocks.Add(block);
                 }
 
-                cells.Add(new TableCellContent
+                var importedCell = new TableCellContent
                 {
                     Id = cellId,
                     ColumnSpan = columnSpan,
-                    RowSpan = rowSpan,
-                    Merge = new TableCellMerge { IsOrigin = verticalMerge?.Val?.Value != W.MergedCellValues.Continue },
+                    RowSpan = 1,
+                    Merge = new TableCellMerge(),
                     Width = TwipsToNullablePoints(properties?.GetFirstChild<W.TableCellWidth>()?.Width?.Value),
                     BackgroundColor = FromDocxColor(properties?.GetFirstChild<W.Shading>()?.Fill?.Value),
+                    Borders = ReadCellBorders(
+                        properties?.GetFirstChild<W.TableCellBorders>(),
+                        $"document.blocks[{tableId}].table.rows[{rowIndex}].cells[{cellIndex}].borders",
+                        cellId),
                     VerticalAlignment = FromDocxCellVerticalAlignment(properties?.GetFirstChild<W.TableCellVerticalAlignment>()?.Val?.Value),
                     Blocks = blocks.Count == 0 ? [DocumentModelText.Paragraph(string.Empty)] : blocks
-                });
+                };
+
+                if (verticalMerge?.Val?.Value == W.MergedCellValues.Restart)
+                {
+                    continuedVerticalMerges[columnIndex] = importedCell;
+                }
+                else if (verticalMerge is not null &&
+                         activeVerticalMerges.TryGetValue(columnIndex, out var origin))
+                {
+                    origin.RowSpan++;
+                    importedCell.Merge = new TableCellMerge
+                    {
+                        IsOrigin = false,
+                        OriginCellId = origin.Id
+                    };
+                    continuedVerticalMerges[columnIndex] = origin;
+                }
+                else if (verticalMerge is not null)
+                {
+                    _warnings.Add(Warning(
+                        "docx.tableVerticalMergeOriginMissing",
+                        "DOCX vertical-merge continuation has no origin in the preceding row and was imported as an independent cell.",
+                        DocumentFormatCompatibilitySeverity.Warning,
+                        $"document.blocks[{tableId}].table.rows[{rowIndex}].cells[{cellIndex}].merge",
+                        cellId));
+                }
+
+                cells.Add(importedCell);
+                columnIndex += columnSpan;
+                cellIndex++;
             }
 
             rows.Add(new TableRowContent { Cells = cells });
+            activeVerticalMerges = continuedVerticalMerges;
+            rowIndex++;
         }
 
         return new DocumentBlock
@@ -1454,6 +1498,60 @@ public sealed class DocxPackageReader
         }
 
         return TableCellVerticalAlignment.Top;
+    }
+
+    private TableCellBorders ReadCellBorders(
+        W.TableCellBorders? borders,
+        string sourcePath,
+        string cellId)
+        => new()
+        {
+            Top = ReadBorder(borders?.TopBorder, $"{sourcePath}.top", cellId),
+            Right = ReadBorder(borders?.RightBorder, $"{sourcePath}.right", cellId),
+            Bottom = ReadBorder(borders?.BottomBorder, $"{sourcePath}.bottom", cellId),
+            Left = ReadBorder(borders?.LeftBorder, $"{sourcePath}.left", cellId)
+        };
+
+    private string? ReadBorder(W.BorderType? border, string sourcePath, string cellId)
+    {
+        if (border?.Val?.Value is null)
+        {
+            return null;
+        }
+
+        var value = border.Val.Value;
+        var style =
+            value == W.BorderValues.Nil || value == W.BorderValues.None
+                ? "none"
+                : value == W.BorderValues.Single
+                    ? "solid"
+                    : value == W.BorderValues.Dashed ||
+                      value == W.BorderValues.DashSmallGap
+                        ? "dashed"
+                        : value == W.BorderValues.Dotted
+                            ? "dotted"
+                            : value == W.BorderValues.Double
+                                ? "double"
+                                : null;
+        if (style is null)
+        {
+            _warnings.Add(Warning(
+                "docx.tableBorderUnsupported",
+                $"DOCX table-cell border style '{value}' is not representable and was omitted.",
+                DocumentFormatCompatibilitySeverity.Warning,
+                sourcePath,
+                cellId));
+            return null;
+        }
+        if (style == "none")
+        {
+            return style;
+        }
+
+        var eighthPoints = border.Size?.Value ?? 4U;
+        var widthPixels = eighthPoints / 8d * 96d / 72d;
+        var color = FromDocxColor(border.Color?.Value) ?? "#000000";
+        return FormattableString.Invariant($"{widthPixels:0.##}px {style} {color}");
     }
 
     private static string? FromDocxColor(string? value)

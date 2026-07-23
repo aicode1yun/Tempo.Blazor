@@ -67,16 +67,14 @@ public static partial class NotionToDocumentModelConverter
             {
                 var rows = childRowsByTableId.TryGetValue(block.Id, out var childRows)
                     ? childRows
-                    : ReadConsecutiveRows(ordered, ref index);
+                    : [];
                 result.Add(CreateTable(block, rows, result.Count, warnings));
                 continue;
             }
 
             if (block.Type == BlockType.TableRow)
             {
-                var rows = new List<IPageBlock> { block };
-                rows.AddRange(ReadConsecutiveRows(ordered, ref index));
-                result.Add(CreateTable(block, rows, result.Count, warnings));
+                result.Add(ConvertBlock(block, result.Count, warnings));
                 continue;
             }
 
@@ -84,20 +82,6 @@ public static partial class NotionToDocumentModelConverter
         }
 
         return result;
-    }
-
-    private static List<IPageBlock> ReadConsecutiveRows(IReadOnlyList<IPageBlock> ordered, ref int index)
-    {
-        var rows = new List<IPageBlock>();
-        while (index + 1 < ordered.Count
-               && ordered[index + 1].ParentBlockId is null
-               && ordered[index + 1].Type == BlockType.TableRow)
-        {
-            index++;
-            rows.Add(ordered[index]);
-        }
-
-        return rows;
     }
 
     private static Dm.DocumentBlock ConvertBlock(
@@ -275,25 +259,93 @@ public static partial class NotionToDocumentModelConverter
             return CreateParagraph(tableBlock.Id.ToString("N"), order, "Empty table");
         }
 
-        var rows = new List<Dm.TableRowContent>();
-        for (var rowIndex = 0; rowIndex < rowBlocks.Count; rowIndex++)
-        {
-            var rowBlock = rowBlocks[rowIndex];
-            var cells = ReadRowCells(rowBlock.Content).ToList();
-            if (tableContent?.ColumnCount > cells.Count)
+        var logicalRows = rowBlocks
+            .Select(rowBlock => new Nm.NotionAuthoringTableRow
             {
-                cells.AddRange(Enumerable.Repeat(string.Empty, tableContent.ColumnCount - cells.Count));
+                Cells = ReadRowCells(rowBlock.Content)
+                    .Select(ToCanonicalCell)
+                    .ToList()
+            })
+            .ToList();
+        var columnCount = tableContent?.ColumnCount
+            ?? logicalRows.Max(row => row.Cells.Sum(cell => cell.ColumnSpan));
+        if (!Nm.NotionTableGridProjector.TryProject(
+                logicalRows,
+                columnCount,
+                $"notion:block:{tableBlock.Id:D}.rows",
+                out var projection,
+                out var projectionIssues))
+        {
+            foreach (var issue in projectionIssues)
+            {
+                warnings?.Add(new DocumentFormatCompatibilityWarning
+                {
+                    Code = issue.Code,
+                    Message = issue.Message,
+                    Severity = DocumentFormatCompatibilitySeverity.Warning,
+                    SourcePath = issue.Path,
+                    ObjectId = tableBlock.Id.ToString("N")
+                });
             }
 
-            rows.Add(new Dm.TableRowContent
+            return CreateParagraph(
+                tableBlock.Id.ToString("N"),
+                order,
+                "Invalid table");
+        }
+
+        var rows = new List<Dm.TableRowContent>(logicalRows.Count);
+        for (var rowIndex = 0; rowIndex < logicalRows.Count; rowIndex++)
+        {
+            var cells = new List<Dm.TableCellContent>();
+            var columnIndex = 0;
+            while (columnIndex < columnCount)
             {
-                Cells = cells.Select(cell => new Dm.TableCellContent
+                var slot = projection!.GetSlot(rowIndex, columnIndex);
+                if (slot.IsOrigin)
                 {
-                    IsHeader = tableContent?.HasHeaderRow == true && rowIndex == 0,
-                    Blocks = [CreateParagraph(Guid.NewGuid().ToString("N"), 0, TextInlines(cell))]
-                })
-                    .ToList()
-            });
+                    var originId = CellId(tableBlock.Id, slot.OriginRow, slot.OriginColumn);
+                    cells.Add(ToDocumentCell(
+                        slot.Cell,
+                        originId,
+                        tableContent,
+                        slot.OriginColumn,
+                        tableContent?.HasHeaderRow == true && rowIndex == 0));
+                    columnIndex += Math.Max(1, slot.Cell.ColumnSpan);
+                    continue;
+                }
+
+                if (slot.OriginRow < rowIndex && slot.OriginColumn == columnIndex)
+                {
+                    cells.Add(new Dm.TableCellContent
+                    {
+                        Id = $"{CellId(tableBlock.Id, rowIndex, columnIndex)}-continuation",
+                        ColumnSpan = Math.Max(1, slot.Cell.ColumnSpan),
+                        RowSpan = 1,
+                        Merge = new Dm.TableCellMerge
+                        {
+                            IsOrigin = false,
+                            OriginCellId = CellId(
+                                tableBlock.Id,
+                                slot.OriginRow,
+                                slot.OriginColumn)
+                        },
+                        Blocks =
+                        [
+                            CreateParagraph(
+                                $"{CellId(tableBlock.Id, rowIndex, columnIndex)}-text",
+                                0,
+                                string.Empty)
+                        ]
+                    });
+                    columnIndex += Math.Max(1, slot.Cell.ColumnSpan);
+                    continue;
+                }
+
+                columnIndex++;
+            }
+
+            rows.Add(new Dm.TableRowContent { Cells = cells });
         }
 
         return new Dm.DocumentBlock
@@ -304,26 +356,196 @@ public static partial class NotionToDocumentModelConverter
             Content = new Dm.TableBlockContent
             {
                 Rows = rows,
-                // Legacy pages store rows without a Table parent, so there is no alignment to read back.
-                ColumnAlignments = [.. tableContent?.ColumnAlignments ?? []]
+                ColumnAlignments = tableContent?.ColumnAlignments
+                    .Select(ToDocumentAlignment)
+                    .ToList() ?? []
             }
         };
     }
 
-    private static IEnumerable<string> ReadRowCells(Nm.IBlockContent content)
+    private static IReadOnlyList<Nm.NotionTableCell> ReadRowCells(
+        Nm.IBlockContent content)
     {
-        if (content is Nm.ITableRowBlockContent row)
-        {
-            if (row.RichCells.Count > 0)
-            {
-                return row.RichCells.Select(cell =>
-                    Nm.NotionHtmlSanitizer.SanitizeBlockContent(cell.Html));
-            }
+        return content is Nm.ITableRowBlockContent row
+            ? row.RichCells.Where(cell => !cell.IsMergeHidden).ToList()
+            : [];
+    }
 
-            return row.Cells.Select(Nm.NotionHtmlSanitizer.SanitizeBlockContent);
+    private static Nm.NotionAuthoringTableCell ToCanonicalCell(
+        Nm.NotionTableCell cell)
+        => new()
+        {
+            Html = Nm.NotionHtmlSanitizer.SanitizeBlockContent(cell.Html),
+            Inlines = cell.Inlines,
+            BackgroundColor = cell.BackgroundColor,
+            TextColor = cell.TextColor,
+            HorizontalAlignment = cell.HorizontalAlignment,
+            VerticalAlignment = cell.VerticalAlignment,
+            RowSpan = Math.Max(1, cell.RowSpan),
+            ColumnSpan = Math.Max(1, cell.ColSpan),
+            Width = cell.Width,
+            Borders = cell.Borders
+        };
+
+    private static Dm.TableCellContent ToDocumentCell(
+        Nm.NotionAuthoringTableCell cell,
+        string cellId,
+        Nm.ITableBlockContent? table,
+        int columnIndex,
+        bool isHeader)
+    {
+        var width = cell.Width;
+        if (width is null && table?.ColumnWidths.Count > columnIndex)
+        {
+            width = table.ColumnWidths
+                .Skip(columnIndex)
+                .Take(Math.Max(1, cell.ColumnSpan))
+                .Where(value => value is > 0)
+                .Sum();
+            if (width == 0)
+            {
+                width = null;
+            }
         }
 
-        return [];
+        return new Dm.TableCellContent
+        {
+            Id = cellId,
+            ColumnSpan = Math.Max(1, cell.ColumnSpan),
+            RowSpan = Math.Max(1, cell.RowSpan),
+            IsHeader = isHeader,
+            Merge = new Dm.TableCellMerge { IsOrigin = true },
+            Width = width,
+            BackgroundColor = cell.BackgroundColor,
+            Borders = new Dm.TableCellBorders
+            {
+                Top = ToBorderCss(cell.Borders.Top),
+                Right = ToBorderCss(cell.Borders.Right),
+                Bottom = ToBorderCss(cell.Borders.Bottom),
+                Left = ToBorderCss(cell.Borders.Left)
+            },
+            VerticalAlignment = cell.VerticalAlignment switch
+            {
+                Nm.NotionTableVerticalAlignment.Middle =>
+                    Dm.TableCellVerticalAlignment.Middle,
+                Nm.NotionTableVerticalAlignment.Bottom =>
+                    Dm.TableCellVerticalAlignment.Bottom,
+                _ => Dm.TableCellVerticalAlignment.Top
+            },
+            Blocks =
+            [
+                new Dm.DocumentBlock
+                {
+                    Id = $"{cellId}-text",
+                    Type = Dm.DocumentBlockType.Paragraph,
+                    Order = 0,
+                    ParagraphProperties = new Dm.DocumentParagraphProperties
+                    {
+                        Alignment = cell.HorizontalAlignment switch
+                        {
+                            Nm.NotionTableHorizontalAlignment.Center =>
+                                Dm.DocumentTextAlignment.Center,
+                            Nm.NotionTableHorizontalAlignment.Right =>
+                                Dm.DocumentTextAlignment.Right,
+                            _ => Dm.DocumentTextAlignment.Left
+                        }
+                    },
+                    Content = new Dm.ParagraphBlockContent
+                    {
+                        Inlines = ToDocumentInlines(cell)
+                    }
+                }
+            ]
+        };
+    }
+
+    private static List<Dm.InlineContent> ToDocumentInlines(
+        Nm.NotionAuthoringTableCell cell)
+    {
+        if (cell.Inlines.Count == 0)
+        {
+            return TextInlines(
+                    Nm.NotionHtmlSanitizer.SanitizeBlockContent(cell.Html))
+                .ToList();
+        }
+
+        return cell.Inlines.Select(inline =>
+        {
+            var marks = new List<Dm.InlineMark>();
+            if (inline.Bold)
+                marks.Add(new Dm.InlineMark { Type = Dm.InlineMarkType.Bold });
+            if (inline.Italic)
+                marks.Add(new Dm.InlineMark { Type = Dm.InlineMarkType.Italic });
+            if (inline.Underline)
+                marks.Add(new Dm.InlineMark { Type = Dm.InlineMarkType.Underline });
+            if (inline.Strikethrough)
+                marks.Add(new Dm.InlineMark { Type = Dm.InlineMarkType.Strikethrough });
+            if (inline.Code)
+            {
+                marks.Add(new Dm.InlineMark
+                {
+                    Type = Dm.InlineMarkType.FontFamily,
+                    Value = "monospace"
+                });
+            }
+            if (!string.IsNullOrWhiteSpace(inline.Href))
+            {
+                marks.Add(new Dm.InlineMark
+                {
+                    Type = Dm.InlineMarkType.Link,
+                    Link = new Dm.LinkMarkData { Href = inline.Href }
+                });
+            }
+
+            var textColor = inline.TextColor ?? cell.TextColor;
+            if (!string.IsNullOrWhiteSpace(textColor))
+            {
+                marks.Add(new Dm.InlineMark
+                {
+                    Type = Dm.InlineMarkType.TextColor,
+                    Value = textColor
+                });
+            }
+            if (!string.IsNullOrWhiteSpace(inline.BackgroundColor))
+            {
+                marks.Add(new Dm.InlineMark
+                {
+                    Type = Dm.InlineMarkType.Highlight,
+                    Value = inline.BackgroundColor
+                });
+            }
+
+            return (Dm.InlineContent)new Dm.TextRun
+            {
+                Text = inline.Text,
+                Marks = marks
+            };
+        }).ToList();
+    }
+
+    private static string CellId(Guid tableId, int rowIndex, int columnIndex)
+        => $"{tableId:N}-r{rowIndex}-c{columnIndex}";
+
+    private static Dm.TableColumnAlignment ToDocumentAlignment(
+        Dm.TableColumnAlignment alignment)
+        => alignment;
+
+    private static string? ToBorderCss(Nm.NotionTableBorder? border)
+    {
+        if (border is null)
+        {
+            return null;
+        }
+        if (border.Style == Nm.NotionTableBorderStyle.None)
+        {
+            return "none";
+        }
+
+        var color = string.IsNullOrWhiteSpace(border.Color)
+            ? "#000000"
+            : border.Color;
+        return FormattableString.Invariant(
+            $"{border.Width:0.##}px {border.Style.ToString().ToLowerInvariant()} {color}");
     }
 
     private static Dm.DocumentBlock CreateApproximateParagraph(

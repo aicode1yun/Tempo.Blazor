@@ -30,6 +30,9 @@
     <None Include="..\Tempo.Blazor.DocumentFormats.Tests\TestData\Fonts\DancingScript-VariableFont_wght.ttf"
           Link="TestData\Fonts\DancingScript-VariableFont_wght.ttf"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Tempo.Blazor.DocumentFormats.Tests\TestData\KR.docx"
+          Link="TestData\KR.docx"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

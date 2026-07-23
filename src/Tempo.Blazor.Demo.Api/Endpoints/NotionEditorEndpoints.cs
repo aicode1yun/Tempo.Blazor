@@ -1180,6 +1180,12 @@ public static class NotionEditorEndpoints
                                 "Atomic table authoring and conflict recovery seed page.");
                             blockStore.SeedE2EAtomicTablePage();
                             break;
+                        case "seedKrFidelityPage":
+                            dataStore.SeedE2ESimplePage(
+                                "F7 KR DOCX Fidelity",
+                                "KR.docx table fidelity seed page.");
+                            blockStore.SeedE2EKrFidelityPage();
+                            break;
                         case "seedMediaPage":
                             dataStore.SeedE2ESimplePage("EB6 Media Blocks", "Media seed page.");
                             blockStore.SeedE2EMediaPage();

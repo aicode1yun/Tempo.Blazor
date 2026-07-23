@@ -54,9 +54,11 @@ public class NotionToDocumentModelConverterTests
         var blocks = new IPageBlock[]
         {
             Block(BlockType.Table, 0, new Nm.TableBlockContent { ColumnCount = 2, HasHeaderRow = true }),
-            Block(BlockType.TableRow, 1, new Nm.TableRowBlockContent { Cells = ["Name", "Status"] }),
-            Block(BlockType.TableRow, 2, new Nm.TableRowBlockContent { Cells = ["CF25", "Ready"] })
+            Block(BlockType.TableRow, 1, RichRow("Name", "Status")),
+            Block(BlockType.TableRow, 2, RichRow("CF25", "Ready"))
         };
+        ((PageBlock)blocks[1]).ParentBlockId = blocks[0].Id;
+        ((PageBlock)blocks[2]).ParentBlockId = blocks[0].Id;
 
         var document = NotionToDocumentModelConverter.ConvertPage(Page("Table"), blocks).Document;
 
@@ -180,6 +182,13 @@ public class NotionToDocumentModelConverterTests
         CreatedAt = new DateTime(2026, 1, 1, 8, 0, 0, DateTimeKind.Utc),
         LastEditedAt = new DateTime(2026, 1, 2, 9, 0, 0, DateTimeKind.Utc)
     };
+
+    private static Nm.TableRowBlockContent RichRow(params string[] cells)
+        => new()
+        {
+            RichCells = cells.Select(cell =>
+                new Nm.NotionTableCell { Html = cell }).ToList()
+        };
 
     private static Nm.IBlockContent ContentFor(BlockType type) => type switch
     {

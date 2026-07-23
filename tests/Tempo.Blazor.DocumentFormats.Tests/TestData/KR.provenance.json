@@ -1,0 +1,9 @@
+{
+  "fixture": "KR.docx",
+  "sourcePath": "/home/pavel/NetProjects/KR.docx",
+  "sourceSha256": "2086363c3535842cafa882154e1f881111d9fe70f4650d17e6bc653fb350e035",
+  "sizeBytes": 18905,
+  "capturedAt": "2026-07-23",
+  "purpose": "Acceptance fixture for Tempo.Blazor 2.7.0 DOCX to Notion rich-table fidelity.",
+  "sourcePolicy": "The source file is read-only. Tests use this committed byte-identical copy."
+}

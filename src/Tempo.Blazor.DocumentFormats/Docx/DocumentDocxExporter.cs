@@ -745,6 +745,8 @@ public sealed class DocxPackageWriter
                     properties.Append(new W.Shading { Val = W.ShadingPatternValues.Clear, Fill = cellFill });
                 }
 
+                AppendCellBorders(properties, cell.Borders);
+
                 if (cell.VerticalAlignment != TableCellVerticalAlignment.Top)
                 {
                     properties.Append(new W.TableCellVerticalAlignment
@@ -785,6 +787,95 @@ public sealed class DocxPackageWriter
         }
 
         return docxTable;
+    }
+
+    private static void AppendCellBorders(
+        W.TableCellProperties properties,
+        TableCellBorders borders)
+    {
+        var result = new W.TableCellBorders();
+        AppendBorder(result, CreateBorder<W.TopBorder>(borders.Top));
+        AppendBorder(result, CreateBorder<W.RightBorder>(borders.Right));
+        AppendBorder(result, CreateBorder<W.BottomBorder>(borders.Bottom));
+        AppendBorder(result, CreateBorder<W.LeftBorder>(borders.Left));
+        if (result.HasChildren)
+        {
+            properties.Append(result);
+        }
+    }
+
+    private static void AppendBorder(
+        W.TableCellBorders target,
+        W.BorderType? border)
+    {
+        if (border is not null)
+        {
+            target.Append(border);
+        }
+    }
+
+    private static TBorder? CreateBorder<TBorder>(string? css)
+        where TBorder : W.BorderType, new()
+    {
+        if (string.IsNullOrWhiteSpace(css))
+        {
+            return null;
+        }
+        if (css.Trim().Equals("none", StringComparison.OrdinalIgnoreCase))
+        {
+            return new TBorder { Val = W.BorderValues.Nil };
+        }
+
+        var parts = css.Split(
+            ' ',
+            3,
+            StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length != 3)
+        {
+            return null;
+        }
+
+        var widthToken = parts[0];
+        var widthInPixels = widthToken.EndsWith("px", StringComparison.OrdinalIgnoreCase);
+        var widthInPoints = widthToken.EndsWith("pt", StringComparison.OrdinalIgnoreCase);
+        if ((!widthInPixels && !widthInPoints) ||
+            !double.TryParse(
+                widthToken[..^2],
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out var width) ||
+            width < 0)
+        {
+            return null;
+        }
+        if (widthInPixels)
+        {
+            width *= 72d / 96d;
+        }
+
+        var style = parts[1].ToLowerInvariant() switch
+        {
+            "solid" => W.BorderValues.Single,
+            "dashed" => W.BorderValues.Dashed,
+            "dotted" => W.BorderValues.Dotted,
+            "double" => W.BorderValues.Double,
+            _ => (W.BorderValues?)null
+        };
+        var color = NormalizeDocxColor(parts[2]);
+        if (style is null || color is null)
+        {
+            return null;
+        }
+
+        return new TBorder
+        {
+            Val = style.Value,
+            Size = (uint)Math.Clamp(
+                (int)Math.Round(width * 8d),
+                1,
+                96),
+            Color = color
+        };
     }
 
     private static int PointsToTwips(double value) => DocxUnitConverter.PointToTwip(value);

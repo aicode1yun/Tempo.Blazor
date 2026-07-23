@@ -202,6 +202,18 @@ public abstract class NotionE2ETestBase : WasmTestBase
         });
     }
 
+    protected async Task SeedKrFidelityPageAsync()
+    {
+        await InvokeSeedAsync("seedKrFidelityPage");
+        await Page.WaitForSelectorAsync(
+            "[data-block-id='f7000000-0000-0000-0000-000000000020'] .tm-notion-table",
+            new PageWaitForSelectorOptions
+            {
+                State = WaitForSelectorState.Visible,
+                Timeout = 60000
+            });
+    }
+
     protected async Task SeedEmptyTocPageAsync()
     {
         await InvokeSeedAsync("seedEmptyTocPage");

@@ -1633,6 +1633,190 @@ public sealed class Eb1BaselineRenderer
         });
     }
 
+    public void SeedE2EKrFidelityPage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+        var thresholdTableId =
+            Guid.Parse("f7000000-0000-0000-0000-000000000010");
+        AddTo(
+            thresholdTableId,
+            MockNotionDataStore.Page1Id,
+            BlockType.Table,
+            0,
+            new TableBlockContent
+            {
+                ColumnCount = 8,
+                HasHeaderRow = true,
+                ColumnWidths = [125, 76, 79, 77, 73, 76, 75, 81]
+            });
+        AddChildTo(
+            Guid.Parse("f7000000-0000-0000-0000-000000000011"),
+            MockNotionDataStore.Page1Id,
+            thresholdTableId,
+            BlockType.TableRow,
+            0,
+            new TableRowBlockContent
+            {
+                RichCells =
+                [
+                    FidelityCell("Threshold / Typ udalosti", bold: true),
+                    FidelityCell("EL01", bold: true),
+                    FidelityCell("EL02", bold: true),
+                    FidelityCell("EL03", bold: true),
+                    FidelityCell("EL04", bold: true),
+                    FidelityCell("EL05", bold: true),
+                    FidelityCell("EL06", bold: true),
+                    FidelityCell("EL07", bold: true)
+                ]
+            });
+        AddChildTo(
+            Guid.Parse("f7000000-0000-0000-0000-000000000012"),
+            MockNotionDataStore.Page1Id,
+            thresholdTableId,
+            BlockType.TableRow,
+            1,
+            new TableRowBlockContent
+            {
+                RichCells =
+                [
+                    FidelityCell("mio", "#FDE9D9"),
+                    FidelityCell("mio", "#FCD5B4"),
+                    FidelityCell("mio", "#FCD5B4"),
+                    FidelityCell("mio", "#FCD5B4"),
+                    FidelityCell("mio", "#FCD5B4"),
+                    FidelityCell("mio", "#FCD5B4"),
+                    FidelityCell("mio", "#FCD5B4"),
+                    FidelityCell("mio", "#FCD5B4")
+                ]
+            });
+        AddChildTo(
+            Guid.Parse("f7000000-0000-0000-0000-000000000013"),
+            MockNotionDataStore.Page1Id,
+            thresholdTableId,
+            BlockType.TableRow,
+            2,
+            new TableRowBlockContent
+            {
+                RichCells =
+                [
+                    FidelityCell("mio"),
+                    FidelityCell(
+                        "Nezmenená hodnota",
+                        bold: true,
+                        horizontalAlignment:
+                        NotionTableHorizontalAlignment.Center,
+                        colSpan: 7,
+                        rowSpan: 4),
+                    Hidden(2, 1),
+                    Hidden(2, 1),
+                    Hidden(2, 1),
+                    Hidden(2, 1),
+                    Hidden(2, 1),
+                    Hidden(2, 1)
+                ]
+            });
+        for (var rowIndex = 3; rowIndex < 6; rowIndex++)
+        {
+            AddChildTo(
+                Guid.Parse(
+                    $"f7000000-0000-0000-0000-{rowIndex + 11:000000000000}"),
+                MockNotionDataStore.Page1Id,
+                thresholdTableId,
+                BlockType.TableRow,
+                rowIndex,
+                new TableRowBlockContent
+                {
+                    RichCells =
+                    [
+                        FidelityCell("mio"),
+                        Hidden(2, 1),
+                        Hidden(2, 1),
+                        Hidden(2, 1),
+                        Hidden(2, 1),
+                        Hidden(2, 1),
+                        Hidden(2, 1),
+                        Hidden(2, 1)
+                    ]
+                });
+        }
+
+        var impactTableId =
+            Guid.Parse("f7000000-0000-0000-0000-000000000020");
+        AddTo(
+            impactTableId,
+            MockNotionDataStore.Page1Id,
+            BlockType.Table,
+            1,
+            new TableBlockContent
+            {
+                ColumnCount = 2,
+                ColumnWidths = [123, 247]
+            });
+        var impactRows = new[]
+        {
+            ("Combo-box", string.Empty, null, null),
+            ("Very high", "3 mil €", "#FF0000", "#FF3300"),
+            ("High", "> 0.5 - <= 3.0 mil €", "#FFC000", "#FFC000"),
+            ("Medium", "> - <= mil €", "#FFFF00", "#FFFF00"),
+            ("Low", "> 50 - < thd €", "#76933C", "#76933C"),
+            ("Very low", "thd €", "#76933C", "#76933C")
+        };
+        for (var rowIndex = 0; rowIndex < impactRows.Length; rowIndex++)
+        {
+            var row = impactRows[rowIndex];
+            AddChildTo(
+                Guid.Parse(
+                    $"f7000000-0000-0000-0000-{rowIndex + 21:000000000000}"),
+                MockNotionDataStore.Page1Id,
+                impactTableId,
+                BlockType.TableRow,
+                rowIndex,
+                new TableRowBlockContent
+                {
+                    RichCells =
+                    [
+                        FidelityCell(
+                            row.Item1,
+                            row.Item3,
+                            bold: rowIndex > 0),
+                        FidelityCell(
+                            row.Item2,
+                            row.Item4,
+                            bold: rowIndex > 0,
+                            horizontalAlignment:
+                            NotionTableHorizontalAlignment.Center)
+                    ]
+                });
+        }
+    }
+
+    private static NotionTableCell FidelityCell(
+        string text,
+        string? backgroundColor = null,
+        bool bold = false,
+        NotionTableHorizontalAlignment horizontalAlignment =
+            NotionTableHorizontalAlignment.Left,
+        int colSpan = 1,
+        int rowSpan = 1)
+        => new()
+        {
+            Html = bold ? $"<strong>{text}</strong>" : text,
+            Inlines =
+            [
+                new NotionRichTextInline
+                {
+                    Text = text,
+                    Bold = bold,
+                    TextColor = "#000000"
+                }
+            ],
+            BackgroundColor = backgroundColor,
+            TextColor = "#000000",
+            HorizontalAlignment = horizontalAlignment,
+            ColSpan = colSpan,
+            RowSpan = rowSpan
+        };
+
     private static NotionTableCell Cell(string html, int colSpan = 1, int rowSpan = 1, string? backgroundColor = null) => new()
     {
         Html = html,
