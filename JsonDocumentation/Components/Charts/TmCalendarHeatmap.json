@@ -1,0 +1,133 @@
+{
+  "itemName": "TmCalendarHeatmap",
+  "kind": "Component",
+  "category": "Charts",
+  "description": "Culture-aware calendar intensity grid for visualizing daily decimal values. It supports full-year or inclusive custom ranges, configurable level counts and color schemes, localized month/day labels and legend text, accessible value tooltips, custom value formatting, and day selection callbacks without JavaScript interop.",
+  "packageId": "Tempo.Blazor",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/TmCalendarHeatmap.razor",
+  "documentationStatus": "generated",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Charts"
+  ],
+  "parameters": [
+    {
+      "name": "CellSize",
+      "type": "int",
+      "isRequired": false,
+      "default": "12",
+      "description": "Size of each day cell in pixels. Defaults to 12."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes applied to the root element."
+    },
+    {
+      "name": "ColorScheme",
+      "type": "CalendarHeatmapColorScheme",
+      "isRequired": false,
+      "default": "CalendarHeatmapColorScheme.Primary",
+      "description": "Color scheme used for intensity levels. Defaults to Primary."
+    },
+    {
+      "name": "Culture",
+      "type": "CultureInfo?",
+      "isRequired": false,
+      "description": "Culture used for week alignment and date formatting. Defaults to CurrentUICulture."
+    },
+    {
+      "name": "From",
+      "type": "DateOnly?",
+      "isRequired": false,
+      "description": "Inclusive start of a custom date range. Defaults to the start of the current year."
+    },
+    {
+      "name": "Levels",
+      "type": "int",
+      "isRequired": false,
+      "default": "5",
+      "description": "Number of intensity levels, including the empty level. Values below 2 are treated as 2. Defaults to 5."
+    },
+    {
+      "name": "MaxValue",
+      "type": "decimal?",
+      "isRequired": false,
+      "description": "Optional upper bound of the intensity scale. When omitted, the maximum positive value inside the rendered date range is used."
+    },
+    {
+      "name": "OnDayClick",
+      "type": "EventCallback<CalendarHeatmapDayClickEventArgs>",
+      "isRequired": false,
+      "description": "Raised when a day cell is selected."
+    },
+    {
+      "name": "ShowDayLabels",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Shows localized labels for the first, third, and fifth weekday rows. Defaults to true."
+    },
+    {
+      "name": "ShowLegend",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Shows the localized intensity legend below the grid. Defaults to true."
+    },
+    {
+      "name": "ShowMonthLabels",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Shows localized month labels above the grid. Defaults to true."
+    },
+    {
+      "name": "To",
+      "type": "DateOnly?",
+      "isRequired": false,
+      "description": "Inclusive end of a custom date range. Defaults to the end of the current year."
+    },
+    {
+      "name": "ValueFormatter",
+      "type": "Func<decimal, string>?",
+      "isRequired": false,
+      "description": "Optional formatter for values displayed in day tooltips and accessible labels. The default formats values with two decimal places using Culture."
+    },
+    {
+      "name": "Values",
+      "type": "IReadOnlyDictionary<DateOnly, decimal>",
+      "isRequired": true,
+      "description": "Daily values displayed by the heatmap. Dates without an entry render as empty cells.",
+      "editorRequired": true
+    },
+    {
+      "name": "Year",
+      "type": "int?",
+      "isRequired": false,
+      "description": "Optional calendar year to render. When specified, the entire year is rendered and From and To are ignored."
+    }
+  ],
+  "cssClasses": [
+    "tm-calendar-heatmap",
+    "tm-calendar-heatmap__layout",
+    "tm-calendar-heatmap__month-labels",
+    "tm-calendar-heatmap__day-labels",
+    "tm-calendar-heatmap__grid",
+    "tm-calendar-heatmap__day",
+    "tm-calendar-heatmap__legend"
+  ],
+  "examples": [
+    {
+      "title": "Annual expense heatmap",
+      "description": "Render one cell per day, format values as currency, and handle day selection.",
+      "code": "<TmCalendarHeatmap Values=\"expenses\"\n                   Year=\"2026\"\n                   ColorScheme=\"CalendarHeatmapColorScheme.Primary\"\n                   ValueFormatter=\"FormatCurrency\"\n                   OnDayClick=\"HandleDayClick\" />"
+    },
+    {
+      "title": "Custom three-month range",
+      "description": "Limit the grid to an inclusive date range and use the danger palette.",
+      "code": "<TmCalendarHeatmap Values=\"expenses\"\n                   From=\"new DateOnly(2026, 1, 1)\"\n                   To=\"new DateOnly(2026, 3, 31)\"\n                   ColorScheme=\"CalendarHeatmapColorScheme.Danger\" />"
+    }
+  ]
+}

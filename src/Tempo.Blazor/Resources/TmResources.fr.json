@@ -5279,5 +5279,11 @@
   "ReportServer_NotFound": "Introuvable",
   "TmCalendarHeatmap_Less": "Moins",
   "TmCalendarHeatmap_More": "Plus",
-  "TmCalendarHeatmap_NoData": "Aucune donnée"
+  "TmCalendarHeatmap_NoData": "Aucune donnée",
+  "TmCalendarHeatmapDemo_Title": "Carte thermique du calendrier",
+  "TmCalendarHeatmapDemo_Description": "Comparez les dépenses quotidiennes sur une année ou concentrez-vous sur une période personnalisée.",
+  "TmCalendarHeatmapDemo_AnnualTitle": "Dépenses annuelles — principale",
+  "TmCalendarHeatmapDemo_RangeTitle": "Janvier à mars — danger",
+  "TmCalendarHeatmapDemo_ClickPrompt": "Sélectionnez un jour pour consulter sa dépense.",
+  "TmCalendarHeatmapDemo_Clicked": "Sélection du {0} : {1}"
 }

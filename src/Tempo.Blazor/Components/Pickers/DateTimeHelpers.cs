@@ -31,6 +31,10 @@ internal static class DateTimeHelpers
     public static string GetMonthName(int month, CultureInfo culture)
         => culture.DateTimeFormat.GetMonthName(month);
 
+    /// <summary>Returns the abbreviated month name for the given month and culture.</summary>
+    public static string GetAbbreviatedMonthName(int month, CultureInfo culture)
+        => culture.DateTimeFormat.GetAbbreviatedMonthName(month);
+
     /// <summary>
     /// Returns 7 abbreviated day-header strings starting on Monday,
     /// honouring the culture's <see cref="DateTimeFormatInfo.FirstDayOfWeek"/>.

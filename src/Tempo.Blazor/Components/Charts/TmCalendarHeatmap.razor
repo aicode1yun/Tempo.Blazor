@@ -261,7 +261,7 @@
             var positionDate = month < rangeStart ? rangeStart : month;
             var week = ((positionDate.DayNumber - gridStart.DayNumber) / 7) + 1;
             labels.Add(new CalendarHeatmapMonthLabel(
-                DateTimeHelpers.GetMonthName(month.Month, _culture),
+                DateTimeHelpers.GetAbbreviatedMonthName(month.Month, _culture),
                 week));
             month = month.AddMonths(1);
         }

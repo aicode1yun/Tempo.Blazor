@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "description": "Color palette used by TmCalendarHeatmap.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/CalendarHeatmapModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "CalendarHeatmapColorScheme"
+}

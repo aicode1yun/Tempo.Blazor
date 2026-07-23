@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Charts",
+  "description": "Identifies a calendar heatmap day selected by the user.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/Charts/CalendarHeatmapModels.cs",
+  "documentationStatus": "generated",
+  "itemName": "CalendarHeatmapDayClickEventArgs"
+}

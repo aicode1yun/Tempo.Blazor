@@ -275,7 +275,9 @@ public class TmCalendarHeatmapTests : LocalizationTestBase
             .Add(component => component.Culture, culture));
 
         var labels = cut.FindAll(".tm-calendar-heatmap__month-label");
-        labels.Select(label => label.TextContent).Should().Equal("leden", "únor");
+        labels.Select(label => label.TextContent).Should().Equal(
+            culture.DateTimeFormat.GetAbbreviatedMonthName(1),
+            culture.DateTimeFormat.GetAbbreviatedMonthName(2));
         labels[0].GetAttribute("style").Should().Contain("grid-column: 1");
         labels[1].GetAttribute("style").Should().Contain("grid-column: 5");
     }

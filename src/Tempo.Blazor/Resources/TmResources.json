@@ -5279,5 +5279,11 @@
   "ReportServer_NotFound": "Not found",
   "TmCalendarHeatmap_Less": "Less",
   "TmCalendarHeatmap_More": "More",
-  "TmCalendarHeatmap_NoData": "No data"
+  "TmCalendarHeatmap_NoData": "No data",
+  "TmCalendarHeatmapDemo_Title": "Calendar Heatmap",
+  "TmCalendarHeatmapDemo_Description": "Compare daily expenses across a year or focus on a custom date range.",
+  "TmCalendarHeatmapDemo_AnnualTitle": "Annual expenses — Primary",
+  "TmCalendarHeatmapDemo_RangeTitle": "January to March — Danger",
+  "TmCalendarHeatmapDemo_ClickPrompt": "Select a day to inspect its expense.",
+  "TmCalendarHeatmapDemo_Clicked": "Selected {0}: {1}"
 }
