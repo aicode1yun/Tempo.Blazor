@@ -2230,6 +2230,46 @@
       ]
     },
     {
+      "itemName": "DiagramSvgBuilder",
+      "kind": "Class",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram.Services",
+      "description": "Builds a static SVG representation of a diagram page using pure SVG elements (no browser, no JavaScript), so the output can be embedded directly, rasterised by Skia (PNG) or embedded by QuestPDF (PDF). Rendering is deterministic given a fixed page, options and palette.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/DiagramSvgBuilder.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DiagramSvgPalette",
+      "kind": "Class",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram.Services",
+      "description": "Resolved colour palette applied to a diagram SVG render. Only fills in the defaults; explicit stencil/style colours override these per element.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/IDiagramSvgRenderer.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DiagramSvgRenderOptions",
+      "kind": "Class",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram.Services",
+      "description": "Options controlling headless diagram SVG rendering. All fields are additive and optional; the defaults reproduce the light-theme auto-fit export.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/IDiagramSvgRenderer.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DiagramSvgTheme",
+      "kind": "Enum",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram.Services",
+      "description": "Colour theme for IDiagramSvgRenderer output.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/IDiagramSvgRenderer.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DiagramTableCellData",
       "kind": "Class",
       "category": "Diagram",
@@ -2457,6 +2497,16 @@
       "description": "Provides diagram stencil definitions to the diagram stencil registry.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/IDiagramStencilProvider.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IDiagramSvgRenderer",
+      "kind": "Interface",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Components.Diagram.Services",
+      "description": "Renders a DiagramDocument to a static SVG string on the server, without a browser or JavaScript. Intended for headless export and documentation embedding (the same output the demo export service rasterises to PNG/PDF).",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/IDiagramSvgRenderer.cs",
       "documentationStatus": "merged"
     },
     {
@@ -35371,11 +35421,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1430,
-    "manualItemCount": 1430,
-    "generatedItemCount": 1413,
+    "itemCount": 1435,
+    "manualItemCount": 1435,
+    "generatedItemCount": 1418,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1413
+    "publicApiTypeCount": 1418
   }
 }

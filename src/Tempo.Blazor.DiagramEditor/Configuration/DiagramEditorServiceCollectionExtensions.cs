@@ -50,6 +50,8 @@ public static class DiagramEditorServiceCollectionExtensions
             return registry;
         });
 
+        services.TryAddSingleton<IDiagramSvgRenderer, DiagramSvgRenderer>();
+
         return services;
     }
 

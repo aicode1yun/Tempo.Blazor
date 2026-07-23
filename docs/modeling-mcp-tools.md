@@ -214,12 +214,33 @@ public sealed class DiagramSvgRenderOptions
 public enum DiagramSvgTheme { Light, Dark }
 ```
 
-Implementation promotes `DiagramExportSvgBuilder` (edges/nodes/ports/stencil sections, invariant-
-culture `F(...)` coordinate formatting, `Escape(...)` text escaping) into
-`Tempo.Blazor.DiagramEditor`, generalized off the demo `DemoDiagramStencilRegistry` onto the real
-`DiagramStencilRegistry` / `IDiagramStencilProvider`. The `Dark` theme swaps background + default
-node/edge palette. Determinism (invariant culture, ordered nodes/edges) is a hard requirement —
-see golden-file tests below.
+Implementation promotes the SVG-building logic (edges/nodes/ports/stencil sections, invariant-
+culture `F(...)` coordinate formatting, `Escape(...)` text escaping) into the shared, browser-free
+`DiagramSvgBuilder` in `Tempo.Blazor.Abstractions`, driven by a `Func<string, DiagramStencil?>`
+stencil-lookup delegate. The shippable `DiagramSvgRenderer` (in `Tempo.Blazor.DiagramEditor`) binds
+it to the real `DiagramStencilRegistry`; the demo export service binds the same builder to its own
+stencil map (so there is now one implementation, not two). The `Dark` theme swaps background +
+default node/edge palette; explicit stencil/style colours always win. Determinism (invariant
+culture, nodes ordered by z-index) is a hard requirement — see golden-file tests below.
+
+**Usage (headless export):**
+
+```csharp
+// DI (host startup): registers IDiagramSvgRenderer as a singleton.
+services.AddTempoBlazorDiagramEditor();
+
+// Anywhere a DiagramDocument is available (e.g. an MCP tool or a docs pipeline):
+public string ExportDiagram(IDiagramSvgRenderer renderer, DiagramDocument document)
+    => renderer.RenderSvg(document, new DiagramSvgRenderOptions
+    {
+        Theme = DiagramSvgTheme.Dark,   // Light (default) | Dark
+        IncludeGrid = false,
+        PageIndex = 0,                  // null → active page
+    });
+```
+
+Sample outputs (committed golden files):
+`tests/Tempo.Blazor.Tests/Diagram/DiagramSvgGolden/diagram-svg-basic-{light,dark}.svg`.
 
 ## Testing approach
 

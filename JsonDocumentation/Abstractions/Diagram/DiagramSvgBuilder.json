@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Builds a static SVG representation of a diagram page using pure SVG elements (no browser, no JavaScript), so the output can be embedded directly, rasterised by Skia (PNG) or embedded by QuestPDF (PDF). Rendering is deterministic given a fixed page, options and palette.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/DiagramSvgBuilder.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramSvgBuilder"
+}

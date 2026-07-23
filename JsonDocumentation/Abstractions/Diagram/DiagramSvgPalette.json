@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Resolved colour palette applied to a diagram SVG render. Only fills in the defaults; explicit stencil/style colours override these per element.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/IDiagramSvgRenderer.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramSvgPalette"
+}

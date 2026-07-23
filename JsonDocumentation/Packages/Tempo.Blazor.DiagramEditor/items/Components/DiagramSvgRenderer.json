@@ -1,0 +1,28 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Headless IDiagramSvgRenderer backed by the shared DiagramSvgBuilder and the application's DiagramStencilRegistry. Registered as a singleton by AddTempoBlazorDiagramEditor().",
+  "packageId": "Tempo.Blazor.DiagramEditor",
+  "sourcePath": "src/Tempo.Blazor.DiagramEditor/Components/Diagram/Services/DiagramSvgRenderer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "RenderSvg",
+      "kind": "Method",
+      "type": "string",
+      "parameters": [
+        {
+          "name": "document",
+          "type": "DiagramDocument"
+        },
+        {
+          "name": "options",
+          "type": "DiagramSvgRenderOptions?",
+          "default": "null"
+        }
+      ]
+    }
+  ],
+  "itemName": "DiagramSvgRenderer"
+}

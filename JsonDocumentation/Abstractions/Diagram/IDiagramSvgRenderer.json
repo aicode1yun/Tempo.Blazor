@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Components.Diagram.Services",
+  "description": "Renders a DiagramDocument to a static SVG string on the server, without a browser or JavaScript. Intended for headless export and documentation embedding (the same output the demo export service rasterises to PNG/PDF).",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Diagram/Services/IDiagramSvgRenderer.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDiagramSvgRenderer"
+}

@@ -17,7 +17,7 @@ public sealed class DemoDiagramExportService : IDiagramExportService
     public Task<byte[]> ExportPngAsync(DiagramDocument document, DiagramExportOptions options, CancellationToken cancellationToken = default)
     {
         var page = ResolvePage(document, options.PageIndex);
-        var svg = DiagramExportSvgBuilder.Build(page, options, _stencilRegistry);
+        var svg = DiagramSvgBuilder.Build(page, options, DiagramSvgPalette.Light, _stencilRegistry.GetStencil);
         var svgBytes = Encoding.UTF8.GetBytes(svg);
 
         double width = ExtractSvgWidth(svg);
@@ -50,7 +50,7 @@ public sealed class DemoDiagramExportService : IDiagramExportService
             {
                 foreach (var page in document.Pages)
                 {
-                    var svg = DiagramExportSvgBuilder.Build(page, options, _stencilRegistry);
+                    var svg = DiagramSvgBuilder.Build(page, options, DiagramSvgPalette.Light, _stencilRegistry.GetStencil);
                     double width = ExtractSvgWidth(svg);
                     double height = ExtractSvgHeight(svg);
 
@@ -68,7 +68,7 @@ public sealed class DemoDiagramExportService : IDiagramExportService
         else
         {
             var page = ResolvePage(document, options.PageIndex);
-            var svg = DiagramExportSvgBuilder.Build(page, options, _stencilRegistry);
+            var svg = DiagramSvgBuilder.Build(page, options, DiagramSvgPalette.Light, _stencilRegistry.GetStencil);
             double width = ExtractSvgWidth(svg);
             double height = ExtractSvgHeight(svg);
 
@@ -90,7 +90,7 @@ public sealed class DemoDiagramExportService : IDiagramExportService
     public Task<string> ExportSvgAsync(DiagramDocument document, DiagramExportOptions options, CancellationToken cancellationToken = default)
     {
         var page = ResolvePage(document, options.PageIndex);
-        var svg = DiagramExportSvgBuilder.Build(page, options, _stencilRegistry);
+        var svg = DiagramSvgBuilder.Build(page, options, DiagramSvgPalette.Light, _stencilRegistry.GetStencil);
         return Task.FromResult(svg);
     }
 
