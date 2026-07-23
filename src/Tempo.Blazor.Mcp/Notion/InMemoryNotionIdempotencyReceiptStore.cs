@@ -23,12 +23,17 @@ internal sealed class InMemoryNotionIdempotencyReceiptStore(TimeProvider? timePr
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
     private readonly ConcurrentDictionary<string, Entry> _entries = new(StringComparer.Ordinal);
+    private long _acquisitions;
 
     public async ValueTask<NotionReceiptAcquireResult> AcquireAsync(
         string key,
         string requestHash,
         CancellationToken cancellationToken)
     {
+        if ((Interlocked.Increment(ref _acquisitions) & 63) == 0)
+        {
+            PruneExpired();
+        }
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -97,6 +102,18 @@ internal sealed class InMemoryNotionIdempotencyReceiptStore(TimeProvider? timePr
     private bool TryRemove(string key, Entry expected)
         => ((ICollection<KeyValuePair<string, Entry>>)_entries)
             .Remove(new KeyValuePair<string, Entry>(key, expected));
+
+    private void PruneExpired()
+    {
+        var now = _timeProvider.GetUtcNow();
+        foreach (var pair in _entries)
+        {
+            if (pair.Value.IsExpired(now) && TryRemove(pair.Key, pair.Value))
+            {
+                pair.Value.Abandon();
+            }
+        }
+    }
 
     private sealed class Entry(string requestHash)
     {

@@ -515,6 +515,7 @@ public sealed class NotionAtomicAuthoringEngineTests
         public ValueTask<NotionOperationCompilationResult> CompileAsync(
             JsonArray source,
             NotionAggregateWorkingSet workingSet,
+            NotionOperationCompileContext context,
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -543,6 +544,7 @@ public sealed class NotionAtomicAuthoringEngineTests
         public ValueTask<NotionOperationCompilationResult> CompileAsync(
             JsonArray source,
             NotionAggregateWorkingSet workingSet,
+            NotionOperationCompileContext context,
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();

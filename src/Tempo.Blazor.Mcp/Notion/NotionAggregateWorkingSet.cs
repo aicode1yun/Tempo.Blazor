@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Mcp.Notion;
@@ -51,6 +53,12 @@ internal sealed class NotionAggregateWorkingSet
             return NotionCanonicalApplyResult.Applied(updated: [change]);
         }
 
+        foreach (var sibling in blocks.Where(candidate =>
+                     candidate.ParentBlockId == block.ParentBlockId &&
+                     candidate.Order >= block.Order))
+        {
+            sibling.Order++;
+        }
         blocks.Add(block);
         targetPage.Blocks = blocks;
         _touchedPageIds.Add(source.PageId);
@@ -146,6 +154,12 @@ internal sealed class NotionAggregateWorkingSet
             targetPage.Blocks = targetPage.Blocks.Where(block => !movedIds.Contains(block.Id)).ToList();
         }
 
+        foreach (var sibling in targetPage.Blocks.Where(block =>
+                     block.ParentBlockId == targetParentBlockId &&
+                     block.Order >= Math.Max(0, targetOrder)))
+        {
+            sibling.Order++;
+        }
         foreach (var block in moved)
         {
             block.PageId = targetPageId;
@@ -188,6 +202,154 @@ internal sealed class NotionAggregateWorkingSet
                 new NotionEntityChange(operationIndex, clientRef, source.Id, source.Id)
             ]);
     }
+
+    public NotionCanonicalApplyResult PatchBlockContent(
+        int operationIndex,
+        string? clientRef,
+        Guid blockId,
+        JsonObject patch)
+    {
+        var located = FindBlock(blockId);
+        if (located is null)
+        {
+            return Failure(operationIndex, "block_not_found", $"Block '{blockId}' was not found.");
+        }
+
+        if (JsonNode.Parse(located.Value.Block.Content.GetRawText()) is not JsonObject content)
+        {
+            return Failure(
+                operationIndex,
+                "block_content_not_object",
+                $"Block '{blockId}' content cannot be patched because it is not a JSON object.");
+        }
+
+        ApplyMergePatch(content, patch);
+        located.Value.Block.Content = JsonSerializer.SerializeToElement(
+            content,
+            NotionAggregateJson.Options);
+        _touchedPageIds.Add(located.Value.Page.Page.Id);
+        return NotionCanonicalApplyResult.Applied(
+            updated:
+            [
+                new NotionEntityChange(
+                    operationIndex,
+                    clientRef,
+                    located.Value.Page.Page.Id,
+                    blockId)
+            ]);
+    }
+
+    public NotionCanonicalApplyResult ConvertBlock(
+        int operationIndex,
+        string? clientRef,
+        Guid blockId,
+        BlockType newType,
+        JsonElement content)
+    {
+        var located = FindBlock(blockId);
+        if (located is null)
+        {
+            return Failure(operationIndex, "block_not_found", $"Block '{blockId}' was not found.");
+        }
+
+        located.Value.Block.Type = newType;
+        located.Value.Block.Content = content.Clone();
+        _touchedPageIds.Add(located.Value.Page.Page.Id);
+        return NotionCanonicalApplyResult.Applied(
+            updated:
+            [
+                new NotionEntityChange(
+                    operationIndex,
+                    clientRef,
+                    located.Value.Page.Page.Id,
+                    blockId)
+            ]);
+    }
+
+    public NotionCanonicalApplyResult ReorderBlocks(
+        int operationIndex,
+        string? clientRef,
+        Guid pageId,
+        Guid? parentBlockId,
+        IReadOnlyList<Guid> orderedBlockIds)
+    {
+        if (!_pages.TryGetValue(pageId, out var page))
+        {
+            return Failure(
+                operationIndex,
+                "page_not_loaded",
+                $"Page '{pageId}' was not loaded for this operation.");
+        }
+
+        var siblings = page.Blocks
+            .Where(block => block.ParentBlockId == parentBlockId)
+            .ToList();
+        if (orderedBlockIds.Count != orderedBlockIds.Distinct().Count())
+        {
+            return Failure(
+                operationIndex,
+                "duplicate_reorder_id",
+                "orderedBlockIds must not contain duplicates.");
+        }
+        if (!siblings.Select(block => block.Id).ToHashSet().SetEquals(orderedBlockIds))
+        {
+            return Failure(
+                operationIndex,
+                "reorder_set_mismatch",
+                "orderedBlockIds must contain every sibling exactly once.");
+        }
+
+        var byId = siblings.ToDictionary(block => block.Id);
+        for (var order = 0; order < orderedBlockIds.Count; order++)
+        {
+            byId[orderedBlockIds[order]].Order = order;
+        }
+
+        _touchedPageIds.Add(pageId);
+        return NotionCanonicalApplyResult.Applied(
+            updated: orderedBlockIds
+                .Select(id => new NotionEntityChange(operationIndex, clientRef, pageId, id))
+                .ToList());
+    }
+
+    public bool TryGetBlock(
+        Guid blockId,
+        out Guid pageId,
+        out NotionBlockSnapshot? block)
+    {
+        var located = FindBlock(blockId);
+        if (located is null)
+        {
+            pageId = Guid.Empty;
+            block = null;
+            return false;
+        }
+
+        pageId = located.Value.Page.Page.Id;
+        block = located.Value.Block;
+        return true;
+    }
+
+    public int GetNextSiblingOrder(Guid pageId, Guid? parentBlockId)
+    {
+        if (!_pages.TryGetValue(pageId, out var page))
+        {
+            return 0;
+        }
+
+        var siblings = page.Blocks.Where(block => block.ParentBlockId == parentBlockId).ToList();
+        return siblings.Count == 0 ? 0 : siblings.Max(block => block.Order) + 1;
+    }
+
+    public IReadOnlyList<Guid> GetSiblingBlockIds(Guid pageId, Guid? parentBlockId)
+        => _pages.TryGetValue(pageId, out var page)
+            ? page.Blocks
+                .Where(block => block.ParentBlockId == parentBlockId)
+                .OrderBy(block => block.Order)
+                .ThenBy(block => block.Id)
+                .Select(block => block.Id)
+                .ToList()
+            : [];
 
     private (NotionPageSnapshot Page, NotionBlockSnapshot Block)? FindBlock(Guid blockId)
     {
@@ -234,6 +396,27 @@ internal sealed class NotionAggregateWorkingSet
             Message = message,
             Path = $"$.operations[{operationIndex}]"
         });
+
+    private static void ApplyMergePatch(JsonObject target, JsonObject patch)
+    {
+        foreach (var property in patch)
+        {
+            if (property.Value is null)
+            {
+                target.Remove(property.Key);
+                continue;
+            }
+
+            if (property.Value is JsonObject patchObject &&
+                target[property.Key] is JsonObject targetObject)
+            {
+                ApplyMergePatch(targetObject, patchObject);
+                continue;
+            }
+
+            target[property.Key] = property.Value.DeepClone();
+        }
+    }
 
     internal static T Clone<T>(T value)
     {

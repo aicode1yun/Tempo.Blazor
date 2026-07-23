@@ -1159,24 +1159,24 @@
       ]
     },
     {
-      "itemName": "NotionOperationEngine",
       "kind": "Class",
       "category": "Notion",
       "namespace": "Tempo.Blazor.Mcp.Notion",
       "description": "Applies ordered Notion page/block operations through host providers.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionOperationEngine.cs",
-      "documentationStatus": "merged"
+      "documentationStatus": "generated",
+      "itemName": "NotionOperationEngine"
     },
     {
-      "itemName": "NotionOperationResult",
       "kind": "Record",
       "category": "Notion",
       "namespace": "Tempo.Blazor.Mcp.Notion",
       "description": "Outcome of applying an ordered batch of Notion page/block operations through NotionOperationEngine. Applied tells the caller how many operations landed before a failure, so a partial batch can be reasoned about rather than silently discarded.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionOperationEngine.cs",
-      "documentationStatus": "merged",
+      "documentationStatus": "generated",
+      "itemName": "NotionOperationResult",
       "members": [
         {
           "name": "Success",
@@ -1972,9 +1972,9 @@
   "summary": {
     "itemCount": 96,
     "manualItemCount": 96,
-    "generatedItemCount": 96,
+    "generatedItemCount": 94,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 96
+    "publicApiTypeCount": 94
   }
 }

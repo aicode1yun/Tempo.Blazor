@@ -29,12 +29,6 @@ internal sealed class NotionAtomicAuthoringEngine(
                     "A non-empty idempotencyKey is required.",
                     "$.idempotencyKey"));
         }
-        if (request.Targets.Count == 0)
-        {
-            return Failure(
-                string.Empty,
-                Issue("targets_required", "At least one page or block target is required.", "$.targets"));
-        }
         JsonArray? operations;
         try
         {
@@ -56,7 +50,27 @@ internal sealed class NotionAtomicAuthoringEngine(
                 Issue("operations_invalid", "operationsJson must contain a JSON array.", "$.operations"));
         }
 
-        var requestHash = NotionCanonicalJson.ComputeRequestHash(request, operations);
+        var targets = request.Targets;
+        if (targets.Count == 0)
+        {
+            var discovery = compiler.DiscoverTargets(operations);
+            var discoveryErrors = discovery.Issues
+                .Where(issue => issue.Severity == NotionIssueSeverity.Error)
+                .ToList();
+            if (discoveryErrors.Count > 0)
+            {
+                return Failure(string.Empty, discoveryErrors.ToArray());
+            }
+            targets = discovery.Targets;
+        }
+        if (targets.Count == 0)
+        {
+            return Failure(
+                string.Empty,
+                Issue("targets_required", "At least one page or block target is required.", "$.targets"));
+        }
+
+        var requestHash = NotionCanonicalJson.ComputeRequestHash(request, operations, targets);
         var acquire = await receipts.AcquireAsync(
             request.IdempotencyKey,
             requestHash,
@@ -80,6 +94,7 @@ internal sealed class NotionAtomicAuthoringEngine(
         {
             var result = await ExecuteOwnedAsync(
                 request,
+                targets,
                 operations,
                 requestHash,
                 cancellationToken);
@@ -109,6 +124,7 @@ internal sealed class NotionAtomicAuthoringEngine(
 
     private async Task<NotionAtomicAuthoringResult> ExecuteOwnedAsync(
         NotionAtomicAuthoringRequest request,
+        IReadOnlyList<NotionAggregateTarget> effectiveTargets,
         JsonArray operations,
         string requestHash,
         CancellationToken cancellationToken)
@@ -116,7 +132,7 @@ internal sealed class NotionAtomicAuthoringEngine(
         var loaded = new Dictionary<Guid, NotionPageSnapshot>();
         var loadedTokens = new Dictionary<Guid, string>();
         var loadWarnings = new List<NotionAggregateIssue>();
-        var targets = request.Targets
+        var targets = effectiveTargets
             .Select((target, index) => (Target: target, Index: index))
             .DistinctBy(item => item.Target)
             .ToList();
@@ -260,7 +276,11 @@ internal sealed class NotionAtomicAuthoringEngine(
         }
 
         var workingSet = new NotionAggregateWorkingSet(loaded);
-        var compilation = await compiler.CompileAsync(operations, workingSet, cancellationToken);
+        var compilation = await compiler.CompileAsync(
+            operations,
+            workingSet,
+            new NotionOperationCompileContext(requestHash, request.IdempotencyKey),
+            cancellationToken);
         var compilationErrors = compilation.Issues
             .Where(issue => issue.Severity == NotionIssueSeverity.Error)
             .ToList();
@@ -328,7 +348,10 @@ internal sealed class NotionAtomicAuthoringEngine(
             {
                 Success = true,
                 RequestHash = requestHash,
-                Applied = compilation.Operations.Count,
+                Applied = compilation.Operations
+                    .Select(operation => operation.OperationIndex)
+                    .Distinct()
+                    .Count(),
                 Created = created,
                 Updated = updated,
                 Deleted = deleted,
@@ -377,7 +400,10 @@ internal sealed class NotionAtomicAuthoringEngine(
         {
             Success = true,
             RequestHash = requestHash,
-            Applied = compilation.Operations.Count,
+            Applied = compilation.Operations
+                .Select(operation => operation.OperationIndex)
+                .Distinct()
+                .Count(),
             Created = created,
             Updated = updated,
             Deleted = deleted,

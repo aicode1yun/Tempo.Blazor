@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Server;
 using Tempo.Blazor.Mcp.Notion;
 using Tempo.Blazor.Mcp.Tests.Fixtures;
@@ -40,6 +41,7 @@ public class NotionToolsTests
 
         names.Should().BeEquivalentTo(new[]
         {
+            "notion_apply_block_operations",
             "notion_create_page",
             "notion_delete_page",
             "notion_duplicate_page",
@@ -61,6 +63,16 @@ public class NotionToolsTests
                 .Where(m => m.GetCustomAttribute<McpServerToolAttribute>() is not null)
                 .Should().OnlyContain(m => m.GetCustomAttribute<DescriptionAttribute>() != null);
         }
+    }
+
+    [Fact]
+    public void AddTempoNotionMcpTools_RegistersSharedIdempotencyRuntime()
+    {
+        var services = new ServiceCollection();
+        services.AddTempoNotionMcpTools();
+
+        using var provider = services.BuildServiceProvider();
+        provider.GetService<InMemoryNotionIdempotencyReceiptStore>().Should().NotBeNull();
     }
 
     [Fact]

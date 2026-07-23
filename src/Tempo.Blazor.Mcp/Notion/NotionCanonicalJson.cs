@@ -9,12 +9,13 @@ internal static class NotionCanonicalJson
 {
     public static string ComputeRequestHash(
         NotionAtomicAuthoringRequest request,
-        JsonArray operations)
+        JsonArray operations,
+        IReadOnlyList<NotionAggregateTarget>? effectiveTargets = null)
     {
         var envelope = new JsonObject
         {
             ["targets"] = new JsonArray(
-                request.Targets
+                (effectiveTargets ?? request.Targets)
                     .Distinct()
                     .OrderBy(target => target.Kind)
                     .ThenBy(target => target.Id)

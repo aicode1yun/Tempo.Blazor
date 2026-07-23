@@ -140,6 +140,7 @@ public class TempoWireframeMcpRegistrationTests
             "modeling_list_models",
             "modeling_list_notations",
             "modeling_validate",
+            "notion_apply_block_operations",
             "notion_create_page",
             "notion_delete_page",
             "notion_duplicate_page",

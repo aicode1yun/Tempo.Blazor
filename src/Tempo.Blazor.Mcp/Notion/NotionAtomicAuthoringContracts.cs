@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Tempo.Blazor.NotionEditor.Models;
 
@@ -50,11 +51,25 @@ internal sealed record NotionAtomicAuthoringResult
 
 internal interface INotionAtomicOperationCompiler
 {
+    NotionOperationTargetDiscoveryResult DiscoverTargets(JsonArray source)
+        => new();
+
     ValueTask<NotionOperationCompilationResult> CompileAsync(
         JsonArray source,
         NotionAggregateWorkingSet workingSet,
+        NotionOperationCompileContext context,
         CancellationToken cancellationToken);
 }
+
+internal sealed record NotionOperationTargetDiscoveryResult
+{
+    public IReadOnlyList<NotionAggregateTarget> Targets { get; init; } = [];
+    public IReadOnlyList<NotionAggregateIssue> Issues { get; init; } = [];
+}
+
+internal sealed record NotionOperationCompileContext(
+    string RequestHash,
+    string IdempotencyKey);
 
 internal sealed record NotionOperationCompilationResult
 {
@@ -167,4 +182,44 @@ internal sealed class NotionReplacePageStateOperation(
 {
     internal override NotionCanonicalApplyResult Apply(NotionAggregateWorkingSet workingSet)
         => workingSet.ReplacePage(OperationIndex, ClientRef, page);
+}
+
+internal sealed class NotionPatchBlockContentOperation(
+    int operationIndex,
+    string? clientRef,
+    Guid blockId,
+    JsonObject patch)
+    : NotionCanonicalOperation(operationIndex, clientRef)
+{
+    internal override NotionCanonicalApplyResult Apply(NotionAggregateWorkingSet workingSet)
+        => workingSet.PatchBlockContent(OperationIndex, ClientRef, blockId, patch);
+}
+
+internal sealed class NotionConvertBlockOperation(
+    int operationIndex,
+    string? clientRef,
+    Guid blockId,
+    Tempo.Blazor.NotionEditor.Enums.BlockType newType,
+    JsonElement content)
+    : NotionCanonicalOperation(operationIndex, clientRef)
+{
+    internal override NotionCanonicalApplyResult Apply(NotionAggregateWorkingSet workingSet)
+        => workingSet.ConvertBlock(OperationIndex, ClientRef, blockId, newType, content);
+}
+
+internal sealed class NotionReorderBlocksOperation(
+    int operationIndex,
+    string? clientRef,
+    Guid pageId,
+    Guid? parentBlockId,
+    IReadOnlyList<Guid> orderedBlockIds)
+    : NotionCanonicalOperation(operationIndex, clientRef)
+{
+    internal override NotionCanonicalApplyResult Apply(NotionAggregateWorkingSet workingSet)
+        => workingSet.ReorderBlocks(
+            OperationIndex,
+            ClientRef,
+            pageId,
+            parentBlockId,
+            orderedBlockIds);
 }
