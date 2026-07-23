@@ -1,0 +1,46 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "A complete physical table grid derived from logical authoring cells.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionTableGridProjector.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "RowCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of physical rows."
+    },
+    {
+      "name": "ColumnCount",
+      "kind": "Property",
+      "type": "int",
+      "description": "Number of physical columns."
+    },
+    {
+      "name": "Slots",
+      "kind": "Property",
+      "type": "IReadOnlyList<NotionTableGridSlot>",
+      "description": "All physical slots in row-major order."
+    },
+    {
+      "name": "GetSlot",
+      "kind": "Method",
+      "type": "NotionTableGridSlot",
+      "description": "Returns one physical slot by zero-based row and column.",
+      "parameters": [
+        {
+          "name": "row",
+          "type": "int"
+        },
+        {
+          "name": "column",
+          "type": "int"
+        }
+      ]
+    }
+  ],
+  "itemName": "NotionTableGridProjection"
+}

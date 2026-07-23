@@ -183,6 +183,37 @@ public class NotionTableE2ETests : WasmTestBase
         await AssertNoHorizontalPageOverflowAsync(page);
     }
 
+    [TestMethod]
+    [TestCategory("NotionUxBaseline")]
+    [Description("Phase 4 verifies historical table HTML and CSS are sanitized before browser render.")]
+    public async Task Phase4_HistoricalUnsafeTableCell_IsSafeAndReadable()
+    {
+        var page = await OpenNotionEditorAsync();
+        await SeedTablePageAsync(page);
+        await page.SetViewportSizeAsync(1366, 768);
+
+        var securityTable = page
+            .Locator("[data-block-id='cf120000-0000-0000-0000-000000000010']")
+            .First;
+        await securityTable.ScrollIntoViewIfNeededAsync();
+        await securityTable.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 10000
+        });
+
+        var cell = securityTable.Locator(".tm-notion-table__cell").First;
+        await Assertions.Expect(cell).ToContainTextAsync("Safe historical content remains visible");
+        Assert.AreEqual(0, await cell.Locator("img").CountAsync(), "Unsafe historical elements must not enter the DOM.");
+        Assert.IsFalse(
+            await page.EvaluateAsync<bool>("() => window.__notionXssTriggered === true"),
+            "The historical onerror payload must never execute.");
+        var style = await securityTable.Locator(".tm-notion-table__cell-td").First.GetAttributeAsync("style");
+        Assert.IsTrue(string.IsNullOrEmpty(style), "Unsafe historical CSS must be dropped completely.");
+
+        await CaptureBaselineAndAssertAsync(page, "phase4-historical-cell-sanitized", securityTable);
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     //  CF11 screenshot recovery
     // ══════════════════════════════════════════════════════════════════════════
@@ -205,7 +236,7 @@ public class NotionTableE2ETests : WasmTestBase
         await Assertions.Expect(TableCell(advancedTable, 1, 2)).ToHaveAttributeAsync("rowspan", "2");
         await Assertions.Expect(advancedTable.Locator(".tm-notion-table-row--header .tm-notion-table__cell").First).ToHaveCSSAsync("font-weight", "600");
         await Assertions.Expect(advancedTable.Locator(".tm-notion-table__cell-td--header-col").First).ToBeVisibleAsync();
-        await Assertions.Expect(advancedTable.Locator("[style*='color-mix']").First).ToBeVisibleAsync();
+        await Assertions.Expect(advancedTable.Locator("[style*='rgba']").First).ToBeVisibleAsync();
 
         await DragSelectCellsAsync(page, TableCell(advancedTable, 1, 0), TableCell(advancedTable, 3, 0));
         await advancedTable.Locator("button[title='Sort column']").ClickAsync();

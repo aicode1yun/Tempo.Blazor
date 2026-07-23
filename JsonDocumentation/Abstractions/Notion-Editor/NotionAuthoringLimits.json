@@ -1,0 +1,60 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Resource limits enforced by canonical Notion authoring and rendering.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAuthoringLimits.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "MaxCellHtmlLength",
+      "kind": "Field",
+      "type": "int",
+      "description": "Maximum length of one cell HTML fragment."
+    },
+    {
+      "name": "MaxCellInlines",
+      "kind": "Field",
+      "type": "int",
+      "description": "Maximum number of structured inlines in one cell."
+    },
+    {
+      "name": "MaxCssColorLength",
+      "kind": "Field",
+      "type": "int",
+      "description": "Maximum accepted CSS color literal length."
+    },
+    {
+      "name": "MaxInlineTextLength",
+      "kind": "Field",
+      "type": "int",
+      "description": "Maximum length of one inline text value."
+    },
+    {
+      "name": "MaxTableColumns",
+      "kind": "Field",
+      "type": "int",
+      "description": "Maximum number of logical columns in one table."
+    },
+    {
+      "name": "MaxTableContentLength",
+      "kind": "Field",
+      "type": "int",
+      "description": "Maximum combined HTML and inline text length in one table."
+    },
+    {
+      "name": "MaxTableRows",
+      "kind": "Field",
+      "type": "int",
+      "description": "Maximum number of logical rows in one table."
+    },
+    {
+      "name": "MaxTableSlots",
+      "kind": "Field",
+      "type": "int",
+      "description": "Maximum number of physical grid slots in one table."
+    }
+  ],
+  "itemName": "NotionAuthoringLimits"
+}

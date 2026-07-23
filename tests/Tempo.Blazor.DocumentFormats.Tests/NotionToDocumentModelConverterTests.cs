@@ -68,6 +68,37 @@ public class NotionToDocumentModelConverterTests
     }
 
     [Fact]
+    public void ConvertPage_SanitizesHistoricalRichTableCellsBeforeParsing()
+    {
+        var table = Block(
+            BlockType.Table,
+            0,
+            new Nm.TableBlockContent { ColumnCount = 1 });
+        var row = Block(
+            BlockType.TableRow,
+            0,
+            new Nm.TableRowBlockContent
+            {
+                RichCells =
+                [
+                    new Nm.NotionTableCell
+                    {
+                        Html = """Safe<img src=x onerror="alert(1)"><strong>Bold</strong>"""
+                    }
+                ]
+            });
+        row.ParentBlockId = table.Id;
+
+        var document = NotionToDocumentModelConverter.ConvertPage(Page("Safe table"), [table, row]).Document;
+        var cellBlock = ((Dm.TableBlockContent)document.Blocks.Single().Content)
+            .Rows.Single()
+            .Cells.Single()
+            .Blocks.Single();
+
+        GetText(cellBlock).Should().Equal("Safe", "Bold");
+    }
+
+    [Fact]
     public void ConvertPage_MapsImageWithoutFallbackWarning()
     {
         var blocks = new[]

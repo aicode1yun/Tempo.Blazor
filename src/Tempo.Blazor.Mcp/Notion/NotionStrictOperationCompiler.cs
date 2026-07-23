@@ -397,6 +397,31 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
             {
                 return;
             }
+            if (columnCount.Value > NotionAuthoringLimits.MaxTableColumns)
+            {
+                issues.Add(Error(
+                    "table_column_limit_exceeded",
+                    $"columnCount cannot exceed {NotionAuthoringLimits.MaxTableColumns}.",
+                    $"{path}.columnCount"));
+            }
+            if (rows.Count > NotionAuthoringLimits.MaxTableRows)
+            {
+                issues.Add(Error(
+                    "table_row_limit_exceeded",
+                    $"A table cannot contain more than {NotionAuthoringLimits.MaxTableRows} rows.",
+                    $"{path}.rows"));
+            }
+            if ((long)rows.Count * columnCount.Value > NotionAuthoringLimits.MaxTableSlots)
+            {
+                issues.Add(Error(
+                    "table_slot_limit_exceeded",
+                    $"A table cannot contain more than {NotionAuthoringLimits.MaxTableSlots} physical slots.",
+                    $"{path}.rows"));
+            }
+            if (issues.Count > 0)
+            {
+                return;
+            }
 
             var table = new NotionAuthoringTable
             {
@@ -444,10 +469,19 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
 
             var parsedRows = ParseTableRows(
                 rows,
-                columnCount.Value,
                 path,
                 issues,
                 cancellationToken);
+            if (issues.Count == 0 &&
+                !NotionTableGridProjector.TryProject(
+                    parsedRows,
+                    columnCount.Value,
+                    $"{path}.rows",
+                    out _,
+                    out var gridIssues))
+            {
+                issues.AddRange(gridIssues);
+            }
             if (issues.Count > 0)
             {
                 return;
@@ -808,13 +842,11 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
 
     private static IReadOnlyList<NotionAuthoringTableRow> ParseTableRows(
         JsonArray rows,
-        int columnCount,
         string operationPath,
         List<NotionAggregateIssue> issues,
         CancellationToken cancellationToken)
     {
         var parsed = new List<NotionAuthoringTableRow>();
-        var occupied = new int[columnCount];
         for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -838,18 +870,9 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
             }
 
             var logicalCells = new List<NotionAuthoringTableCell>();
-            var newlyOccupied = new HashSet<int>();
-            var covered = occupied.Select(value => value > 0).ToArray();
-            var rowIssueCount = issues.Count;
-            var column = 0;
             for (var cellIndex = 0; cellIndex < cells.Count; cellIndex++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                while (column < columnCount && occupied[column] > 0)
-                {
-                    column++;
-                }
-
                 var cellPath = $"{rowPath}.cells[{cellIndex}]";
                 if (cells[cellIndex] is not JsonObject cellNode)
                 {
@@ -877,76 +900,7 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
                     issues.Add(Error("table_cell_invalid", "The table cell is empty.", cellPath));
                     continue;
                 }
-                if (cell.RowSpan < 1)
-                {
-                    issues.Add(Error(
-                        "table_span_out_of_range",
-                        "rowSpan must be at least 1.",
-                        $"{cellPath}.rowSpan"));
-                }
-                else if (rowIndex + cell.RowSpan > rows.Count)
-                {
-                    issues.Add(Error(
-                        "table_span_out_of_range",
-                        "rowSpan exceeds the available table rows.",
-                        $"{cellPath}.rowSpan"));
-                }
-                if (cell.ColumnSpan < 1)
-                {
-                    issues.Add(Error(
-                        "table_span_out_of_range",
-                        "columnSpan must be at least 1.",
-                        $"{cellPath}.columnSpan"));
-                }
-                if (cell.Width is <= 0 || cell.Width is { } width && !double.IsFinite(width))
-                {
-                    issues.Add(Error(
-                        "table_width_out_of_range",
-                        "Cell width must be a finite positive number or null.",
-                        $"{cellPath}.width"));
-                }
-
-                if (cell.ColumnSpan >= 1 &&
-                    (column + cell.ColumnSpan > columnCount ||
-                     Enumerable.Range(column, Math.Min(cell.ColumnSpan, columnCount - column))
-                         .Any(index => occupied[index] > 0)))
-                {
-                    issues.Add(Error(
-                        "table_span_out_of_range",
-                        "The cell span exceeds or overlaps the logical table grid.",
-                        $"{cellPath}.columnSpan"));
-                }
-                else if (cell.RowSpan >= 1)
-                {
-                    for (var offset = 0; offset < cell.ColumnSpan; offset++)
-                    {
-                        covered[column + offset] = true;
-                        if (cell.RowSpan > 1)
-                        {
-                            occupied[column + offset] = cell.RowSpan - 1;
-                            newlyOccupied.Add(column + offset);
-                        }
-                    }
-                }
-
-                column += Math.Max(1, cell.ColumnSpan);
                 logicalCells.Add(cell);
-            }
-
-            if (covered.Any(value => !value) && issues.Count == rowIssueCount)
-            {
-                issues.Add(Error(
-                    "table_row_width_mismatch",
-                    "Cells and active row spans must cover every logical table column.",
-                    $"{rowPath}.cells"));
-            }
-
-            for (var columnIndex = 0; columnIndex < occupied.Length; columnIndex++)
-            {
-                if (occupied[columnIndex] > 0 && !newlyOccupied.Contains(columnIndex))
-                {
-                    occupied[columnIndex]--;
-                }
             }
 
             parsed.Add(new NotionAuthoringTableRow { Cells = logicalCells });
@@ -1293,6 +1247,7 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
             Code = code,
             Severity = NotionIssueSeverity.Error,
             Message = message,
-            Path = path
+            Path = path,
+            SuggestedFix = $"Correct the value at {path} and retry the atomic request."
         };
 }

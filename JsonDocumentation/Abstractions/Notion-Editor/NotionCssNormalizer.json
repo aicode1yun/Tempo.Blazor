@@ -1,0 +1,44 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Dependency-free normalization for the narrow CSS color surface used by Notion content.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionCssNormalizer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "TryNormalizeColor",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Validates and normalizes one literal CSS color. Functions with external state, declarations, custom properties, quotes and statement separators are rejected.",
+      "parameters": [
+        {
+          "name": "value",
+          "type": "string?"
+        },
+        {
+          "name": "normalized",
+          "type": "out string?"
+        }
+      ]
+    },
+    {
+      "name": "TryNormalizeColorStyle",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Normalizes a style containing only color and background-color declarations with literal color values.",
+      "parameters": [
+        {
+          "name": "style",
+          "type": "string?"
+        },
+        {
+          "name": "normalized",
+          "type": "out string?"
+        }
+      ]
+    }
+  ],
+  "itemName": "NotionCssNormalizer"
+}

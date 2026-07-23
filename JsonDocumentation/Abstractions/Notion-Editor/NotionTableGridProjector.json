@@ -1,0 +1,40 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Projects logical Notion table cells into a complete physical grid.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionTableGridProjector.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "TryProject",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Projects logical cells top-down and left-to-right, returning a complete physical grid or stable validation diagnostics.",
+      "parameters": [
+        {
+          "name": "rows",
+          "type": "IReadOnlyList<NotionAuthoringTableRow>?"
+        },
+        {
+          "name": "columnCount",
+          "type": "int"
+        },
+        {
+          "name": "rowsPath",
+          "type": "string"
+        },
+        {
+          "name": "projection",
+          "type": "out NotionTableGridProjection?"
+        },
+        {
+          "name": "issues",
+          "type": "out IReadOnlyList<NotionAggregateIssue>"
+        }
+      ]
+    }
+  ],
+  "itemName": "NotionTableGridProjector"
+}

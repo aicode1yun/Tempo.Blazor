@@ -33,7 +33,7 @@ public partial class TmNotionDiffViewer : TmComponentBase
         if (block.Content is ITextBlockContent text)
             return string.IsNullOrWhiteSpace(text.Html)
                 ? HtmlEncoder.Default.Encode(Loc["TmNotionDiffViewer_EmptyBlock"])
-                : text.Html;
+                : NotionHtmlSanitizer.SanitizeBlockContent(text.Html);
 
         if (block.Content is ICodeBlockContent code)
             return $"<pre><code>{HtmlEncoder.Default.Encode(code.Code)}</code></pre>";

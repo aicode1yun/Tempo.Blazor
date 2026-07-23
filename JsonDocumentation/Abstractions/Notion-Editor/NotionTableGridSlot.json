@@ -1,0 +1,54 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "One physical slot and its logical merge origin.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionTableGridProjector.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Row",
+      "kind": "Property",
+      "type": "int",
+      "description": "Physical row index."
+    },
+    {
+      "name": "Column",
+      "kind": "Property",
+      "type": "int",
+      "description": "Physical column index."
+    },
+    {
+      "name": "OriginRow",
+      "kind": "Property",
+      "type": "int",
+      "description": "Physical row of the logical origin cell."
+    },
+    {
+      "name": "OriginColumn",
+      "kind": "Property",
+      "type": "int",
+      "description": "Physical column of the logical origin cell."
+    },
+    {
+      "name": "LogicalCellIndex",
+      "kind": "Property",
+      "type": "int",
+      "description": "Index of the logical cell within its authoring row."
+    },
+    {
+      "name": "IsOrigin",
+      "kind": "Property",
+      "type": "bool",
+      "description": "Whether this slot is the rendered origin rather than a covered merge position."
+    },
+    {
+      "name": "Cell",
+      "kind": "Property",
+      "type": "NotionAuthoringTableCell",
+      "description": "Logical cell covering this physical slot."
+    }
+  ],
+  "itemName": "NotionTableGridSlot"
+}

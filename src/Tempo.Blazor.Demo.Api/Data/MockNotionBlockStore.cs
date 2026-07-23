@@ -1429,6 +1429,7 @@ public sealed class Eb1BaselineRenderer
         var wideTableId = Guid.Parse("eb700000-0000-0000-0000-000000000020");
         var emptyTableId = Guid.Parse("eb700000-0000-0000-0000-000000000030");
         var advancedTableId = Guid.Parse("cf110000-0000-0000-0000-000000000010");
+        var securityTableId = Guid.Parse("cf120000-0000-0000-0000-000000000010");
 
         AddTo(tableId, MockNotionDataStore.Page1Id, BlockType.Table, 0, new TableBlockContent
         {
@@ -1489,12 +1490,12 @@ public sealed class Eb1BaselineRenderer
         {
             RichCells =
             [
-                Cell("Roadmap summary", 2, 1, "color-mix(in srgb, var(--tm-color-primary) 18%, var(--tm-bg-surface))"),
+                Cell("Roadmap summary", 2, 1, "rgba(59, 130, 246, 0.18)"),
                 Hidden(0, 0),
-                Cell("Status", 1, 1, "color-mix(in srgb, var(--tm-color-primary) 12%, var(--tm-bg-surface))"),
-                Cell("Owner", 1, 1, "color-mix(in srgb, var(--tm-color-primary) 12%, var(--tm-bg-surface))"),
-                Cell("Risk", 1, 1, "color-mix(in srgb, var(--tm-color-primary) 12%, var(--tm-bg-surface))"),
-                Cell("Decision", 1, 1, "color-mix(in srgb, var(--tm-color-primary) 12%, var(--tm-bg-surface))")
+                Cell("Status", 1, 1, "rgba(59, 130, 246, 0.12)"),
+                Cell("Owner", 1, 1, "rgba(59, 130, 246, 0.12)"),
+                Cell("Risk", 1, 1, "rgba(59, 130, 246, 0.12)"),
+                Cell("Decision", 1, 1, "rgba(59, 130, 246, 0.12)")
             ]
         });
         AddChildTo(Guid.Parse("cf110000-0000-0000-0000-000000000012"), MockNotionDataStore.Page1Id, advancedTableId, BlockType.TableRow, 1, new TableRowBlockContent
@@ -1503,9 +1504,9 @@ public sealed class Eb1BaselineRenderer
             [
                 Cell("Discovery"),
                 Cell("Scope"),
-                Cell("Done", 1, 2, "color-mix(in srgb, var(--tm-color-success) 16%, var(--tm-bg-surface))"),
+                Cell("Done", 1, 2, "rgba(34, 197, 94, 0.16)"),
                 Cell("Nora"),
-                Cell("Low", 1, 1, "color-mix(in srgb, var(--tm-color-success) 12%, var(--tm-bg-surface))"),
+                Cell("Low", 1, 1, "rgba(34, 197, 94, 0.12)"),
                 Cell("Ship")
             ]
         });
@@ -1517,7 +1518,7 @@ public sealed class Eb1BaselineRenderer
                 Cell("API"),
                 Hidden(1, 2),
                 Cell("Ivan"),
-                Cell("Medium", 1, 1, "color-mix(in srgb, var(--tm-color-warning) 16%, var(--tm-bg-surface))"),
+                Cell("Medium", 1, 1, "rgba(245, 158, 11, 0.16)"),
                 Cell("Watch")
             ]
         });
@@ -1527,10 +1528,24 @@ public sealed class Eb1BaselineRenderer
             [
                 Cell("Launch"),
                 Cell("Comms"),
-                Cell("Blocked", 1, 1, "color-mix(in srgb, var(--tm-color-danger) 14%, var(--tm-bg-surface))"),
+                Cell("Blocked", 1, 1, "rgba(239, 68, 68, 0.14)"),
                 Cell("Sara"),
-                Cell("High", 1, 1, "color-mix(in srgb, var(--tm-color-danger) 12%, var(--tm-bg-surface))"),
+                Cell("High", 1, 1, "rgba(239, 68, 68, 0.12)"),
                 Cell("Escalate")
+            ]
+        });
+
+        AddTo(securityTableId, MockNotionDataStore.Page1Id, BlockType.Table, 4, new TableBlockContent
+        {
+            ColumnCount = 1
+        });
+        AddChildTo(Guid.Parse("cf120000-0000-0000-0000-000000000011"), MockNotionDataStore.Page1Id, securityTableId, BlockType.TableRow, 0, new TableRowBlockContent
+        {
+            RichCells =
+            [
+                Cell(
+                    """Safe historical content <strong>remains visible</strong><img src=x onerror="window.__notionXssTriggered=true">""",
+                    backgroundColor: "red;position:fixed")
             ]
         });
     }

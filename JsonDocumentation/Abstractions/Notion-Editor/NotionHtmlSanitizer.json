@@ -1,0 +1,76 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Dependency-free HTML sanitizer for Notion rich-text fragments and renderer content.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionHtmlSanitizer.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "EncodePlainText",
+      "kind": "Method",
+      "type": "string",
+      "description": "HTML-encodes plain text and converts line endings to <br>.",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "IsSafeHref",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns whether a hyperlink scheme is allowed in Notion rich text.",
+      "parameters": [
+        {
+          "name": "href",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "SanitizeBlockContent",
+      "kind": "Method",
+      "type": "string",
+      "description": "Sanitizes stored editor content, preserving only known editor chrome.",
+      "parameters": [
+        {
+          "name": "html",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "SanitizeHtmlFragment",
+      "kind": "Method",
+      "type": "string",
+      "description": "Sanitizes a narrow table/export HTML fragment.",
+      "parameters": [
+        {
+          "name": "html",
+          "type": "string?"
+        }
+      ]
+    },
+    {
+      "name": "TryNormalizeTableCellHtml",
+      "kind": "Method",
+      "type": "bool",
+      "description": "Returns whether a table-cell fragment already belongs to the strict authoring profile. The normalized representation is returned for deterministic persistence.",
+      "parameters": [
+        {
+          "name": "html",
+          "type": "string?"
+        },
+        {
+          "name": "normalized",
+          "type": "out string"
+        }
+      ]
+    }
+  ],
+  "itemName": "NotionHtmlSanitizer"
+}

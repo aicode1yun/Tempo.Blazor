@@ -9,7 +9,7 @@
          contenteditable="false"
          data-bg="@Content?.BackgroundColor"
          data-color="@Content?.TextColor">
-        @((MarkupString)(Content?.Html ?? string.Empty))
+        @((MarkupString)NotionHtmlSanitizer.SanitizeBlockContent(Content?.Html))
     </div>
 }
 else

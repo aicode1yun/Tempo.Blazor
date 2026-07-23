@@ -22895,6 +22895,66 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "NotionAuthoringLimits",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Resource limits enforced by canonical Notion authoring and rendering.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAuthoringLimits.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "MaxCellHtmlLength",
+          "kind": "Field",
+          "type": "int",
+          "description": "Maximum length of one cell HTML fragment."
+        },
+        {
+          "name": "MaxCellInlines",
+          "kind": "Field",
+          "type": "int",
+          "description": "Maximum number of structured inlines in one cell."
+        },
+        {
+          "name": "MaxCssColorLength",
+          "kind": "Field",
+          "type": "int",
+          "description": "Maximum accepted CSS color literal length."
+        },
+        {
+          "name": "MaxInlineTextLength",
+          "kind": "Field",
+          "type": "int",
+          "description": "Maximum length of one inline text value."
+        },
+        {
+          "name": "MaxTableColumns",
+          "kind": "Field",
+          "type": "int",
+          "description": "Maximum number of logical columns in one table."
+        },
+        {
+          "name": "MaxTableContentLength",
+          "kind": "Field",
+          "type": "int",
+          "description": "Maximum combined HTML and inline text length in one table."
+        },
+        {
+          "name": "MaxTableRows",
+          "kind": "Field",
+          "type": "int",
+          "description": "Maximum number of logical rows in one table."
+        },
+        {
+          "name": "MaxTableSlots",
+          "kind": "Field",
+          "type": "int",
+          "description": "Maximum number of physical grid slots in one table."
+        }
+      ]
+    },
+    {
       "itemName": "NotionAuthoringTable",
       "kind": "Class",
       "category": "Notion Editor",
@@ -23090,6 +23150,50 @@
       "itemName": "NotionCommentEntry"
     },
     {
+      "itemName": "NotionCssNormalizer",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Dependency-free normalization for the narrow CSS color surface used by Notion content.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionCssNormalizer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "TryNormalizeColor",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Validates and normalizes one literal CSS color. Functions with external state, declarations, custom properties, quotes and statement separators are rejected.",
+          "parameters": [
+            {
+              "name": "value",
+              "type": "string?"
+            },
+            {
+              "name": "normalized",
+              "type": "out string?"
+            }
+          ]
+        },
+        {
+          "name": "TryNormalizeColorStyle",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Normalizes a style containing only color and background-color declarations with literal color values.",
+          "parameters": [
+            {
+              "name": "style",
+              "type": "string?"
+            },
+            {
+              "name": "normalized",
+              "type": "out string?"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "itemName": "NotionDatabaseFilter",
       "kind": "Class",
       "category": "Notion Editor",
@@ -23185,6 +23289,82 @@
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Enums/NotionFilterOperator.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionHtmlSanitizer",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Dependency-free HTML sanitizer for Notion rich-text fragments and renderer content.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionHtmlSanitizer.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "EncodePlainText",
+          "kind": "Method",
+          "type": "string",
+          "description": "HTML-encodes plain text and converts line endings to <br>.",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string?"
+            }
+          ]
+        },
+        {
+          "name": "IsSafeHref",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Returns whether a hyperlink scheme is allowed in Notion rich text.",
+          "parameters": [
+            {
+              "name": "href",
+              "type": "string?"
+            }
+          ]
+        },
+        {
+          "name": "SanitizeBlockContent",
+          "kind": "Method",
+          "type": "string",
+          "description": "Sanitizes stored editor content, preserving only known editor chrome.",
+          "parameters": [
+            {
+              "name": "html",
+              "type": "string?"
+            }
+          ]
+        },
+        {
+          "name": "SanitizeHtmlFragment",
+          "kind": "Method",
+          "type": "string",
+          "description": "Sanitizes a narrow table/export HTML fragment.",
+          "parameters": [
+            {
+              "name": "html",
+              "type": "string?"
+            }
+          ]
+        },
+        {
+          "name": "TryNormalizeTableCellHtml",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Returns whether a table-cell fragment already belongs to the strict authoring profile. The normalized representation is returned for deterministic persistence.",
+          "parameters": [
+            {
+              "name": "html",
+              "type": "string?"
+            },
+            {
+              "name": "normalized",
+              "type": "out string"
+            }
+          ]
+        }
+      ]
     },
     {
       "itemName": "NotionImportFormat",
@@ -23793,6 +23973,146 @@
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAuthoringTable.cs",
       "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionTableGridProjection",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "A complete physical table grid derived from logical authoring cells.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionTableGridProjector.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "RowCount",
+          "kind": "Property",
+          "type": "int",
+          "description": "Number of physical rows."
+        },
+        {
+          "name": "ColumnCount",
+          "kind": "Property",
+          "type": "int",
+          "description": "Number of physical columns."
+        },
+        {
+          "name": "Slots",
+          "kind": "Property",
+          "type": "IReadOnlyList<NotionTableGridSlot>",
+          "description": "All physical slots in row-major order."
+        },
+        {
+          "name": "GetSlot",
+          "kind": "Method",
+          "type": "NotionTableGridSlot",
+          "description": "Returns one physical slot by zero-based row and column.",
+          "parameters": [
+            {
+              "name": "row",
+              "type": "int"
+            },
+            {
+              "name": "column",
+              "type": "int"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "NotionTableGridProjector",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Projects logical Notion table cells into a complete physical grid.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionTableGridProjector.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "TryProject",
+          "kind": "Method",
+          "type": "bool",
+          "description": "Projects logical cells top-down and left-to-right, returning a complete physical grid or stable validation diagnostics.",
+          "parameters": [
+            {
+              "name": "rows",
+              "type": "IReadOnlyList<NotionAuthoringTableRow>?"
+            },
+            {
+              "name": "columnCount",
+              "type": "int"
+            },
+            {
+              "name": "rowsPath",
+              "type": "string"
+            },
+            {
+              "name": "projection",
+              "type": "out NotionTableGridProjection?"
+            },
+            {
+              "name": "issues",
+              "type": "out IReadOnlyList<NotionAggregateIssue>"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "NotionTableGridSlot",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "One physical slot and its logical merge origin.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionTableGridProjector.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Row",
+          "kind": "Property",
+          "type": "int",
+          "description": "Physical row index."
+        },
+        {
+          "name": "Column",
+          "kind": "Property",
+          "type": "int",
+          "description": "Physical column index."
+        },
+        {
+          "name": "OriginRow",
+          "kind": "Property",
+          "type": "int",
+          "description": "Physical row of the logical origin cell."
+        },
+        {
+          "name": "OriginColumn",
+          "kind": "Property",
+          "type": "int",
+          "description": "Physical column of the logical origin cell."
+        },
+        {
+          "name": "LogicalCellIndex",
+          "kind": "Property",
+          "type": "int",
+          "description": "Index of the logical cell within its authoring row."
+        },
+        {
+          "name": "IsOrigin",
+          "kind": "Property",
+          "type": "bool",
+          "description": "Whether this slot is the rendered origin rather than a covered merge position."
+        },
+        {
+          "name": "Cell",
+          "kind": "Property",
+          "type": "NotionAuthoringTableCell",
+          "description": "Logical cell covering this physical slot."
+        }
+      ]
     },
     {
       "itemName": "NotionTableGridValidator",
@@ -35699,11 +36019,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1462,
-    "manualItemCount": 1462,
-    "generatedItemCount": 1445,
+    "itemCount": 1468,
+    "manualItemCount": 1468,
+    "generatedItemCount": 1451,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1445
+    "publicApiTypeCount": 1451
   }
 }

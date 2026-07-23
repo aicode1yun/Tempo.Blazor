@@ -31,7 +31,7 @@
                 contenteditable="false"
                 data-bg="@Content?.BackgroundColor"
                 data-color="@Content?.TextColor">
-                @((MarkupString)(Content?.Html ?? string.Empty))
+                @((MarkupString)NotionHtmlSanitizer.SanitizeBlockContent(Content?.Html))
             </h1>
         }
         else
@@ -59,7 +59,7 @@
                 contenteditable="false"
                 data-bg="@Content?.BackgroundColor"
                 data-color="@Content?.TextColor">
-                @((MarkupString)(Content?.Html ?? string.Empty))
+                @((MarkupString)NotionHtmlSanitizer.SanitizeBlockContent(Content?.Html))
             </h2>
         }
         else
@@ -87,7 +87,7 @@
                 contenteditable="false"
                 data-bg="@Content?.BackgroundColor"
                 data-color="@Content?.TextColor">
-                @((MarkupString)(Content?.Html ?? string.Empty))
+                @((MarkupString)NotionHtmlSanitizer.SanitizeBlockContent(Content?.Html))
             </h3>
         }
         else

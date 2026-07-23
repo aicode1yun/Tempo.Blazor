@@ -118,7 +118,8 @@ public partial class TmNotionTableRowBlock : ComponentBase, IAsyncDisposable
     /// A cell is written into the DOM with innerHTML, so stored markup would run on render.
     /// The editor's own inline chrome — status chips, mentions, inline math — is preserved.
     /// </summary>
-    private static string SanitizeForRender(string html) => NotionInlineHtmlSanitizer.SanitizeBlockContent(html);
+    private static string SanitizeForRender(string html)
+        => NotionHtmlSanitizer.SanitizeBlockContent(html);
 
     private async Task OnCellBlurAsync(int colIndex)
     {
@@ -148,9 +149,10 @@ public partial class TmNotionTableRowBlock : ComponentBase, IAsyncDisposable
         => IsCellSelected?.Invoke(RowIndex, columnIndex) == true;
 
     private static string CellStyle(NotionTableCell cell)
-        => string.IsNullOrWhiteSpace(cell.BackgroundColor)
-            ? string.Empty
-            : $"background:{cell.BackgroundColor}";
+        => NotionCssNormalizer.TryNormalizeColor(cell.BackgroundColor, out var color) &&
+           color is not null
+            ? $"background:{color}"
+            : string.Empty;
 
     /// <summary>BEM modifier carrying the column's imported horizontal alignment, if any.</summary>
     private string AlignmentClass(int columnIndex)

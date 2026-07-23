@@ -100,7 +100,7 @@ public static class DocumentModelToNotionConverter
                 AddApproximateWarning(warnings, block, $"{block.Type} was imported as a paragraph fallback.");
                 result.Add(CreateBlock(pageId, null, BlockType.Paragraph, order, new Nm.TextBlockContent
                 {
-                Html = WebUtility.HtmlEncode(DocumentModelText.GetBlockText(block))
+                    Html = WebUtility.HtmlEncode(DocumentModelText.GetBlockText(block))
                 }));
                 break;
         }
@@ -264,7 +264,7 @@ public static class DocumentModelToNotionConverter
             .Where(value => value.Length > 0)
             .ToList();
 
-        return string.Join("<br>", rendered);
+        return Nm.NotionHtmlSanitizer.SanitizeHtmlFragment(string.Join("<br>", rendered));
     }
 
     private static string RenderCellBlock(Dm.DocumentBlock block)

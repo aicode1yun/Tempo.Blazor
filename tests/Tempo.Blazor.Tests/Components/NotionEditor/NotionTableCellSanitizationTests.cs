@@ -1,6 +1,7 @@
 using Bunit;
 using FluentAssertions;
 using Tempo.Blazor.Components.NotionEditor.Blocks.Table;
+using Tempo.Blazor.Components.NotionEditor.Blocks.Text;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -38,6 +39,56 @@ public sealed class NotionTableCellSanitizationTests : LocalizationTestBase
     }
 
     [Fact]
+    public void ReadOnlyHistoricalCellIsSanitizedBeforeInitialMarkupRender()
+    {
+        var cut = RenderRow(Payload, readOnly: true);
+
+        cut.Markup.Should().NotContain("onerror");
+        cut.Markup.Should().NotContain("<img");
+        cut.Markup.Should().Contain("x", "safe surrounding text remains visible");
+    }
+
+    [Theory]
+    [InlineData("url(https://evil.test/x)")]
+    [InlineData("var(--evil)")]
+    [InlineData("red;position:fixed")]
+    [InlineData("\" onmouseover=\"alert(1)")]
+    public void HistoricalUnsafeCellColorIsNotRenderedIntoStyle(string color)
+    {
+        var cut = RenderRow("safe", readOnly: true, backgroundColor: color);
+
+        cut.Find("td.tm-notion-table__cell-td")
+            .GetAttribute("style")
+            .Should()
+            .BeNullOrEmpty();
+    }
+
+    [Fact]
+    public void HistoricalSafeCellColorIsNormalizedBeforeRender()
+    {
+        var cut = RenderRow("safe", readOnly: true, backgroundColor: "  #1F4E78  ");
+
+        cut.Find("td.tm-notion-table__cell-td")
+            .GetAttribute("style")
+            .Should()
+            .Be("background:#1f4e78");
+    }
+
+    [Fact]
+    public void ReadOnlyHistoricalTextBlockIsSanitizedBeforeInitialMarkupRender()
+    {
+        var cut = Render<TmNotionTextBlock>(parameters => parameters
+            .Add(component => component.ReadOnly, true)
+            .Add(
+                component => component.Content,
+                new TextBlockContent { Html = Payload }));
+
+        cut.Markup.Should().NotContain("onerror");
+        cut.Markup.Should().NotContain("<img");
+        cut.Markup.Should().Contain("x");
+    }
+
+    [Fact]
     public void ACellKeepsTheEditorsOwnChips()
     {
         const string chip = """<span class="tm-notion-status tm-notion-status--green" data-status-label="Done">Done</span>""";
@@ -53,7 +104,10 @@ public sealed class NotionTableCellSanitizationTests : LocalizationTestBase
             .Select(invocation => (string)invocation.Arguments[1]!)
             .ToList();
 
-    private IRenderedComponent<TmNotionTableRowBlock> RenderRow(string cellHtml)
+    private IRenderedComponent<TmNotionTableRowBlock> RenderRow(
+        string cellHtml,
+        bool readOnly = false,
+        string? backgroundColor = null)
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
 
@@ -63,11 +117,22 @@ public sealed class NotionTableCellSanitizationTests : LocalizationTestBase
             PageId = Guid.NewGuid(),
             Type = BlockType.TableRow,
             Order = 0,
-            Content = new TableRowBlockContent { Cells = [cellHtml] }
+            Content = new TableRowBlockContent
+            {
+                RichCells =
+                [
+                    new NotionTableCell
+                    {
+                        Html = cellHtml,
+                        BackgroundColor = backgroundColor
+                    }
+                ]
+            }
         };
 
         return Render<TmNotionTableRowBlock>(parameters => parameters
             .Add(p => p.Row, row)
-            .Add(p => p.ColumnCount, 1));
+            .Add(p => p.ColumnCount, 1)
+            .Add(p => p.ReadOnly, readOnly));
     }
 }

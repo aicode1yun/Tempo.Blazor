@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using Tempo.Blazor.DocumentFormats.Internal;
 using Tempo.Blazor.DocumentEditor.Models;
+using NotionCssNormalizer = Tempo.Blazor.NotionEditor.Models.NotionCssNormalizer;
 
 namespace Tempo.Blazor.DocumentFormats.Html;
 
@@ -296,23 +297,8 @@ public sealed class DocumentHtmlExporter
     }
 
     private static bool IsSafeCssColor(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return false;
-        }
-
-        foreach (var ch in value)
-        {
-            if (!char.IsLetterOrDigit(ch) && ch is not '#' and not '(' and not ')' and not ',' and not '.' and not '%' and not ' ' and not '-')
-            {
-                return false;
-            }
-        }
-
-        return !value.Contains("url", StringComparison.OrdinalIgnoreCase)
-            && !value.Contains("expression", StringComparison.OrdinalIgnoreCase);
-    }
+        => NotionCssNormalizer.TryNormalizeColor(value, out var normalized) &&
+           normalized is not null;
 
     private static string Html(string value) => WebUtility.HtmlEncode(value);
 

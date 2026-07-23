@@ -33,7 +33,7 @@
              class="tm-notion-callout__body tm-notion-editable tm-notion-editable--readonly @_alignClass"
              contenteditable="false"
              data-color="@Content?.TextColor">
-            @((MarkupString)(Content?.Html ?? string.Empty))
+            @((MarkupString)NotionHtmlSanitizer.SanitizeBlockContent(Content?.Html))
         </div>
     }
     else

@@ -195,7 +195,7 @@ public sealed class TmNotionTableAdvancedTests : LocalizationTestBase
         await cut.InvokeAsync(() => table.Instance.SetTableSelection(1, 0, 1, 0));
         cut.Find("button[title='Yellow']").Click();
         provider.Rows[1].Content.Should().BeOfType<TableRowBlockContent>()
-            .Which.RichCells[0].BackgroundColor.Should().Be("color-mix(in srgb, var(--tm-color-warning) 16%, var(--tm-bg-surface))");
+            .Which.RichCells[0].BackgroundColor.Should().Be("rgba(245, 158, 11, 0.16)");
 
         cut.Find("button[title='Split']").Click();
         provider.Rows[1].Content.Should().BeOfType<TableRowBlockContent>()

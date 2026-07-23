@@ -15,6 +15,28 @@ namespace Tempo.Blazor.Tests.Components.NotionEditor;
 public sealed class TmNotionPageHistoryDiffTests : LocalizationTestBase
 {
     [Fact]
+    public void DiffViewer_SanitizesHistoricalBlockHtml()
+    {
+        var block = CapturingHistoryProvider.Block(
+            Guid.Parse("cf230000-0000-0000-0000-000000000003"),
+            0,
+            BlockType.Paragraph,
+            "<strong>Kept</strong><img src=x onerror=\"window.__xss=true\"><script>bad()</script>");
+        var diffs = new[]
+        {
+            new BlockDiff(block.Id.ToString("D"), BlockDiffType.Added, null, block)
+        };
+
+        var cut = Render<TmNotionDiffViewer>(parameters => parameters
+            .Add(component => component.Diffs, diffs));
+
+        cut.Markup.Should().Contain("<strong>Kept</strong>");
+        cut.Markup.Should().NotContain("<img");
+        cut.Markup.Should().NotContain("<script");
+        cut.Markup.Should().NotContain("onerror");
+    }
+
+    [Fact]
     public async Task HistoryPanel_ComparesVersionsAndTogglesDiffModes()
     {
         var provider = new CapturingHistoryProvider();
@@ -117,7 +139,7 @@ public sealed class TmNotionPageHistoryDiffTests : LocalizationTestBase
             BlocksSnapshot = blocks
         };
 
-        private static PageBlock Block(Guid id, int order, BlockType type, string html) => new()
+        internal static PageBlock Block(Guid id, int order, BlockType type, string html) => new()
         {
             Id = id,
             PageId = PageId,

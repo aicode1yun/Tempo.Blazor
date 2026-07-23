@@ -83,4 +83,45 @@ public sealed class DocumentHtmlExporterTests
         html.Should().NotContain("<script>");
         html.Should().NotContain("javascript:");
     }
+
+    [Theory]
+    [InlineData("var(--evil)")]
+    [InlineData("url(https://evil.test/x)")]
+    [InlineData("red;position:fixed")]
+    [InlineData("\" onmouseover=\"alert(1)")]
+    public void Export_DropsUnsafeCssColors(string value)
+    {
+        var document = DocumentEditorDocument.Empty("unsafe-color");
+        document.Blocks =
+        [
+            new DocumentBlock
+            {
+                Type = DocumentBlockType.Paragraph,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines =
+                    [
+                        new TextRun
+                        {
+                            Text = "safe",
+                            Marks =
+                            [
+                                new InlineMark
+                                {
+                                    Type = InlineMarkType.TextColor,
+                                    Value = value
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        ];
+
+        var html = new DocumentHtmlExporter().Export(document);
+
+        html.Should().Contain(">safe<");
+        html.Should().NotContain("style=");
+        html.Should().NotContain("onmouseover");
+    }
 }

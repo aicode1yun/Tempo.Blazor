@@ -329,7 +329,7 @@
                                     }
                                     else
                                     {
-                                        <div class="tm-nbcp__entry-text">@((MarkupString)CommentHtmlFormatter.Format(node.Entry.HtmlContent()))</div>
+                                        <div class="tm-nbcp__entry-text">@((MarkupString)CommentHtmlFormatter.Format(NotionHtmlSanitizer.SanitizeBlockContent(node.Entry.HtmlContent())))</div>
                                         @if (node.Entry.EditedAt.HasValue)
                                         {
                                             <span class="tm-nbcp__entry-edited">@Loc["TmNotionBlockComment_Edited"]</span>

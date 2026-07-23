@@ -330,9 +330,11 @@ public partial class TmNotionPageHistory : TmComponentBase, IAsyncDisposable
     private static string GetBlockHtml(IPageBlock block)
     {
         if (block.Content is ITextBlockContent text)
-            return string.IsNullOrEmpty(text.Html) ? $"<em style='opacity:.4'>({block.Type})</em>" : text.Html;
+            return string.IsNullOrEmpty(text.Html)
+                ? $"<em>({block.Type})</em>"
+                : NotionHtmlSanitizer.SanitizeBlockContent(text.Html);
 
-        return $"<span style='opacity:.5;font-style:italic'>[{block.Type}]</span>";
+        return $"<span>[{block.Type}]</span>";
     }
 
     private string GetBlockTypeLabel(IPageBlock? block)

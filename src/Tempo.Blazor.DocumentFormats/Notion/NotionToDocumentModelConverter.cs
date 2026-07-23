@@ -288,10 +288,10 @@ public static partial class NotionToDocumentModelConverter
             rows.Add(new Dm.TableRowContent
             {
                 Cells = cells.Select(cell => new Dm.TableCellContent
-                    {
-                        IsHeader = tableContent?.HasHeaderRow == true && rowIndex == 0,
-                        Blocks = [CreateParagraph(Guid.NewGuid().ToString("N"), 0, TextInlines(cell))]
-                    })
+                {
+                    IsHeader = tableContent?.HasHeaderRow == true && rowIndex == 0,
+                    Blocks = [CreateParagraph(Guid.NewGuid().ToString("N"), 0, TextInlines(cell))]
+                })
                     .ToList()
             });
         }
@@ -316,10 +316,11 @@ public static partial class NotionToDocumentModelConverter
         {
             if (row.RichCells.Count > 0)
             {
-                return row.RichCells.Select(cell => cell.Html ?? string.Empty);
+                return row.RichCells.Select(cell =>
+                    Nm.NotionHtmlSanitizer.SanitizeBlockContent(cell.Html));
             }
 
-            return row.Cells;
+            return row.Cells.Select(Nm.NotionHtmlSanitizer.SanitizeBlockContent);
         }
 
         return [];
@@ -538,7 +539,9 @@ public static partial class NotionToDocumentModelConverter
             return string.Empty;
         }
 
-        var withBreaks = BlockBreakRegex().Replace(html, "\n");
+        var withBreaks = BlockBreakRegex().Replace(
+            Nm.NotionHtmlSanitizer.SanitizeBlockContent(html),
+            "\n");
         return WebUtility.HtmlDecode(StripResidualTags(withBreaks)).Trim();
     }
 
