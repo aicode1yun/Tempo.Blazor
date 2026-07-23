@@ -75,11 +75,13 @@
                 <TmDataTableColumn TItem="EditableEmployee" Title="Name" Field="e => e.Name" Editable="true">
                     <EditTemplate Context="e">
                         <input class="tm-input" @bind="e.Name" @bind:event="oninput" />
+                        <ValidationMessage For="@(() => e.Name)" />
                     </EditTemplate>
                 </TmDataTableColumn>
                 <TmDataTableColumn TItem="EditableEmployee" Title="Score" Field="e => e.Score" Editable="true">
                     <EditTemplate Context="e">
                         <input class="tm-input" type="number" @bind="e.Score" @bind:event="oninput" />
+                        <ValidationMessage For="@(() => e.Score)" />
                     </EditTemplate>
                 </TmDataTableColumn>
             </ChildContent>

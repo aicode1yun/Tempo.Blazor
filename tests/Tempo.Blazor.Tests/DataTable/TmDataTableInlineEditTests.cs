@@ -20,13 +20,38 @@ public class TmDataTableInlineEditTests : LocalizationTestBase
         [Range(1, 150)] public int Age { get; set; }
     }
 
+    public sealed class ValidatedNameEditor : ComponentBase
+    {
+        [CascadingParameter] public EditContext? EditContext { get; set; }
+        [Parameter, EditorRequired] public EditablePerson Model { get; set; } = default!;
+        [Parameter] public Action<EditContext?>? CaptureEditContext { get; set; }
+
+        protected override void OnParametersSet() => CaptureEditContext?.Invoke(EditContext);
+
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.OpenComponent<InputText>(0);
+            builder.AddAttribute(1, "class", "name-editor");
+            builder.AddAttribute(2, "Value", Model.Name);
+            builder.AddAttribute(3, "ValueChanged", EventCallback.Factory.Create<string>(this, value => Model.Name = value));
+            builder.AddAttribute(4, "ValueExpression", (System.Linq.Expressions.Expression<Func<string>>)(() => Model.Name));
+            builder.CloseComponent();
+
+            builder.OpenComponent<ValidationMessage<string>>(5);
+            builder.AddAttribute(6, "For", (System.Linq.Expressions.Expression<Func<string>>)(() => Model.Name));
+            builder.CloseComponent();
+        }
+    }
+
     private IRenderedComponent<TmDataTable<EditablePerson>> Render(
         List<EditablePerson> items,
         Func<EditablePerson, Task<bool>>? onCommit = null,
         bool editable = true,
         Action<EditablePerson>? onEditStart = null,
         Action<EditablePerson>? onSave = null,
-        Action<EditablePerson>? onEditCancel = null)
+        Action<EditablePerson>? onEditCancel = null,
+        Func<EditablePerson, EditContext>? rowValidatorFactory = null,
+        RenderFragment<EditablePerson>? editTemplate = null)
         => Render<TmDataTable<EditablePerson>>(p =>
         {
             p.Add(c => c.ViewContext, "edit-test");
@@ -36,6 +61,7 @@ public class TmDataTableInlineEditTests : LocalizationTestBase
             if (onEditStart is not null) p.Add(c => c.OnRowEditStart, onEditStart);
             if (onSave is not null) p.Add(c => c.OnRowSave, onSave);
             if (onEditCancel is not null) p.Add(c => c.OnRowEditCancel, onEditCancel);
+            if (rowValidatorFactory is not null) p.Add(c => c.RowValidatorFactory, rowValidatorFactory);
             p.Add(c => c.RowEditValidator, (RenderFragment)(b =>
             {
                 b.OpenComponent<DataAnnotationsValidator>(0);
@@ -48,7 +74,7 @@ public class TmDataTableInlineEditTests : LocalizationTestBase
                 b.AddAttribute(seq++, "Title", "Name");
                 b.AddAttribute(seq++, "Field", (Func<EditablePerson, object?>)(x => x.Name));
                 b.AddAttribute(seq++, "Editable", true);
-                b.AddAttribute(seq++, "EditTemplate", (RenderFragment<EditablePerson>)(item => b2 =>
+                b.AddAttribute(seq++, "EditTemplate", editTemplate ?? (RenderFragment<EditablePerson>)(item => b2 =>
                     b2.AddMarkupContent(0, $"<input class=\"name-editor\" value=\"{item.Name}\" />")));
                 b.CloseComponent();
                 b.OpenComponent<TmDataTableColumn<EditablePerson>>(seq++);
@@ -192,6 +218,78 @@ public class TmDataTableInlineEditTests : LocalizationTestBase
 
         saveCount.Should().Be(1);
         cancelCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void RowValidatorFactory_ContextIsCascadedToEditTemplate()
+    {
+        var person = new EditablePerson { Name = "Ann", Age = 30 };
+        var factoryContext = new EditContext(person);
+        var factoryCalls = 0;
+        EditContext? cascadedContext = null;
+        RenderFragment<EditablePerson> template = item => builder =>
+        {
+            builder.OpenComponent<ValidatedNameEditor>(0);
+            builder.AddAttribute(1, nameof(ValidatedNameEditor.Model), item);
+            builder.AddAttribute(2, nameof(ValidatedNameEditor.CaptureEditContext),
+                (Action<EditContext?>)(context => cascadedContext = context));
+            builder.CloseComponent();
+        };
+        var cut = Render(
+            [person],
+            rowValidatorFactory: item =>
+            {
+                item.Should().BeSameAs(person);
+                factoryCalls++;
+                return factoryContext;
+            },
+            editTemplate: template);
+
+        cut.Find("button[aria-label='Edit row']").Click();
+
+        factoryCalls.Should().Be(1);
+        cascadedContext.Should().BeSameAs(factoryContext);
+    }
+
+    [Fact]
+    public void InvalidModel_ShowsMessagesAndInvalidRow_WithoutSaving()
+    {
+        var person = new EditablePerson { Name = "", Age = 30 };
+        var saveCount = 0;
+        RenderFragment<EditablePerson> template = item => builder =>
+        {
+            builder.OpenComponent<ValidatedNameEditor>(0);
+            builder.AddAttribute(1, nameof(ValidatedNameEditor.Model), item);
+            builder.CloseComponent();
+        };
+        var cut = Render([person], onSave: _ => saveCount++, editTemplate: template);
+
+        cut.Find("button[aria-label='Edit row']").Click();
+        cut.Find("button[aria-label='Save']").Click();
+
+        saveCount.Should().Be(0);
+        cut.FindAll(".tm-data-table-row--editing.tm-data-table-row--invalid").Should().ContainSingle();
+        cut.Find(".validation-message").TextContent.Should().Contain("required");
+    }
+
+    [Fact]
+    public void ValidModel_SavesExactlyOnceAndExitsEditMode()
+    {
+        var person = new EditablePerson { Name = "Ann", Age = 30 };
+        var saveCount = 0;
+        RenderFragment<EditablePerson> template = item => builder =>
+        {
+            builder.OpenComponent<ValidatedNameEditor>(0);
+            builder.AddAttribute(1, nameof(ValidatedNameEditor.Model), item);
+            builder.CloseComponent();
+        };
+        var cut = Render([person], onSave: _ => saveCount++, editTemplate: template);
+
+        cut.Find("button[aria-label='Edit row']").Click();
+        cut.Find(".name-editor").KeyDown(Key.Enter);
+
+        saveCount.Should().Be(1);
+        cut.FindAll(".tm-data-table-row--editing").Should().BeEmpty();
     }
 
     [Fact]

@@ -60,6 +60,12 @@ public partial class TmDataTable<TItem> : IDisposable
     [Parameter] public EventCallback<TItem> OnRowEditCancel { get; set; }
 
     /// <summary>
+    /// Optional factory that creates the <see cref="EditContext"/> cascaded to a row's edit
+    /// templates. When omitted, the table creates a context for the edited item.
+    /// </summary>
+    [Parameter] public Func<TItem, EditContext>? RowValidatorFactory { get; set; }
+
+    /// <summary>
     /// Invoked to persist a committed row edit. Return false to keep the row in edit mode
     /// (for example when a server rejected the change). When null, the edit commits locally.
     /// </summary>
@@ -91,7 +97,7 @@ public partial class TmDataTable<TItem> : IDisposable
     {
         _editingRowIndex = rowIndex;
         _editingItem = item;
-        _editContext = new EditContext(item!);
+        _editContext = RowValidatorFactory?.Invoke(item) ?? new EditContext(item!);
         _editHasErrors = false;
     }
 

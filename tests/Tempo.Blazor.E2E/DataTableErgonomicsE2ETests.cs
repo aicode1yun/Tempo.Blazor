@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -91,6 +92,34 @@ public class DataTableErgonomicsE2ETests : WasmTestBase
         await Assertions.Expect(editing).ToHaveCountAsync(1);
         await editing.Locator("input").First.PressAsync("Enter");
         await Assertions.Expect(editing).ToHaveCountAsync(0);
+    }
+
+    [TestMethod]
+    [TestCategory("WASM")]
+    public async Task DataTable_InlineEdit_InvalidRow_ShowsMessagesAndRecovers()
+    {
+        var page = await OpenPageAsync();
+        var section = page.Locator("[data-testid='dt-inline-edit-section']");
+        await section.WaitForAsync(new LocatorWaitForOptions { Timeout = 30000 });
+        await section.ScrollIntoViewIfNeededAsync();
+
+        await section.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Edit row" }).First.ClickAsync();
+        var editing = section.Locator(".tm-data-table-row--editing");
+        var score = editing.Locator("input[type='number']");
+        await score.FillAsync("101");
+        await section.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Save" }).ClickAsync();
+
+        await Assertions.Expect(editing).ToHaveClassAsync(new Regex("tm-data-table-row--invalid"));
+        await Assertions.Expect(editing.Locator(".validation-message")).ToContainTextAsync("between 0 and 100");
+        await SaveElementScreenshotAsync(section, "inline-edit-validation-light");
+
+        await ToggleDarkModeAsync(page);
+        await SaveElementScreenshotAsync(section, "inline-edit-validation-dark");
+
+        await score.FillAsync("88");
+        await section.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Save" }).ClickAsync();
+        await Assertions.Expect(editing).ToHaveCountAsync(0);
+        await Assertions.Expect(section.Locator("tbody tr").First).ToContainTextAsync("88");
     }
 
     private static async Task SaveScreenshotAsync(IPage page, string fileName)

@@ -301,7 +301,7 @@
                         @if (Editable && IsEditingRow(currentRowIndex))
                         {
                             <CascadingValue Value="_editContext" IsFixed="false">
-                                <tr class="tm-row-editing tm-data-table-row--editing" data-testid="@TestId("row-editing")" @onkeydown="HandleEditKeyDownAsync">
+                                <tr class="tm-row-editing tm-data-table-row--editing @(_editHasErrors ? "tm-data-table-row--invalid" : null)" data-testid="@TestId("row-editing")" @onkeydown="HandleEditKeyDownAsync">
                                     @if (HasDetail)
                                     {
                                         <td class="tm-col-expander"></td>
@@ -316,10 +316,6 @@
                                             @if (!HasEditActions && ReferenceEquals(col, _visibleColumns[0]))
                                             {
                                                 @RowEditValidator
-                                                @if (_editHasErrors)
-                                                {
-                                                    <span class="tm-row-edit-error" data-testid="@TestId("edit-error")">@Loc["TmDataTable_EditInvalid"]</span>
-                                                }
                                             }
                                             @if (col.Editable && col.EditTemplate is not null)
                                             {
@@ -339,10 +335,6 @@
                                     {
                                         <td class="tm-data-table__edit-actions">
                                             @RowEditValidator
-                                            @if (_editHasErrors)
-                                            {
-                                                <span class="tm-row-edit-error" data-testid="@TestId("edit-error")">@Loc["TmDataTable_EditInvalid"]</span>
-                                            }
                                             <button type="button" class="tm-data-table__edit-action tm-data-table__edit-action--save"
                                                     aria-label="@Loc["TmDataTable_SaveRow"]" title="@Loc["TmDataTable_SaveRow"]"
                                                     data-testid="@TestId("edit-commit")"
@@ -362,6 +354,14 @@
                                         </td>
                                     }
                                 </tr>
+                                @if (_editHasErrors)
+                                {
+                                    <tr class="tm-data-table-row--validation">
+                                        <td colspan="@ColSpan">
+                                            <span class="tm-row-edit-error" data-testid="@TestId("edit-error")">@Loc["TmDataTable_EditInvalid"]</span>
+                                        </td>
+                                    </tr>
+                                }
                             </CascadingValue>
                         }
                         else
