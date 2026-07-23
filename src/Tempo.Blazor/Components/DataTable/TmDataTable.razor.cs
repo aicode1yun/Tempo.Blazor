@@ -72,7 +72,10 @@ public partial class TmDataTable<TItem> : IDisposable
     /// </summary>
     [Parameter] public Func<TItem, Task<bool>>? OnRowCommit { get; set; }
 
-    /// <summary>Fires when a row edit is cancelled.</summary>
+    /// <summary>
+    /// Legacy cancellation callback invoked after <see cref="OnRowEditCancel"/>. It receives the
+    /// already-mutated item; restoring original values remains the consuming application's responsibility.
+    /// </summary>
     [Parameter] public EventCallback<TItem> OnRowEditCancelled { get; set; }
 
     /// <summary>

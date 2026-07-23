@@ -7619,7 +7619,7 @@
           "name": "OnRowEditCancelled",
           "type": "EventCallback<TItem>",
           "isRequired": false,
-          "description": "Fires when a row edit is cancelled."
+          "description": "Legacy cancellation callback invoked after OnRowEditCancel. It receives the already-mutated item; restoring original values remains the consuming application's responsibility."
         },
         {
           "name": "OnRowEditStart",

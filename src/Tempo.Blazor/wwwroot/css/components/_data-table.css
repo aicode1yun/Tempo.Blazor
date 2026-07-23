@@ -57,7 +57,13 @@
   white-space: nowrap;
 }
 
+.tm-data-table__export-control {
+  position: relative;
+  display: inline-flex;
+}
+
 .tm-data-table__export-control .tm-dropdown-menu {
+  top: calc(100% + var(--tm-space-1));
   right: 0;
   left: auto;
 }

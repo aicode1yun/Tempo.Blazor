@@ -5,6 +5,7 @@
 @using Tempo.Blazor.Export
 @using Tempo.Blazor.Interfaces
 @using Tempo.Blazor.Models
+@inject ITmLocalizer Loc
 <PageTitle>Data Table – Tempo.Blazor</PageTitle>
 
 <!-- Page Header -->
@@ -13,25 +14,22 @@
     <p class="text-slate-600 dark:text-slate-400">Advanced data tables with sorting, filtering, pagination, and selection capabilities.</p>
 </div>
 
-<!-- Advanced ergonomics: pin, resize, multi-sort, master-detail, export -->
+<!-- Advanced ergonomics: pin, resize, multi-sort, master-detail -->
 <section class="demo-section" data-testid="dt-ergonomics-section">
     <div class="flex items-center space-x-2 mb-4">
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Ergonomics — Pin, Resize, Multi-sort, Export</h2>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Ergonomics — Pin, Resize, Multi-sort</h2>
         <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">K2</span>
     </div>
     <div class="showcase-card">
         <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
             Drag the column edges to resize, use the header pin toggle to freeze columns left/right (persisted via a layout store),
-            Shift+click headers to sort by multiple columns, expand a row for detail, and export the full filtered/sorted set to CSV.
-            A registered optional exporter adds XLSX to the same menu.
+            Shift+click headers to sort by multiple columns, and expand a row for detail.
         </p>
         <TmDataTable TItem="Employee"
                      Items="_employees"
                      ViewContext="ergonomics-demo"
                      LayoutStore="_layoutStore"
                      OnLoadDetail="LoadEmployeeDetailAsync"
-                     ShowExport="true"
-                     CsvDelimiter=";"
                      DefaultPageSize="8">
             <ChildContent>
                 <TmDataTableColumn TItem="Employee" Title="Name" PropertyName="Name" Field="e => e.Name"
@@ -53,38 +51,93 @@
 <!-- Inline editing -->
 <section class="demo-section" data-testid="dt-inline-edit-section">
     <div class="flex items-center space-x-2 mb-4">
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Inline Row Editing</h2>
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">@Loc["TmDataTableDemo_InlineEditTitle"]</h2>
         <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Validated</span>
     </div>
     <div class="showcase-card">
         <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
-            Use the edit action or double-click a row to edit it in place. The row is wrapped in a cascading EditContext with a validator
-            (<code>DataAnnotationsValidator</code> here; <code>FluentValidationValidator</code> plugs into the same
-            <code>RowEditValidator</code> slot). Commit is blocked while invalid.
+            @Loc["TmDataTableDemo_InlineEditDescription"]
         </p>
-        <TmDataTable TItem="EditableEmployee"
-                     Items="_editableEmployees"
-                     ViewContext="inline-edit-demo"
-                     Editable="true"
-                     OnRowCommit="CommitEmployeeAsync">
-            <RowEditValidator>
-                <DataAnnotationsValidator />
-            </RowEditValidator>
-            <ChildContent>
-                <TmDataTableColumn TItem="EditableEmployee" Title="Name" Field="e => e.Name" Editable="true">
-                    <EditTemplate Context="e">
-                        <input class="tm-input" @bind="e.Name" @bind:event="oninput" />
-                        <ValidationMessage For="@(() => e.Name)" />
-                    </EditTemplate>
-                </TmDataTableColumn>
-                <TmDataTableColumn TItem="EditableEmployee" Title="Score" Field="e => e.Score" Editable="true">
-                    <EditTemplate Context="e">
-                        <input class="tm-input" type="number" @bind="e.Score" @bind:event="oninput" />
-                        <ValidationMessage For="@(() => e.Score)" />
-                    </EditTemplate>
-                </TmDataTableColumn>
-            </ChildContent>
-        </TmDataTable>
+        <div data-testid="transaction-table">
+            <TmDataTable TItem="TransactionDemo"
+                         Items="_transactions"
+                         ViewContext="transaction-inline-edit-demo"
+                         Editable="true"
+                         OnRowSave="HandleTransactionSaved">
+                <RowEditValidator>
+                    <DataAnnotationsValidator />
+                </RowEditValidator>
+                <ChildContent>
+                    <TmDataTableColumn TItem="TransactionDemo" Title="@Loc["TmDataTableDemo_Date"]" PropertyName="Date" Field="transaction => transaction.Date">
+                        <CellTemplate Context="transaction">@transaction.Date.ToString("d")</CellTemplate>
+                    </TmDataTableColumn>
+                    <TmDataTableColumn TItem="TransactionDemo" Title="@Loc["TmDataTableDemo_Amount"]" PropertyName="Amount" Field="transaction => transaction.Amount" Editable="true">
+                        <EditTemplate Context="transaction">
+                            <input class="tm-input" data-testid="transaction-amount-input" type="number" step="0.01"
+                                   aria-label="@Loc["TmDataTableDemo_Amount"]"
+                                   @bind="transaction.Amount" @bind:event="oninput" />
+                            <ValidationMessage For="@(() => transaction.Amount)" />
+                        </EditTemplate>
+                    </TmDataTableColumn>
+                    <TmDataTableColumn TItem="TransactionDemo" Title="@Loc["TmDataTableDemo_Category"]" PropertyName="Category" Field="transaction => transaction.Category" Editable="true">
+                        <EditTemplate Context="transaction">
+                            <select class="tm-input" data-testid="transaction-category-input"
+                                    aria-label="@Loc["TmDataTableDemo_Category"]" @bind="transaction.Category">
+                                <option value="">@Loc["TmDataTableDemo_SelectCategory"]</option>
+                                @foreach (var category in TransactionCategories)
+                                {
+                                    <option value="@category">@category</option>
+                                }
+                            </select>
+                            <ValidationMessage For="@(() => transaction.Category)" />
+                        </EditTemplate>
+                    </TmDataTableColumn>
+                    <TmDataTableColumn TItem="TransactionDemo" Title="@Loc["TmDataTableDemo_Note"]" PropertyName="Note" Field="transaction => transaction.Note" Editable="true">
+                        <EditTemplate Context="transaction">
+                            <input class="tm-input" data-testid="transaction-note-input"
+                                   aria-label="@Loc["TmDataTableDemo_Note"]"
+                                   @bind="transaction.Note" @bind:event="oninput" />
+                            <ValidationMessage For="@(() => transaction.Note)" />
+                        </EditTemplate>
+                    </TmDataTableColumn>
+                </ChildContent>
+            </TmDataTable>
+        </div>
+        <p class="text-sm text-slate-600 dark:text-slate-300 mt-3" data-testid="dt-inline-save-result" aria-live="polite">
+            @(_lastSavedTransaction is null
+                ? Loc["TmDataTableDemo_SavePlaceholder"]
+                : Loc["TmDataTableDemo_SaveResult", _lastSavedTransaction.Value.Category, _lastSavedTransaction.Value.Amount])
+        </p>
+    </div>
+</section>
+
+<!-- Export -->
+<section class="demo-section" data-testid="dt-export-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">@Loc["TmDataTableDemo_ExportTitle"]</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full">CSV + XLSX</span>
+    </div>
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            @Loc["TmDataTableDemo_ExportDescription"]
+        </p>
+        <div data-testid="export-table">
+            <TmDataTable TItem="TransactionDemo"
+                         Items="_transactions"
+                         ViewContext="transaction-export-demo"
+                         ShowExport="true"
+                         CsvDelimiter=";"
+                         DefaultPageSize="5">
+                <ChildContent>
+                    <TmDataTableColumn TItem="TransactionDemo" Title="@Loc["TmDataTableDemo_Date"]" PropertyName="Date" Field="transaction => transaction.Date">
+                        <CellTemplate Context="transaction">@transaction.Date.ToString("d")</CellTemplate>
+                    </TmDataTableColumn>
+                    <TmDataTableColumn TItem="TransactionDemo" Title="@Loc["TmDataTableDemo_Amount"]" PropertyName="Amount" Field="transaction => transaction.Amount" />
+                    <TmDataTableColumn TItem="TransactionDemo" Title="@Loc["TmDataTableDemo_Category"]" PropertyName="Category" Field="transaction => transaction.Category" />
+                    <TmDataTableColumn TItem="TransactionDemo" Title="@Loc["TmDataTableDemo_Note"]" PropertyName="Note" Field="transaction => transaction.Note" />
+                </ChildContent>
+            </TmDataTable>
+        </div>
     </div>
 </section>
 
@@ -603,25 +656,38 @@
 
     private record Employee(string Name, string Role, string Dept, int Score, string Email = "", int Id = 0, int? ManagerId = null);
 
-    // ── K2 ergonomics demo (pin/resize/multi-sort/master-detail/export) ──
+    // ── K2 ergonomics demo (pin/resize/multi-sort/master-detail) ──
     private readonly InMemoryDataTableLayoutStore _layoutStore = new();
     private static Task LoadEmployeeDetailAsync(Employee _) => Task.CompletedTask; // demo: detail already in the row
 
-    // ── K2 inline-edit demo (mutable model + DataAnnotations) ──
-    private sealed class EditableEmployee
+    // ── K2 inline-edit and export demo (mutable transaction model + DataAnnotations) ──
+    private sealed class TransactionDemo
     {
-        [Required] public string Name { get; set; } = "";
-        [Range(0, 100)] public int Score { get; set; }
+        public DateTime Date { get; set; }
+
+        [Range(typeof(decimal), "0.01", "1000000")]
+        public decimal Amount { get; set; }
+
+        [Required]
+        public string Category { get; set; } = "";
+
+        [Required]
+        public string Note { get; set; } = "";
     }
 
-    private readonly List<EditableEmployee> _editableEmployees =
+    private static readonly string[] TransactionCategories = ["Travel", "Office", "Software"];
+
+    private readonly List<TransactionDemo> _transactions =
     [
-        new() { Name = "Ada Lovelace", Score = 92 },
-        new() { Name = "Alan Turing", Score = 98 },
-        new() { Name = "Grace Hopper", Score = 95 }
+        new() { Date = new DateTime(2026, 7, 21), Amount = 189.90m, Category = "Travel", Note = "Train to Prague" },
+        new() { Date = new DateTime(2026, 7, 22), Amount = 49.50m, Category = "Office", Note = "Team supplies" },
+        new() { Date = new DateTime(2026, 7, 23), Amount = 299.00m, Category = "Software", Note = "Design subscription" }
     ];
 
-    private static Task<bool> CommitEmployeeAsync(EditableEmployee _) => Task.FromResult(true);
+    private (string Category, decimal Amount)? _lastSavedTransaction;
+
+    private void HandleTransactionSaved(TransactionDemo transaction) =>
+        _lastSavedTransaction = (transaction.Category, transaction.Amount);
 
     private static readonly string[] Roles = ["Admin", "User", "Manager"];
     private static readonly string[] Depts = ["Engineering", "Marketing", "Sales", "IT", "HR"];

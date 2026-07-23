@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
@@ -8,7 +9,7 @@ namespace Tempo.Blazor.E2E;
 
 /// <summary>
 /// E2E for TmDataTable K2 ergonomics on the Data Table demo page (WASM demo at 7106):
-/// column pinning, multi-column sort, CSV export download, and validated inline editing.
+/// column pinning, multi-column sort, CSV/XLSX export downloads, and validated transaction editing.
 /// Screenshots land in <c>__screenshots__/data-table/</c> for UX review.
 /// </summary>
 [TestClass]
@@ -29,7 +30,7 @@ public class DataTableErgonomicsE2ETests : WasmTestBase
 
     [TestMethod]
     [TestCategory("WASM")]
-    public async Task DataTable_PinAndMultiSort_AndExportCsv()
+    public async Task DataTable_PinAndMultiSort_AndExportCsvAndXlsx()
     {
         var page = await OpenPageAsync();
 
@@ -50,50 +51,53 @@ public class DataTableErgonomicsE2ETests : WasmTestBase
         Assert.AreEqual(2, await badges.CountAsync(), "Two columns should show sort-precedence badges.");
         await SaveScreenshotAsync(page, "ergonomics-pin-multisort");
 
-        // The demo registers the optional XLSX service, so both formats share one menu.
-        var exportTrigger = section.Locator(".tm-data-table__export .tm-dropdown-trigger");
+        var exportSection = page.Locator("[data-testid='dt-export-section']");
+        await exportSection.ScrollIntoViewIfNeededAsync();
+
+        // The dedicated export demo registers the optional XLSX service, so both formats share one menu.
+        var exportTrigger = exportSection.Locator(".tm-data-table__export .tm-dropdown-trigger");
         await exportTrigger.ClickAsync();
-        await Assertions.Expect(section.Locator("[data-export-format='csv']")).ToBeVisibleAsync();
-        await Assertions.Expect(section.Locator("[data-export-format='xlsx']")).ToBeVisibleAsync();
-        await SaveElementScreenshotAsync(section, "xlsx-export-menu-light");
+        await Assertions.Expect(exportSection.Locator("[data-export-format='csv']")).ToBeVisibleAsync();
+        await Assertions.Expect(exportSection.Locator("[data-export-format='xlsx']")).ToBeVisibleAsync();
+        await SaveElementScreenshotAsync(exportSection, "xlsx-export-menu-light");
         await ToggleDarkModeAsync(page);
-        await SaveElementScreenshotAsync(section, "xlsx-export-menu-dark");
+        await SaveElementScreenshotAsync(exportSection, "xlsx-export-menu-dark");
 
         // Close and reopen the menu to exercise the keyboard edge case before downloading.
         await exportTrigger.PressAsync("Escape");
-        await Assertions.Expect(section.Locator("[data-export-format='csv']")).ToHaveCountAsync(0);
+        await Assertions.Expect(exportSection.Locator("[data-export-format='csv']")).ToHaveCountAsync(0);
         await exportTrigger.ClickAsync();
 
-        // CSV export includes the full result set rather than only the visible 8-row page.
+        // CSV export contains the complete transaction set and a UTF-8 BOM.
         var download = await page.RunAndWaitForDownloadAsync(async () =>
         {
-            await section.Locator("[data-export-format='csv']").ClickAsync();
+            await exportSection.Locator("[data-export-format='csv']").ClickAsync();
         });
-        Assert.AreEqual("ergonomics-demo.csv", download.SuggestedFilename);
+        Assert.AreEqual("transaction-export-demo.csv", download.SuggestedFilename);
         var path = await download.PathAsync();
         Assert.IsNotNull(path);
         var bytes = await File.ReadAllBytesAsync(path);
         CollectionAssert.AreEqual(new byte[] { 0xEF, 0xBB, 0xBF }, bytes.Take(3).ToArray());
-        Assert.IsTrue(File.ReadAllLines(path).Length > 9,
-            "CSV should contain a header and more rows than the visible 8-row page.");
+        Assert.AreEqual(4, File.ReadAllLines(path).Length,
+            "CSV should contain one header and all three transactions.");
 
-        // XLSX uses the same full result set and produces an Open XML workbook a real reader accepts.
+        // XLSX uses the same transaction set and produces an Open XML workbook a real reader accepts.
         await exportTrigger.ClickAsync();
         var xlsxDownload = await page.RunAndWaitForDownloadAsync(async () =>
         {
-            await section.Locator("[data-export-format='xlsx']").ClickAsync();
+            await exportSection.Locator("[data-export-format='xlsx']").ClickAsync();
         });
-        Assert.AreEqual("ergonomics-demo.xlsx", xlsxDownload.SuggestedFilename);
+        Assert.AreEqual("transaction-export-demo.xlsx", xlsxDownload.SuggestedFilename);
         var xlsxPath = await xlsxDownload.PathAsync();
         Assert.IsNotNull(xlsxPath);
         using var workbook = SpreadsheetDocument.Open(xlsxPath, isEditable: false);
         var xlsxRows = workbook.WorkbookPart!.WorksheetParts.Single().Worksheet
             .GetFirstChild<SheetData>()!.Elements<Row>().ToList();
-        Assert.IsTrue(xlsxRows.Count > 9,
-            "XLSX should contain a header and more rows than the visible 8-row page.");
+        Assert.AreEqual(4, xlsxRows.Count,
+            "XLSX should contain one header and all three transactions.");
         Assert.AreEqual(CellValues.Number,
-            xlsxRows[1].Elements<Cell>().ElementAt(3).DataType?.Value,
-            "The numeric Score column should remain numeric in XLSX.");
+            xlsxRows[1].Elements<Cell>().ElementAt(1).DataType?.Value,
+            "The decimal Amount column should remain numeric in XLSX.");
     }
 
     [TestMethod]
@@ -119,7 +123,9 @@ public class DataTableErgonomicsE2ETests : WasmTestBase
         // Starting a second row replaces the active edit row instead of leaving two editing rows.
         await section.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Edit row" }).First.ClickAsync();
         Assert.AreEqual(1, await editing.CountAsync(), "Starting another row must preserve the single-row edit invariant.");
-        Assert.AreEqual("Alan Turing", await editing.Locator("input").First.InputValueAsync());
+        Assert.AreEqual(49.5m, decimal.Parse(
+            await editing.Locator("input[type='number']").InputValueAsync(),
+            CultureInfo.InvariantCulture));
 
         await SaveElementScreenshotAsync(section, "inline-edit-actions-light");
         await ToggleDarkModeAsync(page);
@@ -145,21 +151,27 @@ public class DataTableErgonomicsE2ETests : WasmTestBase
 
         await section.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Edit row" }).First.ClickAsync();
         var editing = section.Locator(".tm-data-table-row--editing");
-        var score = editing.Locator("input[type='number']");
-        await score.FillAsync("101");
+        var amount = editing.Locator("[data-testid='transaction-amount-input']");
+        var note = editing.Locator("[data-testid='transaction-note-input']");
+        await amount.FillAsync("0");
+        await note.FillAsync("");
         await section.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Save" }).ClickAsync();
 
         await Assertions.Expect(editing).ToHaveClassAsync(new Regex("tm-data-table-row--invalid"));
-        await Assertions.Expect(editing.Locator(".validation-message")).ToContainTextAsync("between 0 and 100");
+        var validationMessages = editing.Locator(".validation-message");
+        await Assertions.Expect(validationMessages.Nth(0)).ToContainTextAsync("between 0.01 and 1000000");
+        await Assertions.Expect(validationMessages.Nth(1)).ToContainTextAsync("required");
         await SaveElementScreenshotAsync(section, "inline-edit-validation-light");
 
         await ToggleDarkModeAsync(page);
         await SaveElementScreenshotAsync(section, "inline-edit-validation-dark");
 
-        await score.FillAsync("88");
+        await amount.FillAsync("88.25");
+        await note.FillAsync("Updated expense");
         await section.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Save" }).ClickAsync();
         await Assertions.Expect(editing).ToHaveCountAsync(0);
-        await Assertions.Expect(section.Locator("tbody tr").First).ToContainTextAsync("88");
+        await Assertions.Expect(section.Locator("tbody tr").First).ToContainTextAsync("88.25");
+        await Assertions.Expect(section.Locator("[data-testid='dt-inline-save-result']")).ToContainTextAsync("OnRowSave");
     }
 
     private static async Task SaveScreenshotAsync(IPage page, string fileName)
