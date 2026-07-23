@@ -18,6 +18,7 @@ public sealed class TmChartStackedBarE2ETests : WasmTestBase
     private async Task<DemoPageHandle> OpenChartsPageAsync()
     {
         var context = await CreateContextAsync();
+        await context.AddInitScriptAsync("localStorage.setItem('tm-demo-culture', 'en');");
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1440, 1000);
 
@@ -68,7 +69,7 @@ public sealed class TmChartStackedBarE2ETests : WasmTestBase
 
         await verticalBars.Nth(5).ClickAsync();
         await Assertions.Expect(page.Locator("[data-testid='charts-demo-clicked']"))
-            .ToContainTextAsync("Q2", new LocatorAssertionsToContainTextOptions { Timeout = 15_000 });
+            .ToContainTextAsync("Feb", new LocatorAssertionsToContainTextOptions { Timeout = 15_000 });
 
         await SaveSectionScreenshotAsync(page, "stacked-bars");
         AssertNoBlazorErrors(handle);

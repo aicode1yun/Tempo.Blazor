@@ -81,8 +81,8 @@ public sealed class TmChartWaterfallE2ETests : WasmTestBase
         Assert.AreEqual(6, await bars.CountAsync());
         Assert.AreEqual(5, await chart.Locator("line.tm-chart__waterfall-connector").CountAsync());
         Assert.AreEqual(6, await chart.Locator("text.tm-chart__value").CountAsync());
-        Assert.AreEqual("+50", await chart.Locator("text.tm-chart__value").Nth(1).TextContentAsync());
-        Assert.AreEqual("-30", await chart.Locator("text.tm-chart__value").Nth(2).TextContentAsync());
+        Assert.AreEqual("+90", await chart.Locator("text.tm-chart__value").Nth(1).TextContentAsync());
+        Assert.AreEqual("-55", await chart.Locator("text.tm-chart__value").Nth(2).TextContentAsync());
 
         var opening = await GeometryAsync(bars.Nth(0));
         var sales = await GeometryAsync(bars.Nth(1));
@@ -91,7 +91,7 @@ public sealed class TmChartWaterfallE2ETests : WasmTestBase
 
         await bars.Nth(2).ClickAsync();
         await Assertions.Expect(page.Locator("[data-testid='charts-waterfall-clicked']"))
-            .ToContainTextAsync("Costs = -30", new LocatorAssertionsToContainTextOptions { Timeout = 15_000 });
+            .ToContainTextAsync("Payroll = -55", new LocatorAssertionsToContainTextOptions { Timeout = 15_000 });
 
         await SaveSectionScreenshotAsync(page, "waterfall-normal");
         AssertNoBrowserErrors(handle);

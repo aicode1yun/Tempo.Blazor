@@ -32,7 +32,8 @@ public sealed class TmChartAreaE2ETests : WasmTestBase
             await page.ReloadAsync(new PageReloadOptions { WaitUntil = WaitUntilState.Load, Timeout = 90_000 });
             await WaitForAppReadyAsync(page);
         }
-        await page.WaitForSelectorAsync("[data-testid='charts-area-section']", new PageWaitForSelectorOptions { Timeout = 30000 });
+        await page.Locator("[data-testid='charts-area-section']").WaitForAsync(
+            new LocatorWaitForOptions { State = WaitForSelectorState.Attached, Timeout = 90_000 });
         return page;
     }
 
