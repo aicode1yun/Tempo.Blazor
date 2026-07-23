@@ -9,7 +9,11 @@
         <label for="@Id" class="tm-select-label @(Required ? "tm-input-label-required" : "")">@Label</label>
     }
     <div class="tm-select-container">
+        @* `value` na <select> nechá Blazor promítnout předvybranou hodnotu do DOM i pro <option>
+           dodané jako ChildContent (syrové <option>), kde komponenta nemůže přidat selected=".."
+           na jednotlivé prvky. Bez toho ChildContent-selecty vždy ukázaly první možnost. *@
         <select id="@Id"
+                value="@SelectedValueString"
                 disabled="@Disabled"
                 required="@Required"
                 class="@SelectCssClass"
@@ -99,6 +103,16 @@
 
     private bool IsSelected(TValue? optValue) =>
         EqualityComparer<TValue?>.Default.Equals(optValue, Value);
+
+    /// <summary>
+    /// Řetězcová podoba <see cref="Value"/> pro <c>value</c> atribut na <c>&lt;select&gt;</c>. Když je hodnota
+    /// prázdná/výchozí, vrací <c>null</c> (nerenderuje se) a prohlížeč ukáže první možnost (placeholder).
+    /// Musí odpovídat tomu, jak se renderují hodnoty <c>&lt;option&gt;</c> (ToString), aby předvýběr sedl.
+    /// </summary>
+    private string? SelectedValueString =>
+        Value is null || EqualityComparer<TValue?>.Default.Equals(Value, default)
+            ? null
+            : Value.ToString();
 
     private string SelectCssClass =>
         $"tm-select{(string.IsNullOrEmpty(Error) ? "" : " tm-select-error")}{(Disabled ? " tm-select-disabled" : "")}";

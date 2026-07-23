@@ -211,6 +211,29 @@ public class TmSelectTests : LocalizationTestBase
         rendered.Count.Should().Be(2);
     }
 
+    // ── Preselection with ChildContent (raw <option>) ───────────
+
+    [Fact]
+    public void TmSelect_ChildContent_Preselects_BoundValue_ViaSelectValueAttribute()
+    {
+        // Regrese: se syrovými <option> potomky musí předvybraná hodnota dojet do <select> přes
+        // jeho value atribut (Blazor deferred value), ne spadnout na první možnost.
+        var cut = Render<TmSelect<string>>(p => p
+            .Add(x => x.Value, "sales")
+            .AddChildContent("<option value=\"\">all</option><option value=\"dbo\">dbo</option><option value=\"sales\">sales</option>"));
+
+        cut.Find("select").GetAttribute("value").Should().Be("sales");
+    }
+
+    [Fact]
+    public void TmSelect_ChildContent_DefaultValue_OmitsSelectValueAttribute()
+    {
+        var cut = Render<TmSelect<string>>(p => p
+            .AddChildContent("<option value=\"\">all</option><option value=\"dbo\">dbo</option>"));
+
+        cut.Find("select").HasAttribute("value").Should().BeFalse();
+    }
+
     // ── Required (accessibility) ─────────────────────────────────
 
     [Fact]
