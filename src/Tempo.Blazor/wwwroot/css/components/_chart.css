@@ -40,6 +40,11 @@
     font-size: 11px;
 }
 
+.tm-chart__axis-zero {
+    stroke: var(--tm-text-tertiary);
+    stroke-width: 1.5;
+}
+
 /* ── Bars ── */
 
 .tm-chart__bar {
@@ -49,6 +54,33 @@
 
 .tm-chart__bar:hover {
     opacity: 0.8;
+}
+
+/* ── Waterfall chart ── */
+
+.tm-chart__bar--positive {
+    fill: var(--tm-color-success);
+    stroke: var(--tm-color-success-hover);
+    stroke-width: 1;
+}
+
+.tm-chart__bar--negative {
+    fill: var(--tm-color-danger);
+    stroke: var(--tm-color-danger-hover);
+    stroke-width: 1;
+}
+
+.tm-chart__bar--total {
+    fill: var(--tm-color-primary);
+    stroke: var(--tm-color-primary-hover);
+    stroke-width: 1;
+}
+
+.tm-chart__waterfall-connector {
+    stroke: var(--tm-text-tertiary);
+    stroke-width: 1;
+    stroke-dasharray: 4, 4;
+    pointer-events: none;
 }
 
 /* ── Line chart ── */

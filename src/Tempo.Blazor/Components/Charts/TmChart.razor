@@ -110,6 +110,18 @@
     [Parameter] public double? AreaOpacity { get; set; }
 
     /// <summary>
+    /// Waterfall charts only: appends a calculated total bar after the input values.
+    /// Defaults to false.
+    /// </summary>
+    [Parameter] public bool WaterfallShowTotal { get; set; }
+
+    /// <summary>
+    /// Waterfall charts only: draws dashed cumulative-level connectors between adjacent bars.
+    /// Defaults to false.
+    /// </summary>
+    [Parameter] public bool WaterfallShowConnectors { get; set; }
+
+    /// <summary>
     /// Time axis only: custom .NET date format string for the X-axis labels (e.g. "yyyy-MM").
     /// Null picks the format automatically from the axis range (hours/days/months/years).
     /// </summary>
@@ -276,6 +288,14 @@
                 return list;
             }
 
+            if (Type == ChartType.Waterfall)
+            {
+                list.Add(new LegendItem(Loc["TmChart_Increase"], "var(--tm-color-success)"));
+                list.Add(new LegendItem(Loc["TmChart_Decrease"], "var(--tm-color-danger)"));
+                list.Add(new LegendItem(Loc["TmChart_Total"], "var(--tm-color-primary)"));
+                return list;
+            }
+
             if (UsesPerValueLegend())
             {
                 var dataset = Data.Datasets[0];
@@ -353,6 +373,10 @@
             case ChartType.StackedArea:
                 BuildStackedGrid(builder);
                 BuildStackedAreaChart(builder);
+                break;
+            case ChartType.Waterfall:
+                BuildWaterfallGrid(builder);
+                BuildWaterfallChart(builder);
                 break;
         }
     };
@@ -1113,6 +1137,198 @@
         builder.CloseElement(); // div
         builder.CloseElement(); // foreignObject
     };
+
+    // ── Waterfall chart ──
+
+    private sealed record WaterfallBar(
+        int Index,
+        string Label,
+        double Delta,
+        double Start,
+        double End,
+        bool IsTotal);
+
+    private List<WaterfallBar> WaterfallBars()
+    {
+        var bars = new List<WaterfallBar>();
+        if (Data is null || Data.Datasets.Length == 0) return bars;
+
+        var values = Data.Datasets[0].Values;
+        var count = Math.Min(Data.Labels.Length, values.Length);
+        double cumulative = 0;
+        for (int i = 0; i < count; i++)
+        {
+            var delta = double.IsNaN(values[i]) ? 0 : values[i];
+            var start = i == 0 ? 0 : cumulative;
+            var end = i == 0 ? delta : cumulative + delta;
+            bars.Add(new WaterfallBar(i, Data.Labels[i], delta, start, end, false));
+            cumulative = end;
+        }
+
+        if (WaterfallShowTotal && bars.Count > 0)
+        {
+            bars.Add(new WaterfallBar(
+                count,
+                Loc["TmChart_Total"],
+                cumulative,
+                0,
+                cumulative,
+                true));
+        }
+
+        return bars;
+    }
+
+    private (double Min, double Max) WaterfallDomain(IReadOnlyList<WaterfallBar> bars)
+    {
+        double min = 0, max = 0;
+        foreach (var bar in bars)
+        {
+            min = Math.Min(min, Math.Min(bar.Start, bar.End));
+            max = Math.Max(max, Math.Max(bar.Start, bar.End));
+        }
+
+        if (min == max) max = min + 1;
+        return (min, max);
+    }
+
+    private void BuildWaterfallGrid(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
+    {
+        if (!ShowGrid) return;
+        var bars = WaterfallBars();
+        var (min, max) = WaterfallDomain(bars);
+        for (int i = 0; i <= 5; i++)
+        {
+            var value = min + (max - min) * i / 5.0;
+            var y = BarDomainY(value, min, max);
+            SvgLine(b, "tm-chart__grid-line", PL, y, PL + CW, y);
+            SvgText(b, "tm-chart__axis-label", PL - 8, y + 4, F(value), "end");
+        }
+
+        if (min < 0)
+        {
+            var zeroY = BarDomainY(0, min, max);
+            b.OpenElement(0, "line");
+            b.AddAttribute(1, "class", "tm-chart__axis-zero");
+            b.AddAttribute(2, "x1", F(PL));
+            b.AddAttribute(3, "y1", F(zeroY));
+            b.AddAttribute(4, "x2", F(PL + CW));
+            b.AddAttribute(5, "y2", F(zeroY));
+            b.CloseElement();
+        }
+    }
+
+    private void BuildWaterfallChart(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
+    {
+        var bars = WaterfallBars();
+        if (bars.Count == 0) return;
+
+        var (min, max) = WaterfallDomain(bars);
+        var gw = CW / (double)bars.Count;
+        var gp = gw * 0.15;
+        var bw = gw * 0.7;
+
+        if (WaterfallShowConnectors)
+        {
+            for (int i = 0; i < bars.Count - 1; i++)
+            {
+                var y = BarDomainY(bars[i].End, min, max);
+                var x1 = PL + i * gw + gp + bw;
+                var x2 = PL + (i + 1) * gw + gp;
+                b.OpenElement(0, "line");
+                b.AddAttribute(1, "class", "tm-chart__waterfall-connector");
+                b.AddAttribute(2, "x1", F(x1));
+                b.AddAttribute(3, "y1", F(y));
+                b.AddAttribute(4, "x2", F(x2));
+                b.AddAttribute(5, "y2", F(y));
+                b.CloseElement();
+            }
+        }
+
+        for (int i = 0; i < bars.Count; i++)
+        {
+            var bar = bars[i];
+            var x = PL + i * gw + gp;
+            var startY = BarDomainY(bar.Start, min, max);
+            var endY = BarDomainY(bar.End, min, max);
+            var y = Math.Min(startY, endY);
+            var height = Math.Abs(startY - endY);
+            var semanticIndex = bar.IsTotal ? 2 : bar.Delta < 0 ? 1 : 0;
+
+            if (!_hidden.Contains(semanticIndex))
+            {
+                BuildWaterfallRect(b, bar, x, y, bw, height);
+                if (ShowValues)
+                {
+                    var text = bar.IsTotal || bar.Index == 0
+                        ? F(bar.End)
+                        : bar.Delta > 0 ? $"+{F(bar.Delta)}" : F(bar.Delta);
+                    var valueY = bar.End < bar.Start ? y + height + 12 : y - 4;
+                    SvgText(b, "tm-chart__value", x + bw / 2, valueY, text, "middle");
+                }
+            }
+
+            SvgText(b, "tm-chart__label", x + bw / 2, PT + CH + 24, bar.Label, "middle");
+        }
+    }
+
+    private void BuildWaterfallRect(
+        Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b,
+        WaterfallBar bar,
+        double x,
+        double y,
+        double width,
+        double height)
+    {
+        var modifier = bar.IsTotal
+            ? "tm-chart__bar--total"
+            : bar.Delta < 0 ? "tm-chart__bar--negative" : "tm-chart__bar--positive";
+        var color = bar.IsTotal
+            ? "var(--tm-color-primary)"
+            : bar.Delta < 0 ? "var(--tm-color-danger)" : "var(--tm-color-success)";
+        var tipX = x + width / 2;
+        var index = bar.Index;
+        var label = bar.Label;
+        var value = bar.IsTotal ? bar.End : bar.Delta;
+
+        b.OpenElement(0, "rect");
+        b.AddAttribute(1, "class", $"tm-chart__bar {modifier}");
+        b.AddAttribute(2, "x", F(x));
+        b.AddAttribute(3, "y", F(y));
+        b.AddAttribute(4, "width", F(width));
+        b.AddAttribute(5, "height", F(height));
+        b.AddAttribute(6, "onclick",
+            EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                this, () => HandleWaterfallClick(index, label, value)));
+        b.AddAttribute(7, "onmouseover",
+            EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(
+                this, () => ShowWaterfallTip(index, label, value, color, tipX, y)));
+        b.AddAttribute(8, "onmouseout",
+            EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, HideTip));
+        b.CloseElement();
+    }
+
+    private async Task HandleWaterfallClick(int index, string label, double value)
+    {
+        if (OnSegmentClick.HasDelegate)
+        {
+            await OnSegmentClick.InvokeAsync(new ChartSegment(0, index, label, value));
+        }
+    }
+
+    private void ShowWaterfallTip(
+        int index,
+        string label,
+        double value,
+        string color,
+        double anchorX,
+        double anchorY)
+    {
+        if (!ShowTooltip) return;
+        _tip = new ChartTooltipContext(0, index, label, value, Data.Datasets[0].Label, color);
+        _tipX = anchorX;
+        _tipY = anchorY;
+    }
 
     // ── SVG element helpers ──
 

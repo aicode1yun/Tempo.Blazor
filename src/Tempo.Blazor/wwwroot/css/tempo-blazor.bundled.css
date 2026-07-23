@@ -2491,8 +2491,13 @@ to{opacity:1;transform:translateY(0) scale(1);}
 .tm-chart__empty{display:flex;align-items:center;justify-content:center;height:100%;min-height:200px;color:var(--tm-text-tertiary);font-size:var(--tm-font-size-sm,0.875rem);border:2px dashed var(--tm-border-color);border-radius:var(--tm-radius-md,0.5rem);}
 .tm-chart__grid-line{stroke:var(--tm-border-color);stroke-width:1;stroke-dasharray:4,4;}
 .tm-chart__axis-label{fill:var(--tm-text-secondary);font-size:11px;}
+.tm-chart__axis-zero{stroke:var(--tm-text-tertiary);stroke-width:1.5;}
 .tm-chart__bar{cursor:pointer;transition:opacity 0.15s ease;}
 .tm-chart__bar:hover{opacity:0.8;}
+.tm-chart__bar--positive{fill:var(--tm-color-success);stroke:var(--tm-color-success-hover);stroke-width:1;}
+.tm-chart__bar--negative{fill:var(--tm-color-danger);stroke:var(--tm-color-danger-hover);stroke-width:1;}
+.tm-chart__bar--total{fill:var(--tm-color-primary);stroke:var(--tm-color-primary-hover);stroke-width:1;}
+.tm-chart__waterfall-connector{stroke:var(--tm-text-tertiary);stroke-width:1;stroke-dasharray:4,4;pointer-events:none;}
 .tm-chart__line{fill:none;stroke-width:2;stroke-linejoin:round;}
 .tm-chart__point{cursor:pointer;transition:r 0.15s ease;}
 .tm-chart__point:hover{r:6;}

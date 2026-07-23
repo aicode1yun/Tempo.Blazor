@@ -214,7 +214,14 @@ public abstract class LocalizationTestBase : BunitContext
         // Document open dialog
         ["TmChart_NoData"]                      = "No data available",
         ["TmChart_ToggleSeries"]                = "Toggle {0}",
+        ["TmChart_Total"]                       = "Total",
+        ["TmChart_Increase"]                    = "Increase",
+        ["TmChart_Decrease"]                    = "Decrease",
         ["TmChartDemo_AreaCustomOpacity"]       = "Custom 40% solid fill, two series",
+        ["TmChartDemo_WaterfallTitle"]           = "Waterfall Chart",
+        ["TmChartDemo_WaterfallStandard"]        = "Operating result with calculated total",
+        ["TmChartDemo_WaterfallNegative"]        = "Cumulative path crossing below zero",
+        ["TmChartDemo_WaterfallClicked"]         = "Clicked",
         ["TmCodeEditor_InvalidJson"]            = "Invalid JSON: {0}",
         ["TmCodeEditor_Format"]                 = "Format",
         ["TmDocumentOpenDialog_Title"]          = "Open document",
@@ -3729,7 +3736,16 @@ public abstract class LocalizationTestBase : BunitContext
 
     private static MockTmLocalizer BuildCzechLocalizer() => new(new Dictionary<string, string>
     {
+        ["TmChart_NoData"] = "Žádná data k dispozici",
+        ["TmChart_ToggleSeries"] = "Přepnout {0}",
+        ["TmChart_Total"] = "Celkem",
+        ["TmChart_Increase"] = "Nárůst",
+        ["TmChart_Decrease"] = "Pokles",
         ["TmChartDemo_AreaCustomOpacity"] = "Vlastní 40% krytí plochy, dvě řady",
+        ["TmChartDemo_WaterfallTitle"] = "Vodopádový graf",
+        ["TmChartDemo_WaterfallStandard"] = "Provozní výsledek s dopočteným součtem",
+        ["TmChartDemo_WaterfallNegative"] = "Kumulativní průběh pod nulou",
+        ["TmChartDemo_WaterfallClicked"] = "Kliknuto",
         ["TmCodeEditor_InvalidJson"] = "Neplatný JSON: {0}",
         ["TmCodeEditor_Format"]      = "Formátovat",
 

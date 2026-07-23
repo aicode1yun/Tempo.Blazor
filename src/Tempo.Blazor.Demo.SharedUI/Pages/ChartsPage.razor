@@ -141,6 +141,38 @@
     </div>
 </section>
 
+<!-- Waterfall Chart -->
+<section class="demo-section mb-8" data-testid="charts-waterfall-section">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">@Loc["TmChartDemo_WaterfallTitle"]</h2>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+            <h3 class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">@Loc["TmChartDemo_WaterfallStandard"]</h3>
+            <TmChart Type="ChartType.Waterfall"
+                     Data="_waterfallData"
+                     WaterfallShowTotal="true"
+                     WaterfallShowConnectors="true"
+                     ShowValues="true"
+                     Height="320px"
+                     OnSegmentClick="HandleSegmentClick" />
+        </div>
+        <div>
+            <h3 class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">@Loc["TmChartDemo_WaterfallNegative"]</h3>
+            <TmChart Type="ChartType.Waterfall"
+                     Data="_waterfallNegativeData"
+                     WaterfallShowTotal="true"
+                     WaterfallShowConnectors="true"
+                     ShowValues="true"
+                     Height="320px" />
+        </div>
+    </div>
+    @if (_clickedSegment is not null)
+    {
+        <p class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="charts-waterfall-clicked">
+            @Loc["TmChartDemo_WaterfallClicked"]: <strong>@_clickedSegment.Label</strong> = @_clickedSegment.Value
+        </p>
+    }
+</section>
+
 <!-- DateTime Axis -->
 <section class="demo-section mb-8" data-testid="charts-time-axis-section">
     <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">DateTime Axis (Time Series)</h2>
@@ -343,6 +375,34 @@
 @code {
     private ChartSegment? _clickedSegment;
     private ChartSeriesToggle? _lastToggle;
+
+    private static readonly ChartData _waterfallData = new()
+    {
+        Labels = ["Opening", "Sales", "Costs", "Services", "Tax"],
+        Datasets =
+        [
+            new ChartDataset
+            {
+                Label = "Operating result",
+                Values = [100, 50, -30, 40, -20],
+                Color = "#2563eb"
+            }
+        ]
+    };
+
+    private static readonly ChartData _waterfallNegativeData = new()
+    {
+        Labels = ["Opening", "Loss", "Recovery", "Adjustment"],
+        Datasets =
+        [
+            new ChartDataset
+            {
+                Label = "Cash position",
+                Values = [50, -80, 20, -15],
+                Color = "#2563eb"
+            }
+        ]
+    };
 
     private static readonly ChartData _stackedData = new()
     {

@@ -2890,7 +2890,7 @@
       "kind": "Component",
       "category": "Charts",
       "namespace": "Tempo.Blazor.Components.Charts",
-      "description": "Pure SVG chart component supporting Bar, Line, Area, Pie, Donut, and HorizontalBar chart types with optional legend, grid, value labels, animation, gradient area fills, a proportional DateTime X axis for time series, combo charts (per-dataset ChartDataset.RenderAs = ChartDatasetRenderAs.Line renders that dataset as a line overlay over the bars of a Bar chart on a shared Y scale — bars for periodic flows, lines for cumulative values), dense-axis label thinning on Bar charts (over 24 categories only every n-th label renders), negative values on Bar/Line charts (signed domain with an emphasized zero axis; bars grow down from the zero baseline), point-marker thinning on dense line series (markers closer than ~9 units thin to ~24-unit spacing while the polyline stays complete), and click events on segments. Chart types additionally include Funnel (conversion trapezoids with per-stage conversion percentages), Heatmap (dataset-rows × label-columns intensity matrix with a global scale), and Treemap (squarified shares, flat or hierarchical via ChartTreeNode). Stacked variants (StackedBar vertical, StackedHorizontalBar, StackedArea) accumulate each category's datasets on a shared baseline scaled to the largest stack total; non-positive values contribute nothing to a stack, datasets toggle off through the series legend, and bar value labels are omitted when a segment is too small to keep the text readable.",
+      "description": "Pure SVG chart component supporting Bar, Line, Area, Pie, Donut, and HorizontalBar chart types with optional legend, grid, value labels, animation, gradient area fills, a proportional DateTime X axis for time series, combo charts (per-dataset ChartDataset.RenderAs = ChartDatasetRenderAs.Line renders that dataset as a line overlay over the bars of a Bar chart on a shared Y scale — bars for periodic flows, lines for cumulative values), dense-axis label thinning on Bar charts (over 24 categories only every n-th label renders), negative values on Bar/Line charts (signed domain with an emphasized zero axis; bars grow down from the zero baseline), point-marker thinning on dense line series (markers closer than ~9 units thin to ~24-unit spacing while the polyline stays complete), and click events on segments. Chart types additionally include Funnel (conversion trapezoids with per-stage conversion percentages), Heatmap (dataset-rows × label-columns intensity matrix with a global scale), Treemap (squarified shares, flat or hierarchical via ChartTreeNode), and Waterfall (the first value starts at zero and subsequent values are cumulative deltas, with optional connectors and calculated total). Stacked variants (StackedBar vertical, StackedHorizontalBar, StackedArea) accumulate each category's datasets on a shared baseline scaled to the largest stack total; non-positive values contribute nothing to a stack, datasets toggle off through the series legend, and bar value labels are omitted when a segment is too small to keep the text readable.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/Charts/TmChart.razor",
       "documentationStatus": "merged",
@@ -2966,6 +2966,18 @@
           "description": "Hierarchical data for ChartType.Treemap: top-level nodes render as groups with header strips, their children as tiles sized by value. When null, a treemap renders flat from Data (one tile per label/value)."
         },
         {
+          "name": "WaterfallShowConnectors",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Waterfall charts only: draws dashed cumulative-level connectors between adjacent bars. Defaults to false."
+        },
+        {
+          "name": "WaterfallShowTotal",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Waterfall charts only: appends a calculated total bar after the input values. Defaults to false."
+        },
+        {
           "name": "Width",
           "type": "string",
           "isRequired": false,
@@ -3025,7 +3037,11 @@
         "tm-chart__area",
         "tm-chart__area--gradient",
         "tm-chart__area-stem",
-        "tm-chart__axis-zero"
+        "tm-chart__axis-zero",
+        "tm-chart__bar--positive",
+        "tm-chart__bar--negative",
+        "tm-chart__bar--total",
+        "tm-chart__waterfall-connector"
       ],
       "examples": [
         {
@@ -3059,6 +3075,10 @@
         {
           "title": "Stacked bar chart: revenue split per quarter",
           "code": "<TmChart Type=\"ChartType.StackedBar\"\n         Data=\"@(new ChartData { Labels = quarters, Datasets = new[] {\n             new ChartDataset { Label = \"Licenses\", Values = licenses, Color = \"#3b82f6\" },\n             new ChartDataset { Label = \"Support\", Values = support, Color = \"#22c55e\" },\n             new ChartDataset { Label = \"Services\", Values = services, Color = \"#f59e0b\" }\n         } })\"\n         ShowLegend=\"true\" ShowValues=\"true\" Height=\"320px\" />"
+        },
+        {
+          "title": "Waterfall chart with connectors and calculated total",
+          "code": "<TmChart Type=\"ChartType.Waterfall\"\n         Data=\"@(new ChartData { Labels = new[] { \"Opening\", \"Sales\", \"Costs\" }, Datasets = new[] { new ChartDataset { Label = \"Profit\", Values = new[] { 100.0, 50.0, -30.0 }, Color = \"#2563eb\" } } })\"\n         WaterfallShowConnectors=\"true\"\n         WaterfallShowTotal=\"true\"\n         ShowValues=\"true\"\n         Height=\"320px\" />"
         }
       ]
     },

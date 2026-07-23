@@ -26,7 +26,9 @@ public enum ChartType
     /// <summary>Stacked horizontal bars: each category's datasets accumulate from the left baseline.</summary>
     StackedHorizontalBar,
     /// <summary>Stacked area: each dataset is filled on top of the cumulative baseline of the ones below it.</summary>
-    StackedArea
+    StackedArea,
+    /// <summary>Cumulative waterfall: the first value starts at zero and subsequent values are deltas.</summary>
+    Waterfall
 }
 
 /// <summary>Data for TmChart.</summary>
