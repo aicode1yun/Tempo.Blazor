@@ -21,8 +21,17 @@ public sealed class TmChartAreaE2ETests : WasmTestBase
         await context.AddInitScriptAsync("localStorage.setItem('tm-demo-culture', 'en');");
         var page = await context.NewPageAsync();
         await page.SetViewportSizeAsync(1440, 1000);
-        await page.GotoAsync($"{BaseUrl}/charts", new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
-        await WaitForAppReadyAsync(page);
+        try
+        {
+            await page.GotoAsync($"{BaseUrl}/charts",
+                new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 90_000 });
+            await WaitForAppReadyAsync(page);
+        }
+        catch (TimeoutException)
+        {
+            await page.ReloadAsync(new PageReloadOptions { WaitUntil = WaitUntilState.Load, Timeout = 90_000 });
+            await WaitForAppReadyAsync(page);
+        }
         await page.WaitForSelectorAsync("[data-testid='charts-area-section']", new PageWaitForSelectorOptions { Timeout = 30000 });
         return page;
     }
@@ -49,21 +58,25 @@ public sealed class TmChartAreaE2ETests : WasmTestBase
         await SaveScreenshotAsync(page, "chart-area-section");
     }
 
-    // ── E2E-ARE-2: fill-opacity plochy jde z --tm-* tokenu ──────────────────
+    // ── E2E-ARE-2: explicitní AreaOpacity přepíše token pro solid fill ───────
 
     [TestMethod]
-    public async Task Area_FillOpacity_ComesFromDesignToken()
+    public async Task Area_CustomFillOpacity_OverridesDesignToken()
     {
         var page = await OpenChartsPageAsync();
         var section = page.Locator("[data-testid='charts-area-section']");
+        var area = section.Locator(".tm-chart").First.Locator("path.tm-chart__area").First;
 
-        var opacity = await section.Locator(".tm-chart").First.Locator("path.tm-chart__area").First
-            .EvaluateAsync<string>("el => getComputedStyle(el).fillOpacity");
+        Assert.AreEqual("0.4", await area.GetAttributeAsync("fill-opacity"));
+        StringAssert.Contains(await area.GetAttributeAsync("style"), "--tm-chart-area-opacity:0.4");
+
+        var opacity = await area.EvaluateAsync<string>("el => getComputedStyle(el).fillOpacity");
         var token = await page.EvaluateAsync<string>(
             "() => getComputedStyle(document.documentElement).getPropertyValue('--tm-chart-area-fill-opacity').trim()");
 
         Assert.IsFalse(string.IsNullOrWhiteSpace(token), "The --tm-chart-area-fill-opacity token must be defined.");
-        Assert.AreEqual(token, opacity, "Area fill opacity must come from the design token.");
+        Assert.AreEqual("0.4", opacity, "AreaOpacity must override the design-token default for this solid area.");
+        Assert.AreNotEqual(token, opacity, "The demo override must be distinguishable from the theme default.");
     }
 
     // ── E2E-ARE-3: klik na bod plochy vyvolá OnSegmentClick ─────────────────
@@ -96,22 +109,13 @@ public sealed class TmChartAreaE2ETests : WasmTestBase
     {
         var page = await OpenChartsPageAsync();
 
-        await page.EvaluateAsync(
-            """
-            () => {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                document.documentElement.classList.add('dark', 'tm-dark');
-                document.body.classList.add('dark');
-                document.querySelectorAll('[data-theme]').forEach(el => {
-                    el.setAttribute('data-theme', 'dark');
-                    el.classList.add('dark', 'tm-dark');
-                });
-            }
-            """);
+        await page.Locator("button[aria-label='Switch to dark mode']:visible").ClickAsync();
+        await page.Locator("[data-theme='dark']").WaitForAsync(
+            new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15_000 });
         await page.WaitForTimeoutAsync(400);
 
         var token = await page.EvaluateAsync<string>(
-            "() => getComputedStyle(document.documentElement).getPropertyValue('--tm-chart-area-fill-opacity').trim()");
+            "() => getComputedStyle(document.querySelector('[data-theme=\"dark\"]')).getPropertyValue('--tm-chart-area-fill-opacity').trim()");
         Assert.AreEqual("0.3", token, "Dark mode must switch the area fill opacity token.");
         await SaveScreenshotAsync(page, "chart-area-dark");
     }

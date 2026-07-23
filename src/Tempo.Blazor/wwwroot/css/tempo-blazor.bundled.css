@@ -2496,7 +2496,7 @@ to{opacity:1;transform:translateY(0) scale(1);}
 .tm-chart__line{fill:none;stroke-width:2;stroke-linejoin:round;}
 .tm-chart__point{cursor:pointer;transition:r 0.15s ease;}
 .tm-chart__point:hover{r:6;}
-.tm-chart__area{fill-opacity:var(--tm-chart-area-fill-opacity);pointer-events:none;}
+.tm-chart__area{fill-opacity:var(--tm-chart-area-opacity,var(--tm-chart-area-fill-opacity));pointer-events:none;}
 .tm-chart__area--gradient{fill-opacity:1;}
 .tm-chart__area-stem{stroke-linecap:round;}
 .tm-chart__slice{cursor:pointer;transition:opacity 0.15s ease,transform 0.15s ease;transform-origin:center;}

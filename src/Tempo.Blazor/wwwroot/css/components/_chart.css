@@ -71,7 +71,7 @@
 /* ── Area chart ── */
 
 .tm-chart__area {
-    fill-opacity: var(--tm-chart-area-fill-opacity);
+    fill-opacity: var(--tm-chart-area-opacity, var(--tm-chart-area-fill-opacity));
     pointer-events: none;
 }
 

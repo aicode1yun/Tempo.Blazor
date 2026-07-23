@@ -1,6 +1,7 @@
 {
   "TmChart_NoData": "No data available",
   "TmChart_ToggleSeries": "Toggle {0}",
+  "TmChartDemo_AreaCustomOpacity": "Custom 40% solid fill, two series",
   "TmCodeEditor_InvalidJson": "Invalid JSON: {0}",
   "TmCodeEditor_Format": "Format",
   "TmColorGradient_Area": "Saturation and brightness",

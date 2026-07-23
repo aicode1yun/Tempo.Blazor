@@ -214,6 +214,7 @@ public abstract class LocalizationTestBase : BunitContext
         // Document open dialog
         ["TmChart_NoData"]                      = "No data available",
         ["TmChart_ToggleSeries"]                = "Toggle {0}",
+        ["TmChartDemo_AreaCustomOpacity"]       = "Custom 40% solid fill, two series",
         ["TmCodeEditor_InvalidJson"]            = "Invalid JSON: {0}",
         ["TmCodeEditor_Format"]                 = "Format",
         ["TmDocumentOpenDialog_Title"]          = "Open document",
@@ -3728,6 +3729,7 @@ public abstract class LocalizationTestBase : BunitContext
 
     private static MockTmLocalizer BuildCzechLocalizer() => new(new Dictionary<string, string>
     {
+        ["TmChartDemo_AreaCustomOpacity"] = "Vlastní 40% krytí plochy, dvě řady",
         ["TmCodeEditor_InvalidJson"] = "Neplatný JSON: {0}",
         ["TmCodeEditor_Format"]      = "Formátovat",
 

@@ -1,6 +1,7 @@
 {
   "TmChart_NoData": "Aucune donnée disponible",
   "TmChart_ToggleSeries": "Basculer {0}",
+  "TmChartDemo_AreaCustomOpacity": "Remplissage uni personnalisé à 40 %, deux séries",
   "TmCodeEditor_InvalidJson": "JSON invalide : {0}",
   "TmCodeEditor_Format": "Formater",
   "TmColorGradient_Area": "Saturation et luminosité",

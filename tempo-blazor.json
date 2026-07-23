@@ -2905,6 +2905,12 @@
           "description": "Area charts only: fills each series with a vertical gradient fading from the series color to transparent instead of the flat token-driven fill. Default false."
         },
         {
+          "name": "AreaOpacity",
+          "type": "double?",
+          "isRequired": false,
+          "description": "Area charts only: optional 0–1 opacity override for solid area fills. Null keeps the light/dark --tm-chart-area-fill-opacity design token; gradient areas retain their stop-based opacity."
+        },
+        {
           "name": "Class",
           "type": "string?",
           "isRequired": true,

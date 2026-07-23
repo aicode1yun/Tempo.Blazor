@@ -38,7 +38,9 @@ public class TmChartAreaTests : LocalizationTestBase
 
         var area = cut.Find("path.tm-chart__area");
         area.GetAttribute("d").Should().NotBeNullOrEmpty();
-        area.GetAttribute("d")!.TrimEnd().Should().EndWith("Z");
+        area.GetAttribute("d")!.TrimEnd().Should().EndWith(
+            "L 580,360 L 50,360 Z",
+            "a positive-only area must close from the last X back to the first X on the zero baseline");
     }
 
     // ── ARE-2: plocha je doplněná linií přes vrcholy (vizuální konzistence s Line) ──
@@ -59,11 +61,24 @@ public class TmChartAreaTests : LocalizationTestBase
     [Fact]
     public void Area_MultipleSeries_RenderOneAreaEach()
     {
+        var data = MultiSeriesData with
+        {
+            Datasets =
+            [
+                MultiSeriesData.Datasets[0] with { BackgroundColor = "#bfdbfe" },
+                MultiSeriesData.Datasets[1]
+            ]
+        };
+
         var cut = Render<TmChart>(p => p
             .Add(x => x.Type, ChartType.Area)
-            .Add(x => x.Data, MultiSeriesData));
+            .Add(x => x.Data, data));
 
-        cut.FindAll("path.tm-chart__area").Should().HaveCount(2);
+        cut.FindAll("path.tm-chart__area")
+            .Select(area => area.GetAttribute("fill"))
+            .Should().Equal(["#bfdbfe", "#ef4444"]);
+        cut.FindAll("polyline.tm-chart__line").Should().HaveCount(2);
+        cut.FindAll("circle.tm-chart__point").Should().HaveCount(6);
     }
 
     // ── ARE-4: prázdná série → žádná plocha, žádný pád ─────────────────────
@@ -256,6 +271,47 @@ public class TmChartAreaTests : LocalizationTestBase
             .Add(x => x.Data, SimpleAreaData));
 
         cut.Find("path.tm-chart__area").GetAttribute("fill").Should().Be("#3b82f6");
+    }
+
+    [Fact]
+    public void Area_CustomOpacity_AppliesToSolidArea()
+    {
+        var cut = Render<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Area)
+            .Add(x => x.Data, SimpleAreaData)
+            .Add(x => x.AreaOpacity, 0.42));
+
+        var area = cut.Find("path.tm-chart__area");
+        area.GetAttribute("fill-opacity").Should().Be("0.42");
+        area.GetAttribute("style").Should().Contain("--tm-chart-area-opacity:0.42");
+    }
+
+    [Fact]
+    public void Area_DefaultOpacity_RemainsThemeTokenDriven()
+    {
+        var cut = Render<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Area)
+            .Add(x => x.Data, SimpleAreaData));
+
+        var area = cut.Find("path.tm-chart__area");
+        area.HasAttribute("fill-opacity").Should().BeFalse();
+        area.HasAttribute("style").Should().BeFalse();
+    }
+
+    [Fact]
+    public void Area_ShowValues_RendersDatasetValuesAndXAxisLabels()
+    {
+        var cut = Render<TmChart>(p => p
+            .Add(x => x.Type, ChartType.Area)
+            .Add(x => x.Data, SimpleAreaData)
+            .Add(x => x.ShowValues, true));
+
+        cut.FindAll("text.tm-chart__value")
+            .Select(value => value.TextContent)
+            .Should().Equal(["10", "20", "15", "30"]);
+        cut.FindAll("text.tm-chart__label")
+            .Select(label => label.TextContent)
+            .Should().Equal(["Jan", "Feb", "Mar", "Apr"]);
     }
 
     // ── ARE-15: zpětná kompatibilita — Line nevykresluje žádnou plochu ─────

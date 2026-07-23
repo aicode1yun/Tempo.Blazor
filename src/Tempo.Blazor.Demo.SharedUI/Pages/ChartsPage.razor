@@ -1,6 +1,7 @@
 @page "/charts"
 @using Tempo.Blazor.Components.Charts
 @using Tempo.Blazor.Models
+@inject ITmLocalizer Loc
 
 <PageTitle>Charts – Tempo.Blazor</PageTitle>
 
@@ -123,9 +124,10 @@
     <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Area Chart</h2>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-            <h3 class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Flat token-driven fill, two series</h3>
+            <h3 class="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">@Loc["TmChartDemo_AreaCustomOpacity"]</h3>
             <TmChart Type="ChartType.Area"
                      Data="_lineData"
+                     AreaOpacity="0.4"
                      Height="320px"
                      OnSegmentClick="HandleSegmentClick" />
         </div>

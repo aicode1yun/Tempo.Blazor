@@ -103,6 +103,13 @@
     [Parameter] public bool AreaGradient { get; set; }
 
     /// <summary>
+    /// Area charts only: optional opacity override for solid area fills, clamped to 0–1.
+    /// Null (default) keeps the light/dark value from the <c>--tm-chart-area-fill-opacity</c>
+    /// design token. Gradient areas keep their stop-based opacity.
+    /// </summary>
+    [Parameter] public double? AreaOpacity { get; set; }
+
+    /// <summary>
     /// Time axis only: custom .NET date format string for the X-axis labels (e.g. "yyyy-MM").
     /// Null picks the format automatically from the axis range (hours/days/months/years).
     /// </summary>
@@ -925,6 +932,12 @@
                 b.AddAttribute(2, "d", sb.ToString());
                 b.AddAttribute(3, "fill", fill);
                 b.AddAttribute(4, "stroke", "none");
+                if (!AreaGradient && AreaOpacity is { } requestedOpacity)
+                {
+                    var opacity = Math.Clamp(requestedOpacity, 0, 1);
+                    b.AddAttribute(5, "fill-opacity", F(opacity));
+                    b.AddAttribute(6, "style", $"--tm-chart-area-opacity:{F(opacity)};");
+                }
                 b.CloseElement();
 
                 // Top line over the run (visual consistency with the Line type).
