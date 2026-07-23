@@ -62,6 +62,44 @@
     </p>
 </section>
 
+<!-- Sankey -->
+<section class="demo-section mb-8" data-testid="sankey-chart">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-2">
+        @Loc["TmSankeyChartDemo_Title"]
+    </h2>
+    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+        @Loc["TmSankeyChartDemo_Description"]
+    </p>
+    <div class="grid grid-cols-1 gap-6">
+        <div class="showcase-card" data-testid="sankey-cashflow">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">
+                @Loc["TmSankeyChartDemo_StandardTitle"]
+            </h3>
+            <TmSankeyChart Data="_sankeyCashFlowData"
+                           Height="400px"
+                           ValueFormatter="FormatSankeyCurrency"
+                           OnNodeClick="HandleSankeyNodeClick"
+                           OnLinkClick="HandleSankeyLinkClick" />
+        </div>
+        <div class="showcase-card" data-testid="sankey-custom-colors">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">
+                @Loc["TmSankeyChartDemo_CustomColorsTitle"]
+            </h3>
+            <TmSankeyChart Data="_sankeyCustomColorsData"
+                           Height="400px"
+                           ValueFormatter="FormatSankeyCurrency"
+                           OnNodeClick="HandleSankeyNodeClick"
+                           OnLinkClick="HandleSankeyLinkClick" />
+        </div>
+    </div>
+    <p class="mt-3 text-sm text-slate-600 dark:text-slate-400"
+       data-testid="sankey-clicked"
+       aria-live="polite"
+       aria-atomic="true">
+        @(_sankeySelection ?? Loc["TmSankeyChartDemo_ClickPrompt"])
+    </p>
+</section>
+
 <!-- Per-value color charts -->
 <section class="demo-section mb-8">
     <div class="flex items-center space-x-2 mb-4">
@@ -431,6 +469,9 @@
     private ChartSegment? _clickedSegment;
     private CalendarHeatmapDayClickEventArgs? _clickedCalendarHeatmapDay;
     private ChartSeriesToggle? _lastToggle;
+    private string? _sankeySelection;
+    private SankeyData _sankeyCashFlowData = default!;
+    private SankeyData _sankeyCustomColorsData = default!;
     private static readonly DateOnly _calendarHeatmapRangeStart = new(CalendarHeatmapDemoYear, 1, 1);
     private static readonly DateOnly _calendarHeatmapRangeEnd = new(CalendarHeatmapDemoYear, 3, 31);
     private static readonly IReadOnlyDictionary<DateOnly, decimal> _calendarHeatmapExpenses =
@@ -456,6 +497,102 @@
             }
         ]
     };
+
+    protected override void OnInitialized()
+    {
+        _sankeyCashFlowData = CreateSankeyData(useCustomColors: false);
+        _sankeyCustomColorsData = CreateSankeyData(useCustomColors: true);
+    }
+
+    private SankeyData CreateSankeyData(bool useCustomColors) => new()
+    {
+        Nodes =
+        [
+            new SankeyNode
+            {
+                Id = "salary",
+                Label = Loc["TmSankeyChartDemo_Salary"],
+                Color = useCustomColors ? "#2563eb" : null
+            },
+            new SankeyNode
+            {
+                Id = "side-income",
+                Label = Loc["TmSankeyChartDemo_SideIncome"],
+                Color = useCustomColors ? "#0d9488" : null
+            },
+            new SankeyNode
+            {
+                Id = "budget",
+                Label = Loc["TmSankeyChartDemo_Budget"],
+                Color = useCustomColors ? "#7c3aed" : null
+            },
+            new SankeyNode
+            {
+                Id = "housing",
+                Label = Loc["TmSankeyChartDemo_Housing"],
+                Color = useCustomColors ? "#ea580c" : null
+            },
+            new SankeyNode
+            {
+                Id = "food",
+                Label = Loc["TmSankeyChartDemo_Food"],
+                Color = useCustomColors ? "#db2777" : null
+            },
+            new SankeyNode
+            {
+                Id = "transport",
+                Label = Loc["TmSankeyChartDemo_Transport"],
+                Color = useCustomColors ? "#ca8a04" : null
+            },
+            new SankeyNode
+            {
+                Id = "savings",
+                Label = Loc["TmSankeyChartDemo_Savings"],
+                Color = useCustomColors ? "#16a34a" : null
+            }
+        ],
+        Links =
+        [
+            new SankeyLink { SourceId = "salary", TargetId = "budget", Value = 4800 },
+            new SankeyLink { SourceId = "side-income", TargetId = "budget", Value = 1200 },
+            new SankeyLink { SourceId = "budget", TargetId = "housing", Value = 2300 },
+            new SankeyLink { SourceId = "budget", TargetId = "food", Value = 1200 },
+            new SankeyLink { SourceId = "budget", TargetId = "transport", Value = 700 },
+            new SankeyLink { SourceId = "budget", TargetId = "savings", Value = 1800 }
+        ]
+    };
+
+    private void HandleSankeyNodeClick(SankeyNode node)
+    {
+        _sankeySelection = Loc["TmSankeyChartDemo_NodeClicked", node.Label];
+    }
+
+    private void HandleSankeyLinkClick(SankeyLink link)
+    {
+        _sankeySelection = Loc[
+            "TmSankeyChartDemo_LinkClicked",
+            SankeyNodeLabel(link.SourceId),
+            SankeyNodeLabel(link.TargetId),
+            FormatSankeyCurrency(link.Value)];
+    }
+
+    private string SankeyNodeLabel(string nodeId) =>
+        _sankeyCashFlowData.Nodes
+            .FirstOrDefault(node => string.Equals(node.Id, nodeId, StringComparison.Ordinal))
+            ?.Label
+        ?? nodeId;
+
+    private static string FormatSankeyCurrency(double value)
+    {
+        var culture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch
+        {
+            "cs" => CultureInfo.GetCultureInfo("cs-CZ"),
+            "fr" => CultureInfo.GetCultureInfo("fr-FR"),
+            _ => CultureInfo.GetCultureInfo("en-US")
+        };
+
+        return value.ToString("C0", culture);
+    }
 
     private static readonly ChartData _waterfallNegativeData = new()
     {
