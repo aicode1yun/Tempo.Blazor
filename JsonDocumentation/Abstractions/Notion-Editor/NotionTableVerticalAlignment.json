@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Vertical alignment supported by logical table cells.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAuthoringTable.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionTableVerticalAlignment"
+}

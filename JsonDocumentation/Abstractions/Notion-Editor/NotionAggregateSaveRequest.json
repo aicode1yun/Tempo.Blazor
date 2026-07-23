@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "An atomic request to replace one or more complete page aggregates.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateContracts.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionAggregateSaveRequest"
+}

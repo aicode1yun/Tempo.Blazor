@@ -1,0 +1,18 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Canonical JSON settings for the Notion aggregate authoring contract.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateJson.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "Options",
+      "kind": "Property",
+      "type": "static JsonSerializerOptions",
+      "description": "Gets the shared serializer options used by providers, tools, and contract tests."
+    }
+  ],
+  "itemName": "NotionAggregateJson"
+}

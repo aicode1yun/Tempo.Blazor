@@ -20621,6 +20621,16 @@
       ]
     },
     {
+      "itemName": "INotionAggregateProvider",
+      "kind": "Interface",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+      "description": "Loads and atomically persists complete Notion page aggregates.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Interfaces/INotionAggregateProvider.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "INotionAIProvider",
       "kind": "Interface",
       "category": "Notion Editor",
@@ -22817,6 +22827,64 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "NotionAggregateIssue",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "A path-aware error or warning produced by aggregate loading, validation, or saving.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionAggregateJson",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Canonical JSON settings for the Notion aggregate authoring contract.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateJson.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "Options",
+          "kind": "Property",
+          "type": "static JsonSerializerOptions",
+          "description": "Gets the shared serializer options used by providers, tools, and contract tests."
+        }
+      ]
+    },
+    {
+      "itemName": "NotionAggregateLoadResult",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Result of loading a Notion page aggregate.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionAggregateSaveRequest",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "An atomic request to replace one or more complete page aggregates.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionAggregateSaveResult",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Result of one atomic aggregate save transaction.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "NotionAnalyticsRange",
       "kind": "Class",
       "category": "Notion Editor",
@@ -22827,6 +22895,36 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "NotionAuthoringTable",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Canonical logical table definition used by aggregate authoring.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAuthoringTable.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionAuthoringTableCell",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "A logical rich-text cell in the canonical Notion authoring model.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAuthoringTable.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionAuthoringTableRow",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "One logical row in a canonical authoring table.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAuthoringTable.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "NotionBlockDiffService",
       "kind": "Class",
       "category": "Notion Editor",
@@ -22834,6 +22932,16 @@
       "description": "Compares two page block snapshots and returns block-level differences.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Services/NotionBlockDiffService.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionBlockSnapshot",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "A canonical block in a page aggregate snapshot.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateContracts.cs",
       "documentationStatus": "merged"
     },
     {
@@ -23089,6 +23197,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "NotionIssueSeverity",
+      "kind": "Enum",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Severity of a structured Notion aggregate issue.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "NotionMediaLibraryItem",
       "kind": "Class",
       "category": "Notion Editor",
@@ -23248,6 +23366,46 @@
       ]
     },
     {
+      "itemName": "NotionPageConflict",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Deterministic optimistic-concurrency conflict for one page.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionPageSave",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "One page replacement inside an atomic aggregate save.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionPageSnapshot",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "A complete, canonical snapshot of one Notion page aggregate.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionPageState",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Canonical mutable metadata for a page inside an aggregate snapshot.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateContracts.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "NotionPageVersionDto",
       "kind": "Class",
       "category": "Notion Editor",
@@ -23293,6 +23451,26 @@
           "type": "Guid"
         }
       ]
+    },
+    {
+      "itemName": "NotionRichTextInline",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "One structured rich-text segment in a table cell.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAuthoringTable.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionSavedPage",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Provider metadata returned for one successfully saved page.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateContracts.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "NotionSearchFilter",
@@ -23535,6 +23713,26 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "NotionTableBorder",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "A supported table border.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAuthoringTable.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionTableBorderStyle",
+      "kind": "Enum",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Line styles supported by logical table cell borders.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAuthoringTable.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "NotionTableCell",
       "kind": "Class",
       "category": "Notion Editor",
@@ -23587,6 +23785,16 @@
       ]
     },
     {
+      "itemName": "NotionTableCellBorders",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Per-side borders for one logical table cell.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAuthoringTable.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "NotionTableGridValidator",
       "kind": "Class",
       "category": "Notion Editor",
@@ -23616,6 +23824,26 @@
           ]
         }
       ]
+    },
+    {
+      "itemName": "NotionTableHorizontalAlignment",
+      "kind": "Enum",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Horizontal alignment supported by logical table cells and columns.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAuthoringTable.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionTableVerticalAlignment",
+      "kind": "Enum",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Vertical alignment supported by logical table cells.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAuthoringTable.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "NotionTemplateDto",
@@ -35471,11 +35699,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1440,
-    "manualItemCount": 1440,
-    "generatedItemCount": 1423,
+    "itemCount": 1462,
+    "manualItemCount": 1462,
+    "generatedItemCount": 1445,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1423
+    "publicApiTypeCount": 1445
   }
 }

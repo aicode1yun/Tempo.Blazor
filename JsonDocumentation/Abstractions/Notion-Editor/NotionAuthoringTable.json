@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Canonical logical table definition used by aggregate authoring.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAuthoringTable.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionAuthoringTable"
+}

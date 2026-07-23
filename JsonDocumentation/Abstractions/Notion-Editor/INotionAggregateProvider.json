@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Loads and atomically persists complete Notion page aggregates.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Interfaces/INotionAggregateProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "INotionAggregateProvider"
+}
