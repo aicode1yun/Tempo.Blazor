@@ -17,13 +17,14 @@ public class TempoDocumentKindTests
     };
 
     [Fact]
-    public void Enum_DefinesAllThreeKinds()
+    public void Enum_DefinesAllKinds()
     {
         Enum.GetValues<TempoDocumentKind>().Should().BeEquivalentTo(new[]
         {
             TempoDocumentKind.Wireframe,
             TempoDocumentKind.Diagram,
-            TempoDocumentKind.Spreadsheet
+            TempoDocumentKind.Spreadsheet,
+            TempoDocumentKind.Modeling
         });
     }
 
@@ -31,6 +32,7 @@ public class TempoDocumentKindTests
     [InlineData(TempoDocumentKind.Wireframe, "\"wireframe\"")]
     [InlineData(TempoDocumentKind.Diagram, "\"diagram\"")]
     [InlineData(TempoDocumentKind.Spreadsheet, "\"spreadsheet\"")]
+    [InlineData(TempoDocumentKind.Modeling, "\"modeling\"")]
     public void Serialises_AsCamelCaseString(TempoDocumentKind kind, string expectedJson)
     {
         var json = JsonSerializer.Serialize(kind, CamelCaseEnum);
@@ -42,6 +44,7 @@ public class TempoDocumentKindTests
     [InlineData("\"wireframe\"", TempoDocumentKind.Wireframe)]
     [InlineData("\"diagram\"", TempoDocumentKind.Diagram)]
     [InlineData("\"spreadsheet\"", TempoDocumentKind.Spreadsheet)]
+    [InlineData("\"modeling\"", TempoDocumentKind.Modeling)]
     public void Deserialises_FromCamelCaseString(string json, TempoDocumentKind expected)
     {
         var kind = JsonSerializer.Deserialize<TempoDocumentKind>(json, CamelCaseEnum);
