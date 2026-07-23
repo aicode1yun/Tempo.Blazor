@@ -5,8 +5,10 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Components.DataTable;
+using Tempo.Blazor.Configuration;
 using Tempo.Blazor.Export;
 using Tempo.Blazor.Interfaces;
 using Tempo.Blazor.Models;
@@ -268,5 +270,36 @@ public class TmDataTableExportTests : LocalizationTestBase
         csv.Take(3).Should().Equal(0xEF, 0xBB, 0xBF);
         Encoding.UTF8.GetString(csv).Should().Contain("\"Ann; \"\"A\"\"\"");
         Encoding.UTF8.GetString(csv).Should().Contain("\"Bob\nB\"");
+    }
+
+    [Fact]
+    public async Task RegisteredXlsxExporter_AddsMenuItem_DownloadsAndReportsCompletion()
+    {
+        Services.AddTempoBlazorDataTableXlsx();
+        DataTableExportResult? completed = null;
+        var cut = Render<TmDataTable<Person>>(p =>
+        {
+            p.Add(c => c.ViewContext, "people");
+            p.Add(c => c.Items, new List<Person> { new("Ann", 30) });
+            p.Add(c => c.ShowSearch, false);
+            p.Add(c => c.ShowColumnPicker, false);
+            p.Add(c => c.ShowExport, true);
+            p.Add(c => c.OnExportCompleted,
+                EventCallback.Factory.Create<DataTableExportResult>(this, result => completed = result));
+            p.AddChildContent(b =>
+            {
+                var seq = 0;
+                AddCol(b, ref seq, "Name", x => x.Name);
+                AddCol(b, ref seq, "Age", x => x.Age);
+            });
+        });
+
+        cut.Find(".tm-data-table__export .tm-dropdown-trigger").Click();
+        await cut.Find("[data-export-format='xlsx']").ClickAsync(new());
+
+        var invocation = JSInterop.Invocations.Should().ContainSingle(i =>
+            i.Identifier == "TempoFileManager.downloadFileFromStream").Subject;
+        invocation.Arguments[0].Should().Be("people.xlsx");
+        completed.Should().Be(new DataTableExportResult(DataTableExportFormat.Xlsx, "people.xlsx", 1));
     }
 }

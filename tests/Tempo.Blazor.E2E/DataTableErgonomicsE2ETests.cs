@@ -1,4 +1,6 @@
 using System.Text.RegularExpressions;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Playwright;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -48,14 +50,14 @@ public class DataTableErgonomicsE2ETests : WasmTestBase
         Assert.AreEqual(2, await badges.CountAsync(), "Two columns should show sort-precedence badges.");
         await SaveScreenshotAsync(page, "ergonomics-pin-multisort");
 
-        // The optional XLSX entry is absent until an IDataTableXlsxExporter is registered.
+        // The demo registers the optional XLSX service, so both formats share one menu.
         var exportTrigger = section.Locator(".tm-data-table__export .tm-dropdown-trigger");
         await exportTrigger.ClickAsync();
         await Assertions.Expect(section.Locator("[data-export-format='csv']")).ToBeVisibleAsync();
-        await Assertions.Expect(section.Locator("[data-export-format='xlsx']")).ToHaveCountAsync(0);
-        await SaveElementScreenshotAsync(section, "csv-export-menu-light");
+        await Assertions.Expect(section.Locator("[data-export-format='xlsx']")).ToBeVisibleAsync();
+        await SaveElementScreenshotAsync(section, "xlsx-export-menu-light");
         await ToggleDarkModeAsync(page);
-        await SaveElementScreenshotAsync(section, "csv-export-menu-dark");
+        await SaveElementScreenshotAsync(section, "xlsx-export-menu-dark");
 
         // Close and reopen the menu to exercise the keyboard edge case before downloading.
         await exportTrigger.PressAsync("Escape");
@@ -74,6 +76,24 @@ public class DataTableErgonomicsE2ETests : WasmTestBase
         CollectionAssert.AreEqual(new byte[] { 0xEF, 0xBB, 0xBF }, bytes.Take(3).ToArray());
         Assert.IsTrue(File.ReadAllLines(path).Length > 9,
             "CSV should contain a header and more rows than the visible 8-row page.");
+
+        // XLSX uses the same full result set and produces an Open XML workbook a real reader accepts.
+        await exportTrigger.ClickAsync();
+        var xlsxDownload = await page.RunAndWaitForDownloadAsync(async () =>
+        {
+            await section.Locator("[data-export-format='xlsx']").ClickAsync();
+        });
+        Assert.AreEqual("ergonomics-demo.xlsx", xlsxDownload.SuggestedFilename);
+        var xlsxPath = await xlsxDownload.PathAsync();
+        Assert.IsNotNull(xlsxPath);
+        using var workbook = SpreadsheetDocument.Open(xlsxPath, isEditable: false);
+        var xlsxRows = workbook.WorkbookPart!.WorksheetParts.Single().Worksheet
+            .GetFirstChild<SheetData>()!.Elements<Row>().ToList();
+        Assert.IsTrue(xlsxRows.Count > 9,
+            "XLSX should contain a header and more rows than the visible 8-row page.");
+        Assert.AreEqual(CellValues.Number,
+            xlsxRows[1].Elements<Cell>().ElementAt(3).DataType?.Value,
+            "The numeric Score column should remain numeric in XLSX.");
     }
 
     [TestMethod]

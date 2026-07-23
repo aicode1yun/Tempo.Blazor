@@ -1,0 +1,24 @@
+{
+  "kind": "Class",
+  "category": "Configuration",
+  "namespace": "Tempo.Blazor.Configuration",
+  "description": "Dependency-injection registration for the optional data-table XLSX exporter.",
+  "packageId": "Tempo.Blazor.DataTableXlsx",
+  "sourcePath": "src/Tempo.Blazor.DataTableXlsx/Configuration/DataTableXlsxServiceCollectionExtensions.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "AddTempoBlazorDataTableXlsx",
+      "kind": "Method",
+      "type": "IServiceCollection",
+      "description": "Registers DataTableXlsxExporter as the XLSX service consumed by TmDataTable. Existing custom registrations are preserved.",
+      "parameters": [
+        {
+          "name": "services",
+          "type": "this IServiceCollection"
+        }
+      ]
+    }
+  ],
+  "itemName": "DataTableXlsxServiceCollectionExtensions"
+}

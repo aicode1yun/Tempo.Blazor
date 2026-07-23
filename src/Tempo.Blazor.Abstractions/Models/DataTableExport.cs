@@ -1,8 +1,8 @@
 namespace Tempo.Blazor.Models;
 
 /// <summary>
-/// Tabular snapshot of a data table for export: the visible column headers and the fully
-/// materialized rows (all pages) for the current filter/sort, as display strings.
+/// Tabular snapshot of a data table for export: visible column headers and fully materialized
+/// rows (all pages) for the current filter/sort, as display strings with optional raw values.
 /// </summary>
 public sealed class DataTableExportData
 {
@@ -11,6 +11,13 @@ public sealed class DataTableExportData
 
     /// <summary>Rows, each a list of cell display strings aligned to <see cref="Headers"/>.</summary>
     public IReadOnlyList<IReadOnlyList<string?>> Rows { get; init; } = [];
+
+    /// <summary>
+    /// Optional raw cell values aligned to <see cref="Headers"/>. Typed exporters use these values
+    /// to preserve native numbers, booleans, and dates; exporters that only need display text can
+    /// continue using <see cref="Rows"/>.
+    /// </summary>
+    public IReadOnlyList<IReadOnlyList<object?>> Values { get; init; } = [];
 
     /// <summary>Optional sheet/table name used by exporters that support it (e.g. XLSX).</summary>
     public string? Name { get; init; }

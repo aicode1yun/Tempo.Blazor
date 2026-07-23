@@ -21,12 +21,25 @@
       {
         "name": "DocumentFormat.OpenXml",
         "version": "3.3.0"
+      },
+      {
+        "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "version": "8.0.2"
+      },
+      {
+        "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "version": "10.0.3"
       }
     ],
     "projectReferences": [
       "../Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj"
     ],
     "namespaces": [
+      "Tempo.Blazor.Configuration",
       "Tempo.Blazor.DataTableXlsx",
       "Tempo.Blazor.Export"
     ]
@@ -44,10 +57,84 @@
       {
         "name": "DocumentFormat.OpenXml",
         "version": "3.3.0"
+      },
+      {
+        "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "version": "8.0.2"
+      },
+      {
+        "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "version": "9.0.3"
+      },
+      {
+        "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "version": "10.0.3"
       }
     ]
   },
   "items": [
+    {
+      "itemName": "DataTableXlsxServiceCollectionExtensions",
+      "kind": "Class",
+      "category": "Configuration",
+      "namespace": "Tempo.Blazor.Configuration",
+      "description": "Dependency-injection registration for the optional data-table XLSX exporter.",
+      "packageId": "Tempo.Blazor.DataTableXlsx",
+      "sourcePath": "src/Tempo.Blazor.DataTableXlsx/Configuration/DataTableXlsxServiceCollectionExtensions.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "AddTempoBlazorDataTableXlsx",
+          "kind": "Method",
+          "type": "IServiceCollection",
+          "description": "Registers DataTableXlsxExporter as the XLSX service consumed by TmDataTable. Existing custom registrations are preserved.",
+          "parameters": [
+            {
+              "name": "services",
+              "type": "this IServiceCollection"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "itemName": "DataTableXlsxExporter",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Export",
+      "description": "Typed XLSX exporter for TmDataTable, backed by DocumentFormat.OpenXml.",
+      "packageId": "Tempo.Blazor.DataTableXlsx",
+      "sourcePath": "src/Tempo.Blazor.DataTableXlsx/DataTableXlsxExporter.cs",
+      "documentationStatus": "merged",
+      "members": [
+        {
+          "name": "ContentType",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "FileExtension",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Format",
+          "kind": "Field",
+          "type": "string"
+        },
+        {
+          "name": "Export",
+          "kind": "Method",
+          "type": "byte[]",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "DataTableExportData"
+            }
+          ]
+        }
+      ]
+    },
     {
       "itemName": "XlsxDataTableExporter",
       "kind": "Class",
@@ -121,11 +208,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 2,
-    "manualItemCount": 2,
-    "generatedItemCount": 2,
+    "itemCount": 4,
+    "manualItemCount": 4,
+    "generatedItemCount": 4,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 2
+    "publicApiTypeCount": 4
   }
 }

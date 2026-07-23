@@ -53,6 +53,15 @@
   flex: 0 0 auto;
 }
 
+.tm-data-table__export-item {
+  white-space: nowrap;
+}
+
+.tm-data-table__export-control .tm-dropdown-menu {
+  right: 0;
+  left: auto;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    Selection bar
    ═══════════════════════════════════════════════════════════════ */

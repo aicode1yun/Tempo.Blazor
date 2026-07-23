@@ -22,6 +22,7 @@ public static class AllServiceCollectionExtensions
         services.AddTempoBlazorModeling();
         services.AddTempoBlazorSpreadsheet();
         services.AddTempoBlazorGanttXlsx();
+        services.AddTempoBlazorDataTableXlsx();
         services.AddTempoBlazorDocumentEditor();
         services.AddTempoBlazorNotionEditor();
         services.AddTempoBlazorSigning();

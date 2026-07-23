@@ -23,6 +23,7 @@
       "../Tempo.Blazor.Codes/Tempo.Blazor.Codes.csproj",
       "../Tempo.Blazor.DiagramEditor/Tempo.Blazor.DiagramEditor.csproj",
       "../Tempo.Blazor.DocumentEditor/Tempo.Blazor.DocumentEditor.csproj",
+      "../Tempo.Blazor.DataTableXlsx/Tempo.Blazor.DataTableXlsx.csproj",
       "../Tempo.Blazor.GanttXlsx/Tempo.Blazor.GanttXlsx.csproj",
       "../Tempo.Blazor.Maps/Tempo.Blazor.Maps.csproj",
       "../Tempo.Blazor.Modeling/Tempo.Blazor.Modeling.csproj",

@@ -1,0 +1,38 @@
+{
+  "kind": "Class",
+  "category": "General",
+  "namespace": "Tempo.Blazor.Export",
+  "description": "Typed XLSX exporter for TmDataTable, backed by DocumentFormat.OpenXml.",
+  "packageId": "Tempo.Blazor.DataTableXlsx",
+  "sourcePath": "src/Tempo.Blazor.DataTableXlsx/DataTableXlsxExporter.cs",
+  "documentationStatus": "generated",
+  "members": [
+    {
+      "name": "ContentType",
+      "kind": "Field",
+      "type": "string"
+    },
+    {
+      "name": "FileExtension",
+      "kind": "Field",
+      "type": "string"
+    },
+    {
+      "name": "Format",
+      "kind": "Field",
+      "type": "string"
+    },
+    {
+      "name": "Export",
+      "kind": "Method",
+      "type": "byte[]",
+      "parameters": [
+        {
+          "name": "data",
+          "type": "DataTableExportData"
+        }
+      ]
+    }
+  ],
+  "itemName": "DataTableXlsxExporter"
+}

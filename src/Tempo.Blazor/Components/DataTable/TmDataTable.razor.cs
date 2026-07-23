@@ -270,13 +270,16 @@ public partial class TmDataTable<TItem> : IDisposable
     {
         var rows = await GatherAllRowsAsync();
         var headers = _visibleColumns.Select(c => c.Title).ToList();
-        var data = rows
-            .Select(item => (IReadOnlyList<string?>)_visibleColumns
-                .Select(c => c.Field?.Invoke(item)?.ToString())
+        var values = rows
+            .Select(item => (IReadOnlyList<object?>)_visibleColumns
+                .Select(c => c.Field?.Invoke(item))
                 .ToList())
             .ToList();
+        var data = values
+            .Select(row => (IReadOnlyList<string?>)row.Select(value => value?.ToString()).ToList())
+            .ToList();
 
-        return new DataTableExportData { Name = ViewContext, Headers = headers, Rows = data };
+        return new DataTableExportData { Name = ViewContext, Headers = headers, Rows = data, Values = values };
     }
 
     /// <summary>Exports the current filter/sort result set (all pages) and triggers a browser download.</summary>

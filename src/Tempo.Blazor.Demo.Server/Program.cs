@@ -80,6 +80,7 @@ builder.Services.AddTempoBlazorWireframe();
 builder.Services.AddTempoBlazorModeling();
 builder.Services.AddTempoBlazorSpreadsheet();
 builder.Services.AddTempoBlazorGanttXlsx();
+builder.Services.AddTempoBlazorDataTableXlsx();
 builder.Services.AddTempoBlazorNotionEditor();
 builder.Services.AddTempoBlazorSigning();
 builder.Services.AddTempoBlazorReporting();
