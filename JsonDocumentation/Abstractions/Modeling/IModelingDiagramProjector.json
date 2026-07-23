@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Modeling",
+  "namespace": "Tempo.Blazor.Modeling",
+  "description": "Projects a semantic ModelingModelDto into a diagram document (plus non-blocking issues), enforcing notation and viewpoint rules. Abstraction over the modeling package's ModelingDiagramGenerator so headless callers (MCP tools) can request a rendered view without referencing the Blazor component package.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Modeling/IModelingDiagramProjector.cs",
+  "documentationStatus": "generated",
+  "itemName": "IModelingDiagramProjector"
+}

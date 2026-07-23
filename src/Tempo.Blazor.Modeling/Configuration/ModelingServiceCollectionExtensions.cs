@@ -41,6 +41,7 @@ public static class ModelingServiceCollectionExtensions
         services.TryAddSingleton<IModelingStencilMapper, BuiltInModelingStencilMapper>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelingModelProvider, DemoModelingModelProvider>());
         services.TryAddScoped<ModelingDiagramGenerator>();
+        services.TryAddScoped<IModelingDiagramProjector>(sp => sp.GetRequiredService<ModelingDiagramGenerator>());
 
         return services;
     }

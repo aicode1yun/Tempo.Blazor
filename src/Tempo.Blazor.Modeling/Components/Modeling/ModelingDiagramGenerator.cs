@@ -6,7 +6,7 @@ using Tempo.Blazor.Modeling;
 namespace Tempo.Blazor.Components.Modeling;
 
 /// <summary>Generates diagram documents from source-backed modeling DTOs.</summary>
-public sealed class ModelingDiagramGenerator
+public sealed class ModelingDiagramGenerator : IModelingDiagramProjector
 {
     private const string DefaultNodeStencilId = "general.rectangle";
     private const string DefaultEdgeStencilId = "relationships.association";

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Diagram",
+  "namespace": "Tempo.Blazor.Mcp.Diagram",
+  "description": "MCP tool that renders a diagram document to a static SVG string for embedding/preview.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramRenderTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "DiagramRenderTools"
+}

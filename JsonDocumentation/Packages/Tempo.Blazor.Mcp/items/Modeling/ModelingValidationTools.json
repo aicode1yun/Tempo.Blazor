@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Modeling",
+  "namespace": "Tempo.Blazor.Mcp.Modeling",
+  "description": "MCP validation and notation-introspection tools for architecture/modeling models.",
+  "packageId": "Tempo.Blazor.Mcp",
+  "sourcePath": "src/Tempo.Blazor.Mcp/Modeling/ModelingValidationTools.cs",
+  "documentationStatus": "generated",
+  "itemName": "ModelingValidationTools"
+}

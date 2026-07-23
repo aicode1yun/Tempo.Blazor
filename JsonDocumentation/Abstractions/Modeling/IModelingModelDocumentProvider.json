@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Modeling",
+  "namespace": "Tempo.Blazor.Modeling",
+  "description": "Host contract for reading and persisting stored modeling models (ModelingModelDto) by id, so MCP tooling can list / read / mutate architecture models the same way the diagram and wireframe suites do. Mirrors IDiagramDocumentProvider. The read-only, source-backed IModelingModelProvider (editor loading path) is unaffected.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Modeling/IModelingModelDocumentProvider.cs",
+  "documentationStatus": "generated",
+  "itemName": "IModelingModelDocumentProvider"
+}

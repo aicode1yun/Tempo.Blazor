@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Tempo.Blazor.Components.Wireframe;
 using Tempo.Blazor.Mcp.DocumentEditor;
 using Tempo.Blazor.Mcp.Diagram;
+using Tempo.Blazor.Mcp.Modeling;
 using Tempo.Blazor.Mcp.Notion;
 using Tempo.Blazor.Mcp.Reporting;
 using Tempo.Blazor.Mcp.Wireframe;
@@ -69,7 +70,8 @@ public static class TempoDiagramMcp
         typeof(DiagramOperationTools),
         typeof(DiagramValidationTools),
         typeof(DiagramStencilCatalogTools),
-        typeof(DiagramBriefTools)
+        typeof(DiagramBriefTools),
+        typeof(DiagramRenderTools)
     ];
 
     /// <summary>
@@ -78,6 +80,30 @@ public static class TempoDiagramMcp
     /// are optional and enable the catalog tools plus stricter validation.
     /// </summary>
     public static IServiceCollection AddTempoDiagramMcpTools(this IServiceCollection services)
+        => services;
+}
+
+/// <summary>
+/// Registration helpers for the architecture/modeling MCP tools.
+/// </summary>
+public static class TempoModelingMcp
+{
+    /// <summary>The modeling tool types, exposed for hosts that register tools by type.</summary>
+    public static IReadOnlyList<Type> ToolTypes { get; } =
+    [
+        typeof(ModelingModelTools),
+        typeof(ModelingOperationTools),
+        typeof(ModelingValidationTools)
+    ];
+
+    /// <summary>
+    /// Registers dependencies required by the modeling MCP tools. The host must supply
+    /// <c>ITempoDocumentLibraryProvider</c> and <c>IModelingModelDocumentProvider</c>; the notation
+    /// rule providers, <c>IModelingDiagramProjector</c> (for <c>modeling_get_view</c>) and the
+    /// diagram SVG renderer (for <c>diagram_render_svg</c>) come from <c>AddTempoBlazorModeling()</c>
+    /// / <c>AddTempoBlazorDiagramEditor()</c> and degrade gracefully when absent.
+    /// </summary>
+    public static IServiceCollection AddTempoModelingMcpTools(this IServiceCollection services)
         => services;
 }
 
@@ -167,6 +193,7 @@ public static class TempoBlazorMcp
     public static IReadOnlyList<Type> ToolTypes { get; } =
         TempoWireframeMcp.ToolTypes
             .Concat(TempoDiagramMcp.ToolTypes)
+            .Concat(TempoModelingMcp.ToolTypes)
             .Concat(TempoDocumentEditorMcp.ToolTypes)
             .Concat(TempoNotionMcp.ToolTypes)
             .Concat(TempoReportingMcp.ToolTypes)
@@ -180,6 +207,7 @@ public static class TempoBlazorMcp
     {
         services.AddTempoWireframeMcpTools();
         services.AddTempoDiagramMcpTools();
+        services.AddTempoModelingMcpTools();
         services.AddTempoDocumentEditorMcpTools();
         services.AddTempoNotionMcpTools();
         services.AddTempoReportingMcpTools();

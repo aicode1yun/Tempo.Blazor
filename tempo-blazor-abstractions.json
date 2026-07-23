@@ -11781,6 +11781,26 @@
       ]
     },
     {
+      "itemName": "IModelingDiagramProjector",
+      "kind": "Interface",
+      "category": "Modeling",
+      "namespace": "Tempo.Blazor.Modeling",
+      "description": "Projects a semantic ModelingModelDto into a diagram document (plus non-blocking issues), enforcing notation and viewpoint rules. Abstraction over the modeling package's ModelingDiagramGenerator so headless callers (MCP tools) can request a rendered view without referencing the Blazor component package.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Modeling/IModelingDiagramProjector.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IModelingModelDocumentProvider",
+      "kind": "Interface",
+      "category": "Modeling",
+      "namespace": "Tempo.Blazor.Modeling",
+      "description": "Host contract for reading and persisting stored modeling models (ModelingModelDto) by id, so MCP tooling can list / read / mutate architecture models the same way the diagram and wireframe suites do. Mirrors IDiagramDocumentProvider. The read-only, source-backed IModelingModelProvider (editor loading path) is unaffected.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Modeling/IModelingModelDocumentProvider.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "IModelingModelProvider",
       "kind": "Interface",
       "category": "Modeling",
@@ -35421,11 +35441,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1435,
-    "manualItemCount": 1435,
-    "generatedItemCount": 1418,
+    "itemCount": 1437,
+    "manualItemCount": 1437,
+    "generatedItemCount": 1420,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1418
+    "publicApiTypeCount": 1420
   }
 }

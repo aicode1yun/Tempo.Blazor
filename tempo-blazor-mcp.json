@@ -49,6 +49,7 @@
       "Tempo.Blazor.Mcp",
       "Tempo.Blazor.Mcp.Diagram",
       "Tempo.Blazor.Mcp.DocumentEditor",
+      "Tempo.Blazor.Mcp.Modeling",
       "Tempo.Blazor.Mcp.Notion",
       "Tempo.Blazor.Mcp.Reporting",
       "Tempo.Blazor.Mcp.Wireframe"
@@ -393,6 +394,16 @@
       "description": "MCP write tools for diagram/draw documents.",
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramOperationTools.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DiagramRenderTools",
+      "kind": "Class",
+      "category": "Diagram",
+      "namespace": "Tempo.Blazor.Mcp.Diagram",
+      "description": "MCP tool that renders a diagram document to a static SVG string for embedding/preview.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Diagram/DiagramRenderTools.cs",
       "documentationStatus": "merged"
     },
     {
@@ -976,6 +987,16 @@
       ]
     },
     {
+      "itemName": "TempoModelingMcp",
+      "kind": "Class",
+      "category": "General",
+      "namespace": "Tempo.Blazor.Mcp",
+      "description": "Registration helpers for the architecture/modeling MCP tools.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/ServiceCollectionExtensions.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "TempoNotionMcp",
       "kind": "Class",
       "category": "General",
@@ -1048,6 +1069,36 @@
           "description": "The wireframe tool types, exposed for hosts that register tools by type. Prefer WithToolsFromAssembly(typeof(TempoWireframeMcp).Assembly), which also advertises the tools capability in the handshake."
         }
       ]
+    },
+    {
+      "itemName": "ModelingModelTools",
+      "kind": "Class",
+      "category": "Modeling",
+      "namespace": "Tempo.Blazor.Mcp.Modeling",
+      "description": "MCP tools for listing and reading stored architecture/modeling models.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Modeling/ModelingModelTools.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ModelingOperationTools",
+      "kind": "Class",
+      "category": "Modeling",
+      "namespace": "Tempo.Blazor.Mcp.Modeling",
+      "description": "MCP write tools for architecture/modeling models.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Modeling/ModelingOperationTools.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "ModelingValidationTools",
+      "kind": "Class",
+      "category": "Modeling",
+      "namespace": "Tempo.Blazor.Mcp.Modeling",
+      "description": "MCP validation and notation-introspection tools for architecture/modeling models.",
+      "packageId": "Tempo.Blazor.Mcp",
+      "sourcePath": "src/Tempo.Blazor.Mcp/Modeling/ModelingValidationTools.cs",
+      "documentationStatus": "merged"
     },
     {
       "itemName": "NotionBlockCatalog",
@@ -1919,11 +1970,11 @@
     }
   ],
   "summary": {
-    "itemCount": 91,
-    "manualItemCount": 91,
-    "generatedItemCount": 91,
+    "itemCount": 96,
+    "manualItemCount": 96,
+    "generatedItemCount": 96,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 91
+    "publicApiTypeCount": 96
   }
 }

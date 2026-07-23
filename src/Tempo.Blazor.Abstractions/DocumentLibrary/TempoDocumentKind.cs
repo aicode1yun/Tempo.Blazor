@@ -17,5 +17,8 @@ public enum TempoDocumentKind
     Diagram,
 
     /// <summary>A spreadsheet workbook produced by the spreadsheet editor.</summary>
-    Spreadsheet
+    Spreadsheet,
+
+    /// <summary>An architecture/modeling model produced by the modeling editor.</summary>
+    Modeling
 }
