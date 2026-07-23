@@ -7,8 +7,8 @@ using TableBlockContent = Tempo.Blazor.NotionEditor.Models.TableBlockContent;
 namespace Tempo.Blazor.Tests.Components.NotionEditor;
 
 /// <summary>
-/// Adding or removing a table column must carry the rich cells (merges, background colours) and the
-/// per-column alignment along. Rebuilding a row from its plain text cells alone throws both away.
+/// Adding or removing a table column must carry canonical rich cells (merges, background colours)
+/// and per-column metadata without reading the removed legacy plain-cell list.
 /// </summary>
 public sealed class NotionTableEditTests
 {
@@ -19,29 +19,30 @@ public sealed class NotionTableEditTests
 
         var updated = NotionTableEdit.AddColumn(row);
 
-        updated.Cells.Should().Equal("a", "b", string.Empty);
+        updated.Cells.Should().BeEmpty("canonical table edits never reconstruct legacy plain cells");
         updated.RichCells.Should().HaveCount(3);
         updated.RichCells[0].BackgroundColor.Should().Be("yellow", "the colour must survive the edit");
         updated.RichCells[2].Html.Should().BeEmpty();
     }
 
     [Fact]
-    public void AddColumn_OnARowWithoutRichCells_DoesNotInventThem()
+    public void AddColumn_OnAnEmptyCanonicalRow_AppendsOneEmptyRichCell()
     {
         var updated = NotionTableEdit.AddColumn(Row(["a"], []));
 
-        updated.Cells.Should().Equal("a", string.Empty);
-        updated.RichCells.Should().BeEmpty("a plain row must stay plain");
+        updated.Cells.Should().BeEmpty();
+        updated.RichCells.Should().ContainSingle();
+        updated.RichCells[0].Html.Should().BeEmpty();
     }
 
     [Fact]
-    public void RemoveColumn_DropsThatColumnFromBothCellLists()
+    public void RemoveColumn_DropsThatColumnFromCanonicalRichCells()
     {
         var row = Row(["a", "b", "c"], [Rich("a"), Rich("b", "green"), Rich("c")]);
 
         var updated = NotionTableEdit.RemoveColumn(row, 1);
 
-        updated.Cells.Should().Equal("a", "c");
+        updated.Cells.Should().BeEmpty("canonical table edits never write legacy plain cells");
         updated.RichCells.Should().HaveCount(2);
         updated.RichCells.Select(cell => cell.Html).Should().Equal("a", "c");
     }

@@ -180,6 +180,18 @@ public abstract class NotionE2ETestBase : WasmTestBase
         });
     }
 
+    protected async Task SeedAtomicTablePageAsync()
+    {
+        await InvokeSeedAsync("seedAtomicTablePage");
+        await Page.WaitForSelectorAsync(
+            "[data-block-id='f6000000-0000-0000-0000-000000000010'] .tm-notion-table",
+            new PageWaitForSelectorOptions
+            {
+                State = WaitForSelectorState.Visible,
+                Timeout = 60000
+            });
+    }
+
     protected async Task SeedLayoutPageAsync()
     {
         await InvokeSeedAsync("seedLayoutPage");

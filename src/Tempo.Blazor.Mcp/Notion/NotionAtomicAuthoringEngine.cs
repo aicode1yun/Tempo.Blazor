@@ -336,7 +336,7 @@ internal sealed class NotionAtomicAuthoringEngine(
         }
 
         NotionAggregateNormalizer.Normalize(workingSet);
-        var validationErrors = NotionAggregateBaselineValidator.Validate(workingSet);
+        var validationErrors = NotionAggregateValidator.Validate(workingSet.Pages.Values);
         if (validationErrors.Count > 0)
         {
             return Failure(requestHash, validationErrors.ToArray());

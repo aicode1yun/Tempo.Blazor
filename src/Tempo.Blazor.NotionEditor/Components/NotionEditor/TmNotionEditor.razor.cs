@@ -36,6 +36,13 @@ public partial class TmNotionEditor : TmComponentBase, IAsyncDisposable
     [Parameter, EditorRequired]
     public INotionBlockProvider BlockProvider { get; set; } = default!;
 
+    /// <summary>
+    /// Canonical aggregate provider used for validated save-once editor mutations. When supplied,
+    /// table operations and conflict recovery use this provider instead of granular writes.
+    /// </summary>
+    [Parameter]
+    public INotionAggregateProvider? AggregateProvider { get; set; }
+
     // ── Optional providers ───────────────────────────────────────────────────
 
     [Parameter] public INotionSearchProvider?        SearchProvider        { get; set; }
@@ -161,6 +168,8 @@ public partial class TmNotionEditor : TmComponentBase, IAsyncDisposable
     private string?                    _scrollSpyBlockId;
     private PageEffectivePermissionDto? _effectivePermission;
     private TmCurrentUserState?        _resolvedCurrentUser;
+    private NotionEditorAggregateSession? _aggregateSession;
+    private INotionAggregateProvider? _aggregateSessionProvider;
 
     /// <summary>
     /// Multi-page block types that are removed from the slash and Turn-Into menus while
@@ -237,6 +246,26 @@ public partial class TmNotionEditor : TmComponentBase, IAsyncDisposable
 
     protected override async Task OnParametersSetAsync()
     {
+        if (!ReferenceEquals(AggregateProvider, _aggregateSessionProvider))
+        {
+            _aggregateSessionProvider = AggregateProvider;
+            _aggregateSession = AggregateProvider is null
+                ? null
+                : new NotionEditorAggregateSession(AggregateProvider);
+            if (_aggregateSession is not null && _currentPageId is not null)
+            {
+                if (!Guid.TryParse(_currentPageId, out var currentAggregatePageId))
+                {
+                    _loadError = Loc["TmNotionEditor_LoadError"];
+                }
+                else
+                {
+                    var aggregateLoad = await _aggregateSession.LoadAsync(currentAggregatePageId);
+                    if (!aggregateLoad.Success)
+                        _loadError = Loc["TmNotionEditor_LoadError"];
+                }
+            }
+        }
         await ResolveCurrentUserAsync();
         _context = BuildContext();
     }
@@ -285,6 +314,21 @@ public partial class TmNotionEditor : TmComponentBase, IAsyncDisposable
             _currentPageId = pageId;
             _currentPage   = page;
             _selectedSpaceId ??= string.IsNullOrWhiteSpace(page.SpaceId) ? null : page.SpaceId;
+
+            if (_aggregateSession is not null)
+            {
+                if (!Guid.TryParse(pageId, out var aggregatePageId))
+                    throw new InvalidDataException(
+                        "Aggregate Notion page identifiers must be GUID values.");
+
+                var aggregateLoad = await _aggregateSession.LoadAsync(aggregatePageId);
+                if (!aggregateLoad.Success)
+                {
+                    throw new InvalidDataException(string.Join(
+                        Environment.NewLine,
+                        aggregateLoad.Issues.Select(issue => issue.Message)));
+                }
+            }
 
             if (AnalyticsProvider is not null)
             {
@@ -723,6 +767,7 @@ public partial class TmNotionEditor : TmComponentBase, IAsyncDisposable
         CurrentPageId        = _currentPageId,
         DataProvider          = DataProvider,
         BlockProvider         = BlockProvider,
+        AggregateSession      = _aggregateSession,
         SearchProvider        = SearchProvider,
         DatabaseProvider      = DatabaseProvider,
         CommentProvider       = CommentProvider,

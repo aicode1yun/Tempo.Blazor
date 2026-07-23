@@ -40,6 +40,13 @@
       "description": "Per-column horizontal alignment imported from a GFM table separator row. Columns beyond the list keep the renderer default (None)."
     },
     {
+      "name": "ColumnWidths",
+      "type": "IReadOnlyList<double?>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "Optional preferred width for each canonical table column in CSS pixels."
+    },
+    {
       "name": "IsHeaderRow",
       "type": "bool",
       "isRequired": false,

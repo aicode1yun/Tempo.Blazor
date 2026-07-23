@@ -202,8 +202,7 @@ public sealed class NotionTableGridProjectionTests
             ]
         };
 
-        var issues = NotionAggregateBaselineValidator.Validate(
-            WorkingSet(page));
+        var issues = NotionAggregateValidator.Validate([page]);
 
         issues.Should().Contain(issue =>
             issue.Code == "table_column_alignment_count_mismatch" &&
@@ -253,8 +252,7 @@ public sealed class NotionTableGridProjectionTests
             ]
         };
 
-        var issues = NotionAggregateBaselineValidator.Validate(
-            WorkingSet(page));
+        var issues = NotionAggregateValidator.Validate([page]);
 
         issues.Should().Contain(issue =>
             issue.Code == "unsafe_table_cell_html" &&

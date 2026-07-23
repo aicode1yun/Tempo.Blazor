@@ -30,6 +30,12 @@ public sealed class TmNotionTableAdvancedTests : LocalizationTestBase
             ["TmNotionTableBlock_Merge"] = "Merge cells",
             ["TmNotionTableBlock_Split"] = "Split",
             ["TmNotionTableBlock_Undo"] = "Undo table change",
+            ["TmNotionTableBlock_Redo"] = "Redo table change",
+            ["TmNotionTableBlock_ConflictTitle"] = "Save conflict",
+            ["TmNotionTableBlock_ConflictMessage"] = "Your changes are local.",
+            ["TmNotionTableBlock_ConflictReload"] = "Reload server version",
+            ["TmNotionTableBlock_ConflictReapply"] = "Reapply my changes",
+            ["TmNotionTableBlock_SaveError"] = "The table could not be saved.",
             ["TmNotionTableBlock_ClearColor"] = "Clear color",
             ["TmNotionTableBlock_ColorYellow"] = "Yellow",
             ["TmNotionTableBlock_ColorGreen"] = "Green",
@@ -40,11 +46,10 @@ public sealed class TmNotionTableAdvancedTests : LocalizationTestBase
     }
 
     [Fact]
-    public void TableRowContent_SerializesRichCells_AndKeepsLegacyCellsCompatible()
+    public void TableRowContent_SerializesCanonicalRichCells()
     {
         var content = new TableRowBlockContent
         {
-            Cells = ["Legacy"],
             RichCells =
             [
                 new NotionTableCell
@@ -61,15 +66,7 @@ public sealed class TmNotionTableAdvancedTests : LocalizationTestBase
         var restored = JsonSerializer.Deserialize<TableRowBlockContent>(json);
 
         restored.Should().NotBeNull();
-        restored!.Cells.Should().ContainSingle().Which.Should().Be("Legacy");
-        restored.RichCells.Should().ContainSingle().Which.Should().BeEquivalentTo(content.RichCells[0]);
-
-        var legacy = JsonSerializer.Deserialize<TableRowBlockContent>("""
-            {"Cells":["A","B"]}
-            """);
-
-        legacy!.Cells.Should().Equal("A", "B");
-        legacy.RichCells.Should().BeEmpty();
+        restored!.RichCells.Should().ContainSingle().Which.Should().BeEquivalentTo(content.RichCells[0]);
     }
 
     [Fact]
@@ -170,40 +167,147 @@ public sealed class TmNotionTableAdvancedTests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task Table_MergeSplitColorAndSort_PersistsThroughBlockProvider()
+    public void TableWithoutAggregateSession_RendersCanonicalCellsAsReadOnly()
     {
-        var provider = new TableBlockProvider();
-        var cut = RenderTable(provider);
+        var cut = RenderTable(new TableBlockProvider());
 
-        cut.WaitForAssertion(() => cut.FindAll(".tm-notion-table__cell-td").Should().HaveCount(9));
+        cut.WaitForAssertion(() =>
+            cut.FindAll(".tm-notion-table__cell-td").Should().HaveCount(9));
+        cut.FindAll(".tm-notion-table__cell[contenteditable='true']").Should().BeEmpty();
+        cut.FindAll(".tm-notion-table-block__add-row").Should().BeEmpty();
+        cut.Find(".tm-notion-table-block")
+            .GetAttribute("data-aggregate-enabled").Should().Be("false");
+    }
 
+    [Fact]
+    public async Task AggregateTable_MergeUndoRedo_EachPersistsAsOnePageSave()
+    {
+        var provider = new AggregateTableProvider(CreateAggregateSnapshot());
+        var cut = await RenderAggregateTableAsync(provider);
         var table = cut.FindComponent<TmNotionTableBlock>();
-        await cut.InvokeAsync(() => table.Instance.SetTableSelection(1, 0, 2, 1));
-        cut.Find("button[title='Merge cells']").Click();
 
-        provider.Rows[1].Content.Should().BeOfType<TableRowBlockContent>()
-            .Which.RichCells[0].Should().Match<NotionTableCell>(cell => cell.ColSpan == 2 && cell.RowSpan == 2);
-        cut.WaitForAssertion(() => cut.Find(".tm-notion-table__cell-td[colspan='2'][rowspan='2']").Should().NotBeNull());
+        await cut.InvokeAsync(() => table.Instance.SetTableSelection(0, 0, 1, 1));
+        cut.Find("button[title='Merge cells']").Click();
+        provider.SaveRequests.Should().ContainSingle();
+        cut.WaitForAssertion(() =>
+            cut.Find(".tm-notion-table__cell-td[colspan='2'][rowspan='2']")
+                .Should().NotBeNull());
 
         cut.Find("button[title='Undo table change']").Click();
-        provider.Rows[1].Content.Should().BeOfType<TableRowBlockContent>()
-            .Which.RichCells[0].Should().Match<NotionTableCell>(cell => cell.ColSpan == 1 && cell.RowSpan == 1 && !cell.IsMergeHidden);
+        provider.SaveRequests.Should().HaveCount(2);
+        cut.FindAll(".tm-notion-table__cell-td").Should().HaveCount(4);
 
-        await cut.InvokeAsync(() => table.Instance.SetTableSelection(1, 0, 2, 1));
+        cut.Find("button[title='Redo table change']").Click();
+        provider.SaveRequests.Should().HaveCount(3);
+        cut.WaitForAssertion(() =>
+            cut.Find(".tm-notion-table__cell-td[colspan='2'][rowspan='2']")
+                .Should().NotBeNull());
+    }
+
+    [Fact]
+    public async Task AggregateTable_ConflictKeepsLocalGrid_AndOffersReloadOrReapply()
+    {
+        var provider = new AggregateTableProvider(CreateAggregateSnapshot())
+        {
+            ConflictNextSave = true
+        };
+        var cut = await RenderAggregateTableAsync(provider);
+        var table = cut.FindComponent<TmNotionTableBlock>();
+
+        await cut.InvokeAsync(() => table.Instance.SetTableSelection(0, 0, 1, 1));
         cut.Find("button[title='Merge cells']").Click();
 
-        await cut.InvokeAsync(() => table.Instance.SetTableSelection(1, 0, 1, 0));
-        cut.Find("button[title='Yellow']").Click();
-        provider.Rows[1].Content.Should().BeOfType<TableRowBlockContent>()
-            .Which.RichCells[0].BackgroundColor.Should().Be("rgba(245, 158, 11, 0.16)");
+        provider.SaveRequests.Should().ContainSingle();
+        cut.Find("[data-testid='notion-table-conflict']")
+            .TextContent.Should().Contain("Save conflict");
+        cut.Find(".tm-notion-table__cell-td[colspan='2'][rowspan='2']")
+            .Should().NotBeNull();
 
-        cut.Find("button[title='Split']").Click();
-        provider.Rows[1].Content.Should().BeOfType<TableRowBlockContent>()
-            .Which.RichCells[0].Should().Match<NotionTableCell>(cell => cell.ColSpan == 1 && cell.RowSpan == 1 && !cell.IsMergeHidden);
+        provider.Remote.ConcurrencyToken = "remote-token";
+        cut.FindAll("button").Single(button =>
+            button.TextContent.Contains("Reapply my changes", StringComparison.Ordinal)).Click();
 
-        cut.Find("button[title='Sort column']").Click();
-        provider.OrderedRowIds.Should().NotBeNull();
-        provider.OrderedRowIds!.Skip(1).Should().Equal(provider.Rows[2].Id.ToString(), provider.Rows[1].Id.ToString());
+        provider.SaveRequests.Should().HaveCount(2);
+        provider.SaveRequests[1].Pages[0].BaseConcurrencyToken.Should().Be("remote-token");
+        cut.FindAll("[data-testid='notion-table-conflict']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task AggregateTable_DeleteColumnThroughMergedCell_PreservesOriginAndValidGrid()
+    {
+        var provider = new AggregateTableProvider(CreateAggregateSnapshot());
+        var cut = await RenderAggregateTableAsync(provider);
+        var table = cut.FindComponent<TmNotionTableBlock>();
+
+        await cut.InvokeAsync(() => table.Instance.SetTableSelection(0, 0, 0, 1));
+        cut.Find("button[title='Merge cells']").Click();
+        cut.FindAll(".tm-notion-table__col-delete").First().Click();
+
+        provider.SaveRequests.Should().HaveCount(2);
+        NotionAggregateValidator.Validate([provider.Remote]).Should().BeEmpty();
+        var canonicalTable = provider.Remote.Blocks
+            .Single(block => block.Type == BlockType.Table)
+            .Content.Deserialize<NotionAuthoringTable>(NotionAggregateJson.Options)!;
+        canonicalTable.ColumnCount.Should().Be(1);
+        var firstRow = provider.Remote.Blocks
+            .Where(block => block.Type == BlockType.TableRow)
+            .OrderBy(block => block.Order)
+            .First()
+            .Content.Deserialize<NotionAuthoringTableRow>(NotionAggregateJson.Options)!;
+        firstRow.Cells.Should().ContainSingle();
+        firstRow.Cells[0].Html.Should().Be("A");
+        firstRow.Cells[0].ColumnSpan.Should().Be(1);
+    }
+
+    [Fact]
+    public void TableRow_RendersCanonicalStylesMarksAndSafeLinks()
+    {
+        var row = new PageBlock
+        {
+            Id = Guid.NewGuid(),
+            PageId = Guid.NewGuid(),
+            Type = BlockType.TableRow,
+            Content = new TableRowBlockContent
+            {
+                RichCells =
+                [
+                    new NotionTableCell
+                    {
+                        Html = "<strong>Safe</strong><script>bad()</script>",
+                        BackgroundColor = "#ffeeaa",
+                        TextColor = "#123456",
+                        HorizontalAlignment = NotionTableHorizontalAlignment.Right,
+                        VerticalAlignment = NotionTableVerticalAlignment.Middle,
+                        Width = 180,
+                        Borders = new NotionTableCellBorders
+                        {
+                            Bottom = new NotionTableBorder
+                            {
+                                Style = NotionTableBorderStyle.Dashed,
+                                Color = "#abcdef",
+                                Width = 2
+                            }
+                        }
+                    }
+                ]
+            }
+        };
+
+        var cut = Render<TmNotionTableRowBlock>(parameters => parameters
+            .Add(component => component.Row, row)
+            .Add(component => component.ColumnCount, 1)
+            .Add(component => component.ReadOnly, true));
+
+        var cell = cut.Find(".tm-notion-table__cell-td");
+        cell.ClassList.Should().Contain("tm-notion-table__cell-td--align-right");
+        cell.GetAttribute("style").Should().Contain("--tm-notion-table-cell-background:#ffeeaa");
+        cell.GetAttribute("style").Should().Contain("--tm-notion-table-cell-text:#123456");
+        cell.GetAttribute("style").Should().Contain("--tm-notion-table-cell-width:180px");
+        cell.GetAttribute("style").Should().Contain("--tm-notion-table-cell-vertical:middle");
+        cell.GetAttribute("style").Should().Contain(
+            "--tm-notion-table-cell-border-bottom:2px dashed #abcdef");
+        cell.InnerHtml.Should().Contain("<strong>Safe</strong>");
+        cell.InnerHtml.Should().NotContain("<script");
     }
 
     private IRenderedComponent<CascadingValue<NotionEditorContext>> RenderTable(TableBlockProvider provider)
@@ -216,6 +320,96 @@ public sealed class TmNotionTableAdvancedTests : LocalizationTestBase
                 .Add(component => component.Block, provider.Table)
                 .Add(component => component.Content, (ITableBlockContent)provider.Table.Content)));
     }
+
+    private async Task<IRenderedComponent<CascadingValue<NotionEditorContext>>> RenderAggregateTableAsync(
+        AggregateTableProvider provider)
+    {
+        var session = new NotionEditorAggregateSession(provider);
+        (await session.LoadAsync(provider.PageId)).Success.Should().BeTrue();
+        var view = NotionCanonicalTableBridge.ToView(session.CurrentSnapshot!, provider.TableId);
+        var context = new NotionEditorContext
+        {
+            BlockProvider = new TableBlockProvider(),
+            AggregateSession = session
+        };
+
+        return Render<CascadingValue<NotionEditorContext>>(parameters => parameters
+            .Add(component => component.Value, context)
+            .AddChildContent<TmNotionTableBlock>(child => child
+                .Add(component => component.Block, view.Table)
+                .Add(component => component.Content, (ITableBlockContent)view.Table.Content)));
+    }
+
+    private static NotionPageSnapshot CreateAggregateSnapshot()
+    {
+        var pageId = Guid.Parse("cf120000-0000-0000-0000-000000000001");
+        var tableId = Guid.Parse("cf120000-0000-0000-0000-000000000010");
+        return new NotionPageSnapshot
+        {
+            Page = new NotionPageState { Id = pageId, Title = "Atomic table" },
+            ConcurrencyToken = "token-1",
+            Digest = "digest-1",
+            Blocks =
+            [
+                AggregateBlock(
+                    tableId,
+                    pageId,
+                    null,
+                    BlockType.Table,
+                    0,
+                    new NotionAuthoringTable
+                    {
+                        ColumnCount = 2,
+                        ColumnWidths = [160, 180]
+                    }),
+                AggregateBlock(
+                    Guid.Parse("cf120000-0000-0000-0000-000000000011"),
+                    pageId,
+                    tableId,
+                    BlockType.TableRow,
+                    0,
+                    new NotionAuthoringTableRow
+                    {
+                        Cells =
+                        [
+                            new NotionAuthoringTableCell { Html = "A" },
+                            new NotionAuthoringTableCell { Html = "B" }
+                        ]
+                    }),
+                AggregateBlock(
+                    Guid.Parse("cf120000-0000-0000-0000-000000000012"),
+                    pageId,
+                    tableId,
+                    BlockType.TableRow,
+                    1,
+                    new NotionAuthoringTableRow
+                    {
+                        Cells =
+                        [
+                            new NotionAuthoringTableCell { Html = "C" },
+                            new NotionAuthoringTableCell { Html = "D" }
+                        ]
+                    })
+            ]
+        };
+    }
+
+    private static NotionBlockSnapshot AggregateBlock<T>(
+        Guid id,
+        Guid pageId,
+        Guid? parentId,
+        BlockType type,
+        int order,
+        T content)
+        => new()
+        {
+            Id = id,
+            PageId = pageId,
+            ParentBlockId = parentId,
+            Type = type,
+            Order = order,
+            Content = JsonSerializer.SerializeToElement(content, NotionAggregateJson.Options)
+        };
 
     private sealed class TableBlockProvider : INotionBlockProvider
     {
@@ -296,7 +490,86 @@ public sealed class TmNotionTableAdvancedTests : LocalizationTestBase
             ParentBlockId = Guid.Parse("cf110000-0000-0000-0000-000000000010"),
             Type = BlockType.TableRow,
             Order = order,
-            Content = new TableRowBlockContent { Cells = cells }
+            Content = new TableRowBlockContent
+            {
+                RichCells = cells.Select(cell => new NotionTableCell { Html = cell }).ToList()
+            }
         };
+    }
+
+    private sealed class AggregateTableProvider : INotionAggregateProvider
+    {
+        public AggregateTableProvider(NotionPageSnapshot initial)
+        {
+            Remote = Clone(initial);
+            PageId = initial.Page.Id;
+            TableId = initial.Blocks.Single(block => block.Type == BlockType.Table).Id;
+        }
+
+        public Guid PageId { get; }
+        public Guid TableId { get; }
+        public NotionPageSnapshot Remote { get; set; }
+        public bool ConflictNextSave { get; set; }
+        public List<NotionAggregateSaveRequest> SaveRequests { get; } = [];
+
+        public Task<NotionAggregateLoadResult> LoadPageAsync(
+            Guid pageId,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(new NotionAggregateLoadResult
+            {
+                Found = pageId == PageId,
+                Snapshot = Clone(Remote)
+            });
+
+        public Task<NotionAggregateLoadResult> LoadBlockAsync(
+            Guid blockId,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(new NotionAggregateLoadResult { Found = false });
+
+        public Task<NotionAggregateSaveResult> SaveAsync(
+            NotionAggregateSaveRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            SaveRequests.Add(request);
+            if (ConflictNextSave)
+            {
+                ConflictNextSave = false;
+                return Task.FromResult(new NotionAggregateSaveResult
+                {
+                    Conflict = true,
+                    Conflicts =
+                    [
+                        new NotionPageConflict
+                        {
+                            PageId = PageId,
+                            ExpectedConcurrencyToken = request.Pages[0].BaseConcurrencyToken,
+                            CurrentConcurrencyToken = Remote.ConcurrencyToken
+                        }
+                    ]
+                });
+            }
+
+            Remote = Clone(request.Pages[0].Snapshot);
+            Remote.ConcurrencyToken = $"token-{SaveRequests.Count + 1}";
+            Remote.Digest = $"digest-{SaveRequests.Count + 1}";
+            return Task.FromResult(new NotionAggregateSaveResult
+            {
+                Success = true,
+                Pages =
+                [
+                    new NotionSavedPage
+                    {
+                        PageId = PageId,
+                        ConcurrencyToken = Remote.ConcurrencyToken,
+                        Digest = Remote.Digest
+                    }
+                ]
+            });
+        }
+
+        private static NotionPageSnapshot Clone(NotionPageSnapshot snapshot)
+            => JsonSerializer.Deserialize<NotionPageSnapshot>(
+                JsonSerializer.Serialize(snapshot, NotionAggregateJson.Options),
+                NotionAggregateJson.Options)!;
     }
 }

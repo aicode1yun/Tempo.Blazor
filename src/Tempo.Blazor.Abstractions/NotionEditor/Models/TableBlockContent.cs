@@ -22,4 +22,7 @@ public class TableBlockContent : ITableBlockContent
 
     /// <summary>Per-column horizontal alignment, indexed by column. Empty means no explicit alignment.</summary>
     public IReadOnlyList<TableColumnAlignment> ColumnAlignments { get; set; } = [];
+
+    /// <summary>Optional preferred width for each column in CSS pixels.</summary>
+    public IReadOnlyList<double?> ColumnWidths { get; set; } = [];
 }

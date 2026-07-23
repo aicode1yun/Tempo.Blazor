@@ -700,6 +700,26 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "NotionEditorAggregateSaveResult",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
+      "description": "Result of loading, validating, saving, reloading, or reapplying an interactive Notion page aggregate. Carries the current canonical snapshot plus structured validation and optimistic-concurrency details.",
+      "packageId": "Tempo.Blazor.NotionEditor",
+      "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionEditorAggregateSession.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "NotionEditorAggregateSession",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
+      "description": "Stateful save-once boundary for one interactive Notion editor. It loads a complete canonical page snapshot, clones and validates each logical mutation, performs exactly one optimistic aggregate save, and retains conflicted local candidates for reload or reapply recovery.",
+      "packageId": "Tempo.Blazor.NotionEditor",
+      "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionEditorAggregateSession.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "NotionEditorContext",
       "kind": "Class",
       "category": "Components",
@@ -756,6 +776,11 @@
               "type": "IPageBlock"
             }
           ]
+        },
+        {
+          "name": "AggregateSession",
+          "kind": "Property",
+          "type": "NotionEditorAggregateSession?"
         },
         {
           "name": "AIProvider",
@@ -3958,6 +3983,12 @@
       ],
       "parameters": [
         {
+          "name": "AggregateProvider",
+          "type": "INotionAggregateProvider?",
+          "isRequired": false,
+          "description": "Canonical page aggregate provider for validated save-once table changes, structured multi-block paste, undo/redo, and optimistic conflict recovery. Without it, canonical tables remain safely readable but aggregate-only authoring controls are disabled."
+        },
+        {
           "name": "AllowedBlockTypes",
           "type": "IReadOnlySet<BlockType>?",
           "isRequired": false,
@@ -6468,6 +6499,13 @@
           "default": "false"
         },
         {
+          "name": "ColumnAlignments",
+          "type": "IReadOnlyList<TableColumnAlignment>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "Per-column horizontal alignment imported from a GFM table separator row. Columns beyond the list keep the renderer default (None)."
+        },
+        {
           "name": "ColumnCount",
           "type": "int",
           "isRequired": false,
@@ -6495,11 +6533,11 @@
           "description": "Zero-based index of this row inside the table; used for selection and cell focus."
         },
         {
-          "name": "ColumnAlignments",
-          "type": "IReadOnlyList<TableColumnAlignment>",
+          "name": "ColumnWidths",
+          "type": "IReadOnlyList<double?>",
           "isRequired": false,
           "default": "[]",
-          "description": "Per-column horizontal alignment imported from a GFM table separator row. Columns beyond the list keep the renderer default (None)."
+          "description": "Optional preferred width for each canonical table column in CSS pixels."
         },
         {
           "name": "IsHeaderRow",
@@ -7298,11 +7336,11 @@
     }
   ],
   "summary": {
-    "itemCount": 169,
-    "manualItemCount": 169,
-    "generatedItemCount": 168,
+    "itemCount": 171,
+    "manualItemCount": 171,
+    "generatedItemCount": 170,
     "generatedOnlyItemCount": 0,
     "componentCount": 128,
-    "publicApiTypeCount": 40
+    "publicApiTypeCount": 42
   }
 }

@@ -12,4 +12,7 @@ public interface ITableBlockContent : IBlockContent
 
     /// <summary>Per-column horizontal alignment, indexed by column. Empty means no explicit alignment.</summary>
     IReadOnlyList<TableColumnAlignment> ColumnAlignments => [];
+
+    /// <summary>Optional preferred width for each column in CSS pixels.</summary>
+    IReadOnlyList<double?> ColumnWidths => [];
 }

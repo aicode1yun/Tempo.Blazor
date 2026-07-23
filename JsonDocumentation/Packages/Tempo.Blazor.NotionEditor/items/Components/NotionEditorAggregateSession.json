@@ -1,0 +1,10 @@
+{
+  "itemName": "NotionEditorAggregateSession",
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
+  "description": "Stateful save-once boundary for one interactive Notion editor. It loads a complete canonical page snapshot, clones and validates each logical mutation, performs exactly one optimistic aggregate save, and retains conflicted local candidates for reload or reapply recovery.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionEditorAggregateSession.cs",
+  "documentationStatus": "generated"
+}

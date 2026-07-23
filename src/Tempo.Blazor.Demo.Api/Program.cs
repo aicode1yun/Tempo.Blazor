@@ -46,6 +46,7 @@ builder.Services.AddSingleton<MockTokenStore>();
 builder.Services.AddSingleton<MockWireframeStore>();
 builder.Services.AddSingleton<MockNotionDataStore>();
 builder.Services.AddSingleton<MockNotionBlockStore>();
+builder.Services.AddSingleton<DemoNotionAggregateStore>();
 builder.Services.AddSingleton<MockNotionBookmarkStore>();
 builder.Services.AddSingleton<DemoWorkItemStore>();
 builder.Services.AddSingleton<DemoNotionSearchService>();

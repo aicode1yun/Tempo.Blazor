@@ -1,7 +1,35 @@
 @namespace Tempo.Blazor.Components.NotionEditor.Blocks.Table
 @using Tempo.Blazor.NotionEditor.Interfaces
 
-<div class="tm-notion-table-block" @ref="_containerRef">
+<div class="tm-notion-table-block"
+     data-aggregate-enabled="@(Context.AggregateSession is not null ? "true" : "false")"
+     @ref="_containerRef">
+
+    @if (_hasConflict)
+    {
+        <div class="tm-notion-table-block__conflict"
+             role="alert"
+             data-testid="@ConflictTestId">
+            <div>
+                <strong>@Loc["TmNotionTableBlock_ConflictTitle"]</strong>
+                <span>@Loc["TmNotionTableBlock_ConflictMessage"]</span>
+            </div>
+            <div class="tm-notion-table-block__conflict-actions">
+                <button type="button" disabled="@_saving" @onclick="ReloadConflictAsync">
+                    @Loc["TmNotionTableBlock_ConflictReload"]
+                </button>
+                <button type="button" disabled="@_saving" @onclick="ReapplyConflictAsync">
+                    @Loc["TmNotionTableBlock_ConflictReapply"]
+                </button>
+            </div>
+        </div>
+    }
+    @if (!string.IsNullOrWhiteSpace(_saveError))
+    {
+        <div class="tm-notion-table-block__save-error" role="alert">
+            @Loc["TmNotionTableBlock_SaveError"] @_saveError
+        </div>
+    }
 
     @if (_loadingRows)
     {
@@ -13,7 +41,7 @@
     }
     else
     {
-        @if (!ReadOnly)
+        @if (CanAuthor)
         {
             <div class="tm-notion-table-block__toolbar">
                 <button class="tm-notion-table-block__toggle @(_hasHeaderRow ? "tm-notion-table-block__toggle--active" : "")"
@@ -48,6 +76,15 @@
                         @onclick="UndoTableChangeAsync"
                         @onclick:stopPropagation="true">
                     @Loc["TmNotionTableBlock_Undo"]
+                </button>
+                <button class="tm-notion-table-block__tool"
+                        type="button"
+                        title="@Loc["TmNotionTableBlock_Redo"]"
+                        aria-label="@Loc["TmNotionTableBlock_Redo"]"
+                        disabled="@(_redoStack.Count == 0 || _saving)"
+                        @onclick="RedoTableChangeAsync"
+                        @onclick:stopPropagation="true">
+                    @Loc["TmNotionTableBlock_Redo"]
                 </button>
                 @if (_selection is not null)
                 {
@@ -117,7 +154,7 @@
                        aria-label="@Loc["TmNotionTableBlock_TableLabel"]"
                        @ref="_tableRef">
 
-                    @if (!ReadOnly && _columnCount > 0)
+                    @if (CanAuthor && _columnCount > 0)
                     {
                         <thead>
                             <tr class="tm-notion-table__ctrl-row" aria-hidden="true">
@@ -154,11 +191,12 @@
                             var isHeader = _hasHeaderRow && r == 0;
                             <TmNotionTableRowBlock Row="row"
                                                    RowIndex="rowIdx"
-                                                   ColumnCount="_columnCount"
-                                                   ColumnAlignments="_columnAlignments"
+                                     ColumnCount="_columnCount"
+                                     ColumnAlignments="_columnAlignments"
+                                     ColumnWidths="_columnWidths"
                                                    IsHeaderRow="isHeader"
                                                    HasHeaderColumn="_hasHeaderColumn"
-                                                   ReadOnly="ReadOnly"
+                                                   ReadOnly="@(!CanAuthor)"
                                                    IsDragging="_dragSourceIndex == rowIdx"
                                                    IsDragOver="_dragOverIndex == rowIdx && _dragOverIndex != _dragSourceIndex"
                                                    CanDelete="_rows.Count > 1"
@@ -193,7 +231,7 @@
                 }
             </div>
 
-            @if (!ReadOnly)
+            @if (CanAuthor)
             {
                 <button class="tm-notion-table-block__add-col"
                         type="button"
@@ -209,7 +247,7 @@
             }
         </div>
 
-        @if (!ReadOnly)
+        @if (CanAuthor)
         {
             <button class="tm-notion-table-block__add-row"
                     type="button"

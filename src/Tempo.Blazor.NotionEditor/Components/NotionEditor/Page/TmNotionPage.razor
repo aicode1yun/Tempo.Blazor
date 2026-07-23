@@ -45,6 +45,41 @@
              data-page-blocks
              @onclick="OnContentAreaClickAsync">
 
+            @if (_hasAggregateConflict)
+            {
+                <div class="tm-notion-load-error tm-notion-page__aggregate-conflict"
+                     role="alert"
+                     data-testid="@AggregateConflictTestId"
+                     @onclick:stopPropagation="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+                         class="tm-notion-load-error__icon">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M12 7v5M12 16h.01" stroke="currentColor" stroke-width="1.75"
+                              stroke-linecap="round"/>
+                    </svg>
+                    <span class="tm-notion-load-error__message">
+                        <strong>@Loc["TmNotionTableBlock_ConflictTitle"]</strong>
+                        @Loc["TmNotionPage_SaveConflict"]
+                        @if (!string.IsNullOrWhiteSpace(_aggregateConflictError))
+                        {
+                            <span>@_aggregateConflictError</span>
+                        }
+                    </span>
+                    <button type="button"
+                            class="tm-notion-load-error__retry"
+                            disabled="@_resolvingAggregateConflict"
+                            @onclick="ReloadAggregateConflictAsync">
+                        @Loc["TmNotionTableBlock_ConflictReload"]
+                    </button>
+                    <button type="button"
+                            class="tm-notion-load-error__retry"
+                            disabled="@_resolvingAggregateConflict"
+                            @onclick="ReapplyAggregateConflictAsync">
+                        @Loc["TmNotionTableBlock_ConflictReapply"]
+                    </button>
+                </div>
+            }
+
             @if (_isLoadingBlocks)
             {
                 <div class="tm-notion-loading" role="status" aria-busy="true"

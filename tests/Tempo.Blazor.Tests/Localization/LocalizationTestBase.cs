@@ -211,6 +211,14 @@ public abstract class LocalizationTestBase : BunitContext
 
     private static MockTmLocalizer BuildEnglishLocalizer() => new(new Dictionary<string, string>
     {
+        ["TmNotionTableBlock_Redo"] = "Redo table change",
+        ["TmNotionTableBlock_ConflictTitle"] = "Save conflict",
+        ["TmNotionTableBlock_ConflictMessage"] = "The page changed elsewhere. Your table changes are still available locally.",
+        ["TmNotionTableBlock_ConflictReload"] = "Reload server version",
+        ["TmNotionTableBlock_ConflictReapply"] = "Reapply my changes",
+        ["TmNotionTableBlock_SaveError"] = "The table could not be saved.",
+        ["TmNotionPage_AggregateProviderRequired"] = "Editing this content requires an aggregate provider.",
+        ["TmNotionPage_SaveConflict"] = "The page changed elsewhere. Your pasted blocks remain local; reload or reapply the pending change.",
         // Document open dialog
         ["TmChart_NoData"]                      = "No data available",
         ["TmChart_ToggleSeries"]                = "Toggle {0}",
@@ -3782,6 +3790,14 @@ public abstract class LocalizationTestBase : BunitContext
 
     private static MockTmLocalizer BuildCzechLocalizer() => new(new Dictionary<string, string>
     {
+        ["TmNotionTableBlock_Redo"] = "Znovu provést změnu tabulky",
+        ["TmNotionTableBlock_ConflictTitle"] = "Konflikt při ukládání",
+        ["TmNotionTableBlock_ConflictMessage"] = "Stránka byla mezitím změněna. Vaše změny tabulky zůstávají dostupné lokálně.",
+        ["TmNotionTableBlock_ConflictReload"] = "Načíst verzi ze serveru",
+        ["TmNotionTableBlock_ConflictReapply"] = "Znovu použít moje změny",
+        ["TmNotionTableBlock_SaveError"] = "Tabulku se nepodařilo uložit.",
+        ["TmNotionPage_AggregateProviderRequired"] = "Úprava tohoto obsahu vyžaduje aggregate provider.",
+        ["TmNotionPage_SaveConflict"] = "Stránka byla mezitím změněna. Vložené bloky zůstávají lokální; načtěte stránku znovu nebo změnu znovu použijte.",
         ["TmChart_NoData"] = "Žádná data k dispozici",
         ["TmChart_ToggleSeries"] = "Přepnout {0}",
         ["TmChart_Total"] = "Celkem",

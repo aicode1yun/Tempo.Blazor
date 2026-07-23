@@ -27,6 +27,8 @@ public sealed class DomRect
 /// </summary>
 public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 {
+    private const string AggregateConflictTestId = "notion-page-conflict";
+
     // ── DI ────────────────────────────────────────────────────────────────────
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
@@ -79,6 +81,9 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     private readonly NotionCommandStack _commands = new();
     private bool             _isLoadingBlocks;
     private string?          _loadBlocksError;
+    private bool             _hasAggregateConflict;
+    private bool             _resolvingAggregateConflict;
+    private string?          _aggregateConflictError;
     private Guid?            _activeBlockId;
     private INotionPage?     _lastPage;
 
@@ -811,12 +816,35 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
         try
         {
-            var created   = await Context.BlockProvider.CreateBlocksAsync(Page.Id.ToString(), newBlocks, args.AfterBlockId);
+            if (Context.AggregateSession is null)
+            {
+                _loadBlocksError = Loc["TmNotionPage_AggregateProviderRequired"];
+                StateHasChanged();
+                return;
+            }
+
+            var afterId = Guid.TryParse(args.AfterBlockId, out var parsedAfterId)
+                ? parsedAfterId
+                : (Guid?)null;
+            var result = await Context.AggregateSession.ApplyAsync(snapshot =>
+                NotionCanonicalBlockBridge.InsertBlocks(snapshot, newBlocks, afterId));
+            if (!result.Success && !result.Conflict)
+            {
+                _loadBlocksError = string.Join(
+                    Environment.NewLine,
+                    result.Issues.Select(issue => issue.Message));
+                StateHasChanged();
+                return;
+            }
+
             var insertIdx = afterBlock is null ? _blocks.Count : _blocks.IndexOf(afterBlock) + 1;
 
             // _blocks holds the page's top level only; a container fetches its own children.
-            foreach (var b in created.Where(b => b.ParentBlockId is null).OrderBy(b => b.Order))
+            foreach (var b in newBlocks.Where(b => b.ParentBlockId is null).OrderBy(b => b.Order))
                 _blocks.Insert(Math.Clamp(insertIdx++, 0, _blocks.Count), b);
+            _hasAggregateConflict = result.Conflict;
+            _aggregateConflictError = null;
+            _loadBlocksError = null;
             StateHasChanged();
         }
         catch
@@ -825,6 +853,66 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
             StateHasChanged();
         }
     }
+
+    private async Task ReloadAggregateConflictAsync()
+    {
+        if (Context.AggregateSession is null)
+            return;
+
+        _resolvingAggregateConflict = true;
+        _aggregateConflictError = null;
+        try
+        {
+            var result = await Context.AggregateSession.ReloadAsync();
+            if (!result.Success)
+            {
+                _aggregateConflictError = FormatAggregateIssues(result.Issues);
+                return;
+            }
+
+            _hasAggregateConflict = false;
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            _aggregateConflictError = ex.Message;
+        }
+        finally
+        {
+            _resolvingAggregateConflict = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ReapplyAggregateConflictAsync()
+    {
+        if (Context.AggregateSession is null)
+            return;
+
+        _resolvingAggregateConflict = true;
+        _aggregateConflictError = null;
+        try
+        {
+            var result = await Context.AggregateSession.ReapplyAsync();
+            _hasAggregateConflict = Context.AggregateSession.HasPendingConflict;
+            if (!result.Success)
+            {
+                _aggregateConflictError = FormatAggregateIssues(result.Issues);
+            }
+        }
+        catch (Exception ex)
+        {
+            _aggregateConflictError = ex.Message;
+        }
+        finally
+        {
+            _resolvingAggregateConflict = false;
+            StateHasChanged();
+        }
+    }
+
+    private static string FormatAggregateIssues(IEnumerable<NotionAggregateIssue> issues)
+        => string.Join(Environment.NewLine, issues.Select(issue => issue.Message));
 
     private async Task HandleAddBlockAtEndAsync() =>
         await AddBlockAsync(BlockType.Paragraph);

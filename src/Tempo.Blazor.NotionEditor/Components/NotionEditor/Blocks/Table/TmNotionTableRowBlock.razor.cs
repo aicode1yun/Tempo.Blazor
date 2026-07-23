@@ -24,6 +24,9 @@ public partial class TmNotionTableRowBlock : ComponentBase, IAsyncDisposable
 
     /// <summary>Per-column horizontal alignment; columns beyond the list keep the renderer default.</summary>
     [Parameter] public IReadOnlyList<TableColumnAlignment> ColumnAlignments { get; set; } = [];
+
+    /// <summary>Optional preferred width for each column in CSS pixels.</summary>
+    [Parameter] public IReadOnlyList<double?> ColumnWidths { get; set; } = [];
     [Parameter] public bool IsHeaderRow     { get; set; }
     [Parameter] public bool HasHeaderColumn { get; set; }
     [Parameter] public bool ReadOnly        { get; set; }
@@ -106,7 +109,7 @@ public partial class TmNotionTableRowBlock : ComponentBase, IAsyncDisposable
             for (var c = 0; c < Math.Min(_cells.Count, _cellRefs.Length); c++)
             {
                 if (_cells[c].IsMergeHidden) continue;
-                try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _cellRefs[c], SanitizeForRender(_cells[c].Html)); }
+                try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _cellRefs[c], SanitizeForRender(EffectiveHtml(_cells[c]))); }
                 catch { }
             }
         }
@@ -121,17 +124,28 @@ public partial class TmNotionTableRowBlock : ComponentBase, IAsyncDisposable
     private static string SanitizeForRender(string html)
         => NotionHtmlSanitizer.SanitizeBlockContent(html);
 
+    private static string EffectiveHtml(NotionTableCell cell)
+        => cell.DisplayHtml ?? cell.Html;
+
     private async Task OnCellBlurAsync(int colIndex)
     {
         if (ReadOnly || colIndex >= _cellRefs.Length) return;
+        string html;
         try
         {
-            var html = SanitizeForRender(await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _cellRefs[colIndex]));
-            if (html == _cells[colIndex].Html) return;
-            _cells[colIndex].Html = html;
-            await OnCellsChanged.InvokeAsync(_cells.AsReadOnly());
+            html = SanitizeForRender(
+                await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _cellRefs[colIndex]));
         }
-        catch { }
+        catch (JSException)
+        {
+            return;
+        }
+
+        if (html == EffectiveHtml(_cells[colIndex])) return;
+        _cells[colIndex].Html = html;
+        _cells[colIndex].DisplayHtml = null;
+        _cells[colIndex].Inlines = [];
+        await OnCellsChanged.InvokeAsync(_cells.AsReadOnly());
     }
 
     private async Task OnFocusedAsync() => await OnFocused.InvokeAsync();
@@ -148,18 +162,71 @@ public partial class TmNotionTableRowBlock : ComponentBase, IAsyncDisposable
     private bool IsSelected(int columnIndex)
         => IsCellSelected?.Invoke(RowIndex, columnIndex) == true;
 
-    private static string CellStyle(NotionTableCell cell)
-        => NotionCssNormalizer.TryNormalizeColor(cell.BackgroundColor, out var color) &&
-           color is not null
-            ? $"background:{color}"
-            : string.Empty;
+    private string CellStyle(NotionTableCell cell, int columnIndex)
+    {
+        var declarations = new List<string>(8);
+        AddColorVariable(declarations, "--tm-notion-table-cell-background", cell.BackgroundColor);
+        AddColorVariable(declarations, "--tm-notion-table-cell-text", cell.TextColor);
+
+        var width = cell.Width ??
+                    (columnIndex < ColumnWidths.Count ? ColumnWidths[columnIndex] : null);
+        if (width is > 0 and <= 4096 && double.IsFinite(width.Value))
+        {
+            declarations.Add($"--tm-notion-table-cell-width:{width.Value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)}px");
+        }
+
+        declarations.Add($"--tm-notion-table-cell-vertical:{cell.VerticalAlignment.ToString().ToLowerInvariant()}");
+        AddBorder(declarations, "top", cell.Borders.Top);
+        AddBorder(declarations, "right", cell.Borders.Right);
+        AddBorder(declarations, "bottom", cell.Borders.Bottom);
+        AddBorder(declarations, "left", cell.Borders.Left);
+        return string.Join(';', declarations);
+    }
+
+    private static void AddColorVariable(List<string> declarations, string name, string? value)
+    {
+        if (NotionCssNormalizer.TryNormalizeColor(value, out var color) && color is not null)
+        {
+            declarations.Add($"{name}:{color}");
+        }
+    }
+
+    private static void AddBorder(
+        List<string> declarations,
+        string side,
+        NotionTableBorder? border)
+    {
+        if (border is null ||
+            border.Width is <= 0 or > 32 ||
+            !double.IsFinite(border.Width) ||
+            !NotionCssNormalizer.TryNormalizeColor(border.Color, out var color) ||
+            color is null)
+        {
+            return;
+        }
+
+        var style = border.Style switch
+        {
+            NotionTableBorderStyle.Solid => "solid",
+            NotionTableBorderStyle.Dashed => "dashed",
+            NotionTableBorderStyle.Dotted => "dotted",
+            NotionTableBorderStyle.Double => "double",
+            _ => "none"
+        };
+        declarations.Add(
+            $"--tm-notion-table-cell-border-{side}:{border.Width.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)}px {style} {color}");
+    }
 
     /// <summary>BEM modifier carrying the column's imported horizontal alignment, if any.</summary>
-    private string AlignmentClass(int columnIndex)
+    private string AlignmentClass(int columnIndex, NotionTableCell cell)
     {
-        var alignment = columnIndex < ColumnAlignments.Count
-            ? ColumnAlignments[columnIndex]
-            : TableColumnAlignment.None;
+        var alignment = cell.HorizontalAlignment switch
+        {
+            NotionTableHorizontalAlignment.Center => TableColumnAlignment.Center,
+            NotionTableHorizontalAlignment.Right => TableColumnAlignment.Right,
+            _ when columnIndex < ColumnAlignments.Count => ColumnAlignments[columnIndex],
+            _ => TableColumnAlignment.None
+        };
 
         return alignment switch
         {
@@ -181,12 +248,8 @@ public partial class TmNotionTableRowBlock : ComponentBase, IAsyncDisposable
             return cells.Take(columnCount).ToList();
         }
 
-        var legacy = content?.Cells ?? [];
         return Enumerable.Range(0, columnCount)
-            .Select(index => new NotionTableCell
-            {
-                Html = index < legacy.Count ? legacy[index] : string.Empty
-            })
+            .Select(_ => new NotionTableCell())
             .ToList();
     }
 
@@ -196,9 +259,16 @@ public partial class TmNotionTableRowBlock : ComponentBase, IAsyncDisposable
         for (var i = 0; i < left.Count; i++)
         {
             if (left[i].Html != right[i].Html ||
+                left[i].DisplayHtml != right[i].DisplayHtml ||
                 left[i].ColSpan != right[i].ColSpan ||
                 left[i].RowSpan != right[i].RowSpan ||
                 left[i].BackgroundColor != right[i].BackgroundColor ||
+                left[i].TextColor != right[i].TextColor ||
+                left[i].HorizontalAlignment != right[i].HorizontalAlignment ||
+                left[i].VerticalAlignment != right[i].VerticalAlignment ||
+                left[i].Width != right[i].Width ||
+                !BordersEqual(left[i].Borders, right[i].Borders) ||
+                !InlinesEqual(left[i].Inlines, right[i].Inlines) ||
                 left[i].IsMergeHidden != right[i].IsMergeHidden ||
                 left[i].MergeOriginRow != right[i].MergeOriginRow ||
                 left[i].MergeOriginColumn != right[i].MergeOriginColumn)
@@ -207,6 +277,35 @@ public partial class TmNotionTableRowBlock : ComponentBase, IAsyncDisposable
 
         return true;
     }
+
+    private static bool BordersEqual(NotionTableCellBorders left, NotionTableCellBorders right)
+        => BorderEqual(left.Top, right.Top) &&
+           BorderEqual(left.Right, right.Right) &&
+           BorderEqual(left.Bottom, right.Bottom) &&
+           BorderEqual(left.Left, right.Left);
+
+    private static bool BorderEqual(NotionTableBorder? left, NotionTableBorder? right)
+        => left is null
+            ? right is null
+            : right is not null &&
+              left.Style == right.Style &&
+              left.Color == right.Color &&
+              left.Width == right.Width;
+
+    private static bool InlinesEqual(
+        IReadOnlyList<NotionRichTextInline> left,
+        IReadOnlyList<NotionRichTextInline> right)
+        => left.Count == right.Count &&
+           left.Zip(right).All(pair =>
+               pair.First.Text == pair.Second.Text &&
+               pair.First.Href == pair.Second.Href &&
+               pair.First.Bold == pair.Second.Bold &&
+               pair.First.Italic == pair.Second.Italic &&
+               pair.First.Underline == pair.Second.Underline &&
+               pair.First.Strikethrough == pair.Second.Strikethrough &&
+               pair.First.Code == pair.Second.Code &&
+               pair.First.TextColor == pair.Second.TextColor &&
+               pair.First.BackgroundColor == pair.Second.BackgroundColor);
 
     // ── JS callbacks for Tab navigation ──────────────────────────────────────
 

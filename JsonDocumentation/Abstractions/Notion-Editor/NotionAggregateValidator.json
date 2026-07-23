@@ -1,0 +1,10 @@
+{
+  "itemName": "NotionAggregateValidator",
+  "kind": "Class",
+  "category": "Notion Editor",
+  "namespace": "Tempo.Blazor.NotionEditor.Models",
+  "description": "Validates complete canonical Notion page snapshots before an atomic save. The interactive editor and Tempo.Blazor.Mcp use this same deterministic, path-aware validation pipeline.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateValidator.cs",
+  "documentationStatus": "generated"
+}

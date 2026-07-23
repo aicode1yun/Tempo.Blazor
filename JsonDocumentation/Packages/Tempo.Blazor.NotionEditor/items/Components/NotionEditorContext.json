@@ -60,6 +60,12 @@
       "type": "INotionAnalyticsProvider?"
     },
     {
+      "name": "AggregateSession",
+      "kind": "Property",
+      "type": "NotionEditorAggregateSession?",
+      "description": "Active canonical snapshot session used by aggregate-only editor mutations and conflict recovery."
+    },
+    {
       "name": "AuditProvider",
       "kind": "Property",
       "type": "ITmActivityProvider?"

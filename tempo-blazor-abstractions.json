@@ -22885,6 +22885,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "NotionAggregateValidator",
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Validates complete canonical Notion page snapshots before an atomic save. The interactive editor and Tempo.Blazor.Mcp use this same deterministic, path-aware validation pipeline.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionAggregateValidator.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "NotionAnalyticsRange",
       "kind": "Class",
       "category": "Notion Editor",
@@ -23933,14 +23943,35 @@
           "type": "string?"
         },
         {
+          "name": "Borders",
+          "kind": "Property",
+          "type": "NotionTableCellBorders"
+        },
+        {
           "name": "ColSpan",
           "kind": "Property",
           "type": "int"
         },
         {
+          "name": "DisplayHtml",
+          "kind": "Property",
+          "type": "string?",
+          "description": "Sanitized presentation HTML derived from structured inlines. It is never serialized back into the canonical aggregate."
+        },
+        {
+          "name": "HorizontalAlignment",
+          "kind": "Property",
+          "type": "NotionTableHorizontalAlignment"
+        },
+        {
           "name": "Html",
           "kind": "Property",
           "type": "string"
+        },
+        {
+          "name": "Inlines",
+          "kind": "Property",
+          "type": "IReadOnlyList<NotionRichTextInline>"
         },
         {
           "name": "IsMergeHidden",
@@ -23961,6 +23992,21 @@
           "name": "RowSpan",
           "kind": "Property",
           "type": "int"
+        },
+        {
+          "name": "TextColor",
+          "kind": "Property",
+          "type": "string?"
+        },
+        {
+          "name": "VerticalAlignment",
+          "kind": "Property",
+          "type": "NotionTableVerticalAlignment"
+        },
+        {
+          "name": "Width",
+          "kind": "Property",
+          "type": "double?"
         }
       ]
     },
@@ -25426,6 +25472,12 @@
           "name": "ColumnCount",
           "kind": "Property",
           "type": "int"
+        },
+        {
+          "name": "ColumnWidths",
+          "kind": "Property",
+          "type": "IReadOnlyList<double?>",
+          "description": "Optional preferred width for each column in CSS pixels."
         },
         {
           "name": "HasHeaderColumn",
@@ -36019,11 +36071,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1468,
-    "manualItemCount": 1468,
-    "generatedItemCount": 1451,
+    "itemCount": 1469,
+    "manualItemCount": 1469,
+    "generatedItemCount": 1452,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1451
+    "publicApiTypeCount": 1452
   }
 }

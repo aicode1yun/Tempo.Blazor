@@ -11,6 +11,7 @@
 @inject NavigationManager Navigation
 @inject DemoNotionDataProvider DataProvider
 @inject DemoNotionBlockProvider BlockProvider
+@inject DemoNotionAggregateProvider AggregateProvider
 @inject MockNotionCommentProvider CommentProvider
 @inject DemoNotionHistoryProvider HistoryProvider
 @inject MockNotionMentionProvider MentionProvider
@@ -86,10 +87,11 @@
     }
     else if (_currentPage != null)
     {
-        <div style="height: 600px; border: 1px solid var(--slate-200); border-radius: 8px; overflow: hidden; background: white;">
+        <div style="height: 600px; border: 1px solid var(--tm-color-border); border-radius: var(--tm-radius-lg); overflow: hidden; background: var(--tm-bg-surface);">
             <TmNotionEditor @key="_editorRefreshKey"
                             DataProvider="@DataProvider"
                             BlockProvider="@BlockProvider"
+                            AggregateProvider="@AggregateProvider"
                             CommentProvider="@(IsProviderDisabled("disableCommentProvider") ? null : CommentProvider)"
                             HistoryProvider="@HistoryProvider"
                             MentionProvider="@(IsProviderDisabled("disableMentionProvider") ? null : MentionProvider)"
@@ -159,9 +161,10 @@
 
     @if (_currentPage != null)
     {
-        <div style="height: 420px; border: 1px solid var(--slate-200); border-radius: 8px; overflow: hidden; background: white;">
+        <div style="height: 420px; border: 1px solid var(--tm-color-border); border-radius: var(--tm-radius-lg); overflow: hidden; background: var(--tm-bg-surface);">
             <TmNotionEditor DataProvider="@DataProvider"
                             BlockProvider="@BlockProvider"
+                            AggregateProvider="@AggregateProvider"
                             MentionProvider="@MentionProvider"
                             FileProvider="@FileProvider"
                             TokenProvider="@TokenProvider"
@@ -932,6 +935,7 @@
     private static readonly string[] E2ESeedMethods =
     [
         "seedActionItemsPage",
+        "seedAtomicTablePage",
         "seedAnalyticsPage",
         "seedAuditPage",
         "seedBlogPage",

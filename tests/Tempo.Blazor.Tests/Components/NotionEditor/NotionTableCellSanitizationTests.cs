@@ -60,7 +60,7 @@ public sealed class NotionTableCellSanitizationTests : LocalizationTestBase
         cut.Find("td.tm-notion-table__cell-td")
             .GetAttribute("style")
             .Should()
-            .BeNullOrEmpty();
+            .NotContain("--tm-notion-table-cell-background");
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public sealed class NotionTableCellSanitizationTests : LocalizationTestBase
         cut.Find("td.tm-notion-table__cell-td")
             .GetAttribute("style")
             .Should()
-            .Be("background:#1f4e78");
+            .Contain("--tm-notion-table-cell-background:#1f4e78");
     }
 
     [Fact]

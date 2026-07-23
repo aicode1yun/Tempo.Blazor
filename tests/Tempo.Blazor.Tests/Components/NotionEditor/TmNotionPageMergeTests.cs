@@ -2,6 +2,7 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using System.Text.Json;
 using Tempo.Blazor.Configuration;
 using Tempo.Blazor.Components.NotionEditor.Blocks;
 using Tempo.Blazor.Components.NotionEditor.Page;
@@ -133,28 +134,67 @@ public sealed class TmNotionPageMergeTests : LocalizationTestBase
         // fresh ids, so the children must be re-pointed at the parent's new id — otherwise the
         // table renders empty and the orphaned rows fall back to paragraphs reading "TableRow".
         var anchor = Paragraph("anchor", order: 0);
-        var (cut, provider) = RenderPage(anchor);
+        var aggregateProvider = Substitute.For<INotionAggregateProvider>();
+        var snapshot = new NotionPageSnapshot
+        {
+            Page = new NotionPageState { Id = PageId, Title = "Page" },
+            ConcurrencyToken = "token-1",
+            Blocks =
+            [
+                new NotionBlockSnapshot
+                {
+                    Id = anchor.Id,
+                    PageId = PageId,
+                    Type = anchor.Type,
+                    Order = anchor.Order,
+                    Content = JsonSerializer.SerializeToElement(
+                        anchor.Content,
+                        anchor.Content.GetType(),
+                        NotionAggregateJson.Options)
+                }
+            ]
+        };
+        aggregateProvider.LoadPageAsync(PageId, Arg.Any<CancellationToken>())
+            .Returns(new NotionAggregateLoadResult { Found = true, Snapshot = snapshot });
+        NotionAggregateSaveRequest? savedRequest = null;
+        aggregateProvider.SaveAsync(
+                Arg.Do<NotionAggregateSaveRequest>(request => savedRequest = request),
+                Arg.Any<CancellationToken>())
+            .Returns(new NotionAggregateSaveResult
+            {
+                Success = true,
+                Pages =
+                [
+                    new NotionSavedPage
+                    {
+                        PageId = PageId,
+                        ConcurrencyToken = "token-2",
+                        Digest = "digest-2"
+                    }
+                ]
+            });
+        var aggregateSession = new NotionEditorAggregateSession(aggregateProvider);
+        (await aggregateSession.LoadAsync(PageId)).Success.Should().BeTrue();
+        var (cut, provider) = RenderPage(aggregateSession, anchor);
 
         var tableId = Guid.NewGuid();
         var pasted = new List<IPageBlock>
         {
             new PageBlock { Id = tableId, PageId = PageId, Type = BlockType.Table, Order = 0, Content = new TableBlockContent { ColumnCount = 1 } },
-            new PageBlock { Id = Guid.NewGuid(), PageId = PageId, ParentBlockId = tableId, Type = BlockType.TableRow, Order = 0, Content = new TableRowBlockContent { Cells = ["a"] } },
-            new PageBlock { Id = Guid.NewGuid(), PageId = PageId, ParentBlockId = tableId, Type = BlockType.TableRow, Order = 1, Content = new TableRowBlockContent { Cells = ["b"] } }
+            new PageBlock { Id = Guid.NewGuid(), PageId = PageId, ParentBlockId = tableId, Type = BlockType.TableRow, Order = 0, Content = new TableRowBlockContent { RichCells = [new NotionTableCell { Html = "a" }] } },
+            new PageBlock { Id = Guid.NewGuid(), PageId = PageId, ParentBlockId = tableId, Type = BlockType.TableRow, Order = 1, Content = new TableRowBlockContent { RichCells = [new NotionTableCell { Html = "b" }] } }
         };
-
-        provider.CreateBlocksAsync(Arg.Any<string>(), Arg.Any<IEnumerable<IPageBlock>>(), Arg.Any<string?>())
-            .Returns(callInfo => Task.FromResult(callInfo.ArgAt<IEnumerable<IPageBlock>>(1)));
 
         var list = cut.FindComponent<TmNotionBlockList>();
         await cut.InvokeAsync(() => list.Instance.OnInsertTemplateBlocksAfter
             .InvokeAsync((anchor.Id.ToString(), (IReadOnlyList<IPageBlock>)pasted)));
 
-        var sent = provider.ReceivedCalls()
-            .Single(call => call.GetMethodInfo().Name == nameof(INotionBlockProvider.CreateBlocksAsync))
-            .GetArguments()[1] as IEnumerable<IPageBlock>;
-
-        var persisted = sent!.ToList();
+        await aggregateProvider.Received(1).SaveAsync(
+            Arg.Any<NotionAggregateSaveRequest>(),
+            Arg.Any<CancellationToken>());
+        await provider.DidNotReceiveWithAnyArgs()
+            .CreateBlocksAsync(default!, default!, default);
+        var persisted = savedRequest!.Pages.Single().Snapshot.Blocks;
         var table = persisted.Single(block => block.Type == BlockType.Table);
         var rows = persisted.Where(block => block.Type == BlockType.TableRow).ToList();
 
@@ -231,6 +271,26 @@ public sealed class TmNotionPageMergeTests : LocalizationTestBase
 
     private (IRenderedComponent<TmNotionPage> Cut, INotionBlockProvider Provider) RenderPage(
         params IPageBlock[] blocks) => RenderPage(readOnly: false, blocks);
+
+    private (IRenderedComponent<TmNotionPage> Cut, INotionBlockProvider Provider) RenderPage(
+        NotionEditorAggregateSession aggregateSession,
+        params IPageBlock[] blocks)
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        Services.AddTempoBlazorNotionEditor();
+        var provider = Substitute.For<INotionBlockProvider>();
+        provider.GetBlocksAsync(PageId.ToString()).Returns(blocks);
+        var context = new NotionEditorContext
+        {
+            BlockProvider = provider,
+            AggregateSession = aggregateSession
+        };
+        var page = new NotionPage { Id = PageId, Title = "Page" };
+        var cut = Render<TmNotionPage>(parameters => parameters
+            .AddCascadingValue(context)
+            .Add(parameter => parameter.Page, page));
+        return (cut, provider);
+    }
 
     private (IRenderedComponent<TmNotionPage> Cut, INotionBlockProvider Provider) RenderPage(
         bool readOnly, params IPageBlock[] blocks)

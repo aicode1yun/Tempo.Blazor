@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -1550,6 +1551,88 @@ public sealed class Eb1BaselineRenderer
         });
     }
 
+    public void SeedE2EAtomicTablePage()
+    {
+        RemoveBlocksForPages(MockNotionDataStore.Page1Id);
+        var tableId = Guid.Parse("f6000000-0000-0000-0000-000000000010");
+        AddTo(tableId, MockNotionDataStore.Page1Id, BlockType.Table, 0, new TableBlockContent
+        {
+            ColumnCount = 3,
+            HasHeaderRow = true,
+            HasHeaderColumn = true,
+            ColumnWidths = [220, 150, 180]
+        });
+        AddChildTo(Guid.Parse("f6000000-0000-0000-0000-000000000011"), MockNotionDataStore.Page1Id, tableId, BlockType.TableRow, 0, new TableRowBlockContent
+        {
+            RichCells =
+            [
+                new NotionTableCell
+                {
+                    Html = "<strong>Atomic authoring</strong>",
+                    Inlines =
+                    [
+                        new NotionRichTextInline
+                        {
+                            Text = "Atomic authoring",
+                            Bold = true,
+                            TextColor = "#1d4ed8"
+                        }
+                    ],
+                    ColSpan = 2,
+                    BackgroundColor = "#dbeafe",
+                    TextColor = "#1d4ed8",
+                    VerticalAlignment = NotionTableVerticalAlignment.Middle,
+                    Borders = new NotionTableCellBorders
+                    {
+                        Bottom = new NotionTableBorder
+                        {
+                            Style = NotionTableBorderStyle.Solid,
+                            Color = "#60a5fa",
+                            Width = 2
+                        }
+                    }
+                },
+                Hidden(0, 0),
+                new NotionTableCell
+                {
+                    Html = "State",
+                    BackgroundColor = "#dbeafe",
+                    TextColor = "#1f2937"
+                }
+            ]
+        });
+        AddChildTo(Guid.Parse("f6000000-0000-0000-0000-000000000012"), MockNotionDataStore.Page1Id, tableId, BlockType.TableRow, 1, new TableRowBlockContent
+        {
+            RichCells =
+            [
+                new NotionTableCell { Html = "Batch save" },
+                new NotionTableCell
+                {
+                    Html = "<strong>One request</strong>",
+                    HorizontalAlignment = NotionTableHorizontalAlignment.Center,
+                    BackgroundColor = "#dcfce7",
+                    TextColor = "#1f2937"
+                },
+                new NotionTableCell { Html = "Ready" }
+            ]
+        });
+        AddChildTo(Guid.Parse("f6000000-0000-0000-0000-000000000013"), MockNotionDataStore.Page1Id, tableId, BlockType.TableRow, 2, new TableRowBlockContent
+        {
+            RichCells =
+            [
+                new NotionTableCell { Html = "Conflict recovery" },
+                new NotionTableCell
+                {
+                    Html = "Reload / reapply",
+                    HorizontalAlignment = NotionTableHorizontalAlignment.Center,
+                    BackgroundColor = "#fef3c7",
+                    TextColor = "#1f2937"
+                },
+                new NotionTableCell { Html = "Optimistic token" }
+            ]
+        });
+    }
+
     private static NotionTableCell Cell(string html, int colSpan = 1, int rowSpan = 1, string? backgroundColor = null) => new()
     {
         Html = html,
@@ -1803,6 +1886,106 @@ public sealed class Eb1BaselineRenderer
             return await Task.FromResult(blocks);
         }
         return await Task.FromResult(Array.Empty<IPageBlock>());
+    }
+
+    public IReadOnlyList<IPageBlock> GetAllPageBlocks(Guid pageId)
+        => _blocks.Values
+            .Where(block => block.PageId == pageId)
+            .OrderBy(block => block.ParentBlockId)
+            .ThenBy(block => block.Order)
+            .ThenBy(block => block.Id)
+            .Cast<IPageBlock>()
+            .ToList();
+
+    public IPageBlock? GetBlock(Guid blockId)
+        => _blocks.TryGetValue(blockId, out var block) ? block : null;
+
+    public void ApplyAggregateSnapshot(NotionPageSnapshot snapshot)
+    {
+        var pageIds = snapshot.Blocks.Select(block => block.Id).ToHashSet();
+        var replacements = snapshot.Blocks.Select(block => new PageBlock
+        {
+            Id = block.Id,
+            PageId = block.PageId,
+            ParentBlockId = block.ParentBlockId,
+            Type = block.Type,
+            Order = block.Order,
+            CreatedAt = block.CreatedAt,
+            LastEditedAt = block.LastEditedAt,
+            Content = FromAggregateContent(block)
+        }).ToList();
+
+        foreach (var id in _blocks.Values
+                     .Where(block => block.PageId == snapshot.Page.Id && !pageIds.Contains(block.Id))
+                     .Select(block => block.Id)
+                     .ToList())
+        {
+            _blocks.Remove(id);
+        }
+        foreach (var replacement in replacements)
+        {
+            _blocks[replacement.Id] = replacement;
+        }
+    }
+
+    private IBlockContent FromAggregateContent(NotionBlockSnapshot block)
+    {
+        if (block.Type == BlockType.Table)
+        {
+            var table = block.Content.Deserialize<NotionAuthoringTable>(
+                NotionAggregateJson.Options)!;
+            return new TableBlockContent
+            {
+                ColumnCount = table.ColumnCount,
+                HasHeaderRow = table.HasHeaderRow,
+                HasHeaderColumn = table.HasHeaderColumn,
+                ColumnAlignments = table.ColumnAlignments.Select(alignment => alignment switch
+                {
+                    NotionTableHorizontalAlignment.Center =>
+                        Tempo.Blazor.DocumentEditor.Models.TableColumnAlignment.Center,
+                    NotionTableHorizontalAlignment.Right =>
+                        Tempo.Blazor.DocumentEditor.Models.TableColumnAlignment.Right,
+                    _ => Tempo.Blazor.DocumentEditor.Models.TableColumnAlignment.Left
+                }).ToList(),
+                ColumnWidths = table.ColumnWidths
+            };
+        }
+        if (block.Type == BlockType.TableRow)
+        {
+            var row = block.Content.Deserialize<NotionAuthoringTableRow>(
+                NotionAggregateJson.Options)!;
+            return new TableRowBlockContent
+            {
+                RichCells = row.Cells.Select(cell => new NotionTableCell
+                {
+                    Html = cell.Html,
+                    Inlines = cell.Inlines,
+                    BackgroundColor = cell.BackgroundColor,
+                    TextColor = cell.TextColor,
+                    HorizontalAlignment = cell.HorizontalAlignment,
+                    VerticalAlignment = cell.VerticalAlignment,
+                    RowSpan = cell.RowSpan,
+                    ColSpan = cell.ColumnSpan,
+                    Width = cell.Width,
+                    Borders = cell.Borders
+                }).ToList()
+            };
+        }
+        if (_blocks.TryGetValue(block.Id, out var existing))
+        {
+            return existing.Content;
+        }
+
+        return block.Type switch
+        {
+            BlockType.Heading1 or BlockType.Heading2 or BlockType.Heading3 =>
+                block.Content.Deserialize<HeadingBlockContent>(NotionAggregateJson.Options)!,
+            BlockType.BulletList or BlockType.NumberedList =>
+                block.Content.Deserialize<ListBlockContent>(NotionAggregateJson.Options)!,
+            BlockType.Code =>
+                block.Content.Deserialize<CodeBlockContent>(NotionAggregateJson.Options)!,
+            _ => block.Content.Deserialize<TextBlockContent>(NotionAggregateJson.Options)!
+        };
     }
 
     public async Task<IEnumerable<IPageBlock>> GetChildBlocksAsync(string parentBlockId)

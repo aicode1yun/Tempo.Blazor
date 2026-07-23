@@ -33,6 +33,56 @@ public static class NotionEditorEndpoints
         var bookmarkGroup = app.MapGroup("/api/notion/bookmarks").WithTags("Notion Editor");
         var smartLinkGroup = app.MapGroup("/api/notion/smart-links").WithTags("Notion Editor");
         var syncedBlockGroup = app.MapGroup("/api/notion/synced-blocks").WithTags("Notion Editor");
+        var aggregateGroup = app.MapGroup("/api/notion/aggregate").WithTags("Notion Editor");
+
+        aggregateGroup.MapGet("/pages/{pageId:guid}", async (
+            Guid pageId,
+            DemoNotionAggregateStore store) =>
+        {
+            var result = await store.LoadPageAsync(pageId);
+            return Results.Json(
+                result,
+                NotionAggregateJson.Options,
+                statusCode: result.Found ? StatusCodes.Status200OK : StatusCodes.Status404NotFound);
+        });
+        aggregateGroup.MapGet("/blocks/{blockId:guid}", async (
+            Guid blockId,
+            DemoNotionAggregateStore store) =>
+        {
+            var result = await store.LoadBlockAsync(blockId);
+            return Results.Json(
+                result,
+                NotionAggregateJson.Options,
+                statusCode: result.Found ? StatusCodes.Status200OK : StatusCodes.Status404NotFound);
+        });
+        aggregateGroup.MapPost("/save", async (
+            HttpRequest request,
+            DemoNotionAggregateStore store,
+            CancellationToken cancellationToken) =>
+        {
+            var payload = await request.ReadFromJsonAsync<NotionAggregateSaveRequest>(
+                NotionAggregateJson.Options,
+                cancellationToken);
+            if (payload is null)
+            {
+                return Results.BadRequest();
+            }
+            var result = store.Save(payload);
+            return Results.Json(
+                result,
+                NotionAggregateJson.Options,
+                statusCode: result.Conflict
+                    ? StatusCodes.Status409Conflict
+                    : result.Success
+                        ? StatusCodes.Status200OK
+                        : StatusCodes.Status400BadRequest);
+        });
+        aggregateGroup.MapPost("/e2e/advance-token/{pageId:guid}", (
+            Guid pageId,
+            DemoNotionAggregateStore store) =>
+            store.AdvanceConcurrencyToken(pageId)
+                ? Results.NoContent()
+                : Results.NotFound());
 
         app.MapPost("/api/notion/page-properties/report", (PagePropertiesReportQuery query, MockNotionDataStore dataStore, MockNotionBlockStore blockStore) =>
             Results.Ok(BuildPagePropertiesReport(query, dataStore, blockStore)));
@@ -989,11 +1039,13 @@ public static class NotionEditorEndpoints
         app.MapPost("/api/notion/reset", (
             MockNotionDataStore dataStore,
             MockNotionBlockStore blockStore,
+            DemoNotionAggregateStore aggregateStore,
             DemoNotionNotificationStore notificationStore,
             DemoNotionHistoryStore historyStore) =>
         {
             dataStore.Reset();
             blockStore.Reset();
+            aggregateStore.Reset();
             historyStore.Reset();
             notificationStore.Clear();
             return Results.NoContent();
@@ -1005,6 +1057,7 @@ public static class NotionEditorEndpoints
                 string scenario,
                 MockNotionDataStore dataStore,
                 MockNotionBlockStore blockStore,
+                DemoNotionAggregateStore aggregateStore,
                 MockNotionAnalyticsStore analyticsStore,
                 MockNotionReactionStore reactionStore,
                 DemoNotionAuditProvider auditProvider,
@@ -1031,6 +1084,7 @@ public static class NotionEditorEndpoints
                         watchProvider,
                         notificationStore,
                         historyStore);
+                    aggregateStore.Reset();
 
                     switch (scenario.Trim())
                     {
@@ -1119,6 +1173,12 @@ public static class NotionEditorEndpoints
                         case "seedTablePage":
                             dataStore.SeedE2ESimplePage("EB7 Table Blocks", "Table seed page.");
                             blockStore.SeedE2ETablePage();
+                            break;
+                        case "seedAtomicTablePage":
+                            dataStore.SeedE2ESimplePage(
+                                "F6 Atomic Notion Table",
+                                "Atomic table authoring and conflict recovery seed page.");
+                            blockStore.SeedE2EAtomicTablePage();
                             break;
                         case "seedMediaPage":
                             dataStore.SeedE2ESimplePage("EB6 Media Blocks", "Media seed page.");

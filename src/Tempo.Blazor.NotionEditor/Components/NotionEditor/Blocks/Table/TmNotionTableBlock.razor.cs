@@ -12,6 +12,8 @@ namespace Tempo.Blazor.Components.NotionEditor.Blocks.Table;
 
 public partial class TmNotionTableBlock : ComponentBase
 {
+    private const string ConflictTestId = "notion-table-conflict";
+
     // ── DI ───────────────────────────────────────────────────────────────────
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
@@ -41,6 +43,7 @@ public partial class TmNotionTableBlock : ComponentBase
     private bool             _hasHeaderColumn;
     private int              _columnCount;
     private IReadOnlyList<TableColumnAlignment> _columnAlignments = [];
+    private IReadOnlyList<double?> _columnWidths = [];
     private int              _dragSourceIndex = -1;
     private int              _dragOverIndex   = -1;
     private ElementReference _containerRef;
@@ -50,6 +53,10 @@ public partial class TmNotionTableBlock : ComponentBase
     private bool _isSelecting;
     private bool _dragSelectionActivated;
     private readonly Stack<List<RowSnapshot>> _undoStack = new();
+    private readonly Stack<List<RowSnapshot>> _redoStack = new();
+    private bool _saving;
+    private bool _hasConflict;
+    private string? _saveError;
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -59,6 +66,7 @@ public partial class TmNotionTableBlock : ComponentBase
         _hasHeaderColumn  = Content?.HasHeaderColumn ?? false;
         _columnCount      = Content?.ColumnCount     ?? 0;
         _columnAlignments = Content?.ColumnAlignments ?? [];
+        _columnWidths     = Content?.ColumnWidths ?? [];
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -81,6 +89,11 @@ public partial class TmNotionTableBlock : ComponentBase
         _selection is { } selection &&
         (selection.StartRow != selection.EndRow || selection.StartColumn != selection.EndColumn);
 
+    private bool CanAuthor =>
+        !ReadOnly &&
+        !_hasConflict &&
+        Context.AggregateSession is not null;
+
     // ── Row loading ───────────────────────────────────────────────────────────
 
     private async Task LoadRowsAsync()
@@ -89,14 +102,33 @@ public partial class TmNotionTableBlock : ComponentBase
         StateHasChanged();
         try
         {
-            var children = await Context.BlockProvider.GetChildBlocksAsync(Block.Id.ToString());
-            _rows = children
-                .Where(b => b.Type == BlockType.TableRow)
-                .OrderBy(b => b.Order)
-                .ToList();
+            if (Context.AggregateSession?.CurrentSnapshot is { } snapshot)
+            {
+                var view = NotionCanonicalTableBridge.ToView(snapshot, Block.Id);
+                _rows = view.Rows;
+                if (view.Table.Content is ITableBlockContent table)
+                {
+                    _hasHeaderRow = table.HasHeaderRow;
+                    _hasHeaderColumn = table.HasHeaderColumn;
+                    _columnCount = table.ColumnCount;
+                    _columnAlignments = table.ColumnAlignments;
+                    _columnWidths = table.ColumnWidths;
+                }
+            }
+            else
+            {
+                var children = await Context.BlockProvider.GetChildBlocksAsync(Block.Id.ToString());
+                _rows = children
+                    .Where(b => b.Type == BlockType.TableRow)
+                    .OrderBy(b => b.Order)
+                    .ToList();
+            }
             _rowsLoaded = true;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _saveError = ex.Message;
+        }
         finally
         {
             _loadingRows = false;
@@ -108,7 +140,9 @@ public partial class TmNotionTableBlock : ComponentBase
 
     private async Task AddRowAsync()
     {
-        var cells = Enumerable.Range(0, _columnCount).Select(_ => string.Empty).ToList<string>();
+        var cells = Enumerable.Range(0, _columnCount)
+            .Select(_ => new NotionTableCell())
+            .ToList();
         var newRow = new PageBlock
         {
             Id            = Guid.NewGuid(),
@@ -116,18 +150,16 @@ public partial class TmNotionTableBlock : ComponentBase
             ParentBlockId = Block.Id,
             Type          = BlockType.TableRow,
             Order         = _rows.Count,
-            Content       = new TableRowBlockContent { Cells = cells }
+            Content       = BuildRowContent(cells)
         };
         try
         {
-            var created = await Context.BlockProvider.CreateBlockAsync(
-                Block.PageId.ToString(),
-                newRow,
-                _rows.LastOrDefault()?.Id.ToString());
-            _rows.Add(created);
+            var candidateRows = _rows.Append(newRow).ToList();
+            if (await SaveAggregateTableAsync(Block, candidateRows))
+                _rows = candidateRows;
             StateHasChanged();
         }
-        catch { }
+        catch (Exception ex) { _saveError = ex.Message; }
     }
 
     // ── Delete row ────────────────────────────────────────────────────────────
@@ -138,12 +170,16 @@ public partial class TmNotionTableBlock : ComponentBase
         var row = _rows[rowIndex];
         try
         {
-            await Context.BlockProvider.DeleteBlockAsync(row.Id.ToString());
-            _rows.RemoveAt(rowIndex);
-            await RenumberRowsAsync();
+            var candidateRows = _rows.Where(candidate => candidate.Id != row.Id)
+                .Select((candidate, index) =>
+                    BuildRowBlock(candidate, (TableRowBlockContent)candidate.Content, index))
+                .Cast<IPageBlock>()
+                .ToList();
+            if (await SaveAggregateTableAsync(Block, candidateRows))
+                _rows = candidateRows;
             StateHasChanged();
         }
-        catch { }
+        catch (Exception ex) { _saveError = ex.Message; }
     }
 
     // ── Add column ────────────────────────────────────────────────────────────
@@ -151,24 +187,21 @@ public partial class TmNotionTableBlock : ComponentBase
     private async Task AddColumnAsync()
     {
         var newCount = _columnCount + 1;
-
-        for (var i = 0; i < _rows.Count; i++)
+        var candidateRows = _rows.Select(row =>
+            row.Content is ITableRowBlockContent content
+                ? (IPageBlock)BuildRowBlock(row, NotionTableEdit.AddColumn(content))
+                : row).ToList();
+        var candidateTable = BuildTableBlock(
+            Block,
+            NotionTableEdit.AddColumn(CurrentTableContent()));
+        if (await SaveAggregateTableAsync(candidateTable, candidateRows))
         {
-            if (_rows[i].Content is not ITableRowBlockContent rc) continue;
-            var updated = BuildRowBlock(_rows[i], NotionTableEdit.AddColumn(rc));
-            try { await Context.BlockProvider.UpdateBlockAsync(updated); _rows[i] = updated; }
-            catch { }
-        }
-
-        var updatedTable = BuildTableBlock(Block, NotionTableEdit.AddColumn(CurrentTableContent()));
-        try
-        {
-            await Context.BlockProvider.UpdateBlockAsync(updatedTable);
-            await OnUpdated.InvokeAsync(updatedTable);
+            _rows = candidateRows;
             _columnCount = newCount;
-            StateHasChanged();
+            ApplyTableView((ITableBlockContent)candidateTable.Content);
+            await OnUpdated.InvokeAsync(candidateTable);
         }
-        catch { }
+        StateHasChanged();
     }
 
     // ── Delete column ─────────────────────────────────────────────────────────
@@ -178,62 +211,64 @@ public partial class TmNotionTableBlock : ComponentBase
         if (_columnCount <= 1 || colIndex < 0 || colIndex >= _columnCount) return;
 
         var newCount = _columnCount - 1;
-
-        for (var i = 0; i < _rows.Count; i++)
+        var grid = BuildGrid();
+        RemoveGridColumn(grid, colIndex);
+        var candidateRows = _rows.Select((row, index) =>
+                (IPageBlock)BuildRowBlock(
+                    row,
+                    BuildRowContent(grid[index])))
+            .ToList();
+        var candidateTable = BuildTableBlock(
+            Block,
+            NotionTableEdit.RemoveColumn(CurrentTableContent(), colIndex));
+        if (await SaveAggregateTableAsync(candidateTable, candidateRows))
         {
-            if (_rows[i].Content is not ITableRowBlockContent rc) continue;
-            var updated = BuildRowBlock(_rows[i], NotionTableEdit.RemoveColumn(rc, colIndex));
-            try { await Context.BlockProvider.UpdateBlockAsync(updated); _rows[i] = updated; }
-            catch { }
-        }
-
-        var updatedTable = BuildTableBlock(Block, NotionTableEdit.RemoveColumn(CurrentTableContent(), colIndex));
-        try
-        {
-            await Context.BlockProvider.UpdateBlockAsync(updatedTable);
-            await OnUpdated.InvokeAsync(updatedTable);
+            _rows = candidateRows;
             _columnCount = newCount;
-            StateHasChanged();
+            ApplyTableView((ITableBlockContent)candidateTable.Content);
+            await OnUpdated.InvokeAsync(candidateTable);
         }
-        catch { }
+        StateHasChanged();
     }
 
     // ── Header toggles ────────────────────────────────────────────────────────
 
     private async Task ToggleHeaderRowAsync()
     {
-        _hasHeaderRow = !_hasHeaderRow;
+        var nextValue = !_hasHeaderRow;
         var updated = BuildTableBlock(Block, new TableBlockContent
         {
-            HasHeaderRow    = _hasHeaderRow,
+            HasHeaderRow    = nextValue,
             HasHeaderColumn = _hasHeaderColumn,
-            ColumnCount     = _columnCount
+            ColumnCount     = _columnCount,
+            ColumnAlignments = _columnAlignments,
+            ColumnWidths = _columnWidths
         });
-        try
+        if (await SaveAggregateTableAsync(updated, _rows))
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            _hasHeaderRow = nextValue;
             await OnUpdated.InvokeAsync(updated);
-            StateHasChanged();
         }
-        catch { }
+        StateHasChanged();
     }
 
     private async Task ToggleHeaderColumnAsync()
     {
-        _hasHeaderColumn = !_hasHeaderColumn;
+        var nextValue = !_hasHeaderColumn;
         var updated = BuildTableBlock(Block, new TableBlockContent
         {
             HasHeaderRow    = _hasHeaderRow,
-            HasHeaderColumn = _hasHeaderColumn,
-            ColumnCount     = _columnCount
+            HasHeaderColumn = nextValue,
+            ColumnCount     = _columnCount,
+            ColumnAlignments = _columnAlignments,
+            ColumnWidths = _columnWidths
         });
-        try
+        if (await SaveAggregateTableAsync(updated, _rows))
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            _hasHeaderColumn = nextValue;
             await OnUpdated.InvokeAsync(updated);
-            StateHasChanged();
         }
-        catch { }
+        StateHasChanged();
     }
 
     // ── Cell edit ─────────────────────────────────────────────────────────────
@@ -244,10 +279,12 @@ public partial class TmNotionTableBlock : ComponentBase
         var idx = _rows.FindIndex(r => r.Id == row.Id);
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
-            if (idx >= 0) _rows[idx] = updated;
+            var candidateRows = _rows.ToList();
+            if (idx >= 0) candidateRows[idx] = updated;
+            if (await SaveAggregateTableAsync(Block, candidateRows))
+                _rows = candidateRows;
         }
-        catch { }
+        catch (Exception ex) { _saveError = ex.Message; }
     }
 
     // ── Selection and advanced table operations ──────────────────────────────
@@ -300,7 +337,7 @@ public partial class TmNotionTableBlock : ComponentBase
         if (!SelectionWithinGrid(selection, grid))
             return;
 
-        PushUndoSnapshot();
+        var undoSnapshot = CaptureRows();
         SplitIntersectingMergedCells(grid, selection);
 
         var origin = grid[selection.StartRow][selection.StartColumn];
@@ -326,7 +363,8 @@ public partial class TmNotionTableBlock : ComponentBase
             }
         }
 
-        await PersistGridAsync(grid);
+        if (await PersistGridAsync(grid))
+            PushUndoSnapshot(undoSnapshot);
     }
 
     private async Task SplitSelectionAsync()
@@ -338,12 +376,13 @@ public partial class TmNotionTableBlock : ComponentBase
         if (!SelectionWithinGrid(selection, grid))
             return;
 
-        PushUndoSnapshot();
+        var undoSnapshot = CaptureRows();
         var origins = GetSelectedOrigins(grid, selection);
         foreach (var (row, column) in origins)
             SplitOrigin(grid, row, column);
 
-        await PersistGridAsync(grid);
+        if (await PersistGridAsync(grid))
+            PushUndoSnapshot(undoSnapshot);
     }
 
     private async Task ApplySelectionColorAsync(string backgroundColor)
@@ -355,11 +394,12 @@ public partial class TmNotionTableBlock : ComponentBase
         if (!SelectionWithinGrid(selection, grid))
             return;
 
-        PushUndoSnapshot();
+        var undoSnapshot = CaptureRows();
         foreach (var (row, column) in GetSelectedOrigins(grid, selection))
             grid[row][column].BackgroundColor = backgroundColor;
 
-        await PersistGridAsync(grid);
+        if (await PersistGridAsync(grid))
+            PushUndoSnapshot(undoSnapshot);
     }
 
     private async Task ClearSelectionColorAsync()
@@ -371,11 +411,12 @@ public partial class TmNotionTableBlock : ComponentBase
         if (!SelectionWithinGrid(selection, grid))
             return;
 
-        PushUndoSnapshot();
+        var undoSnapshot = CaptureRows();
         foreach (var (row, column) in GetSelectedOrigins(grid, selection))
             grid[row][column].BackgroundColor = null;
 
-        await PersistGridAsync(grid);
+        if (await PersistGridAsync(grid))
+            PushUndoSnapshot(undoSnapshot);
     }
 
     private async Task UndoTableChangeAsync()
@@ -383,18 +424,35 @@ public partial class TmNotionTableBlock : ComponentBase
         if (_undoStack.Count == 0)
             return;
 
+        _redoStack.Push(CaptureRows());
         var snapshot = _undoStack.Pop();
-        foreach (var item in snapshot)
+        var candidateRows = RestoreRows(snapshot);
+        if (await SaveAggregateTableAsync(Block, candidateRows))
+            _rows = candidateRows;
+        else
         {
-            var index = _rows.FindIndex(row => row.Id == item.Row.Id);
-            if (index < 0)
-                continue;
-
-            var updated = BuildRowBlock(item.Row, BuildRowContent(item.Cells));
-            await Context.BlockProvider.UpdateBlockAsync(updated);
-            _rows[index] = updated;
+            _redoStack.Pop();
+            _undoStack.Push(snapshot);
         }
+        _selection = null;
+        StateHasChanged();
+    }
 
+    private async Task RedoTableChangeAsync()
+    {
+        if (_redoStack.Count == 0)
+            return;
+
+        _undoStack.Push(CaptureRows());
+        var snapshot = _redoStack.Pop();
+        var candidateRows = RestoreRows(snapshot);
+        if (await SaveAggregateTableAsync(Block, candidateRows))
+            _rows = candidateRows;
+        else
+        {
+            _undoStack.Pop();
+            _redoStack.Push(snapshot);
+        }
         _selection = null;
         StateHasChanged();
     }
@@ -413,14 +471,19 @@ public partial class TmNotionTableBlock : ComponentBase
             .Select(item => item.Row)
             .ToList();
 
-        _rows = [.. headerRows, .. bodyRows];
-
-        try
+        var candidateRows = headerRows.Concat(bodyRows)
+            .Select((row, index) =>
+                (IPageBlock)BuildRowBlock(
+                    row,
+                    (TableRowBlockContent)row.Content,
+                    index))
+            .ToList();
+        var undoSnapshot = CaptureRows();
+        if (await SaveAggregateTableAsync(Block, candidateRows))
         {
-            await Context.BlockProvider.ReorderBlocksAsync(Block.PageId.ToString(), _rows.Select(row => row.Id.ToString()));
+            _rows = candidateRows;
+            PushUndoSnapshot(undoSnapshot);
         }
-        catch { }
-
         StateHasChanged();
     }
 
@@ -464,14 +527,24 @@ public partial class TmNotionTableBlock : ComponentBase
             return;
         }
 
-        var row      = _rows[src];
-        _rows.RemoveAt(src);
+        var reorderedRows = _rows.ToList();
+        var row = reorderedRows[src];
+        reorderedRows.RemoveAt(src);
         var insertAt = src < tgt ? tgt - 1 : tgt;
-        _rows.Insert(Math.Max(0, Math.Min(insertAt, _rows.Count)), row);
+        reorderedRows.Insert(Math.Max(0, Math.Min(insertAt, reorderedRows.Count)), row);
 
-        var orderedIds = _rows.Select(r => r.Id.ToString()).ToList();
-        try { await Context.BlockProvider.ReorderBlocksAsync(Block.PageId.ToString(), orderedIds); }
-        catch { }
+        var candidateRows = reorderedRows.Select((candidate, index) =>
+                (IPageBlock)BuildRowBlock(
+                    candidate,
+                    (TableRowBlockContent)candidate.Content,
+                    index))
+            .ToList();
+        var undoSnapshot = CaptureRows();
+        if (await SaveAggregateTableAsync(Block, candidateRows))
+        {
+            _rows = candidateRows;
+            PushUndoSnapshot(undoSnapshot);
+        }
 
         StateHasChanged();
     }
@@ -484,12 +557,26 @@ public partial class TmNotionTableBlock : ComponentBase
         return Task.CompletedTask;
     }
 
-    private void PushUndoSnapshot()
+    private void PushUndoSnapshot(IReadOnlyList<RowSnapshot> snapshot)
     {
-        _undoStack.Push(_rows
-            .Select(row => new RowSnapshot(row, NormalizeRow(row).Select(cell => cell.Clone()).ToList()))
-            .ToList());
+        _undoStack.Push(snapshot.ToList());
+        _redoStack.Clear();
     }
+
+    private List<RowSnapshot> CaptureRows()
+        => _rows.Select(row =>
+                new RowSnapshot(
+                    row,
+                    NormalizeRow(row).Select(cell => cell.Clone()).ToList()))
+            .ToList();
+
+    private static List<IPageBlock> RestoreRows(IReadOnlyList<RowSnapshot> snapshot)
+        => snapshot.Select((item, index) =>
+                (IPageBlock)BuildRowBlock(
+                    item.Row,
+                    BuildRowContent(item.Cells),
+                    index))
+            .ToList();
 
     private List<List<NotionTableCell>> BuildGrid()
         => _rows.Select(NormalizeRow).ToList();
@@ -505,34 +592,33 @@ public partial class TmNotionTableBlock : ComponentBase
             return rich.Take(_columnCount).ToList();
         }
 
-        var legacy = content?.Cells ?? [];
         return Enumerable.Range(0, _columnCount)
-            .Select(index => new NotionTableCell
-            {
-                Html = index < legacy.Count ? legacy[index] : string.Empty
-            })
+            .Select(_ => new NotionTableCell())
             .ToList();
     }
 
-    private async Task PersistGridAsync(List<List<NotionTableCell>> grid)
+    private async Task<bool> PersistGridAsync(List<List<NotionTableCell>> grid)
     {
         if (!NotionTableGridValidator.TryValidate(grid, _columnCount, out _))
-            return;
+            return false;
 
-        for (var index = 0; index < Math.Min(_rows.Count, grid.Count); index++)
-        {
-            var updated = BuildRowBlock(_rows[index], BuildRowContent(grid[index]));
-            await Context.BlockProvider.UpdateBlockAsync(updated);
-            _rows[index] = updated;
-        }
-
+        var candidateRows = _rows
+            .Select((row, index) =>
+                (IPageBlock)BuildRowBlock(
+                    row,
+                    BuildRowContent(grid[index]),
+                    index))
+            .ToList();
+        var saved = await SaveAggregateTableAsync(Block, candidateRows);
+        if (saved)
+            _rows = candidateRows;
         StateHasChanged();
+        return saved;
     }
 
     private static TableRowBlockContent BuildRowContent(IReadOnlyList<NotionTableCell> cells)
         => new()
         {
-            Cells = cells.Select(cell => cell.IsMergeHidden ? string.Empty : cell.Html).ToList(),
             RichCells = cells.Select(cell => cell.Clone()).ToList()
         };
 
@@ -612,13 +698,104 @@ public partial class TmNotionTableBlock : ComponentBase
         }
     }
 
+    private static void RemoveGridColumn(
+        List<List<NotionTableCell>> grid,
+        int columnIndex)
+    {
+        var affectedOrigins = new HashSet<(int Row, int Column)>();
+        for (var row = 0; row < grid.Count; row++)
+        {
+            if (columnIndex < grid[row].Count)
+                affectedOrigins.Add(GetOrigin(grid, row, columnIndex));
+        }
+
+        foreach (var (originRow, originColumn) in affectedOrigins)
+        {
+            if (originRow < 0 ||
+                originRow >= grid.Count ||
+                originColumn < 0 ||
+                originColumn >= grid[originRow].Count)
+            {
+                continue;
+            }
+
+            var origin = grid[originRow][originColumn];
+            if (origin.IsMergeHidden || origin.ColSpan <= 1)
+                continue;
+
+            if (originColumn == columnIndex)
+            {
+                var moved = origin.Clone();
+                moved.ColSpan--;
+                moved.IsMergeHidden = false;
+                moved.MergeOriginRow = -1;
+                moved.MergeOriginColumn = -1;
+                grid[originRow][columnIndex + 1] = moved;
+            }
+            else
+            {
+                origin.ColSpan--;
+            }
+        }
+
+        foreach (var row in grid)
+        {
+            if (columnIndex < row.Count)
+                row.RemoveAt(columnIndex);
+        }
+
+        var origins = new List<(int Row, int Column, NotionTableCell Cell)>();
+        for (var row = 0; row < grid.Count; row++)
+        {
+            for (var column = 0; column < grid[row].Count; column++)
+            {
+                var cell = grid[row][column];
+                if (cell.IsMergeHidden)
+                {
+                    grid[row][column] = new NotionTableCell();
+                }
+                else
+                {
+                    origins.Add((row, column, cell));
+                }
+            }
+        }
+
+        foreach (var (originRow, originColumn, origin) in origins)
+        {
+            for (var row = originRow;
+                 row < Math.Min(grid.Count, originRow + Math.Max(1, origin.RowSpan));
+                 row++)
+            {
+                for (var column = originColumn;
+                     column < Math.Min(grid[row].Count, originColumn + Math.Max(1, origin.ColSpan));
+                     column++)
+                {
+                    if (row == originRow && column == originColumn)
+                        continue;
+
+                    grid[row][column] = new NotionTableCell
+                    {
+                        IsMergeHidden = true,
+                        MergeOriginRow = originRow,
+                        MergeOriginColumn = originColumn
+                    };
+                }
+            }
+        }
+    }
+
     private string GetSortText(IPageBlock row, int column)
     {
         var cells = NormalizeRow(row);
         if (column < 0 || column >= cells.Count)
             return string.Empty;
 
-        return WebUtility.HtmlDecode(StripHtml(cells[column].Html)).Trim();
+        var cell = cells[column];
+        var value = cell.Inlines.Count > 0
+            ? string.Concat(cell.Inlines.Select(inline => inline.Text))
+            : StripHtml(cell.Html);
+        return WebUtility.HtmlDecode(value).Trim();
     }
 
     private static string StripHtml(string html)
@@ -632,43 +809,20 @@ public partial class TmNotionTableBlock : ComponentBase
         HasHeaderRow     = _hasHeaderRow,
         HasHeaderColumn  = _hasHeaderColumn,
         ColumnCount      = _columnCount,
-        ColumnAlignments = [.. _columnAlignments]
+        ColumnAlignments = [.. _columnAlignments],
+        ColumnWidths = [.. _columnWidths]
     };
 
-    /// <summary>
-    /// Rows are addressed by Order. After a delete the remaining rows must close the gap, otherwise
-    /// a later insert lands on a duplicate order and the rows come back in a different sequence.
-    /// </summary>
-    private async Task RenumberRowsAsync()
-    {
-        for (var i = 0; i < _rows.Count; i++)
-        {
-            if (_rows[i].Order == i) continue;
-
-            var renumbered = new PageBlock
-            {
-                Id            = _rows[i].Id,
-                PageId        = _rows[i].PageId,
-                ParentBlockId = _rows[i].ParentBlockId,
-                Type          = _rows[i].Type,
-                Order         = i,
-                Content       = _rows[i].Content,
-                CreatedAt     = _rows[i].CreatedAt,
-                LastEditedAt  = DateTime.UtcNow
-            };
-
-            try { await Context.BlockProvider.UpdateBlockAsync(renumbered); _rows[i] = renumbered; }
-            catch { }
-        }
-    }
-
-    private static PageBlock BuildRowBlock(IPageBlock src, TableRowBlockContent content) => new()
+    private static PageBlock BuildRowBlock(
+        IPageBlock src,
+        TableRowBlockContent content,
+        int? order = null) => new()
     {
         Id            = src.Id,
         PageId        = src.PageId,
         ParentBlockId = src.ParentBlockId,
         Type          = src.Type,
-        Order         = src.Order,
+        Order         = order ?? src.Order,
         Content       = content,
         CreatedAt     = src.CreatedAt,
         LastEditedAt  = DateTime.UtcNow
@@ -685,6 +839,132 @@ public partial class TmNotionTableBlock : ComponentBase
         CreatedAt     = src.CreatedAt,
         LastEditedAt  = DateTime.UtcNow
     };
+
+    private async Task<bool> SaveAggregateTableAsync(
+        IPageBlock table,
+        IReadOnlyList<IPageBlock> rows)
+    {
+        var session = Context.AggregateSession;
+        if (session is null)
+            return false;
+        if (session.HasPendingConflict)
+        {
+            _hasConflict = true;
+            return false;
+        }
+
+        _saving = true;
+        _saveError = null;
+        try
+        {
+            var result = await session.ApplyAsync(snapshot =>
+                NotionCanonicalTableBridge.ReplaceTable(snapshot, table, rows));
+            _hasConflict = result.Conflict;
+            if (!result.Success && !result.Conflict)
+            {
+                _saveError = string.Join(
+                    Environment.NewLine,
+                    result.Issues.Select(issue => issue.Message));
+            }
+            return result.Success || result.Conflict;
+        }
+        catch (Exception ex)
+        {
+            _saveError = ex.Message;
+            return false;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task ReloadConflictAsync()
+    {
+        if (Context.AggregateSession is null)
+            return;
+        _saving = true;
+        _saveError = null;
+        try
+        {
+            var result = await Context.AggregateSession.ReloadAsync();
+            if (result.Success && result.Snapshot is not null)
+            {
+                var view = NotionCanonicalTableBridge.ToView(result.Snapshot, Block.Id);
+                ApplyAggregateView(view);
+                await OnUpdated.InvokeAsync(view.Table);
+                _hasConflict = false;
+                _undoStack.Clear();
+                _redoStack.Clear();
+            }
+            else
+            {
+                _saveError = FormatIssues(result.Issues);
+            }
+        }
+        catch (Exception ex)
+        {
+            _saveError = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+        StateHasChanged();
+    }
+
+    private async Task ReapplyConflictAsync()
+    {
+        if (Context.AggregateSession is null)
+            return;
+        _saving = true;
+        _saveError = null;
+        try
+        {
+            var result = await Context.AggregateSession.ReapplyAsync();
+            _hasConflict = Context.AggregateSession.HasPendingConflict;
+            if (result.Success && result.Snapshot is not null)
+            {
+                var view = NotionCanonicalTableBridge.ToView(result.Snapshot, Block.Id);
+                ApplyAggregateView(view);
+                await OnUpdated.InvokeAsync(view.Table);
+            }
+            else
+            {
+                _saveError = FormatIssues(result.Issues);
+            }
+        }
+        catch (Exception ex)
+        {
+            _saveError = ex.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
+        StateHasChanged();
+    }
+
+    private static string FormatIssues(IEnumerable<NotionAggregateIssue> issues)
+        => string.Join(Environment.NewLine, issues.Select(issue => issue.Message));
+
+    private void ApplyAggregateView((PageBlock Table, List<IPageBlock> Rows) view)
+    {
+        _rows = view.Rows;
+        if (view.Table.Content is not ITableBlockContent table)
+            return;
+
+        ApplyTableView(table);
+    }
+
+    private void ApplyTableView(ITableBlockContent table)
+    {
+        _columnCount = table.ColumnCount;
+        _hasHeaderRow = table.HasHeaderRow;
+        _hasHeaderColumn = table.HasHeaderColumn;
+        _columnAlignments = table.ColumnAlignments;
+        _columnWidths = table.ColumnWidths;
+    }
 
     private sealed record RowSnapshot(IPageBlock Row, IReadOnlyList<NotionTableCell> Cells);
 }

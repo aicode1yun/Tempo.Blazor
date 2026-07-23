@@ -42,12 +42,7 @@ public static class NotionBlockTools
         }
 
         var snapshot = load.Snapshot;
-        var validationIssues = NotionAggregateBaselineValidator.Validate(
-            new NotionAggregateWorkingSet(
-                new Dictionary<Guid, NotionPageSnapshot>
-                {
-                    [snapshot.Page.Id] = snapshot
-                }));
+        var validationIssues = NotionAggregateValidator.Validate([snapshot]);
         var allIssues = load.Issues.Concat(validationIssues).ToList();
         if (allIssues.Any(issue => issue.Severity == NotionIssueSeverity.Error))
         {

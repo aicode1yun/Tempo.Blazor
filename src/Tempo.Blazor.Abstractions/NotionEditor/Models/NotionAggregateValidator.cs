@@ -1,16 +1,22 @@
 using System.Text.Json;
 using Tempo.Blazor.NotionEditor.Enums;
-using Tempo.Blazor.NotionEditor.Models;
 
-namespace Tempo.Blazor.Mcp.Notion;
+namespace Tempo.Blazor.NotionEditor.Models;
 
-internal static class NotionAggregateBaselineValidator
+/// <summary>
+/// Validates canonical page aggregates before any atomic persistence boundary.
+/// MCP and interactive editor writes intentionally share this exact pipeline.
+/// </summary>
+public static class NotionAggregateValidator
 {
-    public static IReadOnlyList<NotionAggregateIssue> Validate(NotionAggregateWorkingSet workingSet)
+    /// <summary>Returns deterministic path-aware issues for complete page snapshots.</summary>
+    public static IReadOnlyList<NotionAggregateIssue> Validate(
+        IEnumerable<NotionPageSnapshot> snapshots)
     {
+        ArgumentNullException.ThrowIfNull(snapshots);
         var issues = new List<NotionAggregateIssue>();
         var globallySeenBlockIds = new HashSet<Guid>();
-        var pages = workingSet.Pages.Values.OrderBy(page => page.Page.Id).ToList();
+        var pages = snapshots.OrderBy(page => page.Page.Id).ToList();
 
         for (var pageIndex = 0; pageIndex < pages.Count; pageIndex++)
         {

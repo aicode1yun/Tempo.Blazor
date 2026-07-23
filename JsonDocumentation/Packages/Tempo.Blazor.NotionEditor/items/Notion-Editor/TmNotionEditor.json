@@ -21,6 +21,12 @@
       "description": "Block read/write provider — CRUD, reorder, convert and duplicate blocks."
     },
     {
+      "name": "AggregateProvider",
+      "type": "INotionAggregateProvider?",
+      "isRequired": false,
+      "description": "Canonical page aggregate provider for validated save-once table changes, structured multi-block paste, undo/redo, and optimistic conflict recovery. Without it, canonical tables remain safely readable but aggregate-only authoring controls are disabled."
+    },
+    {
       "name": "SearchProvider",
       "type": "INotionSearchProvider?",
       "isRequired": false,

@@ -1,0 +1,10 @@
+{
+  "itemName": "NotionEditorAggregateSaveResult",
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
+  "description": "Result of loading, validating, saving, reloading, or reapplying an interactive Notion page aggregate. Carries the current canonical snapshot plus structured validation and optimistic-concurrency details.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionEditorAggregateSession.cs",
+  "documentationStatus": "generated"
+}
