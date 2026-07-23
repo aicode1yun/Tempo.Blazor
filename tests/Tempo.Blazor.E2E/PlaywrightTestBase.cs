@@ -299,7 +299,7 @@ public abstract class PlaywrightTestBase
     protected async Task ToggleDarkModeAsync(IPage page)
     {
         // Find and click the theme toggle button
-        var themeToggle = page.Locator("[data-testid='theme-toggle'], button[aria-label*='theme' i], button[title*='dark' i]").First;
+        var themeToggle = page.Locator("[data-testid='theme-toggle']:visible, button[aria-label*='theme' i]:visible, button[title*='dark' i]:visible").First;
         await themeToggle.ClickAsync();
 
         // Wait for the dark class to be applied/removed

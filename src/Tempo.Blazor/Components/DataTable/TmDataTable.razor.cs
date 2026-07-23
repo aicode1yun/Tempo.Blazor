@@ -44,6 +44,21 @@ public partial class TmDataTable<TItem> : IDisposable
     /// <summary>Enables inline row editing (double-click a row). Requires editable columns with EditTemplate.</summary>
     [Parameter] public bool Editable { get; set; }
 
+    /// <summary>Whether to show the row edit action buttons. Defaults to <c>true</c>.</summary>
+    [Parameter] public bool ShowEditButtons { get; set; } = true;
+
+    /// <summary>Fires when a row enters inline edit mode.</summary>
+    [Parameter] public EventCallback<TItem> OnRowEditStart { get; set; }
+
+    /// <summary>Fires after a valid row edit is saved.</summary>
+    [Parameter] public EventCallback<TItem> OnRowSave { get; set; }
+
+    /// <summary>
+    /// Fires when a row edit is cancelled. The callback receives the edited item; restoring its
+    /// original values is the consuming application's responsibility.
+    /// </summary>
+    [Parameter] public EventCallback<TItem> OnRowEditCancel { get; set; }
+
     /// <summary>
     /// Invoked to persist a committed row edit. Return false to keep the row in edit mode
     /// (for example when a server rejected the change). When null, the edit commits locally.
@@ -61,20 +76,36 @@ public partial class TmDataTable<TItem> : IDisposable
     [Parameter] public RenderFragment? RowEditValidator { get; set; }
 
     private int _editingRowIndex = -1;
-    private bool AnyEditableColumn => _columns.Any(c => c.Editable);
+    private bool AnyEditableColumn => _columns.Any(c => c.Editable && c.EditTemplate is not null);
+    private bool HasEditActions => Editable
+        && ShowEditButtons
+        && AnyEditableColumn
+        && ScrollMode != DataTableScrollMode.Virtualized
+        && _groupByColumns.Count == 0;
 
     // Editing is tracked by row index (not item value) so value-equal duplicate rows do not all
     // enter edit mode together, and value-type TItem does not falsely match default(TItem).
     private bool IsEditingRow(int rowIndex) => _editingRowIndex == rowIndex && _editContext is not null;
 
-    private void StartEditAt(int rowIndex, TItem item)
+    private void SetEditingRow(int rowIndex, TItem item)
     {
-        if (!Editable || !AnyEditableColumn) return;
         _editingRowIndex = rowIndex;
         _editingItem = item;
         _editContext = new EditContext(item!);
         _editHasErrors = false;
+    }
+
+    private async Task StartEditAtAsync(int rowIndex, TItem item)
+    {
+        if (!Editable || !AnyEditableColumn) return;
+        if (_editContext is not null && _editingRowIndex != rowIndex)
+        {
+            await CancelEditAsync();
+        }
+
+        SetEditingRow(rowIndex, item);
         StateHasChanged();
+        await OnRowEditStart.InvokeAsync(item);
     }
 
     /// <summary>Begins inline editing of a row (host-triggered equivalent of a double-click).</summary>
@@ -83,7 +114,7 @@ public partial class TmDataTable<TItem> : IDisposable
         var index = _displayedItems.FindIndex(x => EqualityComparer<TItem>.Default.Equals(x, item));
         if (index >= 0)
         {
-            StartEditAt(index, item);
+            _ = InvokeAsync(() => StartEditAtAsync(index, item));
         }
     }
 
@@ -102,6 +133,7 @@ public partial class TmDataTable<TItem> : IDisposable
         var committed = OnRowCommit is null || await OnRowCommit(item);
         if (committed)
         {
+            await OnRowSave.InvokeAsync(item);
             _editingItem = default;
             _editContext = null;
             _editingRowIndex = -1;
@@ -118,12 +150,12 @@ public partial class TmDataTable<TItem> : IDisposable
         _editContext = null;
         _editingRowIndex = -1;
         _editHasErrors = false;
+        StateHasChanged();
         if (item is not null)
         {
+            await OnRowEditCancel.InvokeAsync(item);
             await OnRowEditCancelled.InvokeAsync(item);
         }
-
-        StateHasChanged();
     }
 
     private Task HandleEditKeyDownAsync(KeyboardEventArgs e)
@@ -488,7 +520,7 @@ public partial class TmDataTable<TItem> : IDisposable
 
     private bool IsAllSelected => _displayedItems.Count > 0 && _displayedItems.All(IsSelected);
     private bool IsSelected(TItem item) => _selectedItems.Contains(item);
-    private int ColSpan => Math.Max(1, (HasDetail ? 1 : 0) + (Selectable ? 1 : 0) + _visibleColumns.Count);
+    private int ColSpan => Math.Max(1, (HasDetail ? 1 : 0) + (Selectable ? 1 : 0) + _visibleColumns.Count + (HasEditActions ? 1 : 0));
     /// <summary>
     /// Attribute names the table manages itself on each &lt;tr&gt;. A consumer <see cref="RowAttributes"/>
     /// dictionary must not override these, or it would clobber row styling, selection clicks, keyboard

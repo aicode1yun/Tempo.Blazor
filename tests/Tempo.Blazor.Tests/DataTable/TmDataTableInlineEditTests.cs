@@ -23,13 +23,19 @@ public class TmDataTableInlineEditTests : LocalizationTestBase
     private IRenderedComponent<TmDataTable<EditablePerson>> Render(
         List<EditablePerson> items,
         Func<EditablePerson, Task<bool>>? onCommit = null,
-        bool editable = true)
+        bool editable = true,
+        Action<EditablePerson>? onEditStart = null,
+        Action<EditablePerson>? onSave = null,
+        Action<EditablePerson>? onEditCancel = null)
         => Render<TmDataTable<EditablePerson>>(p =>
         {
             p.Add(c => c.ViewContext, "edit-test");
             p.Add(c => c.Editable, editable);
             p.Add(c => c.Items, items);
             if (onCommit is not null) p.Add(c => c.OnRowCommit, onCommit);
+            if (onEditStart is not null) p.Add(c => c.OnRowEditStart, onEditStart);
+            if (onSave is not null) p.Add(c => c.OnRowSave, onSave);
+            if (onEditCancel is not null) p.Add(c => c.OnRowEditCancel, onEditCancel);
             p.Add(c => c.RowEditValidator, (RenderFragment)(b =>
             {
                 b.OpenComponent<DataAnnotationsValidator>(0);
@@ -42,7 +48,8 @@ public class TmDataTableInlineEditTests : LocalizationTestBase
                 b.AddAttribute(seq++, "Title", "Name");
                 b.AddAttribute(seq++, "Field", (Func<EditablePerson, object?>)(x => x.Name));
                 b.AddAttribute(seq++, "Editable", true);
-                b.AddAttribute(seq++, "EditTemplate", (RenderFragment<EditablePerson>)(item => b2 => b2.AddContent(0, item.Name)));
+                b.AddAttribute(seq++, "EditTemplate", (RenderFragment<EditablePerson>)(item => b2 =>
+                    b2.AddMarkupContent(0, $"<input class=\"name-editor\" value=\"{item.Name}\" />")));
                 b.CloseComponent();
                 b.OpenComponent<TmDataTableColumn<EditablePerson>>(seq++);
                 b.AddAttribute(seq++, "Title", "Age");
@@ -54,12 +61,47 @@ public class TmDataTableInlineEditTests : LocalizationTestBase
     [Fact]
     public void DoubleClickRow_EntersEditMode()
     {
-        var cut = Render([new EditablePerson { Name = "Ann", Age = 30 }]);
+        var person = new EditablePerson { Name = "Ann", Age = 30 };
+        EditablePerson? started = null;
+        var cut = Render([person], onEditStart: item => started = item);
 
         cut.FindAll("tbody tr")[0].TriggerEvent("ondblclick", new MouseEventArgs());
 
-        cut.FindAll("[data-testid='row-editing']").Should().ContainSingle();
+        cut.FindAll(".tm-data-table-row--editing").Should().ContainSingle();
+        cut.FindAll(".tm-data-table-cell--editing .name-editor").Should().ContainSingle();
+        cut.Find(".tm-data-table-row--editing").TextContent.Should().Contain("30");
         cut.FindAll("[data-testid='edit-commit']").Should().ContainSingle();
+        started.Should().BeSameAs(person);
+    }
+
+    [Fact]
+    public void EditButton_UsesLocalizedLabel_AndEntersEditMode()
+    {
+        var cut = Render([new EditablePerson { Name = "Ann", Age = 30 }]);
+
+        cut.Find("button[aria-label='Edit row']").Click();
+
+        cut.FindAll(".tm-data-table-row--editing").Should().ContainSingle();
+        cut.Find("button[aria-label='Save']").Should().NotBeNull();
+        cut.Find("button[aria-label='Cancel']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void StartingAnotherRow_LeavesOnlyThatRowEditing()
+    {
+        EditablePerson? cancelled = null;
+        var cut = Render([
+            new EditablePerson { Name = "Ann", Age = 30 },
+            new EditablePerson { Name = "Bob", Age = 40 }
+        ], onEditCancel: item => cancelled = item);
+
+        cut.FindAll("tbody tr")[0].TriggerEvent("ondblclick", new MouseEventArgs());
+        cut.Find("button[aria-label='Edit row']").Click();
+
+        cut.FindAll(".tm-data-table-row--editing").Should().ContainSingle();
+        cut.Find(".tm-data-table-row--editing .name-editor").GetAttribute("value").Should().Be("Bob");
+        cancelled.Should().NotBeNull();
+        cancelled!.Name.Should().Be("Ann");
     }
 
     [Fact]
@@ -70,6 +112,7 @@ public class TmDataTableInlineEditTests : LocalizationTestBase
         cut.FindAll("tbody tr")[0].TriggerEvent("ondblclick", new MouseEventArgs());
 
         cut.FindAll("[data-testid='row-editing']").Should().BeEmpty();
+        cut.FindAll("button[aria-label='Edit row']").Should().BeEmpty();
     }
 
     [Fact]
@@ -101,6 +144,54 @@ public class TmDataTableInlineEditTests : LocalizationTestBase
 
         committed.Should().BeSameAs(person);
         cut.FindAll("[data-testid='row-editing']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Enter_SavesAndExitsEditMode()
+    {
+        var person = new EditablePerson { Name = "Ann", Age = 30 };
+        EditablePerson? saved = null;
+        var cut = Render([person], onSave: item => saved = item);
+
+        cut.Find("button[aria-label='Edit row']").Click();
+        cut.Find(".tm-data-table-row--editing").KeyDown(Key.Enter);
+
+        saved.Should().BeSameAs(person);
+        cut.FindAll(".tm-data-table-row--editing").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Escape_CancelsAndExitsEditMode()
+    {
+        var person = new EditablePerson { Name = "Ann", Age = 30 };
+        EditablePerson? cancelled = null;
+        var cut = Render([person], onEditCancel: item => cancelled = item);
+
+        cut.Find("button[aria-label='Edit row']").Click();
+        cut.Find(".tm-data-table-row--editing").KeyDown(Key.Escape);
+
+        cancelled.Should().BeSameAs(person);
+        cut.FindAll(".tm-data-table-row--editing").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void SaveAndCancelButtons_InvokeTheirCallbacks()
+    {
+        var person = new EditablePerson { Name = "Ann", Age = 30 };
+        var saveCount = 0;
+        var cancelCount = 0;
+        var cut = Render(
+            [person],
+            onSave: _ => saveCount++,
+            onEditCancel: _ => cancelCount++);
+
+        cut.Find("button[aria-label='Edit row']").Click();
+        cut.Find("button[aria-label='Save']").Click();
+        cut.Find("button[aria-label='Edit row']").Click();
+        cut.Find("button[aria-label='Cancel']").Click();
+
+        saveCount.Should().Be(1);
+        cancelCount.Should().Be(1);
     }
 
     [Fact]

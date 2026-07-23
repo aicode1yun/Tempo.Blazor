@@ -57,7 +57,7 @@ public class DataTableErgonomicsE2ETests : WasmTestBase
 
     [TestMethod]
     [TestCategory("WASM")]
-    public async Task DataTable_InlineEdit_EntersEditModeOnDoubleClick()
+    public async Task DataTable_InlineEdit_ActionsKeyboardAndSingleRowMode_WorkInLightAndDarkThemes()
     {
         var page = await OpenPageAsync();
 
@@ -65,12 +65,32 @@ public class DataTableErgonomicsE2ETests : WasmTestBase
         await section.WaitForAsync(new LocatorWaitForOptions { Timeout = 30000 });
         await section.ScrollIntoViewIfNeededAsync();
 
-        await section.Locator("tbody tr").First.DblClickAsync();
+        var editButtons = section.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Edit row" });
+        Assert.AreEqual(3, await editButtons.CountAsync(), "Every editable row should expose an accessible Edit row action.");
+        await editButtons.First.ClickAsync();
 
-        var editing = section.Locator("[data-testid='row-editing']");
+        var editing = section.Locator(".tm-data-table-row--editing");
         await editing.WaitForAsync(new LocatorWaitForOptions { Timeout = 15000 });
-        await section.Locator("[data-testid='edit-commit']").WaitForAsync(new LocatorWaitForOptions { Timeout = 10000 });
-        await SaveScreenshotAsync(page, "inline-edit");
+        Assert.AreEqual(1, await editing.CountAsync(), "Only one row may be edited at a time.");
+        await section.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Save" }).WaitForAsync();
+        await section.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Cancel" }).WaitForAsync();
+
+        // Starting a second row replaces the active edit row instead of leaving two editing rows.
+        await section.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Edit row" }).First.ClickAsync();
+        Assert.AreEqual(1, await editing.CountAsync(), "Starting another row must preserve the single-row edit invariant.");
+        Assert.AreEqual("Alan Turing", await editing.Locator("input").First.InputValueAsync());
+
+        await SaveElementScreenshotAsync(section, "inline-edit-actions-light");
+        await ToggleDarkModeAsync(page);
+        await SaveElementScreenshotAsync(section, "inline-edit-actions-dark");
+
+        await editing.Locator("input").First.PressAsync("Escape");
+        await Assertions.Expect(editing).ToHaveCountAsync(0);
+
+        await section.Locator("tbody tr").First.DblClickAsync();
+        await Assertions.Expect(editing).ToHaveCountAsync(1);
+        await editing.Locator("input").First.PressAsync("Enter");
+        await Assertions.Expect(editing).ToHaveCountAsync(0);
     }
 
     private static async Task SaveScreenshotAsync(IPage page, string fileName)
@@ -79,6 +99,14 @@ public class DataTableErgonomicsE2ETests : WasmTestBase
             "tests", "Tempo.Blazor.E2E", "__screenshots__", "data-table");
         Directory.CreateDirectory(dir);
         await page.ScreenshotAsync(new PageScreenshotOptions { Path = Path.Combine(dir, $"{fileName}.png"), FullPage = true });
+    }
+
+    private static async Task SaveElementScreenshotAsync(ILocator locator, string fileName)
+    {
+        var dir = Path.Combine(FindRepoRoot().FullName,
+            "tests", "Tempo.Blazor.E2E", "__screenshots__", "data-table");
+        Directory.CreateDirectory(dir);
+        await locator.ScreenshotAsync(new LocatorScreenshotOptions { Path = Path.Combine(dir, $"{fileName}.png") });
     }
 
     private static DirectoryInfo FindRepoRoot()

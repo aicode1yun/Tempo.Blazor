@@ -188,6 +188,10 @@
                                 }
                             </th>
                         }
+                        @if (HasEditActions)
+                        {
+                            <th class="tm-data-table__edit-actions" aria-hidden="true"></th>
+                        }
                     </tr>
                     @if (_visibleColumns.Any(c => c.Filterable))
                     {
@@ -206,6 +210,7 @@
                                     }
                                 </th>
                             }
+                            @if (HasEditActions) { <th class="tm-data-table__edit-actions" aria-hidden="true"></th> }
                         </tr>
                     }
                 </thead>
@@ -296,7 +301,7 @@
                         @if (Editable && IsEditingRow(currentRowIndex))
                         {
                             <CascadingValue Value="_editContext" IsFixed="false">
-                                <tr class="tm-row-editing" data-testid="@TestId("row-editing")" @onkeydown="HandleEditKeyDownAsync">
+                                <tr class="tm-row-editing tm-data-table-row--editing" data-testid="@TestId("row-editing")" @onkeydown="HandleEditKeyDownAsync">
                                     @if (HasDetail)
                                     {
                                         <td class="tm-col-expander"></td>
@@ -307,7 +312,15 @@
                                     }
                                     @foreach (var col in _visibleColumns)
                                     {
-                                        <td class="@GetCellClass(col)" style="@GetColumnStyle(col)" data-label="@(CardMode ? col.Title : null)">
+                                        <td class="@GetCellClass(col) @(col.Editable && col.EditTemplate is not null ? "tm-data-table-cell--editing" : null)" style="@GetColumnStyle(col)" data-label="@(CardMode ? col.Title : null)">
+                                            @if (!HasEditActions && ReferenceEquals(col, _visibleColumns[0]))
+                                            {
+                                                @RowEditValidator
+                                                @if (_editHasErrors)
+                                                {
+                                                    <span class="tm-row-edit-error" data-testid="@TestId("edit-error")">@Loc["TmDataTable_EditInvalid"]</span>
+                                                }
+                                            }
                                             @if (col.Editable && col.EditTemplate is not null)
                                             {
                                                 @col.EditTemplate(rowItem)
@@ -322,19 +335,32 @@
                                             }
                                         </td>
                                     }
-                                </tr>
-                                <tr class="tm-row-edit-actions">
-                                    <td colspan="@ColSpan">
-                                        @RowEditValidator
-                                        @if (_editHasErrors)
-                                        {
-                                            <span class="tm-row-edit-error" data-testid="@TestId("edit-error")">@Loc["TmDataTable_EditInvalid"]</span>
-                                        }
-                                        <button type="button" class="tm-data-table-edit-save" data-testid="@TestId("edit-commit")"
-                                                @onclick="CommitEditAsync">@Loc["TmDataTable_Save"]</button>
-                                        <button type="button" class="tm-data-table-edit-cancel" data-testid="@TestId("edit-cancel")"
-                                                @onclick="CancelEditAsync">@Loc["TmDataTable_Cancel"]</button>
-                                    </td>
+                                    @if (HasEditActions)
+                                    {
+                                        <td class="tm-data-table__edit-actions">
+                                            @RowEditValidator
+                                            @if (_editHasErrors)
+                                            {
+                                                <span class="tm-row-edit-error" data-testid="@TestId("edit-error")">@Loc["TmDataTable_EditInvalid"]</span>
+                                            }
+                                            <button type="button" class="tm-data-table__edit-action tm-data-table__edit-action--save"
+                                                    aria-label="@Loc["TmDataTable_SaveRow"]" title="@Loc["TmDataTable_SaveRow"]"
+                                                    data-testid="@TestId("edit-commit")"
+                                                    @onkeydown:stopPropagation="true"
+                                                    @onclick:stopPropagation="true"
+                                                    @onclick="CommitEditAsync">
+                                                <TmIcon Name="save" />
+                                            </button>
+                                            <button type="button" class="tm-data-table__edit-action tm-data-table__edit-action--cancel"
+                                                    aria-label="@Loc["TmDataTable_CancelEdit"]" title="@Loc["TmDataTable_CancelEdit"]"
+                                                    data-testid="@TestId("edit-cancel")"
+                                                    @onkeydown:stopPropagation="true"
+                                                    @onclick:stopPropagation="true"
+                                                    @onclick="CancelEditAsync">
+                                                <TmIcon Name="x" />
+                                            </button>
+                                        </td>
+                                    }
                                 </tr>
                             </CascadingValue>
                         }
@@ -342,7 +368,7 @@
                         {
                             <tr class="@GetRowClass(rowItem)"
                                 tabindex="0"
-                                @ondblclick="() => StartEditAt(currentRowIndex, rowItem)"
+                                @ondblclick="() => StartEditAtAsync(currentRowIndex, rowItem)"
                                 @onclick="() => HandleRowClickAsync(rowItem)"
                                 @onkeydown="e => HandleRowKeyDownAsync(e, rowItem)"
                                 @attributes="GetRowAttributes(rowItem)">
@@ -380,6 +406,18 @@
                                         {
                                             @col.Field?.Invoke(rowItem)
                                         }
+                                    </td>
+                                }
+                                @if (HasEditActions)
+                                {
+                                    <td class="tm-data-table__edit-actions">
+                                        <button type="button" class="tm-data-table__edit-action tm-data-table__edit-action--start"
+                                                aria-label="@Loc["TmDataTable_EditRow"]" title="@Loc["TmDataTable_EditRow"]"
+                                                @onkeydown:stopPropagation="true"
+                                                @onclick:stopPropagation="true"
+                                                @onclick="() => StartEditAtAsync(currentRowIndex, rowItem)">
+                                            <TmIcon Name="edit" />
+                                        </button>
                                     </td>
                                 }
                             </tr>
