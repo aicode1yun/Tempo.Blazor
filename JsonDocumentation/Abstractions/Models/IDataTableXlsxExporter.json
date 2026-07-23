@@ -1,0 +1,10 @@
+{
+  "kind": "Interface",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Optional service contract for producing XLSX bytes without adding an Open XML dependency to the core component package.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableExport.cs",
+  "documentationStatus": "generated",
+  "itemName": "IDataTableXlsxExporter"
+}

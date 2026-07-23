@@ -52,6 +52,30 @@
                                    CurrentUserId="CurrentUserId"
                                    CurrentTenantId="CurrentTenantId" />
                 }
+                @if (ShouldRenderExport())
+                {
+                    <div class="tm-data-table__export">
+                        <TmDropdown Text="@(_isExporting ? Loc["TmDataTable_Exporting"] : Loc["TmDataTable_Export"])"
+                                    Icon="@IconNames.Download"
+                                    Disabled="_isExporting"
+                                    Class="tm-data-table__export-control"
+                                    OnSelect="HandleExportSelectionAsync">
+                            <TmDropdownItem Value="csv"
+                                            Class="tm-data-table__export-item"
+                                            AdditionalAttributes="@(new Dictionary<string, object> { ["data-export-format"] = "csv" })">
+                                @Loc["TmDataTable_ExportCsv"]
+                            </TmDropdownItem>
+                            @if (XlsxExporter is not null)
+                            {
+                                <TmDropdownItem Value="xlsx"
+                                                Class="tm-data-table__export-item"
+                                                AdditionalAttributes="@(new Dictionary<string, object> { ["data-export-format"] = "xlsx" })">
+                                    @Loc["TmDataTable_ExportXlsx"]
+                                </TmDropdownItem>
+                            }
+                        </TmDropdown>
+                    </div>
+                }
             </div>
         </div>
     }

@@ -22,17 +22,16 @@
     <div class="showcase-card">
         <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
             Drag the column edges to resize, use the header pin toggle to freeze columns left/right (persisted via a layout store),
-            Shift+click headers to sort by multiple columns, expand a row for detail, and export the full filtered/sorted set to CSV or XLSX.
+            Shift+click headers to sort by multiple columns, expand a row for detail, and export the full filtered/sorted set to CSV.
+            A registered optional exporter adds XLSX to the same menu.
         </p>
-        <div class="flex items-center gap-2 mb-3">
-            <button class="tm-btn-primary" data-testid="dt-export-csv" @onclick="ExportCsvAsync">Export CSV</button>
-            <button class="tm-btn-secondary" data-testid="dt-export-xlsx" @onclick="ExportXlsxAsync">Export XLSX</button>
-        </div>
-        <TmDataTable @ref="_ergoTable" TItem="Employee"
+        <TmDataTable TItem="Employee"
                      Items="_employees"
                      ViewContext="ergonomics-demo"
                      LayoutStore="_layoutStore"
                      OnLoadDetail="LoadEmployeeDetailAsync"
+                     ShowExport="true"
+                     CsvDelimiter=";"
                      DefaultPageSize="8">
             <ChildContent>
                 <TmDataTableColumn TItem="Employee" Title="Name" PropertyName="Name" Field="e => e.Name"
@@ -605,13 +604,7 @@
     private record Employee(string Name, string Role, string Dept, int Score, string Email = "", int Id = 0, int? ManagerId = null);
 
     // ── K2 ergonomics demo (pin/resize/multi-sort/master-detail/export) ──
-    private TmDataTable<Employee>? _ergoTable;
     private readonly InMemoryDataTableLayoutStore _layoutStore = new();
-    private readonly CsvDataTableExporter _csvExporter = new();
-    private readonly XlsxDataTableExporter _xlsxExporter = new();
-
-    private Task ExportCsvAsync() => _ergoTable?.ExportAsync(_csvExporter, "employees.csv") ?? Task.CompletedTask;
-    private Task ExportXlsxAsync() => _ergoTable?.ExportAsync(_xlsxExporter, "employees.xlsx") ?? Task.CompletedTask;
     private static Task LoadEmployeeDetailAsync(Employee _) => Task.CompletedTask; // demo: detail already in the row
 
     // ── K2 inline-edit demo (mutable model + DataAnnotations) ──

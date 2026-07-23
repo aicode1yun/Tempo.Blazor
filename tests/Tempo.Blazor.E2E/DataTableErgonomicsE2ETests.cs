@@ -48,12 +48,32 @@ public class DataTableErgonomicsE2ETests : WasmTestBase
         Assert.AreEqual(2, await badges.CountAsync(), "Two columns should show sort-precedence badges.");
         await SaveScreenshotAsync(page, "ergonomics-pin-multisort");
 
-        // Export CSV triggers a browser download.
+        // The optional XLSX entry is absent until an IDataTableXlsxExporter is registered.
+        var exportTrigger = section.Locator(".tm-data-table__export .tm-dropdown-trigger");
+        await exportTrigger.ClickAsync();
+        await Assertions.Expect(section.Locator("[data-export-format='csv']")).ToBeVisibleAsync();
+        await Assertions.Expect(section.Locator("[data-export-format='xlsx']")).ToHaveCountAsync(0);
+        await SaveElementScreenshotAsync(section, "csv-export-menu-light");
+        await ToggleDarkModeAsync(page);
+        await SaveElementScreenshotAsync(section, "csv-export-menu-dark");
+
+        // Close and reopen the menu to exercise the keyboard edge case before downloading.
+        await exportTrigger.PressAsync("Escape");
+        await Assertions.Expect(section.Locator("[data-export-format='csv']")).ToHaveCountAsync(0);
+        await exportTrigger.ClickAsync();
+
+        // CSV export includes the full result set rather than only the visible 8-row page.
         var download = await page.RunAndWaitForDownloadAsync(async () =>
         {
-            await section.Locator("[data-testid='dt-export-csv']").ClickAsync();
+            await section.Locator("[data-export-format='csv']").ClickAsync();
         });
-        StringAssert.EndsWith(download.SuggestedFilename, ".csv");
+        Assert.AreEqual("ergonomics-demo.csv", download.SuggestedFilename);
+        var path = await download.PathAsync();
+        Assert.IsNotNull(path);
+        var bytes = await File.ReadAllBytesAsync(path);
+        CollectionAssert.AreEqual(new byte[] { 0xEF, 0xBB, 0xBF }, bytes.Take(3).ToArray());
+        Assert.IsTrue(File.ReadAllLines(path).Length > 9,
+            "CSV should contain a header and more rows than the visible 8-row page.");
     }
 
     [TestMethod]

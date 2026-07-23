@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Describes a successfully generated and downloaded data-table export.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableExport.cs",
+  "documentationStatus": "generated",
+  "itemName": "DataTableExportResult"
+}

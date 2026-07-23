@@ -1,0 +1,10 @@
+{
+  "kind": "Enum",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Built-in export formats supported by TmDataTable.",
+  "packageId": "Tempo.Blazor.Abstractions",
+  "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableExport.cs",
+  "documentationStatus": "generated",
+  "itemName": "DataTableExportFormat"
+}

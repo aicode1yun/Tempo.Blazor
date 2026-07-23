@@ -35,3 +35,34 @@ public interface IDataTableExporter
     /// <param name="data">Headers and rows to export.</param>
     byte[] Export(DataTableExportData data);
 }
+
+/// <summary>Built-in export formats supported by <c>TmDataTable</c>.</summary>
+public enum DataTableExportFormat
+{
+    /// <summary>Comma-separated values encoded as UTF-8 with a byte-order mark.</summary>
+    Csv,
+
+    /// <summary>Office Open XML workbook supplied by the optional XLSX exporter service.</summary>
+    Xlsx
+}
+
+/// <summary>Describes a successfully generated and downloaded data-table export.</summary>
+/// <param name="Format">Generated file format.</param>
+/// <param name="FileName">Browser download file name.</param>
+/// <param name="RowCount">Number of exported data rows, excluding the header.</param>
+public sealed record DataTableExportResult(
+    DataTableExportFormat Format,
+    string FileName,
+    int RowCount);
+
+/// <summary>
+/// Optional service contract for producing XLSX bytes without adding an Open XML dependency to
+/// the core component package.
+/// </summary>
+public interface IDataTableXlsxExporter
+{
+    /// <summary>Serializes the supplied table snapshot as an XLSX workbook.</summary>
+    /// <param name="data">Visible headers and all filtered/sorted rows.</param>
+    /// <returns>Complete XLSX file bytes.</returns>
+    byte[] Export(DataTableExportData data);
+}

@@ -16,6 +16,7 @@ namespace Tempo.Blazor.Components.DataTable;
 public partial class TmDataTable<TItem> : IDisposable
 {
     [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private IServiceProvider ServiceProvider { get; set; } = default!;
 
     // ── Column layout state (pin + width; runtime overrides of column defaults) ──
     private readonly Dictionary<string, int> _columnWidths = new(StringComparer.Ordinal);
@@ -208,6 +209,19 @@ public partial class TmDataTable<TItem> : IDisposable
 
     // ── Export ────────────────────────────────────────────────────
 
+    private bool _isExporting;
+    private IDataTableXlsxExporter? XlsxExporter =>
+        ServiceProvider.GetService(typeof(IDataTableXlsxExporter)) as IDataTableXlsxExporter;
+
+    /// <summary>Shows the export format dropdown in the table toolbar. Defaults to <c>false</c>.</summary>
+    [Parameter] public bool ShowExport { get; set; }
+
+    /// <summary>Delimiter used by the built-in CSV export. Defaults to a comma.</summary>
+    [Parameter] public string CsvDelimiter { get; set; } = ",";
+
+    /// <summary>Fires after an export has been generated and handed to the browser download API.</summary>
+    [Parameter] public EventCallback<DataTableExportResult> OnExportCompleted { get; set; }
+
     private async Task<IReadOnlyList<TItem>> GatherAllRowsAsync()
     {
         if (DataProvider is not null)
@@ -280,6 +294,62 @@ public partial class TmDataTable<TItem> : IDisposable
         }
         catch { /* JS unavailable (e.g. tests) */ }
     }
+
+    /// <summary>
+    /// Exports all rows matching the current filter and sort in a built-in format and triggers a
+    /// streamed browser download.
+    /// </summary>
+    /// <param name="format">CSV, or XLSX when an <see cref="IDataTableXlsxExporter"/> is registered.</param>
+    public async Task ExportAsync(DataTableExportFormat format)
+    {
+        if (format is not DataTableExportFormat.Csv and not DataTableExportFormat.Xlsx)
+        {
+            throw new ArgumentOutOfRangeException(nameof(format), format, null);
+        }
+
+        if (_isExporting)
+        {
+            return;
+        }
+
+        var xlsxExporter = format == DataTableExportFormat.Xlsx ? XlsxExporter : null;
+        if (format == DataTableExportFormat.Xlsx && xlsxExporter is null)
+        {
+            return;
+        }
+
+        _isExporting = true;
+        StateHasChanged();
+        try
+        {
+            var data = await BuildExportDataAsync();
+            var bytes = format switch
+            {
+                DataTableExportFormat.Csv => new CsvDataTableExporter(CsvDelimiter, writeBom: true).Export(data),
+                DataTableExportFormat.Xlsx => xlsxExporter!.Export(data),
+                _ => throw new ArgumentOutOfRangeException(nameof(format), format, null)
+            };
+            var extension = format == DataTableExportFormat.Csv ? "csv" : "xlsx";
+            var fileName = $"{ViewContext}.{extension}";
+
+            await using var stream = new MemoryStream(bytes, writable: false);
+            using var streamReference = new DotNetStreamReference(stream);
+            await JS.InvokeVoidAsync("TempoFileManager.downloadFileFromStream", fileName, streamReference);
+            await OnExportCompleted.InvokeAsync(new DataTableExportResult(format, fileName, data.Rows.Count));
+        }
+        finally
+        {
+            _isExporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private Task HandleExportSelectionAsync(string format) => format switch
+    {
+        "csv" => ExportAsync(DataTableExportFormat.Csv),
+        "xlsx" => ExportAsync(DataTableExportFormat.Xlsx),
+        _ => Task.CompletedTask
+    };
     // ── Column registry ──────────────────────────────────────────
     private readonly List<TmDataTableColumn<TItem>> _columns = [];
     private readonly List<TmDataTableColumn<TItem>> _visibleColumns = [];
@@ -596,7 +666,8 @@ public partial class TmDataTable<TItem> : IDisposable
     private bool HasVisibleToolbarControls() =>
         ShouldRenderSearch() ||
         ShouldRenderColumnPicker() ||
-        ShouldRenderViewManager();
+        ShouldRenderViewManager() ||
+        ShouldRenderExport();
 
     private bool IsFullToolbarMode => ToolbarMode == DataToolbarMode.Full;
     private bool IsSearchToolbarMode => ToolbarMode == DataToolbarMode.SearchOnly;
@@ -620,6 +691,12 @@ public partial class TmDataTable<TItem> : IDisposable
         !IsSearchToolbarMode &&
         ViewProvider is not null &&
         (IsActionsToolbarMode || (IsFullToolbarMode && ShowViewManager));
+
+    /// <summary>True when the export action should be rendered.</summary>
+    private bool ShouldRenderExport() =>
+        ShowExport &&
+        !IsContentToolbarMode &&
+        !IsSearchToolbarMode;
 
     /// <summary>True when the external filter builder should be rendered.</summary>
     private bool ShouldRenderExternalFilterBuilder() =>

@@ -12819,6 +12819,26 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "DataTableExportFormat",
+      "kind": "Enum",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Built-in export formats supported by TmDataTable.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableExport.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "DataTableExportResult",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Describes a successfully generated and downloaded data-table export.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableExport.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DataTableFilter",
       "kind": "Record",
       "category": "Models",
@@ -15221,6 +15241,16 @@
       "category": "Models",
       "namespace": "Tempo.Blazor.Models",
       "description": "Serializes a DataTableExportData snapshot into a downloadable document (for example CSV or XLSX). Implementations are format-specific and stateless.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableExport.cs",
+      "documentationStatus": "merged"
+    },
+    {
+      "itemName": "IDataTableXlsxExporter",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Optional service contract for producing XLSX bytes without adding an Open XML dependency to the core component package.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/Models/DataTableExport.cs",
       "documentationStatus": "merged"
@@ -35441,11 +35471,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1437,
-    "manualItemCount": 1437,
-    "generatedItemCount": 1420,
+    "itemCount": 1440,
+    "manualItemCount": 1440,
+    "generatedItemCount": 1423,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1420
+    "publicApiTypeCount": 1423
   }
 }

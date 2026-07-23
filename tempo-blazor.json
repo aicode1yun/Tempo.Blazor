@@ -7486,6 +7486,13 @@
           "description": "Additional CSS class applied to the wrapper div."
         },
         {
+          "name": "CsvDelimiter",
+          "type": "string",
+          "isRequired": false,
+          "default": "\",\"",
+          "description": "Delimiter used by the built-in CSV export. Defaults to a comma."
+        },
+        {
           "name": "CurrentTenantId",
           "type": "string?",
           "isRequired": false,
@@ -7573,6 +7580,12 @@
           "description": "Persistence hook for per-user column layout (widths + pin state). Optional."
         },
         {
+          "name": "OnExportCompleted",
+          "type": "EventCallback<DataTableExportResult>",
+          "isRequired": false,
+          "description": "Fires after an export has been generated and handed to the browser download API."
+        },
+        {
           "name": "OnGroupingChanged",
           "type": "EventCallback<IReadOnlyList<string>>",
           "isRequired": false,
@@ -7597,10 +7610,28 @@
           "description": "Invoked to persist a committed row edit. Return false to keep the row in edit mode (for example when a server rejected the change). When null, the edit commits locally."
         },
         {
+          "name": "OnRowEditCancel",
+          "type": "EventCallback<TItem>",
+          "isRequired": false,
+          "description": "Fires when a row edit is cancelled. The callback receives the edited item; restoring its original values is the consuming application's responsibility."
+        },
+        {
           "name": "OnRowEditCancelled",
           "type": "EventCallback<TItem>",
           "isRequired": false,
           "description": "Fires when a row edit is cancelled."
+        },
+        {
+          "name": "OnRowEditStart",
+          "type": "EventCallback<TItem>",
+          "isRequired": false,
+          "description": "Fires when a row enters inline edit mode."
+        },
+        {
+          "name": "OnRowSave",
+          "type": "EventCallback<TItem>",
+          "isRequired": false,
+          "description": "Fires after a valid row edit is saved."
         },
         {
           "name": "OnSelectionChanged",
@@ -7626,6 +7657,12 @@
           "type": "RenderFragment?",
           "isRequired": false,
           "description": "Optional validator content rendered inside the row's cascading EditContext while editing (for example <FluentValidationValidator /> or <DataAnnotationsValidator />). Commit is blocked while the edit context is invalid."
+        },
+        {
+          "name": "RowValidatorFactory",
+          "type": "Func<TItem, EditContext>?",
+          "isRequired": false,
+          "description": "Optional factory that creates the EditContext cascaded to a row's edit templates. When omitted, the table creates a context for the edited item."
         },
         {
           "name": "ScrollMode",
@@ -7671,6 +7708,19 @@
           "isRequired": false,
           "default": "true",
           "description": "When true, shows the column visibility picker. Default: true."
+        },
+        {
+          "name": "ShowEditButtons",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether to show the row edit action buttons. Defaults to true."
+        },
+        {
+          "name": "ShowExport",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Shows the export format dropdown in the table toolbar. Defaults to false."
         },
         {
           "name": "ShowExternalFilterBuilder",
