@@ -1777,6 +1777,9 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
                 P("colorScheme", "Color Scheme", PropType.Enum, "Primary", cat: "Appearance",
                     opts: ["Primary","Success","Danger","Neutral"]),
                 P("cellSize", "Cell Size", PropType.Int, 12, cat: "Appearance"),
+                P("showMonthLabels", "Show Month Labels", PropType.Bool, true, cat: "Appearance"),
+                P("showDayLabels", "Show Day Labels", PropType.Bool, true, cat: "Appearance"),
+                P("showLegend", "Show Legend", PropType.Bool, true, cat: "Appearance"),
             ]
         };
 

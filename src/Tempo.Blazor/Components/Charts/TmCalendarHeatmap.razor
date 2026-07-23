@@ -4,24 +4,65 @@
 <div @attributes="AdditionalAttributes"
      class="@CssClass"
      style="@RootStyle">
-    <div class="tm-calendar-heatmap__grid"
-         role="grid"
+    <div class="@LayoutCssClass"
          style="--tm-heatmap-week-count: @_weekCount">
-        @foreach (var cell in _cells)
+        @if (ShowMonthLabels)
         {
-            <button class="tm-calendar-heatmap__day tm-calendar-heatmap__day--level-@cell.Level"
-                    type="button"
-                    role="gridcell"
-                    data-date="@cell.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
-                    aria-label="@cell.Date.ToString("d", _culture)"
-                    style="@GetCellStyle(cell)">
-            </button>
+            <div class="tm-calendar-heatmap__month-labels">
+                @foreach (var label in _monthLabels)
+                {
+                    <span class="tm-calendar-heatmap__month-label"
+                          style="grid-column: @label.Week">@label.Text</span>
+                }
+            </div>
+        }
+        @if (ShowDayLabels)
+        {
+            <div class="tm-calendar-heatmap__day-labels">
+                @foreach (var label in _dayLabels)
+                {
+                    <span class="tm-calendar-heatmap__day-label"
+                          style="grid-row: @label.Row">@label.Text</span>
+                }
+            </div>
+        }
+        <div class="tm-calendar-heatmap__grid"
+             role="grid">
+            @foreach (var cell in _cells)
+            {
+                var description = GetDayDescription(cell);
+                <button class="tm-calendar-heatmap__day tm-calendar-heatmap__day--level-@cell.Level"
+                        type="button"
+                        role="gridcell"
+                        data-date="@cell.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+                        title="@description"
+                        aria-label="@description"
+                        style="@GetCellStyle(cell)"
+                        @onclick="() => HandleDayClickAsync(cell)">
+                </button>
+            }
+        </div>
+        @if (ShowLegend)
+        {
+            <div class="tm-calendar-heatmap__legend">
+                <span>@Loc["TmCalendarHeatmap_Less"]</span>
+                <span class="tm-calendar-heatmap__legend-scale" aria-hidden="true">
+                    @for (var level = 0; level < EffectiveLevels; level++)
+                    {
+                        <span class="tm-calendar-heatmap__legend-level tm-calendar-heatmap__day--level-@level"
+                              style="@GetLegendLevelStyle(level)"></span>
+                    }
+                </span>
+                <span>@Loc["TmCalendarHeatmap_More"]</span>
+            </div>
         }
     </div>
 </div>
 
 @code {
     private IReadOnlyList<CalendarHeatmapCell> _cells = [];
+    private IReadOnlyList<CalendarHeatmapMonthLabel> _monthLabels = [];
+    private IReadOnlyList<CalendarHeatmapDayLabel> _dayLabels = [];
     private CultureInfo _culture = CultureInfo.CurrentUICulture;
     private int _weekCount;
 
@@ -62,6 +103,18 @@
     [Parameter]
     public CalendarHeatmapColorScheme ColorScheme { get; set; } = CalendarHeatmapColorScheme.Primary;
 
+    /// <summary>Shows localized month labels above the grid. Defaults to true.</summary>
+    [Parameter]
+    public bool ShowMonthLabels { get; set; } = true;
+
+    /// <summary>Shows localized labels for the first, third, and fifth weekday rows. Defaults to true.</summary>
+    [Parameter]
+    public bool ShowDayLabels { get; set; } = true;
+
+    /// <summary>Shows the localized intensity legend below the grid. Defaults to true.</summary>
+    [Parameter]
+    public bool ShowLegend { get; set; } = true;
+
     /// <summary>Size of each day cell in pixels. Defaults to 12.</summary>
     [Parameter]
     public int CellSize { get; set; } = 12;
@@ -72,6 +125,17 @@
     /// </summary>
     [Parameter]
     public CultureInfo? Culture { get; set; }
+
+    /// <summary>
+    /// Optional formatter for values displayed in day tooltips and accessible labels.
+    /// The default formats values with two decimal places using <see cref="Culture"/>.
+    /// </summary>
+    [Parameter]
+    public Func<decimal, string>? ValueFormatter { get; set; }
+
+    /// <summary>Raised when a day cell is selected.</summary>
+    [Parameter]
+    public EventCallback<CalendarHeatmapDayClickEventArgs> OnDayClick { get; set; }
 
     /// <summary>Additional CSS classes applied to the root element.</summary>
     [Parameter]
@@ -95,6 +159,10 @@
 
     private string RootStyle => $"--tm-heatmap-cell-size: {Math.Max(1, CellSize)}px";
 
+    private string LayoutCssClass => ShowDayLabels
+        ? "tm-calendar-heatmap__layout"
+        : "tm-calendar-heatmap__layout tm-calendar-heatmap__layout--without-day-labels";
+
     protected override void OnParametersSet()
     {
         _culture = Culture ?? CultureInfo.CurrentUICulture;
@@ -110,6 +178,8 @@
         if (rangeEnd < rangeStart)
         {
             _cells = [];
+            _monthLabels = [];
+            _dayLabels = [];
             _weekCount = 0;
             return;
         }
@@ -123,20 +193,23 @@
         {
             var date = rangeStart.AddDays(index);
             var gridOffset = date.DayNumber - gridStart.DayNumber;
-            var value = Values is not null && Values.TryGetValue(date, out var storedValue)
+            decimal? value = Values is not null && Values.TryGetValue(date, out var storedValue)
                 ? storedValue
-                : 0m;
-            var level = GetLevel(value, scaleMaximum);
+                : null;
+            var level = GetLevel(value ?? 0m, scaleMaximum);
             cells[index] = new CalendarHeatmapCell(
                 date,
                 (gridOffset / 7) + 1,
                 (gridOffset % 7) + 1,
                 level,
-                GetPaletteLevel(level));
+                GetPaletteLevel(level),
+                value);
         }
 
         _cells = cells;
         _weekCount = cells[^1].Week;
+        _monthLabels = BuildMonthLabels(rangeStart, rangeEnd, gridStart);
+        _dayLabels = BuildDayLabels();
     }
 
     private decimal ResolveScaleMaximum(DateOnly rangeStart, DateOnly rangeEnd)
@@ -175,11 +248,66 @@
         return Math.Clamp((int)decimal.Ceiling(normalizedLevel * 4), 1, 4);
     }
 
+    private IReadOnlyList<CalendarHeatmapMonthLabel> BuildMonthLabels(
+        DateOnly rangeStart,
+        DateOnly rangeEnd,
+        DateOnly gridStart)
+    {
+        var labels = new List<CalendarHeatmapMonthLabel>();
+        var month = new DateOnly(rangeStart.Year, rangeStart.Month, 1);
+
+        while (month <= rangeEnd)
+        {
+            var positionDate = month < rangeStart ? rangeStart : month;
+            var week = ((positionDate.DayNumber - gridStart.DayNumber) / 7) + 1;
+            labels.Add(new CalendarHeatmapMonthLabel(
+                DateTimeHelpers.GetMonthName(month.Month, _culture),
+                week));
+            month = month.AddMonths(1);
+        }
+
+        return labels;
+    }
+
+    private IReadOnlyList<CalendarHeatmapDayLabel> BuildDayLabels()
+    {
+        int[] rows = [1, 3, 5];
+        return rows
+            .Select(row =>
+            {
+                var day = (DayOfWeek)(((int)_culture.DateTimeFormat.FirstDayOfWeek + row - 1) % 7);
+                return new CalendarHeatmapDayLabel(
+                    _culture.DateTimeFormat.GetAbbreviatedDayName(day),
+                    row);
+            })
+            .ToArray();
+    }
+
+    private string GetDayDescription(CalendarHeatmapCell cell)
+    {
+        var date = cell.Date.ToString("d", _culture);
+        var value = cell.Value.HasValue
+            ? ValueFormatter?.Invoke(cell.Value.Value) ?? cell.Value.Value.ToString("N2", _culture)
+            : Loc["TmCalendarHeatmap_NoData"];
+        return $"{date} — {value}";
+    }
+
+    private Task HandleDayClickAsync(CalendarHeatmapCell cell)
+        => OnDayClick.InvokeAsync(new CalendarHeatmapDayClickEventArgs(cell.Date, cell.Value));
+
     private static string GetCellStyle(CalendarHeatmapCell cell)
     {
         var gridPosition = $"grid-column: {cell.Week}; grid-row: {cell.Day}";
         return cell.PaletteLevel == 0
             ? gridPosition
             : $"{gridPosition}; --tm-heatmap-day-color: var(--tm-heatmap-level-{cell.PaletteLevel})";
+    }
+
+    private string? GetLegendLevelStyle(int level)
+    {
+        var paletteLevel = GetPaletteLevel(level);
+        return paletteLevel == 0
+            ? null
+            : $"--tm-heatmap-day-color: var(--tm-heatmap-level-{paletteLevel})";
     }
 }

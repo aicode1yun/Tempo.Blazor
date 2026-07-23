@@ -26,4 +26,9 @@ internal sealed record CalendarHeatmapCell(
     int Week,
     int Day,
     int Level,
-    int PaletteLevel);
+    int PaletteLevel,
+    decimal? Value);
+
+internal sealed record CalendarHeatmapMonthLabel(string Text, int Week);
+
+internal sealed record CalendarHeatmapDayLabel(string Text, int Row);

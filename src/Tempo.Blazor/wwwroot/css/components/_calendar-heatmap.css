@@ -20,6 +20,92 @@
   padding: var(--tm-space-1);
 }
 
+.tm-calendar-heatmap__layout {
+  display: grid;
+  grid-template-columns: auto max-content;
+  grid-template-rows: auto max-content auto;
+  column-gap: var(--tm-space-2);
+  width: max-content;
+}
+
+.tm-calendar-heatmap__layout--without-day-labels {
+  grid-template-columns: max-content;
+  column-gap: 0;
+}
+
+.tm-calendar-heatmap__month-labels {
+  display: grid;
+  grid-column: 2;
+  grid-row: 1;
+  grid-template-columns: repeat(var(--tm-heatmap-week-count), var(--tm-heatmap-cell-size));
+  gap: var(--tm-space-1);
+  padding-inline: var(--tm-space-1);
+  min-height: calc(var(--tm-font-size-xs) * var(--tm-line-height-tight));
+}
+
+.tm-calendar-heatmap__month-label,
+.tm-calendar-heatmap__day-label,
+.tm-calendar-heatmap__legend {
+  color: var(--tm-text-secondary);
+  font-size: var(--tm-font-size-xs);
+  line-height: var(--tm-line-height-tight);
+}
+
+.tm-calendar-heatmap__month-label {
+  white-space: nowrap;
+}
+
+.tm-calendar-heatmap__day-labels {
+  display: grid;
+  grid-column: 1;
+  grid-row: 2;
+  grid-template-rows: repeat(7, var(--tm-heatmap-cell-size));
+  gap: var(--tm-space-1);
+  padding-block: var(--tm-space-1);
+}
+
+.tm-calendar-heatmap__day-label {
+  align-self: center;
+  text-align: end;
+}
+
+.tm-calendar-heatmap__grid {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.tm-calendar-heatmap__layout--without-day-labels .tm-calendar-heatmap__month-labels,
+.tm-calendar-heatmap__layout--without-day-labels .tm-calendar-heatmap__grid,
+.tm-calendar-heatmap__layout--without-day-labels .tm-calendar-heatmap__legend {
+  grid-column: 1;
+}
+
+.tm-calendar-heatmap__legend {
+  display: flex;
+  grid-column: 2;
+  grid-row: 3;
+  justify-self: end;
+  align-items: center;
+  gap: var(--tm-space-2);
+  width: max-content;
+  margin-top: var(--tm-space-2);
+  padding-inline: var(--tm-space-1);
+}
+
+.tm-calendar-heatmap__legend-scale {
+  display: flex;
+  gap: var(--tm-space-1);
+}
+
+.tm-calendar-heatmap__legend-level {
+  display: inline-block;
+  width: var(--tm-heatmap-cell-size);
+  height: var(--tm-heatmap-cell-size);
+  border: var(--tm-border-width) solid var(--tm-heatmap-day-color, var(--tm-border-color-control));
+  border-radius: var(--tm-radius-xs);
+  background: var(--tm-heatmap-day-color, var(--tm-bg-muted));
+}
+
 .tm-calendar-heatmap__day {
   width: var(--tm-heatmap-cell-size);
   height: var(--tm-heatmap-cell-size);

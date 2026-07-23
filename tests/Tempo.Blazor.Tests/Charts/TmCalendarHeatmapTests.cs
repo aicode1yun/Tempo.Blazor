@@ -190,7 +190,7 @@ public class TmCalendarHeatmapTests : LocalizationTestBase
             .Add(component => component.MaxValue, 100m)
             .Add(component => component.Levels, 3));
 
-        var days = cut.FindAll(".tm-calendar-heatmap__day--level-2");
+        var days = cut.FindAll(".tm-calendar-heatmap__grid .tm-calendar-heatmap__day--level-2");
         days.Should().HaveCount(2);
         days.Should().OnlyContain(day =>
             day.GetAttribute("style")!.Contains(
@@ -208,6 +208,124 @@ public class TmCalendarHeatmapTests : LocalizationTestBase
 
         cut.Find(".tm-calendar-heatmap").ClassList.Should()
             .Contain("tm-calendar-heatmap--success");
+    }
+
+    [Fact]
+    public void CalendarHeatmap_TooltipAndAriaUseLocalizedDateAndFormattedValue()
+    {
+        var culture = CultureInfo.GetCultureInfo("en-US");
+        var date = new DateOnly(2025, 1, 2);
+        var cut = Render<TmCalendarHeatmap>(parameters => parameters
+            .Add(component => component.Values, new Dictionary<DateOnly, decimal> { [date] = 1_234.5m })
+            .Add(component => component.From, date)
+            .Add(component => component.To, date)
+            .Add(component => component.Culture, culture));
+
+        var day = cut.Find("[data-date='2025-01-02']");
+        day.GetAttribute("title").Should().Be("1/2/2025 — 1,234.50");
+        day.GetAttribute("aria-label").Should().Be("1/2/2025 — 1,234.50");
+    }
+
+    [Fact]
+    public void CalendarHeatmap_UsesValueFormatterAndLocalizedNoData()
+    {
+        var valuedDate = new DateOnly(2025, 1, 1);
+        var emptyDate = new DateOnly(2025, 1, 2);
+        var cut = Render<TmCalendarHeatmap>(parameters => parameters
+            .Add(component => component.Values, new Dictionary<DateOnly, decimal> { [valuedDate] = 42m })
+            .Add(component => component.From, valuedDate)
+            .Add(component => component.To, emptyDate)
+            .Add(component => component.Culture, CultureInfo.GetCultureInfo("en-US"))
+            .Add(component => component.ValueFormatter, value => $"USD {value:0}"));
+
+        cut.Find("[data-date='2025-01-01']").GetAttribute("title")
+            .Should().Be("1/1/2025 — USD 42");
+        cut.Find("[data-date='2025-01-02']").GetAttribute("title")
+            .Should().Be("1/2/2025 — No data");
+    }
+
+    [Fact]
+    public void CalendarHeatmap_ClickReportsValueOrNull()
+    {
+        var valuedDate = new DateOnly(2025, 1, 1);
+        var emptyDate = new DateOnly(2025, 1, 2);
+        var clicks = new List<CalendarHeatmapDayClickEventArgs>();
+        var cut = Render<TmCalendarHeatmap>(parameters => parameters
+            .Add(component => component.Values, new Dictionary<DateOnly, decimal> { [valuedDate] = 42m })
+            .Add(component => component.From, valuedDate)
+            .Add(component => component.To, emptyDate)
+            .Add(component => component.OnDayClick, clicks.Add));
+
+        cut.Find("[data-date='2025-01-01']").Click();
+        cut.Find("[data-date='2025-01-02']").Click();
+
+        clicks.Should().Equal(
+            new CalendarHeatmapDayClickEventArgs(valuedDate, 42m),
+            new CalendarHeatmapDayClickEventArgs(emptyDate, null));
+    }
+
+    [Fact]
+    public void CalendarHeatmap_MonthLabelsUseCultureAndAlignToFirstWeek()
+    {
+        var culture = CultureInfo.GetCultureInfo("cs-CZ");
+        var cut = Render<TmCalendarHeatmap>(parameters => parameters
+            .Add(component => component.Values, NoValues)
+            .Add(component => component.From, new DateOnly(2025, 1, 1))
+            .Add(component => component.To, new DateOnly(2025, 2, 28))
+            .Add(component => component.Culture, culture));
+
+        var labels = cut.FindAll(".tm-calendar-heatmap__month-label");
+        labels.Select(label => label.TextContent).Should().Equal("leden", "únor");
+        labels[0].GetAttribute("style").Should().Contain("grid-column: 1");
+        labels[1].GetAttribute("style").Should().Contain("grid-column: 5");
+    }
+
+    [Fact]
+    public void CalendarHeatmap_DayLabelsUseFirstThirdAndFifthCultureRows()
+    {
+        var culture = CultureInfo.GetCultureInfo("cs-CZ");
+        var expected = new[] { DayOfWeek.Monday, DayOfWeek.Wednesday, DayOfWeek.Friday }
+            .Select(day => culture.DateTimeFormat.GetAbbreviatedDayName(day));
+        var cut = Render<TmCalendarHeatmap>(parameters => parameters
+            .Add(component => component.Values, NoValues)
+            .Add(component => component.From, new DateOnly(2025, 1, 1))
+            .Add(component => component.To, new DateOnly(2025, 1, 7))
+            .Add(component => component.Culture, culture));
+
+        var labels = cut.FindAll(".tm-calendar-heatmap__day-label");
+        labels.Select(label => label.TextContent).Should().Equal(expected);
+        labels.Select(label => label.GetAttribute("style")).Should().Equal(
+            "grid-row: 1",
+            "grid-row: 3",
+            "grid-row: 5");
+    }
+
+    [Fact]
+    public void CalendarHeatmap_VisibilityFlagsHideLabelsAndLegend()
+    {
+        var cut = Render<TmCalendarHeatmap>(parameters => parameters
+            .Add(component => component.Values, NoValues)
+            .Add(component => component.Year, 2025)
+            .Add(component => component.ShowMonthLabels, false)
+            .Add(component => component.ShowDayLabels, false)
+            .Add(component => component.ShowLegend, false));
+
+        cut.FindAll(".tm-calendar-heatmap__month-label").Should().BeEmpty();
+        cut.FindAll(".tm-calendar-heatmap__day-label").Should().BeEmpty();
+        cut.FindAll(".tm-calendar-heatmap__legend").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void CalendarHeatmap_LegendUsesLocalizedEndpointsAndOneSwatchPerLevel()
+    {
+        var cut = Render<TmCalendarHeatmap>(parameters => parameters
+            .Add(component => component.Values, NoValues)
+            .Add(component => component.Year, 2025)
+            .Add(component => component.Levels, 7));
+
+        var legend = cut.Find(".tm-calendar-heatmap__legend");
+        legend.TextContent.Should().Contain("Less").And.Contain("More");
+        legend.QuerySelectorAll(".tm-calendar-heatmap__legend-level").Should().HaveCount(7);
     }
 
     private static IDisposable UseCulture(string name)

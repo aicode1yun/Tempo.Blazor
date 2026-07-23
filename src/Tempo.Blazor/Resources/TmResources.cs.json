@@ -5229,5 +5229,8 @@
   "CreateReport_FolderId_Required": "Cílová složka je povinná.",
   "CreateReport_Name_Required": "Název sestavy je povinný.",
   "CreateReport_DefinitionJson_Required": "Definice sestavy je povinná.",
-  "ReportServer_NotFound": "Nenalezeno"
+  "ReportServer_NotFound": "Nenalezeno",
+  "TmCalendarHeatmap_Less": "Méně",
+  "TmCalendarHeatmap_More": "Více",
+  "TmCalendarHeatmap_NoData": "Bez dat"
 }
