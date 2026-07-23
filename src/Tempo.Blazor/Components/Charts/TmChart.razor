@@ -66,6 +66,8 @@
     private const int PR = 20;  // pad-right
     private const int PT = 20;  // pad-top
     private const int PB = 40;  // pad-bottom
+    private const int MinStackedValueLabelHeight = 16;
+    private const int MinStackedValueLabelWidth = 24;
     private int CW => SvgW - PL - PR;  // chart width
     private int CH => SvgH - PT - PB;  // chart height
 
@@ -1242,7 +1244,7 @@
                 var yTop = PT + CH - ((cum + val) / max) * CH;
                 var fill = ResolveFillColor(ds, i, ds.BackgroundColor ?? ds.Color);
                 SvgRect(b, x, yTop, bw, segH, fill, ds.Color, di, i, x + bw / 2, yTop);
-                if (ShowValues)
+                if (ShowValues && segH >= MinStackedValueLabelHeight)
                     SvgText(b, "tm-chart__value", x + bw / 2, yTop + segH / 2 + 4, F(val), "middle");
                 cum += val;
             }
@@ -1280,7 +1282,7 @@
                 var x = PL + (cum / max) * CW;
                 var fill = ResolveFillColor(ds, i, ds.BackgroundColor ?? ds.Color);
                 SvgRect(b, x, y, segW, bh, fill, ds.Color, di, i, x + segW / 2, y + bh / 2);
-                if (ShowValues)
+                if (ShowValues && segW >= MinStackedValueLabelWidth)
                     SvgText(b, "tm-chart__value", x + segW / 2, y + bh / 2 + 4, F(val), "middle");
                 cum += val;
             }

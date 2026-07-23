@@ -28,6 +28,16 @@ public class TmChartTests : LocalizationTestBase
         ]
     };
 
+    private static ChartData StackedData => new()
+    {
+        Labels = ["Q1", "Q2", "Q3"],
+        Datasets =
+        [
+            new ChartDataset { Label = "Licenses", Values = [10, 20, 30], Color = "#2563eb" },
+            new ChartDataset { Label = "Services", Values = [5, 10, 15], Color = "#16a34a" }
+        ]
+    };
+
     private static ChartData PieData => new()
     {
         Labels = ["A", "B", "C"],
@@ -182,6 +192,96 @@ public class TmChartTests : LocalizationTestBase
             .Add(x => x.Data, SimpleBarData));
 
         cut.FindAll("rect.tm-chart__bar").Count.Should().Be(3);
+    }
+
+    // ── Stacked bars ──
+
+    [Fact]
+    public void StackedBarChart_RendersSegmentsOnSharedCategoryPositions_UsingStackTotalScale()
+    {
+        var cut = Render<TmChart>(p => p
+            .Add(x => x.Type, ChartType.StackedBar)
+            .Add(x => x.Data, StackedData)
+            .Add(x => x.ShowValues, true));
+
+        var bars = cut.FindAll("rect.tm-chart__bar");
+        bars.Should().HaveCount(6);
+
+        // Dataset segments for one label share X and touch vertically.
+        AttributeAsDouble(bars[0], "x").Should().Be(AttributeAsDouble(bars[1], "x"));
+        (AttributeAsDouble(bars[1], "y") + AttributeAsDouble(bars[1], "height"))
+            .Should().BeApproximately(AttributeAsDouble(bars[0], "y"), 0.02);
+
+        // The maximum stack is Q3 = 30 + 15, not the maximum individual value (30).
+        cut.FindAll("text.tm-chart__axis-label")
+            .Select(x => x.TextContent)
+            .Should().Contain("45");
+
+        cut.FindAll("text.tm-chart__value")
+            .Select(x => x.TextContent)
+            .Should().Equal(["10", "5", "20", "10", "30", "15"]);
+        cut.FindAll(".tm-chart__legend-label")
+            .Select(x => x.TextContent)
+            .Should().Equal(["Licenses", "Services"]);
+    }
+
+    [Fact]
+    public void StackedHorizontalBarChart_RendersSegmentsOnSharedCategoryPositions_UsingStackTotalScale()
+    {
+        var cut = Render<TmChart>(p => p
+            .Add(x => x.Type, ChartType.StackedHorizontalBar)
+            .Add(x => x.Data, StackedData));
+
+        var bars = cut.FindAll("rect.tm-chart__bar");
+        bars.Should().HaveCount(6);
+
+        // Dataset segments for one label share Y and touch horizontally.
+        AttributeAsDouble(bars[0], "y").Should().Be(AttributeAsDouble(bars[1], "y"));
+        (AttributeAsDouble(bars[0], "x") + AttributeAsDouble(bars[0], "width"))
+            .Should().BeApproximately(AttributeAsDouble(bars[1], "x"), 0.02);
+
+        // Q3 is the maximum stack (45), so its two segments span the full 530px plot width.
+        (AttributeAsDouble(bars[4], "width") + AttributeAsDouble(bars[5], "width"))
+            .Should().BeApproximately(530, 0.02);
+    }
+
+    [Fact]
+    public void StackedBarChart_SegmentClick_ReturnsOriginalDatasetAndValue()
+    {
+        ChartSegment? clicked = null;
+        var cut = Render<TmChart>(p => p
+            .Add(x => x.Type, ChartType.StackedBar)
+            .Add(x => x.Data, StackedData)
+            .Add(x => x.OnSegmentClick, segment => clicked = segment));
+
+        cut.FindAll("rect.tm-chart__bar")[3].Click();
+
+        clicked.Should().Be(new ChartSegment(1, 1, "Q2", 10));
+    }
+
+    [Theory]
+    [InlineData(ChartType.StackedBar)]
+    [InlineData(ChartType.StackedHorizontalBar)]
+    public void StackedBarChart_ShowValues_SuppressesLabelsThatDoNotFit(ChartType type)
+    {
+        var data = new ChartData
+        {
+            Labels = ["Total"],
+            Datasets =
+            [
+                new ChartDataset { Label = "Large", Values = [1000], Color = "#2563eb" },
+                new ChartDataset { Label = "Tiny", Values = [1], Color = "#16a34a" }
+            ]
+        };
+
+        var cut = Render<TmChart>(p => p
+            .Add(x => x.Type, type)
+            .Add(x => x.Data, data)
+            .Add(x => x.ShowValues, true));
+
+        cut.FindAll("text.tm-chart__value")
+            .Select(x => x.TextContent)
+            .Should().Equal(["1000"]);
     }
 
     // ── Per-value colors ──
@@ -620,4 +720,9 @@ public class TmChartTests : LocalizationTestBase
             elements[i].GetAttribute("style").Should().Contain($"background-color: {expectedColors[i]}");
         }
     }
+
+    private static double AttributeAsDouble(AngleSharp.Dom.IElement element, string attribute)
+        => double.Parse(
+            element.GetAttribute(attribute).Should().NotBeNullOrWhiteSpace().And.Subject!,
+            System.Globalization.CultureInfo.InvariantCulture);
 }
