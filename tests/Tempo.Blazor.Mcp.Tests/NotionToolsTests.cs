@@ -40,7 +40,6 @@ public class NotionToolsTests
 
         names.Should().BeEquivalentTo(new[]
         {
-            "notion_apply_block_operations",
             "notion_create_page",
             "notion_delete_page",
             "notion_duplicate_page",
@@ -51,7 +50,6 @@ public class NotionToolsTests
             "notion_list_blocks",
             "notion_list_pages",
             "notion_move_page",
-            "notion_replace_blocks",
             "notion_restore_page",
             "notion_update_page",
             "notion_validate_page"
@@ -163,79 +161,6 @@ public class NotionToolsTests
     }
 
     [Fact]
-    public async Task ApplyBlockOperations_CreatesUpdatesDeletesAndCreatesEmbeddedBlock()
-    {
-        var backend = new FakeNotionBackend();
-        var pageId = backend.AddPage("Ops");
-        var blockId = Guid.NewGuid();
-        var diagramId = Guid.NewGuid();
-
-        var createBlock = Block(pageId, blockId, BlockType.Paragraph, new TextBlockContent { Html = "Draft" });
-        var updatedBlock = Block(pageId, blockId, BlockType.Paragraph, new TextBlockContent { Html = "Updated" });
-        var operations = Json(new object[]
-        {
-            new { op = "createBlock", pageId, block = createBlock },
-            new { op = "updateBlockContent", block = updatedBlock },
-            new { op = "deleteBlock", blockId },
-            new { op = "createDiagramBlock", pageId, documentId = diagramId, caption = "Flow" }
-        });
-
-        var root = Parse(await NotionBlockTools.ApplyBlockOperations(backend, backend, operations));
-
-        root.GetProperty("success").GetBoolean().Should().BeTrue();
-        root.GetProperty("applied").GetInt32().Should().Be(4);
-        root.GetProperty("createdIds").EnumerateArray().Should().HaveCount(2);
-
-        var blocks = (await backend.GetBlocksAsync(pageId.ToString())).ToList();
-        blocks.Should().ContainSingle();
-        blocks[0].Type.Should().Be(BlockType.Diagram);
-        ((DiagramBlockContent)blocks[0].Content).DiagramDocumentId.Should().Be(diagramId);
-    }
-
-    [Fact]
-    public async Task ApplyBlockOperations_ReordersAndMovesBlocks()
-    {
-        var backend = new FakeNotionBackend();
-        var sourcePageId = backend.AddPage("Source");
-        var targetPageId = backend.AddPage("Target");
-        var firstId = backend.AddBlock(sourcePageId, BlockType.Paragraph, new TextBlockContent { Html = "First" });
-        var secondId = backend.AddBlock(sourcePageId, BlockType.Paragraph, new TextBlockContent { Html = "Second" });
-
-        var operations = Json(new object[]
-        {
-            new { op = "reorderBlocks", pageId = sourcePageId, orderedBlockIds = new[] { secondId.ToString(), firstId.ToString() } },
-            new { op = "moveBlock", blockId = firstId, targetPageId = sourcePageId, sourceParentBlockId = (string?)null, targetParentBlockId = secondId, targetIndex = 0 },
-            new { op = "moveBlockToPage", blockId = firstId, targetPageId }
-        });
-
-        var root = Parse(await NotionBlockTools.ApplyBlockOperations(backend, backend, operations));
-
-        root.GetProperty("success").GetBoolean().Should().BeTrue();
-        root.GetProperty("applied").GetInt32().Should().Be(3);
-        (await backend.GetBlocksAsync(targetPageId.ToString())).Should().ContainSingle(b => b.Id == firstId);
-    }
-
-    [Fact]
-    public async Task ReplaceBlocks_ValidReplacement_SavesNewTopLevelBlocks()
-    {
-        var backend = new FakeNotionBackend();
-        var pageId = backend.AddPage("Replace");
-        backend.AddBlock(pageId, BlockType.Paragraph, new TextBlockContent { Html = "Old" });
-        var replacement = new[]
-        {
-            Block(pageId, Guid.NewGuid(), BlockType.Heading1, new HeadingBlockContent { Level = 1, Html = "New" })
-        };
-
-        var root = Parse(await NotionBlockTools.ReplaceBlocks(backend, backend, pageId.ToString(), Json(replacement)));
-
-        root.GetProperty("success").GetBoolean().Should().BeTrue();
-        root.GetProperty("replaced").GetInt32().Should().Be(1);
-        var blocks = (await backend.GetBlocksAsync(pageId.ToString())).ToList();
-        blocks.Should().ContainSingle();
-        blocks[0].Type.Should().Be(BlockType.Heading1);
-    }
-
-    [Fact]
     public async Task PageWriteTools_StaleLastEditedAt_ReturnConflict()
     {
         var backend = new FakeNotionBackend();
@@ -256,49 +181,13 @@ public class NotionToolsTests
     }
 
     [Fact]
-    public async Task BlockWriteTools_MissingPage_ReturnNotFound()
+    public async Task ListBlocks_MissingPage_ReturnsNotFound()
     {
         var backend = new FakeNotionBackend();
         var missingPageId = Guid.NewGuid();
-        var operations = Json(new object[]
-        {
-            new
-            {
-                op = "createBlock",
-                pageId = missingPageId,
-                block = Block(missingPageId, Guid.NewGuid(), BlockType.Paragraph, new TextBlockContent { Html = "No page" })
-            }
-        });
-
         var listRoot = Parse(await NotionBlockTools.ListBlocks(backend, backend, missingPageId.ToString()));
         listRoot.GetProperty("success").GetBoolean().Should().BeFalse();
         listRoot.GetProperty("error").GetString().Should().Be("not_found");
-
-        var opRoot = Parse(await NotionBlockTools.ApplyBlockOperations(backend, backend, operations));
-        opRoot.GetProperty("success").GetBoolean().Should().BeFalse();
-        opRoot.GetProperty("error").GetString().Should().Be("not_found");
-    }
-
-    [Fact]
-    public async Task DeleteBlockOperation_RemovesNestedSubtree()
-    {
-        var backend = new FakeNotionBackend();
-        var pageId = backend.AddPage("Delete subtree");
-        var parentId = backend.AddBlock(pageId, BlockType.Toggle, new ToggleBlockContent { Html = "Parent" });
-        var childId = backend.AddBlock(pageId, BlockType.Toggle, new ToggleBlockContent { Html = "Child" }, parentId);
-        backend.AddBlock(pageId, BlockType.Paragraph, new TextBlockContent { Html = "Grandchild" }, childId);
-
-        var operations = Json(new object[]
-        {
-            new { op = "deleteBlock", blockId = parentId }
-        });
-
-        var root = Parse(await NotionBlockTools.ApplyBlockOperations(backend, backend, operations));
-
-        root.GetProperty("success").GetBoolean().Should().BeTrue();
-        (await backend.GetBlocksAsync(pageId.ToString())).Should().BeEmpty();
-        (await backend.GetChildBlocksAsync(parentId.ToString())).Should().BeEmpty();
-        (await backend.GetChildBlocksAsync(childId.ToString())).Should().BeEmpty();
     }
 
     [Fact]
