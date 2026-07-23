@@ -9,76 +9,6 @@ namespace Tempo.Blazor.Mcp.Notion;
 
 internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationCompiler
 {
-    private static readonly HashSet<string> BlockFields =
-        ["type", "content", "children"];
-    private static readonly HashSet<string> TableRowFields = ["cells"];
-    private static readonly HashSet<string> TableCellFields =
-    [
-        "html",
-        "inlines",
-        "backgroundColor",
-        "textColor",
-        "horizontalAlignment",
-        "verticalAlignment",
-        "rowSpan",
-        "columnSpan",
-        "width",
-        "borders"
-    ];
-    private static readonly HashSet<string> InlineFields =
-    [
-        "text",
-        "href",
-        "bold",
-        "italic",
-        "underline",
-        "strikethrough",
-        "code",
-        "textColor",
-        "backgroundColor"
-    ];
-    private static readonly HashSet<string> BorderContainerFields =
-        ["top", "right", "bottom", "left"];
-    private static readonly HashSet<string> BorderFields =
-        ["style", "color", "width"];
-    private static readonly HashSet<string> CreateBlockFields =
-        ["op", "clientRef", "pageId", "parentBlockId", "order", "block"];
-    private static readonly HashSet<string> CreateBlocksFields =
-        ["op", "clientRef", "pageId", "parentBlockId", "order", "blocks"];
-    private static readonly HashSet<string> CreateTableFields =
-    [
-        "op",
-        "clientRef",
-        "pageId",
-        "parentBlockId",
-        "order",
-        "columnCount",
-        "hasHeaderRow",
-        "hasHeaderColumn",
-        "columnAlignments",
-        "columnWidths",
-        "rows"
-    ];
-    private static readonly HashSet<string> PatchFields =
-        ["op", "clientRef", "blockId", "patch"];
-    private static readonly HashSet<string> MoveFields =
-    [
-        "op",
-        "clientRef",
-        "blockId",
-        "targetPageId",
-        "targetParentBlockId",
-        "targetOrder"
-    ];
-    private static readonly HashSet<string> ReorderFields =
-        ["op", "clientRef", "pageId", "parentBlockId", "orderedBlockIds"];
-    private static readonly HashSet<string> ConvertFields =
-        ["op", "clientRef", "blockId", "newType", "content"];
-    private static readonly HashSet<string> DeleteFields =
-        ["op", "clientRef", "blockId"];
-    private static readonly HashSet<string> ReplaceFields =
-        ["op", "clientRef", "pageId", "parentBlockId", "blocks"];
-
     public NotionOperationTargetDiscoveryResult DiscoverTargets(JsonArray source)
     {
         var targets = new HashSet<NotionAggregateTarget>();
@@ -268,7 +198,7 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
         {
             if (!ValidateAllowed(
                     operation,
-                    CreateBlockFields,
+                    OperationFields("createBlock"),
                     path,
                     issues))
             {
@@ -311,7 +241,7 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
         {
             if (!ValidateAllowed(
                     operation,
-                    CreateBlocksFields,
+                    OperationFields("createBlocks"),
                     path,
                     issues))
             {
@@ -374,7 +304,7 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
         {
             if (!ValidateAllowed(
                     operation,
-                    CreateTableFields,
+                    OperationFields("createTable"),
                     path,
                     issues))
             {
@@ -527,7 +457,7 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
         {
             if (!ValidateAllowed(
                     operation,
-                    PatchFields,
+                    OperationFields("patchBlockContent"),
                     path,
                     issues))
             {
@@ -560,7 +490,7 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
         {
             if (!ValidateAllowed(
                     operation,
-                    MoveFields,
+                    OperationFields("moveBlock"),
                     path,
                     issues))
             {
@@ -607,7 +537,7 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
         {
             if (!ValidateAllowed(
                     operation,
-                    ReorderFields,
+                    OperationFields("reorderBlocks"),
                     path,
                     issues))
             {
@@ -636,7 +566,7 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
         {
             if (!ValidateAllowed(
                     operation,
-                    ConvertFields,
+                    OperationFields("convertBlockType"),
                     path,
                     issues))
             {
@@ -665,7 +595,7 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
         {
             if (!ValidateAllowed(
                     operation,
-                    DeleteFields,
+                    OperationFields("deleteBlock"),
                     path,
                     issues))
             {
@@ -690,7 +620,7 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
         {
             if (!ValidateAllowed(
                     operation,
-                    ReplaceFields,
+                    OperationFields("replaceBlocks"),
                     path,
                     issues))
             {
@@ -753,7 +683,7 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
             string idPath)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (!ValidateAllowed(block, BlockFields, path, issues))
+            if (!ValidateAllowed(block, NotionAuthoringCatalog.BlockFields, path, issues))
             {
                 return;
             }
@@ -856,7 +786,7 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
                 issues.Add(Error("table_row_must_be_object", "Each row must be an object.", rowPath));
                 continue;
             }
-            if (!ValidateAllowed(row, TableRowFields, rowPath, issues))
+            if (!ValidateAllowed(row, NotionAuthoringCatalog.TableRowFields, rowPath, issues))
             {
                 continue;
             }
@@ -914,14 +844,18 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
         string path,
         List<NotionAggregateIssue> issues)
     {
-        ValidateAllowed(cell, TableCellFields, path, issues);
+        ValidateAllowed(cell, NotionAuthoringCatalog.TableCellFields, path, issues);
         if (cell["inlines"] is JsonArray inlines)
         {
             for (var index = 0; index < inlines.Count; index++)
             {
                 if (inlines[index] is JsonObject inline)
                 {
-                    ValidateAllowed(inline, InlineFields, $"{path}.inlines[{index}]", issues);
+                    ValidateAllowed(
+                        inline,
+                        NotionAuthoringCatalog.InlineFields,
+                        $"{path}.inlines[{index}]",
+                        issues);
                 }
                 else
                 {
@@ -942,12 +876,20 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
 
         if (cell["borders"] is JsonObject borders)
         {
-            ValidateAllowed(borders, BorderContainerFields, $"{path}.borders", issues);
-            foreach (var side in BorderContainerFields)
+            ValidateAllowed(
+                borders,
+                NotionAuthoringCatalog.BorderContainerFields,
+                $"{path}.borders",
+                issues);
+            foreach (var side in NotionAuthoringCatalog.BorderContainerFields)
             {
                 if (borders[side] is JsonObject border)
                 {
-                    ValidateAllowed(border, BorderFields, $"{path}.borders.{side}", issues);
+                    ValidateAllowed(
+                        border,
+                        NotionAuthoringCatalog.BorderFields,
+                        $"{path}.borders.{side}",
+                        issues);
                     if (border.TryGetPropertyValue("width", out var widthNode) &&
                         (widthNode is not JsonValue widthValue ||
                          !widthValue.TryGetValue<double>(out var width) ||
@@ -1250,4 +1192,9 @@ internal sealed class NotionStrictOperationCompiler : INotionAtomicOperationComp
             Path = path,
             SuggestedFix = $"Correct the value at {path} and retry the atomic request."
         };
+
+    private static IReadOnlySet<string> OperationFields(string operation)
+        => NotionAuthoringCatalog.GetOperationFields(operation)
+           ?? throw new InvalidOperationException(
+               $"Operation '{operation}' is missing from the canonical authoring catalog.");
 }

@@ -1101,16 +1101,6 @@
       "documentationStatus": "merged"
     },
     {
-      "itemName": "NotionBlockCatalog",
-      "kind": "Class",
-      "category": "Notion",
-      "namespace": "Tempo.Blazor.Mcp.Notion",
-      "description": "Maps Notion block types to their polymorphic content payloads.",
-      "packageId": "Tempo.Blazor.Mcp",
-      "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionBlockCatalog.cs",
-      "documentationStatus": "merged"
-    },
-    {
       "itemName": "NotionBlockTools",
       "kind": "Class",
       "category": "Notion",
@@ -1119,91 +1109,6 @@
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionBlockTools.cs",
       "documentationStatus": "merged"
-    },
-    {
-      "itemName": "NotionBlockTypeSchema",
-      "kind": "Record",
-      "category": "Notion",
-      "namespace": "Tempo.Blazor.Mcp.Notion",
-      "description": "Describes one Notion block type for MCP consumers: which polymorphic content payload it carries and how that payload is discriminated in JSON. Produced by NotionBlockCatalog.",
-      "packageId": "Tempo.Blazor.Mcp",
-      "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionBlockCatalog.cs",
-      "documentationStatus": "merged",
-      "members": [
-        {
-          "name": "Type",
-          "type": "BlockType",
-          "description": "The block type."
-        },
-        {
-          "name": "ContentDiscriminator",
-          "type": "string",
-          "description": "The JSON discriminator value used for this block's content."
-        },
-        {
-          "name": "ContentType",
-          "type": "string",
-          "description": "The CLR type name of the content payload."
-        },
-        {
-          "name": "Description",
-          "type": "string",
-          "description": "Human-readable description of the block type."
-        }
-      ],
-      "examples": [
-        {
-          "title": "Discover the block catalog",
-          "code": "foreach (var schema in NotionBlockCatalog.All)\n{\n    Console.WriteLine($\"{schema.Type}: {schema.ContentType} (\\\"{schema.ContentDiscriminator}\\\")\");\n}"
-        }
-      ]
-    },
-    {
-      "kind": "Class",
-      "category": "Notion",
-      "namespace": "Tempo.Blazor.Mcp.Notion",
-      "description": "Applies ordered Notion page/block operations through host providers.",
-      "packageId": "Tempo.Blazor.Mcp",
-      "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionOperationEngine.cs",
-      "documentationStatus": "generated",
-      "itemName": "NotionOperationEngine"
-    },
-    {
-      "kind": "Record",
-      "category": "Notion",
-      "namespace": "Tempo.Blazor.Mcp.Notion",
-      "description": "Outcome of applying an ordered batch of Notion page/block operations through NotionOperationEngine. Applied tells the caller how many operations landed before a failure, so a partial batch can be reasoned about rather than silently discarded.",
-      "packageId": "Tempo.Blazor.Mcp",
-      "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionOperationEngine.cs",
-      "documentationStatus": "generated",
-      "itemName": "NotionOperationResult",
-      "members": [
-        {
-          "name": "Success",
-          "type": "bool",
-          "description": "Whether every operation was applied."
-        },
-        {
-          "name": "Errors",
-          "type": "IReadOnlyList<string>",
-          "description": "Human-readable errors; empty when Success is true."
-        },
-        {
-          "name": "Applied",
-          "type": "int",
-          "description": "Number of operations that were applied."
-        },
-        {
-          "name": "CreatedIds",
-          "type": "IReadOnlyList<string>",
-          "description": "Ids of the blocks or pages created by the batch."
-        },
-        {
-          "name": "ErrorCode",
-          "type": "string",
-          "description": "Machine-readable error code; defaults to McpToolResults.InvalidOperation."
-        }
-      ]
     },
     {
       "itemName": "NotionPageTools",
@@ -1224,44 +1129,6 @@
       "packageId": "Tempo.Blazor.Mcp",
       "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionSchemaAndValidationTools.cs",
       "documentationStatus": "merged"
-    },
-    {
-      "itemName": "NotionValidationEngine",
-      "kind": "Class",
-      "category": "Notion",
-      "namespace": "Tempo.Blazor.Mcp.Notion",
-      "description": "Validates Notion pages and block trees for MCP write tools.",
-      "packageId": "Tempo.Blazor.Mcp",
-      "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionValidationEngine.cs",
-      "documentationStatus": "merged"
-    },
-    {
-      "itemName": "NotionValidationResult",
-      "kind": "Record",
-      "category": "Notion",
-      "namespace": "Tempo.Blazor.Mcp.Notion",
-      "description": "Outcome of validating a Notion page and its block tree before an MCP write tool applies it.",
-      "packageId": "Tempo.Blazor.Mcp",
-      "sourcePath": "src/Tempo.Blazor.Mcp/Notion/NotionValidationEngine.cs",
-      "documentationStatus": "merged",
-      "members": [
-        {
-          "name": "IsValid",
-          "type": "bool",
-          "description": "Whether the page and blocks passed validation."
-        },
-        {
-          "name": "Errors",
-          "type": "IReadOnlyList<string>",
-          "description": "Validation errors; empty when IsValid is true."
-        }
-      ],
-      "examples": [
-        {
-          "title": "Validate before writing",
-          "code": "var result = NotionValidationEngine.Validate(page, blocks);\n\nif (!result.IsValid)\n{\n    return McpToolResults.Failure(\n        McpToolResults.InvalidOperation,\n        string.Join(\"; \", result.Errors));\n}"
-        }
-      ]
     },
     {
       "itemName": "ReportCatalogTools",
@@ -1970,11 +1837,11 @@
     }
   ],
   "summary": {
-    "itemCount": 96,
-    "manualItemCount": 96,
-    "generatedItemCount": 94,
+    "itemCount": 90,
+    "manualItemCount": 90,
+    "generatedItemCount": 90,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 94
+    "publicApiTypeCount": 90
   }
 }

@@ -45,16 +45,16 @@ public class NotionToolsTests
             "notion_create_page",
             "notion_delete_page",
             "notion_duplicate_page",
+            "notion_get_authoring_guide",
             "notion_get_block_schema",
             "notion_get_block_tree",
+            "notion_get_operation_catalog",
             "notion_get_page",
             "notion_list_block_types",
-            "notion_list_blocks",
             "notion_list_pages",
             "notion_move_page",
             "notion_restore_page",
-            "notion_update_page",
-            "notion_validate_page"
+            "notion_update_page"
         });
 
         foreach (var type in TempoNotionMcp.ToolTypes)
@@ -87,10 +87,10 @@ public class NotionToolsTests
         listRoot.GetProperty("totalCount").GetInt32().Should().Be(1);
         listRoot.GetProperty("items")[0].GetProperty("title").GetString().Should().Be("Project notes");
 
-        var getRoot = Parse(await NotionPageTools.GetPage(backend, backend, pageId.ToString()));
+        var getRoot = Parse(await NotionPageTools.GetPage(backend, pageId.ToString()));
         getRoot.GetProperty("success").GetBoolean().Should().BeTrue();
         getRoot.GetProperty("page").GetProperty("title").GetString().Should().Be("Project notes");
-        getRoot.GetProperty("blocks").EnumerateArray().Should().ContainSingle();
+        getRoot.TryGetProperty("blocks", out _).Should().BeFalse();
     }
 
     [Fact]
@@ -156,23 +156,6 @@ public class NotionToolsTests
     }
 
     [Fact]
-    public async Task ListBlocksAndBlockTree_ReturnNestedBlocks()
-    {
-        var backend = new FakeNotionBackend();
-        var pageId = backend.AddPage("Tree");
-        var parentBlockId = backend.AddBlock(pageId, BlockType.Toggle, new ToggleBlockContent { Html = "Parent" });
-        backend.AddBlock(pageId, BlockType.Paragraph, new TextBlockContent { Html = "Child" }, parentBlockId);
-
-        var listRoot = Parse(await NotionBlockTools.ListBlocks(backend, backend, pageId.ToString()));
-        listRoot.GetProperty("success").GetBoolean().Should().BeTrue();
-        listRoot.GetProperty("items").EnumerateArray().Should().ContainSingle();
-
-        var treeRoot = Parse(await NotionBlockTools.GetBlockTree(backend, backend, pageId.ToString()));
-        treeRoot.GetProperty("success").GetBoolean().Should().BeTrue();
-        treeRoot.GetProperty("totalCount").GetInt32().Should().Be(2);
-    }
-
-    [Fact]
     public async Task PageWriteTools_StaleLastEditedAt_ReturnConflict()
     {
         var backend = new FakeNotionBackend();
@@ -193,38 +176,6 @@ public class NotionToolsTests
     }
 
     [Fact]
-    public async Task ListBlocks_MissingPage_ReturnsNotFound()
-    {
-        var backend = new FakeNotionBackend();
-        var missingPageId = Guid.NewGuid();
-        var listRoot = Parse(await NotionBlockTools.ListBlocks(backend, backend, missingPageId.ToString()));
-        listRoot.GetProperty("success").GetBoolean().Should().BeFalse();
-        listRoot.GetProperty("error").GetString().Should().Be("not_found");
-    }
-
-    [Fact]
-    public void ValidatePage_InvalidParentAndContentMismatch_ReturnsErrors()
-    {
-        var pageId = Guid.NewGuid();
-        var page = new NotionPage { Id = pageId, Title = "Invalid" };
-        var blocks = new[]
-        {
-            Block(pageId, Guid.NewGuid(), BlockType.Paragraph, new TextBlockContent { Html = "Root" }, order: 0),
-            Block(pageId, Guid.NewGuid(), BlockType.Diagram, new TextBlockContent { Html = "Wrong" }, Guid.NewGuid(), order: 1),
-            Block(pageId, Guid.NewGuid(), BlockType.Wireframe, new WireframeBlockContent(), order: 2)
-        };
-
-        var root = Parse(NotionSchemaAndValidationTools.ValidatePage(Json(page), Json(blocks)));
-
-        root.GetProperty("success").GetBoolean().Should().BeTrue();
-        root.GetProperty("valid").GetBoolean().Should().BeFalse();
-        var errors = root.GetProperty("validationErrors").EnumerateArray().Select(e => e.GetString()).ToList();
-        errors.Should().Contain(e => e!.Contains("parentBlockId"));
-        errors.Should().Contain(e => e!.Contains("not compatible"));
-        errors.Should().Contain(e => e!.Contains("wireframeDocumentId"));
-    }
-
-    [Fact]
     public void SchemaTools_ReturnBlockCatalogEntries()
     {
         var listRoot = Parse(NotionSchemaAndValidationTools.ListBlockTypes("diagram"));
@@ -234,25 +185,7 @@ public class NotionToolsTests
 
         var schemaRoot = Parse(NotionSchemaAndValidationTools.GetBlockSchema("Paragraph"));
         schemaRoot.GetProperty("success").GetBoolean().Should().BeTrue();
-        schemaRoot.GetProperty("blockType").GetProperty("contentDiscriminator").GetString().Should().Be("text");
+        schemaRoot.GetProperty("blockType").GetProperty("fields").EnumerateArray()
+            .Should().Contain(field => field.GetProperty("name").GetString() == "html");
     }
-
-    private static PageBlock Block(
-        Guid pageId,
-        Guid id,
-        BlockType type,
-        IBlockContent content,
-        Guid? parentBlockId = null,
-        int order = 0)
-        => new()
-        {
-            Id = id,
-            PageId = pageId,
-            ParentBlockId = parentBlockId,
-            Type = type,
-            Order = order,
-            Content = content,
-            CreatedAt = DateTime.UtcNow,
-            LastEditedAt = DateTime.UtcNow
-        };
 }

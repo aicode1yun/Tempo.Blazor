@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Server;
+using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
@@ -12,45 +13,76 @@ namespace Tempo.Blazor.Mcp.Notion;
 [McpServerToolType]
 public static class NotionBlockTools
 {
-    [McpServerTool(Name = "notion_list_blocks")]
-    [Description("List NotionEditor blocks for a page or child blocks under parentBlockId.")]
-    public static async Task<string> ListBlocks(
-        INotionDataProvider pages,
-        INotionBlockProvider blocks,
-        [Description("Page id for top-level blocks.")] string pageId,
-        [Description("Optional parent block id for child blocks.")] string? parentBlockId = null)
-    {
-        if (await NotionPageTools.LoadPageForWrite(pages, pageId, expectedLastEditedAt: null, "notion_get_page") is { } failure)
-        {
-            return failure;
-        }
-
-        var items = string.IsNullOrWhiteSpace(parentBlockId)
-            ? await blocks.GetBlocksAsync(pageId)
-            : await blocks.GetChildBlocksAsync(parentBlockId);
-
-        var list = items.OrderBy(b => b.Order).ToList();
-        return McpToolResults.Success(new { pageId, parentBlockId, totalCount = list.Count, items = list });
-    }
-
     [McpServerTool(Name = "notion_get_block_tree")]
-    [Description("Get all blocks for a NotionEditor page, including nested child blocks.")]
+    [Description("Read one canonical Notion page as a recursively ordered block tree. Returns page metadata, opaque concurrencyToken, digest and logical rich table rows/cells without merge markers.")]
     public static async Task<string> GetBlockTree(
-        INotionDataProvider pages,
-        INotionBlockProvider blocks,
-        [Description("Page id.")] string pageId)
+        INotionAggregateProvider? provider,
+        [Description("Non-empty page GUID string.")] string pageId,
+        CancellationToken cancellationToken = default)
     {
-        if (await NotionPageTools.LoadPageForWrite(pages, pageId, expectedLastEditedAt: null, "notion_get_page") is { } failure)
+        if (provider is null)
         {
-            return failure;
+            return McpToolResults.Failure(
+                McpToolResults.Unsupported,
+                "The host has not registered INotionAggregateProvider.");
+        }
+        if (!Guid.TryParse(pageId, out var parsedPageId) || parsedPageId == Guid.Empty)
+        {
+            return McpToolResults.Failure(
+                McpToolResults.ValidationFailed,
+                "pageId must be a non-empty GUID string.");
         }
 
-        var all = await NotionPageTools.LoadBlocks(blocks, pageId, recursive: true);
+        var load = await provider.LoadPageAsync(parsedPageId, cancellationToken);
+        if (!load.Found || load.Snapshot is null)
+        {
+            return McpToolResults.Failure(
+                McpToolResults.NotFound,
+                $"Notion page '{pageId}' not found.");
+        }
+
+        var snapshot = load.Snapshot;
+        var validationIssues = NotionAggregateBaselineValidator.Validate(
+            new NotionAggregateWorkingSet(
+                new Dictionary<Guid, NotionPageSnapshot>
+                {
+                    [snapshot.Page.Id] = snapshot
+                }));
+        var allIssues = load.Issues.Concat(validationIssues).ToList();
+        if (allIssues.Any(issue => issue.Severity == NotionIssueSeverity.Error))
+        {
+            return McpToolResults.Failure(
+                McpToolResults.ValidationFailed,
+                "The loaded Notion aggregate is not canonical.",
+                allIssues.Select(FormatIssue));
+        }
+
+        var childrenByParent = snapshot.Blocks
+            .Where(block => block.ParentBlockId is not null)
+            .GroupBy(block => block.ParentBlockId!.Value)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<NotionBlockSnapshot>)group
+                    .OrderBy(block => block.Order)
+                    .ThenBy(block => block.Id)
+                    .ToList());
+        var roots = snapshot.Blocks
+            .Where(block => block.ParentBlockId is null)
+            .OrderBy(block => block.Order)
+            .ThenBy(block => block.Id)
+            .ToList();
+        var visiting = new HashSet<Guid>();
+        var tree = roots.Select(block =>
+            BuildReadNode(block, childrenByParent, visiting)).ToList();
         return McpToolResults.Success(new
         {
-            pageId,
-            totalCount = all.Count,
-            blocks = all.OrderBy(b => b.ParentBlockId).ThenBy(b => b.Order).ToList()
+            schemaVersion = snapshot.SchemaVersion,
+            page = snapshot.Page,
+            concurrencyToken = snapshot.ConcurrencyToken,
+            digest = snapshot.Digest,
+            totalCount = snapshot.Blocks.Count,
+            blocks = tree,
+            issues = allIssues
         });
     }
 
@@ -191,4 +223,77 @@ public static class NotionBlockTools
             Message = message,
             Path = path
         };
+
+    private static JsonObject BuildReadNode(
+        NotionBlockSnapshot block,
+        IReadOnlyDictionary<Guid, IReadOnlyList<NotionBlockSnapshot>> childrenByParent,
+        HashSet<Guid> visiting)
+    {
+        if (!visiting.Add(block.Id))
+        {
+            throw new InvalidDataException(
+                $"Canonical Notion aggregate contains a cycle at block '{block.Id}'.");
+        }
+
+        try
+        {
+            var children = childrenByParent.GetValueOrDefault(block.Id, []);
+            var content = JsonNode.Parse(block.Content.GetRawText()) as JsonObject
+                ?? throw new InvalidDataException(
+                    $"Canonical content for block '{block.Id}' is not a JSON object.");
+            var node = new JsonObject
+            {
+                ["id"] = block.Id,
+                ["pageId"] = block.PageId,
+                ["parentBlockId"] = block.ParentBlockId,
+                ["type"] = JsonNamingPolicy.CamelCase.ConvertName(block.Type.ToString()),
+                ["order"] = block.Order,
+                ["content"] = content,
+                ["createdAt"] = block.CreatedAt,
+                ["lastEditedAt"] = block.LastEditedAt
+            };
+
+            if (block.Type == BlockType.Table)
+            {
+                var rows = new JsonArray();
+                foreach (var rowBlock in children.Where(
+                             child => child.Type == BlockType.TableRow))
+                {
+                    var row = rowBlock.Content.Deserialize<NotionAuthoringTableRow>(
+                        NotionAggregateJson.Options) ?? new NotionAuthoringTableRow();
+                    rows.Add(new JsonObject
+                    {
+                        ["id"] = rowBlock.Id,
+                        ["order"] = rowBlock.Order,
+                        ["cells"] = JsonSerializer.SerializeToNode(
+                            row.Cells,
+                            NotionAggregateJson.Options)
+                    });
+                }
+
+                content["rows"] = rows;
+                children = children.Where(
+                        child => child.Type != BlockType.TableRow)
+                    .ToList();
+            }
+
+            node["children"] = new JsonArray(
+                children.Select(child =>
+                        (JsonNode)BuildReadNode(child, childrenByParent, visiting))
+                    .ToArray());
+            return node;
+        }
+        finally
+        {
+            visiting.Remove(block.Id);
+        }
+    }
+
+    private static string FormatIssue(NotionAggregateIssue issue)
+    {
+        var suggestedFix = string.IsNullOrWhiteSpace(issue.SuggestedFix)
+            ? string.Empty
+            : $" Suggested fix: {issue.SuggestedFix}";
+        return $"{issue.Code} at {issue.Path}: {issue.Message}{suggestedFix}";
+    }
 }

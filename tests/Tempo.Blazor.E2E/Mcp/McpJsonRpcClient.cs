@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 namespace Tempo.Blazor.E2E.Mcp;
 
 /// <summary>One tool as reported by <c>tools/list</c>.</summary>
-public sealed record McpTool(string Name, string? Description);
+public sealed record McpTool(string Name, string? Description, JsonElement InputSchema);
 
 /// <summary>
 /// Minimal MCP streamable-HTTP JSON-RPC client for E2E tests: <c>initialize</c>, <c>tools/list</c>
@@ -68,7 +68,10 @@ public sealed class McpJsonRpcClient
                 var name = t.GetProperty("name").GetString();
                 if (string.IsNullOrWhiteSpace(name)) continue;
                 var desc = t.TryGetProperty("description", out var d) ? d.GetString() : null;
-                tools.Add(new McpTool(name!, desc));
+                var inputSchema = t.TryGetProperty("inputSchema", out var schema)
+                    ? schema.Clone()
+                    : default;
+                tools.Add(new McpTool(name!, desc, inputSchema));
             }
         }
         return tools;

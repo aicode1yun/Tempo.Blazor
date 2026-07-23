@@ -60,13 +60,10 @@ public static class NotionPageTools
     }
 
     [McpServerTool(Name = "notion_get_page")]
-    [Description("Get a NotionEditor page and optionally its blocks. Returns not_found when the provider does not find the page.")]
+    [Description("Get Notion page metadata. Use notion_get_block_tree for canonical recursive blocks, logical table cells, concurrencyToken and digest.")]
     public static async Task<string> GetPage(
         INotionDataProvider pages,
-        INotionBlockProvider blocks,
-        [Description("Page id.")] string pageId,
-        [Description("Include top-level blocks.")] bool includeBlocks = true,
-        [Description("Include nested child blocks recursively.")] bool recursive = false)
+        [Description("Page id.")] string pageId)
     {
         var page = await TryGetPage(pages, pageId);
         if (page is null)
@@ -74,11 +71,7 @@ public static class NotionPageTools
             return McpToolResults.Failure(McpToolResults.NotFound, $"Notion page '{pageId}' not found.");
         }
 
-        var pageBlocks = includeBlocks
-            ? await LoadBlocks(blocks, pageId, recursive)
-            : [];
-
-        return McpToolResults.Success(new { page, blocks = pageBlocks });
+        return McpToolResults.Success(new { page });
     }
 
     [McpServerTool(Name = "notion_create_page")]
@@ -218,33 +211,4 @@ public static class NotionPageTools
         return null;
     }
 
-    internal static async Task<IReadOnlyList<IPageBlock>> LoadBlocks(
-        INotionBlockProvider blocks,
-        string pageId,
-        bool recursive)
-    {
-        var root = (await blocks.GetBlocksAsync(pageId)).ToList();
-        if (!recursive)
-        {
-            return root;
-        }
-
-        var all = new List<IPageBlock>(root);
-        foreach (var block in root)
-        {
-            await AddChildren(blocks, block.Id.ToString(), all);
-        }
-
-        return all;
-    }
-
-    private static async Task AddChildren(INotionBlockProvider blocks, string parentBlockId, List<IPageBlock> all)
-    {
-        var children = (await blocks.GetChildBlocksAsync(parentBlockId)).ToList();
-        all.AddRange(children);
-        foreach (var child in children)
-        {
-            await AddChildren(blocks, child.Id.ToString(), all);
-        }
-    }
 }

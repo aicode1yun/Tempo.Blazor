@@ -54,10 +54,17 @@ internal static class NotionAggregateBaselineValidator
                 {
                     Add("negative_block_order", "Block order cannot be negative.", $"{blockPath}.order");
                 }
-                if (block.Content.ValueKind is System.Text.Json.JsonValueKind.Undefined or
-                    System.Text.Json.JsonValueKind.Null)
+                if (block.Content.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
                 {
                     Add("block_content_required", "Block content is required.", $"{blockPath}.content");
+                }
+                else if (block.Content.ValueKind != JsonValueKind.Object)
+                {
+                    Add(
+                        "block_content_object_required",
+                        "Canonical block content must be a JSON object.",
+                        $"{blockPath}.content",
+                        "Supply the documented object content for the declared block type.");
                 }
 
                 if (block.Id != Guid.Empty)
