@@ -74,7 +74,7 @@ public partial class TmNotionColumnListBlock : ComponentBase, IAsyncDisposable
         StateHasChanged();
         try
         {
-            var result = await Context.BlockProvider.GetChildBlocksAsync(Block.Id.ToString());
+            var result = await Context.BlockService.GetChildBlocksAsync(Block.Id.ToString());
             _columns = result
                 .Where(b => b.Type == BlockType.Column)
                 .OrderBy(b => (b.Content as IColumnBlockContent)?.ColumnIndex ?? b.Order)
@@ -122,7 +122,7 @@ public partial class TmNotionColumnListBlock : ComponentBase, IAsyncDisposable
             };
             try
             {
-                var created = await Context.BlockProvider.CreateBlockAsync(
+                var created = await Context.BlockService.CreateBlockAsync(
                     Block.PageId.ToString(), col,
                     _columns.LastOrDefault()?.Id.ToString());
                 _columns.Add(created);
@@ -134,7 +134,7 @@ public partial class TmNotionColumnListBlock : ComponentBase, IAsyncDisposable
             try
             {
                 var updatedList = BuildColumnListBlock(Block, new ColumnListBlockContent { ColumnCount = _columns.Count });
-                await Context.BlockProvider.UpdateBlockAsync(updatedList);
+                await Context.BlockService.UpdateBlockAsync(updatedList);
                 await OnUpdated.InvokeAsync(updatedList);
             }
             catch { }
@@ -163,7 +163,7 @@ public partial class TmNotionColumnListBlock : ComponentBase, IAsyncDisposable
                 ColumnIndex  = i,
                 WidthPercent = Math.Round(widths[i], 2)
             });
-            try { await Context.BlockProvider.UpdateBlockAsync(updated); }
+            try { await Context.BlockService.UpdateBlockAsync(updated); }
             catch { }
             _columns[i] = updated;
         }
@@ -186,7 +186,7 @@ public partial class TmNotionColumnListBlock : ComponentBase, IAsyncDisposable
                 ColumnIndex  = i,
                 WidthPercent = equalPct
             });
-            try { await Context.BlockProvider.UpdateBlockAsync(upd); _columns[i] = upd; }
+            try { await Context.BlockService.UpdateBlockAsync(upd); _columns[i] = upd; }
             catch { }
         }
 
@@ -203,7 +203,7 @@ public partial class TmNotionColumnListBlock : ComponentBase, IAsyncDisposable
 
         try
         {
-            var created = await Context.BlockProvider.CreateBlockAsync(
+            var created = await Context.BlockService.CreateBlockAsync(
                 Block.PageId.ToString(),
                 newColBlock,
                 _columns.LastOrDefault()?.Id.ToString());
@@ -211,7 +211,7 @@ public partial class TmNotionColumnListBlock : ComponentBase, IAsyncDisposable
 
             // Update ColumnList block metadata
             var updatedList = BuildColumnListBlock(Block, new ColumnListBlockContent { ColumnCount = totalCols });
-            await Context.BlockProvider.UpdateBlockAsync(updatedList);
+            await Context.BlockService.UpdateBlockAsync(updatedList);
             await OnUpdated.InvokeAsync(updatedList);
 
             _resizeInitialized = false;

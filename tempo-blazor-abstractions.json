@@ -11553,7 +11553,7 @@
         },
         {
           "title": "Wiring to TmNotionEditor",
-          "code": "@inject MyTokenProvider TokenProvider\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                TokenProvider=\"@TokenProvider\" />"
+          "code": "@inject MyTokenProvider TokenProvider\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                AggregateProvider=\"@AggregateProvider\"\n                TokenProvider=\"@TokenProvider\" />"
         }
       ]
     },
@@ -19972,18 +19972,6 @@
               "type": "NotionPageSnapshot"
             }
           ]
-        },
-        {
-          "name": "LoadCallCount",
-          "kind": "Property",
-          "type": "int",
-          "description": "Gets the number of aggregate load calls observed by this instance."
-        },
-        {
-          "name": "SaveCallCount",
-          "kind": "Property",
-          "type": "int",
-          "description": "Gets the number of atomic save calls observed by this instance."
         }
       ]
     },
@@ -20698,211 +20686,6 @@
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Interfaces/INotionAnalyticsProvider.cs",
       "documentationStatus": "merged"
-    },
-    {
-      "itemName": "INotionBlockProvider",
-      "kind": "Interface",
-      "category": "Notion Editor",
-      "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
-      "description": "Required block provider for TmNotionEditor. Handles all block-level CRUD, reordering, type conversion, duplication, and cross-page moves. Every editable action in the editor flows through this provider.",
-      "packageId": "Tempo.Blazor.Abstractions",
-      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Interfaces/INotionBlockProvider.cs",
-      "documentationStatus": "merged",
-      "methods": [
-        {
-          "name": "GetBlocksAsync",
-          "returnType": "Task<IEnumerable<IPageBlock>>",
-          "description": "Returns all top-level blocks for the given page, ordered by their Order field.",
-          "parameters": [
-            {
-              "name": "pageId",
-              "type": "string"
-            }
-          ]
-        },
-        {
-          "name": "GetChildBlocksAsync",
-          "returnType": "Task<IEnumerable<IPageBlock>>",
-          "description": "Returns child blocks for a parent block (used by toggle, column, and synced-block containers).",
-          "parameters": [
-            {
-              "name": "parentBlockId",
-              "type": "string"
-            }
-          ]
-        },
-        {
-          "name": "CreateBlockAsync",
-          "returnType": "Task<IPageBlock>",
-          "description": "Creates a single block and returns the persisted version with the server-assigned ID.",
-          "parameters": [
-            {
-              "name": "pageId",
-              "type": "string"
-            },
-            {
-              "name": "block",
-              "type": "IPageBlock",
-              "description": "Block to create (Id may be a temporary client-side GUID)."
-            },
-            {
-              "name": "afterBlockId",
-              "type": "string?",
-              "description": "Insert after this block ID, or null to append."
-            }
-          ]
-        },
-        {
-          "name": "CreateBlocksAsync",
-          "returnType": "Task<IEnumerable<IPageBlock>>",
-          "description": "Batch-creates multiple blocks (e.g. on paste). Returns them in insertion order.",
-          "parameters": [
-            {
-              "name": "pageId",
-              "type": "string"
-            },
-            {
-              "name": "blocks",
-              "type": "IEnumerable<IPageBlock>"
-            },
-            {
-              "name": "afterBlockId",
-              "type": "string?",
-              "description": "Insert after this block ID, or null to append."
-            }
-          ]
-        },
-        {
-          "name": "UpdateBlockAsync",
-          "returnType": "Task",
-          "description": "Persists content changes for an existing block (text edits, media URL changes, etc.).",
-          "parameters": [
-            {
-              "name": "block",
-              "type": "IPageBlock"
-            }
-          ]
-        },
-        {
-          "name": "DeleteBlockAsync",
-          "returnType": "Task",
-          "description": "Permanently deletes a block.",
-          "parameters": [
-            {
-              "name": "blockId",
-              "type": "string"
-            }
-          ]
-        },
-        {
-          "name": "ReorderBlocksAsync",
-          "returnType": "Task",
-          "description": "Persists the new block order after a drag-and-drop reorder.",
-          "parameters": [
-            {
-              "name": "pageId",
-              "type": "string"
-            },
-            {
-              "name": "orderedBlockIds",
-              "type": "IEnumerable<string>",
-              "description": "All block IDs in their new order."
-            }
-          ]
-        },
-        {
-          "name": "MoveBlockToPageAsync",
-          "returnType": "Task",
-          "description": "Moves a block to a different page.",
-          "parameters": [
-            {
-              "name": "blockId",
-              "type": "string"
-            },
-            {
-              "name": "targetPageId",
-              "type": "string"
-            },
-            {
-              "name": "afterBlockId",
-              "type": "string?",
-              "description": "Insert position in the target page."
-            }
-          ]
-        },
-        {
-          "name": "DuplicateBlockAsync",
-          "returnType": "Task<IPageBlock>",
-          "description": "Creates a deep copy of a block (including child blocks for containers) and inserts it directly after the source.",
-          "parameters": [
-            {
-              "name": "blockId",
-              "type": "string"
-            }
-          ]
-        },
-        {
-          "name": "ConvertBlockTypeAsync",
-          "returnType": "Task<IPageBlock>",
-          "description": "Changes a block's type while preserving its text content (e.g. Paragraph -> Heading1). Uses the block's stored content. Returns the updated block.",
-          "parameters": [
-            {
-              "name": "blockId",
-              "type": "string"
-            },
-            {
-              "name": "newType",
-              "type": "BlockType",
-              "description": "Target block type from the BlockType enum."
-            }
-          ]
-        },
-        {
-          "name": "ConvertBlockTypeAsync",
-          "returnType": "Task<IPageBlock>",
-          "description": "Overload that converts a block using the editor's live contenteditable HTML instead of the stored content, so text typed since the last blur is not lost. This is a default interface member: providers that do not override it ignore currentHtml and fall back to the two-argument overload, so existing implementations keep working unchanged.",
-          "parameters": [
-            {
-              "name": "blockId",
-              "type": "string"
-            },
-            {
-              "name": "newType",
-              "type": "BlockType",
-              "description": "Target block type from the BlockType enum."
-            },
-            {
-              "name": "currentHtml",
-              "type": "string?",
-              "description": "The block's live editor HTML, or null to use the stored content."
-            }
-          ]
-        },
-        {
-          "name": "GetBlockLinkAsync",
-          "returnType": "Task<string>",
-          "description": "Returns a shareable URL that deep-links directly to this block.",
-          "parameters": [
-            {
-              "name": "blockId",
-              "type": "string"
-            }
-          ]
-        }
-      ],
-      "usedInComponents": [
-        "TmNotionEditor"
-      ],
-      "examples": [
-        {
-          "title": "Minimal API-backed implementation skeleton",
-          "code": "public class ApiNotionBlockProvider : INotionBlockProvider\n{\n    private readonly HttpClient _http;\n\n    public ApiNotionBlockProvider(HttpClient http) => _http = http;\n\n    public async Task<IEnumerable<IPageBlock>> GetBlocksAsync(string pageId)\n        => await _http.GetFromJsonAsync<List<PageBlock>>($\"/api/pages/{pageId}/blocks\") ?? [];\n\n    public async Task<IPageBlock> CreateBlockAsync(string pageId, IPageBlock block, string? afterBlockId)\n    {\n        var response = await _http.PostAsJsonAsync($\"/api/pages/{pageId}/blocks?after={afterBlockId}\", block);\n        return await response.Content.ReadFromJsonAsync<PageBlock>() ?? throw new InvalidOperationException();\n    }\n\n    // ... implement remaining methods\n}"
-        },
-        {
-          "title": "Convert without losing unsaved text",
-          "code": "// the editor reads the live contenteditable value before converting\nvar liveHtml = await JS.InvokeAsync<string?>(\n    \"tmNotionEditor.getEditableHtml\", blockId);\n\nvar converted = await BlockProvider.ConvertBlockTypeAsync(\n    blockId, BlockType.Heading2, liveHtml);\n\n// providers that do not implement the overload simply ignore liveHtml"
-        }
-      ]
     },
     {
       "itemName": "INotionBlogProvider",
@@ -22183,7 +21966,7 @@
       "kind": "Interface",
       "category": "Notion Editor",
       "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
-      "description": "Read-only view of a single content block within a page. Returned by INotionBlockProvider. The concrete type is PageBlock from Tempo.Blazor.NotionEditor.Models, which you can use directly or subclass.",
+      "description": "Read-only view of a single content block within a complete page aggregate. The concrete type is PageBlock from Tempo.Blazor.NotionEditor.Models, which you can use directly or subclass.",
       "packageId": "Tempo.Blazor.Abstractions",
       "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Interfaces/IPageBlock.cs",
       "documentationStatus": "merged",
@@ -22834,16 +22617,6 @@
           ]
         }
       ]
-    },
-    {
-      "itemName": "MoveBlockToPageRequest",
-      "kind": "Record",
-      "category": "Notion Editor",
-      "namespace": "Tempo.Blazor.NotionEditor.Models",
-      "description": "Request for moving an existing Notion block to a top-level page position.",
-      "packageId": "Tempo.Blazor.Abstractions",
-      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/MoveBlockToPageRequest.cs",
-      "documentationStatus": "merged"
     },
     {
       "itemName": "MoveNotionBlockRequest",
@@ -36115,11 +35888,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1470,
-    "manualItemCount": 1470,
-    "generatedItemCount": 1453,
+    "itemCount": 1468,
+    "manualItemCount": 1468,
+    "generatedItemCount": 1451,
     "generatedOnlyItemCount": 0,
     "componentCount": 0,
-    "publicApiTypeCount": 1453
+    "publicApiTypeCount": 1451
   }
 }

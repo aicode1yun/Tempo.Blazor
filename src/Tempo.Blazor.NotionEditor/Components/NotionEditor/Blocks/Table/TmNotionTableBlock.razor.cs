@@ -117,7 +117,7 @@ public partial class TmNotionTableBlock : ComponentBase
             }
             else
             {
-                var children = await Context.BlockProvider.GetChildBlocksAsync(Block.Id.ToString());
+                var children = await Context.BlockService.GetChildBlocksAsync(Block.Id.ToString());
                 _rows = children
                     .Where(b => b.Type == BlockType.TableRow)
                     .OrderBy(b => b.Order)

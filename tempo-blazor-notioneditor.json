@@ -343,6 +343,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "INotionEditorBlockService",
+      "kind": "Interface",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
+      "description": "Interactive block operations backed by complete aggregate replacements.",
+      "packageId": "Tempo.Blazor.NotionEditor",
+      "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionEditorBlockService.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "MarkdownShortcutDetector",
       "kind": "Class",
       "category": "Components",
@@ -720,6 +730,16 @@
       "documentationStatus": "merged"
     },
     {
+      "itemName": "NotionEditorBlockService",
+      "kind": "Class",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
+      "description": "Applies interactive block mutations to complete Notion page snapshots and persists each logical change through exactly one SaveAsync call.",
+      "packageId": "Tempo.Blazor.NotionEditor",
+      "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionEditorBlockService.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "NotionEditorContext",
       "kind": "Class",
       "category": "Components",
@@ -815,9 +835,9 @@
           "description": "Raised by nested blocks when they create a sibling block through the shared provider."
         },
         {
-          "name": "BlockProvider",
+          "name": "BlockService",
           "kind": "Property",
-          "type": "INotionBlockProvider"
+          "type": "INotionEditorBlockService"
         },
         {
           "name": "BlogProvider",
@@ -1055,7 +1075,7 @@
       "examples": [
         {
           "title": "Export page blocks to HTML",
-          "code": "var blocks = await BlockProvider.GetBlocksAsync(pageId.ToString());\nvar html   = NotionHtmlExporter.Export(blocks, pageTitle: page.Title);"
+          "code": "var blockService = new NotionEditorBlockService(AggregateProvider);\nvar blocks = (await blockService.GetBlocksAsync(pageId.ToString())).ToList();\nvar html = NotionHtmlExporter.Export(blocks, pageTitle: page.Title);"
         },
         {
           "title": "Render Markdown to HTML without an extra dependency",
@@ -1216,7 +1236,7 @@
       "examples": [
         {
           "title": "Export page blocks to Markdown",
-          "code": "var blocks   = await BlockProvider.GetBlocksAsync(pageId.ToString());\nvar markdown = NotionMarkdownExporter.Export(blocks, pageTitle: page.Title);"
+          "code": "var blockService = new NotionEditorBlockService(AggregateProvider);\nvar blocks = (await blockService.GetBlocksAsync(pageId.ToString())).ToList();\nvar markdown = NotionMarkdownExporter.Export(blocks, pageTitle: page.Title);"
         },
         {
           "title": "Alignment survives the round-trip",
@@ -1265,7 +1285,7 @@
       "examples": [
         {
           "title": "Import Markdown into page blocks",
-          "code": "var blocks = NotionMarkdownImporter.Import(markdown, pageId);\n\n// persist through your IBlockProvider\nforeach (var block in blocks)\n{\n    await BlockProvider.CreateBlockAsync(pageId.ToString(), block, previousBlockId: null);\n}"
+          "code": "var blocks = NotionMarkdownImporter.Import(markdown, pageId);\nvar blockService = new NotionEditorBlockService(AggregateProvider);\n\n// The complete imported tree is persisted through one aggregate save.\nawait blockService.CreateBlocksAsync(pageId.ToString(), blocks, afterBlockId: null);"
         },
         {
           "title": "A table imports as a parent block with child rows",
@@ -1524,7 +1544,7 @@
       "examples": [
         {
           "title": "Register the editor services",
-          "code": "// Program.cs\nbuilder.Services.AddTempoBlazorNotionEditor();\n\n// then supply your own providers\nbuilder.Services.AddScoped<INotionDataProvider, MyNotionDataProvider>();\nbuilder.Services.AddScoped<INotionBlockProvider, MyNotionBlockProvider>();"
+          "code": "// Program.cs\nbuilder.Services.AddTempoBlazorNotionEditor();\n\n// then supply your own providers\nbuilder.Services.AddScoped<INotionDataProvider, MyNotionDataProvider>();\nbuilder.Services.AddScoped<INotionAggregateProvider, MyNotionAggregateProvider>();"
         }
       ]
     },
@@ -3984,22 +4004,16 @@
       "parameters": [
         {
           "name": "AggregateProvider",
-          "type": "INotionAggregateProvider?",
-          "isRequired": false,
-          "description": "Canonical page aggregate provider for validated save-once table changes, structured multi-block paste, undo/redo, and optimistic conflict recovery. Without it, canonical tables remain safely readable but aggregate-only authoring controls are disabled."
+          "type": "INotionAggregateProvider",
+          "isRequired": true,
+          "description": "Canonical page aggregate provider for all block reads and validated save-once mutations, including optimistic conflict recovery.",
+          "editorRequired": true
         },
         {
           "name": "AllowedBlockTypes",
           "type": "IReadOnlySet<BlockType>?",
           "isRequired": false,
           "description": "When non-null, restricts the slash menu and Turn Into menu to only these block types. Existing blocks of other types are still displayed. When null, all types are available."
-        },
-        {
-          "name": "BlockProvider",
-          "type": "INotionBlockProvider",
-          "isRequired": true,
-          "description": "Block read/write provider — CRUD, reorder, convert and duplicate blocks.",
-          "editorRequired": true
         },
         {
           "name": "Class",
@@ -4196,9 +4210,9 @@
           "parameter": "DataProvider"
         },
         {
-          "name": "INotionBlockProvider",
-          "description": "Required — block CRUD, reorder, convert, duplicate.",
-          "parameter": "BlockProvider"
+          "name": "INotionAggregateProvider",
+          "description": "Required — complete page snapshots and atomic block persistence.",
+          "parameter": "AggregateProvider"
         },
         {
           "name": "ITokenDataProvider",
@@ -4228,28 +4242,28 @@
       ],
       "examples": [
         {
-          "title": "Minimal setup (pages + blocks only)",
-          "code": "@inject MyNotionDataProvider DataProvider\n@inject MyNotionBlockProvider BlockProvider\n\n<div style=\"height: 600px;\">\n    <TmNotionEditor DataProvider=\"@DataProvider\"\n                    BlockProvider=\"@BlockProvider\"\n                    InitialPageId=\"my-page-id\" />\n</div>"
+          "title": "Minimal setup",
+          "code": "@inject MyNotionDataProvider DataProvider\n@inject MyNotionAggregateProvider AggregateProvider\n\n<div style=\"height: 600px;\">\n    <TmNotionEditor DataProvider=\"@DataProvider\"\n                    AggregateProvider=\"@AggregateProvider\"\n                    InitialPageId=\"my-page-id\" />\n</div>"
         },
         {
           "title": "With token autocomplete (type {{ to insert variables)",
-          "code": "@inject MyNotionDataProvider DataProvider\n@inject MyNotionBlockProvider BlockProvider\n@inject MyTokenProvider TokenProvider\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                TokenProvider=\"@TokenProvider\"\n                InitialPageId=\"my-page-id\"\n                Class=\"h-full\" />"
+          "code": "@inject MyNotionDataProvider DataProvider\n@inject MyNotionAggregateProvider AggregateProvider\n@inject MyTokenProvider TokenProvider\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                AggregateProvider=\"@AggregateProvider\"\n                TokenProvider=\"@TokenProvider\"\n                InitialPageId=\"my-page-id\"\n                Class=\"h-full\" />"
         },
         {
           "title": "Full featured — all optional providers",
-          "code": "<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                SearchProvider=\"@SearchProvider\"\n                CommentProvider=\"@CommentProvider\"\n                HistoryProvider=\"@HistoryProvider\"\n                MentionProvider=\"@MentionProvider\"\n                CollaborationProvider=\"@CollaborationProvider\"\n                FileProvider=\"@FileProvider\"\n                MediaLibraryProvider=\"@MediaLibraryProvider\"\n                TokenProvider=\"@TokenProvider\"\n                ImportExportProvider=\"@ImportExportProvider\"\n                InitialPageId=\"@_pageId\"\n                ShowSidebar=\"true\"\n                OnPageChanged=\"HandlePageChanged\"\n                Class=\"h-full\" />"
+          "code": "<TmNotionEditor DataProvider=\"@DataProvider\"\n                AggregateProvider=\"@AggregateProvider\"\n                SearchProvider=\"@SearchProvider\"\n                CommentProvider=\"@CommentProvider\"\n                HistoryProvider=\"@HistoryProvider\"\n                MentionProvider=\"@MentionProvider\"\n                CollaborationProvider=\"@CollaborationProvider\"\n                FileProvider=\"@FileProvider\"\n                MediaLibraryProvider=\"@MediaLibraryProvider\"\n                TokenProvider=\"@TokenProvider\"\n                ImportExportProvider=\"@ImportExportProvider\"\n                InitialPageId=\"@_pageId\"\n                ShowSidebar=\"true\"\n                OnPageChanged=\"HandlePageChanged\"\n                Class=\"h-full\" />"
         },
         {
           "title": "Read-only viewer",
-          "code": "<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                InitialPageId=\"@_pageId\"\n                ReadOnly=\"true\"\n                ShowSidebar=\"false\" />"
+          "code": "<TmNotionEditor DataProvider=\"@DataProvider\"\n                AggregateProvider=\"@AggregateProvider\"\n                InitialPageId=\"@_pageId\"\n                ReadOnly=\"true\"\n                ShowSidebar=\"false\" />"
         },
         {
           "title": "Restrict to a subset of block types",
-          "code": "@using Tempo.Blazor.NotionEditor.Enums\n\n@code {\n    private static readonly IReadOnlySet<BlockType> AllowedTypes = new HashSet<BlockType>\n    {\n        BlockType.Paragraph,\n        BlockType.Heading1,\n        BlockType.Heading2,\n        BlockType.BulletList,\n        BlockType.NumberedList,\n        BlockType.TodoItem,\n    };\n}\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                AllowedBlockTypes=\"@AllowedTypes\"\n                InitialPageId=\"@_pageId\" />"
+          "code": "@using Tempo.Blazor.NotionEditor.Enums\n\n@code {\n    private static readonly IReadOnlySet<BlockType> AllowedTypes = new HashSet<BlockType>\n    {\n        BlockType.Paragraph,\n        BlockType.Heading1,\n        BlockType.Heading2,\n        BlockType.BulletList,\n        BlockType.NumberedList,\n        BlockType.TodoItem,\n    };\n}\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                AggregateProvider=\"@AggregateProvider\"\n                AllowedBlockTypes=\"@AllowedTypes\"\n                InitialPageId=\"@_pageId\" />"
         },
         {
           "title": "Single-page mode — embed one page as a work-item description field",
-          "code": "@using Tempo.Blazor.NotionEditor.Enums\n\n@code {\n    // Rich-text description blocks only — multi-page blocks are removed automatically in SinglePageMode.\n    private static readonly IReadOnlySet<BlockType> DescriptionBlocks = new HashSet<BlockType>\n    {\n        BlockType.Paragraph, BlockType.Heading1, BlockType.Heading2, BlockType.Heading3,\n        BlockType.BulletList, BlockType.NumberedList, BlockType.TodoItem,\n        BlockType.Quote, BlockType.Callout, BlockType.Code, BlockType.Divider, BlockType.Image, BlockType.Table\n    };\n\n    void OpenElsewhere(string pageId) { /* host opens the linked page in a dialog / new tab */ }\n}\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                SinglePageMode=\"true\"\n                InitialPageId=\"@WorkItem.DescriptionPageId\"\n                AllowedBlockTypes=\"@DescriptionBlocks\"\n                OnPageNavigationRequested=\"OpenElsewhere\" />"
+          "code": "@using Tempo.Blazor.NotionEditor.Enums\n\n@code {\n    // Rich-text description blocks only — multi-page blocks are removed automatically in SinglePageMode.\n    private static readonly IReadOnlySet<BlockType> DescriptionBlocks = new HashSet<BlockType>\n    {\n        BlockType.Paragraph, BlockType.Heading1, BlockType.Heading2, BlockType.Heading3,\n        BlockType.BulletList, BlockType.NumberedList, BlockType.TodoItem,\n        BlockType.Quote, BlockType.Callout, BlockType.Code, BlockType.Divider, BlockType.Image, BlockType.Table\n    };\n\n    void OpenElsewhere(string pageId) { /* host opens the linked page in a dialog / new tab */ }\n}\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                AggregateProvider=\"@AggregateProvider\"\n                SinglePageMode=\"true\"\n                InitialPageId=\"@WorkItem.DescriptionPageId\"\n                AllowedBlockTypes=\"@DescriptionBlocks\"\n                OnPageNavigationRequested=\"OpenElsewhere\" />"
         }
       ]
     },
@@ -5036,7 +5050,7 @@
       "category": "Notion Editor",
       "subcategory": "Page",
       "namespace": "Tempo.Blazor.Components.NotionEditor.Page",
-      "description": "Renders a single Notion page: header (via TmNotionPageHeader), block list and comments area. Loads blocks via BlockProvider and manages block state.",
+      "description": "Renders a single Notion page: header (via TmNotionPageHeader), block list and comments area. Loads blocks through the aggregate-backed editor service and manages block state.",
       "packageId": "Tempo.Blazor.NotionEditor",
       "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Page/TmNotionPage.razor",
       "documentationStatus": "merged",
@@ -5721,10 +5735,10 @@
       ],
       "parameters": [
         {
-          "name": "BlockProvider",
-          "type": "INotionBlockProvider",
+          "name": "AggregateProvider",
+          "type": "INotionAggregateProvider",
           "isRequired": true,
-          "description": "Provider used to load blocks for the shared Notion page.",
+          "description": "Provider used to load the complete shared page aggregate.",
           "editorRequired": true
         },
         {
@@ -6404,7 +6418,7 @@
       "category": "Notion Editor",
       "subcategory": "Blocks / Table",
       "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Table",
-      "description": "Editable table block. The Table block itself carries the shape (column count, header flags, per-column alignment); its rows are separate TableRow blocks loaded as children via IBlockProvider.GetChildBlocksAsync(tableId) and ordered by Order. Supports adding/deleting rows and columns, a header row and header column, cell range selection with merge/split, cell background colours, column sorting, row drag-and-drop, and undo of the last table change.",
+      "description": "Editable table block. The Table block itself carries the shape (column count, header flags, per-column alignment); its rows are separate TableRow blocks loaded from the complete page aggregate and ordered by Order. Supports adding/deleting rows and columns, a header row and header column, cell range selection with merge/split, cell background colours, column sorting, row drag-and-drop, and undo of the last table change.",
       "packageId": "Tempo.Blazor.NotionEditor",
       "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Table/TmNotionTableBlock.razor",
       "documentationStatus": "merged",
@@ -6987,7 +7001,7 @@
       "category": "Notion Editor",
       "subcategory": "Blocks / Lists",
       "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Lists",
-      "description": "Self-contained toggle block. Owns the header contenteditable JS lifecycle and manages child blocks (lazy-loaded from BlockProvider). Arrow click fires OnOpenChanged so the parent can persist the new IsOpen state. Enter on an empty header fires OnTypeConvert(\"paragraph\") to escape the toggle. Enter on a non-empty header fires OnEnterSplit to create a new sibling block after.",
+      "description": "Self-contained toggle block. Owns the header contenteditable JS lifecycle and manages child blocks (lazy-loaded from the aggregate-backed editor service). Arrow click fires OnOpenChanged so the parent can persist the new IsOpen state. Enter on an empty header fires OnTypeConvert(\"paragraph\") to escape the toggle. Enter on a non-empty header fires OnEnterSplit to create a new sibling block after.",
       "packageId": "Tempo.Blazor.NotionEditor",
       "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Lists/TmNotionToggleBlock.razor",
       "documentationStatus": "merged",
@@ -7336,11 +7350,11 @@
     }
   ],
   "summary": {
-    "itemCount": 171,
-    "manualItemCount": 171,
-    "generatedItemCount": 170,
+    "itemCount": 173,
+    "manualItemCount": 173,
+    "generatedItemCount": 172,
     "generatedOnlyItemCount": 0,
     "componentCount": 128,
-    "publicApiTypeCount": 42
+    "publicApiTypeCount": 44
   }
 }

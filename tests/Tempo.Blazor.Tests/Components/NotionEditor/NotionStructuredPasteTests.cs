@@ -124,7 +124,7 @@ public sealed class NotionStructuredPasteTests : LocalizationTestBase
     private (IRenderedComponent<TmNotionBlock> Cut, List<IReadOnlyList<IPageBlock>> Inserted) RenderBlock()
     {
         var inserted = new List<IReadOnlyList<IPageBlock>>();
-        var context = new NotionEditorContext { BlockProvider = Substitute.For<INotionBlockProvider>() };
+        var context = new NotionEditorContext { BlockService = Substitute.For<INotionEditorBlockService>() };
 
         var cut = Render<TmNotionBlock>(parameters => parameters
             .AddCascadingValue(context)

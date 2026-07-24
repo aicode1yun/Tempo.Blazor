@@ -28,7 +28,7 @@
   "examples": [
     {
       "title": "Export page blocks to HTML",
-      "code": "var blocks = await BlockProvider.GetBlocksAsync(pageId.ToString());\nvar html   = NotionHtmlExporter.Export(blocks, pageTitle: page.Title);"
+      "code": "var blockService = new NotionEditorBlockService(AggregateProvider);\nvar blocks = (await blockService.GetBlocksAsync(pageId.ToString())).ToList();\nvar html = NotionHtmlExporter.Export(blocks, pageTitle: page.Title);"
     },
     {
       "title": "Render Markdown to HTML without an extra dependency",

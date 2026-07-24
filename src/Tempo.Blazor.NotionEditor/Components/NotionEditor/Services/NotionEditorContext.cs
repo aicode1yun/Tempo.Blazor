@@ -16,9 +16,9 @@ public sealed class NotionEditorContext
 {
     public string                      CurrentUserId        { get; init; } = "demo";
     public string?                     CurrentPageId        { get; init; }
-    public INotionDataProvider         DataProvider          { get; init; } = default!;
-    public INotionBlockProvider        BlockProvider         { get; init; } = default!;
-    public NotionEditorAggregateSession? AggregateSession    { get; init; }
+    public INotionDataProvider         DataProvider       { get; init; } = default!;
+    public INotionEditorBlockService   BlockService      { get; init; } = default!;
+    public NotionEditorAggregateSession? AggregateSession { get; init; }
     public INotionSearchProvider?      SearchProvider        { get; init; }
     public INotionDatabaseProvider?    DatabaseProvider      { get; init; }
     public ITmCommentProvider?         CommentProvider       { get; init; }

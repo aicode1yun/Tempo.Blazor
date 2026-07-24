@@ -3,7 +3,7 @@
   "kind": "Interface",
   "category": "NotionEditor",
   "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
-  "description": "Read-only view of a single content block within a page. Returned by INotionBlockProvider. The concrete type is PageBlock from Tempo.Blazor.NotionEditor.Models, which you can use directly or subclass.",
+  "description": "Read-only view of a single content block within a complete page aggregate. The concrete type is PageBlock from Tempo.Blazor.NotionEditor.Models, which you can use directly or subclass.",
   "properties": [
     { "name": "Id",             "type": "Guid",          "isRequired": true,  "description": "Unique block identifier." },
     { "name": "PageId",         "type": "Guid",          "isRequired": true,  "description": "ID of the page that owns this block." },

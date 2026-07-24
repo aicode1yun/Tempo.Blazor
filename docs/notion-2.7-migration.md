@@ -70,6 +70,11 @@ Idempotency belongs to `NotionAtomicAuthoringEngine`, not the provider
 interface: retry the identical request with the same idempotency key, but use a
 new key after rebuilding a request following a concurrency conflict.
 
+`INotionBlockProvider`, the `BlockProvider` component parameter, and the demo
+`/api/notion/blocks` endpoints were removed. Pass only `AggregateProvider` to
+`TmNotionEditor` and `TmNotionPublicPage`. Interactive block operations are
+translated by the editor into one complete aggregate save per logical change.
+
 ## MCP migration
 
 Use this sequence:

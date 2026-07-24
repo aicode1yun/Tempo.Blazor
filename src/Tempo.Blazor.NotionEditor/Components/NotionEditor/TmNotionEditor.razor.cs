@@ -32,16 +32,11 @@ public partial class TmNotionEditor : TmComponentBase, IAsyncDisposable
     [Parameter, EditorRequired]
     public INotionDataProvider DataProvider { get; set; } = default!;
 
-    /// <summary>Block read/write provider (required).</summary>
-    [Parameter, EditorRequired]
-    public INotionBlockProvider BlockProvider { get; set; } = default!;
-
     /// <summary>
-    /// Canonical aggregate provider used for validated save-once editor mutations. When supplied,
-    /// table operations and conflict recovery use this provider instead of granular writes.
+    /// Canonical aggregate provider used for every editor read and validated save-once mutation.
     /// </summary>
-    [Parameter]
-    public INotionAggregateProvider? AggregateProvider { get; set; }
+    [Parameter, EditorRequired]
+    public INotionAggregateProvider AggregateProvider { get; set; } = default!;
 
     // ── Optional providers ───────────────────────────────────────────────────
 
@@ -170,6 +165,7 @@ public partial class TmNotionEditor : TmComponentBase, IAsyncDisposable
     private TmCurrentUserState?        _resolvedCurrentUser;
     private NotionEditorAggregateSession? _aggregateSession;
     private INotionAggregateProvider? _aggregateSessionProvider;
+    private NotionEditorBlockService _blockService = default!;
 
     /// <summary>
     /// Multi-page block types that are removed from the slash and Turn-Into menus while
@@ -238,6 +234,7 @@ public partial class TmNotionEditor : TmComponentBase, IAsyncDisposable
 
     protected override void OnInitialized()
     {
+        EnsureAggregateServices();
         if (CollaborationProvider is not null)
             _collabSync = new NotionCollaborationSync();
 
@@ -248,11 +245,8 @@ public partial class TmNotionEditor : TmComponentBase, IAsyncDisposable
     {
         if (!ReferenceEquals(AggregateProvider, _aggregateSessionProvider))
         {
-            _aggregateSessionProvider = AggregateProvider;
-            _aggregateSession = AggregateProvider is null
-                ? null
-                : new NotionEditorAggregateSession(AggregateProvider);
-            if (_aggregateSession is not null && _currentPageId is not null)
+            EnsureAggregateServices();
+            if (_currentPageId is not null)
             {
                 if (!Guid.TryParse(_currentPageId, out var currentAggregatePageId))
                 {
@@ -268,6 +262,25 @@ public partial class TmNotionEditor : TmComponentBase, IAsyncDisposable
         }
         await ResolveCurrentUserAsync();
         _context = BuildContext();
+    }
+
+    private void EnsureAggregateServices()
+    {
+        if (AggregateProvider is null)
+        {
+            throw new InvalidOperationException(
+                $"{nameof(TmNotionEditor)} requires {nameof(AggregateProvider)}.");
+        }
+        if (ReferenceEquals(AggregateProvider, _aggregateSessionProvider))
+        {
+            return;
+        }
+
+        _aggregateSessionProvider = AggregateProvider;
+        _aggregateSession = new NotionEditorAggregateSession(AggregateProvider);
+        _blockService = new NotionEditorBlockService(
+            AggregateProvider,
+            _aggregateSession);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -564,7 +577,7 @@ public partial class TmNotionEditor : TmComponentBase, IAsyncDisposable
                 })
                 .ToArray();
 
-            await BlockProvider.CreateBlocksAsync(pageId, blocks, null);
+            await _blockService.CreateBlocksAsync(pageId, blocks, null);
         }
 
         _templateGalleryOpen = false;
@@ -766,7 +779,7 @@ public partial class TmNotionEditor : TmComponentBase, IAsyncDisposable
         CurrentUserId        = EffectiveCurrentUserId,
         CurrentPageId        = _currentPageId,
         DataProvider          = DataProvider,
-        BlockProvider         = BlockProvider,
+        BlockService         = _blockService,
         AggregateSession      = _aggregateSession,
         SearchProvider        = SearchProvider,
         DatabaseProvider      = DatabaseProvider,

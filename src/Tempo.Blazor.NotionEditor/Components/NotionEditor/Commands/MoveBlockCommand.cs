@@ -1,4 +1,5 @@
 using Tempo.Blazor.NotionEditor.Commands;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using PageBlock = Tempo.Blazor.NotionEditor.Interfaces.PageBlock;
 
@@ -11,14 +12,14 @@ namespace Tempo.Blazor.Components.NotionEditor.Commands;
 /// </summary>
 public sealed class MoveBlockCommand : INotionCommand
 {
-    private readonly INotionBlockProvider _provider;
+    private readonly INotionEditorBlockService _provider;
     private readonly List<IPageBlock>    _blocks;
     private readonly string              _pageId;
     private readonly int                 _sourceIndex;
     private readonly int                 _targetIndex;
 
     public MoveBlockCommand(
-        INotionBlockProvider provider,
+        INotionEditorBlockService provider,
         List<IPageBlock>     blocks,
         string               pageId,
         int                  sourceIndex,

@@ -23,7 +23,7 @@ public class TmNotionWireframeBlockInsertTests : LocalizationTestBase
         => new()
         {
             DataProvider = Substitute.For<INotionDataProvider>(),
-            BlockProvider = Substitute.For<INotionBlockProvider>(),
+            BlockService = Substitute.For<INotionEditorBlockService>(),
             DocumentLibraryProvider = library,
             WireframeDocumentProvider = wireframe
         };

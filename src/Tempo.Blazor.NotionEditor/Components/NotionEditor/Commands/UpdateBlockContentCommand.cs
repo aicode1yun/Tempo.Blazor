@@ -1,4 +1,5 @@
 using Tempo.Blazor.NotionEditor.Commands;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
@@ -14,14 +15,14 @@ namespace Tempo.Blazor.Components.NotionEditor.Commands;
 /// </summary>
 public sealed class UpdateBlockContentCommand : INotionCommand
 {
-    private readonly INotionBlockProvider _provider;
+    private readonly INotionEditorBlockService _provider;
     private readonly List<IPageBlock>    _blocks;
     private readonly Guid                _blockId;
     private readonly IBlockContent       _before;
     private readonly IBlockContent       _after;
 
     public UpdateBlockContentCommand(
-        INotionBlockProvider provider,
+        INotionEditorBlockService provider,
         List<IPageBlock>     blocks,
         Guid                 blockId,
         IBlockContent        before,

@@ -37,7 +37,7 @@
 
         <div class="tm-npp__editor">
             <TmNotionEditor DataProvider="DataProvider"
-                            BlockProvider="BlockProvider"
+                            AggregateProvider="AggregateProvider"
                             CommentProvider="@(_share.AllowComments ? CommentProvider : null)"
                             InitialPageId="@_share.PageId.ToString("D")"
                             ShowSidebar="false"

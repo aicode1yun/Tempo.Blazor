@@ -32,9 +32,10 @@ public sealed class TmNotionPageMergeTests : LocalizationTestBase
 
         await cut.InvokeAsync(() => cut.Instance.MergeBlockIntoPreviousAsync(second.Id.ToString(), "beta"));
 
-        await provider.Received(1).DeleteBlockAsync(second.Id.ToString());
-        await provider.Received(1).UpdateBlockAsync(Arg.Is<IPageBlock>(block =>
-            block.Id == first.Id && ((ITextBlockContent)block.Content).Html == "alphabeta"));
+        await provider.Received(1).UpdateBlockAndDeleteAsync(
+            Arg.Is<IPageBlock>(block =>
+                block.Id == first.Id && ((ITextBlockContent)block.Content).Html == "alphabeta"),
+            second.Id.ToString());
 
         cut.Instance.Blocks.Should().ContainSingle();
         cut.Instance.Blocks[0].Id.Should().Be(first.Id);
@@ -69,8 +70,8 @@ public sealed class TmNotionPageMergeTests : LocalizationTestBase
 
         await cut.InvokeAsync(() => cut.Instance.MergeBlockIntoPreviousAsync(first.Id.ToString(), "alpha"));
 
-        await provider.DidNotReceiveWithAnyArgs().DeleteBlockAsync(default!);
-        await provider.DidNotReceiveWithAnyArgs().UpdateBlockAsync(default!);
+        await provider.DidNotReceiveWithAnyArgs()
+            .UpdateBlockAndDeleteAsync(default!, default!);
         cut.Instance.Blocks.Should().HaveCount(2);
     }
 
@@ -83,7 +84,8 @@ public sealed class TmNotionPageMergeTests : LocalizationTestBase
 
         await cut.InvokeAsync(() => cut.Instance.MergeBlockIntoPreviousAsync(second.Id.ToString(), "beta"));
 
-        await provider.DidNotReceiveWithAnyArgs().DeleteBlockAsync(default!);
+        await provider.DidNotReceiveWithAnyArgs()
+            .UpdateBlockAndDeleteAsync(default!, default!);
         cut.Instance.Blocks.Should().HaveCount(2);
     }
 
@@ -93,12 +95,14 @@ public sealed class TmNotionPageMergeTests : LocalizationTestBase
         var first  = Paragraph("alpha", order: 0);
         var second = Paragraph("beta", order: 1);
         var (cut, provider) = RenderPage(first, second);
-        provider.UpdateBlockAsync(Arg.Any<IPageBlock>()).Returns(_ => throw new InvalidOperationException("offline"));
+        provider.UpdateBlockAndDeleteAsync(Arg.Any<IPageBlock>(), Arg.Any<string>())
+            .Returns(_ => throw new InvalidOperationException("offline"));
 
         await cut.InvokeAsync(() => cut.Instance.MergeBlockIntoPreviousAsync(second.Id.ToString(), "beta"));
 
         cut.Instance.Blocks.Should().HaveCount(2, "a failed save must not drop the block locally");
-        await provider.DidNotReceiveWithAnyArgs().DeleteBlockAsync(default!);
+        await provider.Received(1)
+            .UpdateBlockAndDeleteAsync(Arg.Any<IPageBlock>(), second.Id.ToString());
     }
 
     [Fact]
@@ -274,20 +278,20 @@ public sealed class TmNotionPageMergeTests : LocalizationTestBase
 
     // ── Helpers ────────────────────────────────────────────────────────────
 
-    private (IRenderedComponent<TmNotionPage> Cut, INotionBlockProvider Provider) RenderPage(
+    private (IRenderedComponent<TmNotionPage> Cut, INotionEditorBlockService Provider) RenderPage(
         params IPageBlock[] blocks) => RenderPage(readOnly: false, blocks);
 
-    private (IRenderedComponent<TmNotionPage> Cut, INotionBlockProvider Provider) RenderPage(
+    private (IRenderedComponent<TmNotionPage> Cut, INotionEditorBlockService Provider) RenderPage(
         NotionEditorAggregateSession aggregateSession,
         params IPageBlock[] blocks)
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddTempoBlazorNotionEditor();
-        var provider = Substitute.For<INotionBlockProvider>();
+        var provider = Substitute.For<INotionEditorBlockService>();
         provider.GetBlocksAsync(PageId.ToString()).Returns(blocks);
         var context = new NotionEditorContext
         {
-            BlockProvider = provider,
+            BlockService = provider,
             AggregateSession = aggregateSession
         };
         var page = new NotionPage { Id = PageId, Title = "Page" };
@@ -297,16 +301,16 @@ public sealed class TmNotionPageMergeTests : LocalizationTestBase
         return (cut, provider);
     }
 
-    private (IRenderedComponent<TmNotionPage> Cut, INotionBlockProvider Provider) RenderPage(
+    private (IRenderedComponent<TmNotionPage> Cut, INotionEditorBlockService Provider) RenderPage(
         bool readOnly, params IPageBlock[] blocks)
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddTempoBlazorNotionEditor(); // TmNotionPage's comment panel injects orchestrator services
 
-        var provider = Substitute.For<INotionBlockProvider>();
+        var provider = Substitute.For<INotionEditorBlockService>();
         provider.GetBlocksAsync(PageId.ToString()).Returns(blocks);
 
-        var context = new NotionEditorContext { BlockProvider = provider };
+        var context = new NotionEditorContext { BlockService = provider };
         var page    = new NotionPage { Id = PageId, Title = "Page" };
 
         var cut = Render<TmNotionPage>(parameters => parameters

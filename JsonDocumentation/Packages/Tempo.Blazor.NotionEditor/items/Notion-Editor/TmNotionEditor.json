@@ -15,16 +15,10 @@
       "description": "Core page data provider — lists, loads, creates and deletes pages."
     },
     {
-      "name": "BlockProvider",
-      "type": "INotionBlockProvider",
-      "isRequired": true,
-      "description": "Block read/write provider — CRUD, reorder, convert and duplicate blocks."
-    },
-    {
       "name": "AggregateProvider",
-      "type": "INotionAggregateProvider?",
-      "isRequired": false,
-      "description": "Canonical page aggregate provider for validated save-once table changes, structured multi-block paste, undo/redo, and optimistic conflict recovery. Without it, canonical tables remain safely readable but aggregate-only authoring controls are disabled."
+      "type": "INotionAggregateProvider",
+      "isRequired": true,
+      "description": "Canonical page aggregate provider for all block reads and validated save-once mutations, including optimistic conflict recovery."
     },
     {
       "name": "SearchProvider",
@@ -199,9 +193,9 @@
       "parameter": "DataProvider"
     },
     {
-      "name": "INotionBlockProvider",
-      "description": "Required — block CRUD, reorder, convert, duplicate.",
-      "parameter": "BlockProvider"
+      "name": "INotionAggregateProvider",
+      "description": "Required — complete page snapshots and atomic block persistence.",
+      "parameter": "AggregateProvider"
     },
     {
       "name": "ITokenDataProvider",
@@ -231,28 +225,28 @@
   ],
   "examples": [
     {
-      "title": "Minimal setup (pages + blocks only)",
-      "code": "@inject MyNotionDataProvider DataProvider\n@inject MyNotionBlockProvider BlockProvider\n\n<div style=\"height: 600px;\">\n    <TmNotionEditor DataProvider=\"@DataProvider\"\n                    BlockProvider=\"@BlockProvider\"\n                    InitialPageId=\"my-page-id\" />\n</div>"
+      "title": "Minimal setup",
+      "code": "@inject MyNotionDataProvider DataProvider\n@inject MyNotionAggregateProvider AggregateProvider\n\n<div style=\"height: 600px;\">\n    <TmNotionEditor DataProvider=\"@DataProvider\"\n                    AggregateProvider=\"@AggregateProvider\"\n                    InitialPageId=\"my-page-id\" />\n</div>"
     },
     {
       "title": "With token autocomplete (type {{ to insert variables)",
-      "code": "@inject MyNotionDataProvider DataProvider\n@inject MyNotionBlockProvider BlockProvider\n@inject MyTokenProvider TokenProvider\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                TokenProvider=\"@TokenProvider\"\n                InitialPageId=\"my-page-id\"\n                Class=\"h-full\" />"
+      "code": "@inject MyNotionDataProvider DataProvider\n@inject MyNotionAggregateProvider AggregateProvider\n@inject MyTokenProvider TokenProvider\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                AggregateProvider=\"@AggregateProvider\"\n                TokenProvider=\"@TokenProvider\"\n                InitialPageId=\"my-page-id\"\n                Class=\"h-full\" />"
     },
     {
       "title": "Full featured — all optional providers",
-      "code": "<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                SearchProvider=\"@SearchProvider\"\n                CommentProvider=\"@CommentProvider\"\n                HistoryProvider=\"@HistoryProvider\"\n                MentionProvider=\"@MentionProvider\"\n                CollaborationProvider=\"@CollaborationProvider\"\n                FileProvider=\"@FileProvider\"\n                MediaLibraryProvider=\"@MediaLibraryProvider\"\n                TokenProvider=\"@TokenProvider\"\n                ImportExportProvider=\"@ImportExportProvider\"\n                InitialPageId=\"@_pageId\"\n                ShowSidebar=\"true\"\n                OnPageChanged=\"HandlePageChanged\"\n                Class=\"h-full\" />"
+      "code": "<TmNotionEditor DataProvider=\"@DataProvider\"\n                AggregateProvider=\"@AggregateProvider\"\n                SearchProvider=\"@SearchProvider\"\n                CommentProvider=\"@CommentProvider\"\n                HistoryProvider=\"@HistoryProvider\"\n                MentionProvider=\"@MentionProvider\"\n                CollaborationProvider=\"@CollaborationProvider\"\n                FileProvider=\"@FileProvider\"\n                MediaLibraryProvider=\"@MediaLibraryProvider\"\n                TokenProvider=\"@TokenProvider\"\n                ImportExportProvider=\"@ImportExportProvider\"\n                InitialPageId=\"@_pageId\"\n                ShowSidebar=\"true\"\n                OnPageChanged=\"HandlePageChanged\"\n                Class=\"h-full\" />"
     },
     {
       "title": "Read-only viewer",
-      "code": "<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                InitialPageId=\"@_pageId\"\n                ReadOnly=\"true\"\n                ShowSidebar=\"false\" />"
+      "code": "<TmNotionEditor DataProvider=\"@DataProvider\"\n                AggregateProvider=\"@AggregateProvider\"\n                InitialPageId=\"@_pageId\"\n                ReadOnly=\"true\"\n                ShowSidebar=\"false\" />"
     },
     {
       "title": "Restrict to a subset of block types",
-      "code": "@using Tempo.Blazor.NotionEditor.Enums\n\n@code {\n    private static readonly IReadOnlySet<BlockType> AllowedTypes = new HashSet<BlockType>\n    {\n        BlockType.Paragraph,\n        BlockType.Heading1,\n        BlockType.Heading2,\n        BlockType.BulletList,\n        BlockType.NumberedList,\n        BlockType.TodoItem,\n    };\n}\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                AllowedBlockTypes=\"@AllowedTypes\"\n                InitialPageId=\"@_pageId\" />"
+      "code": "@using Tempo.Blazor.NotionEditor.Enums\n\n@code {\n    private static readonly IReadOnlySet<BlockType> AllowedTypes = new HashSet<BlockType>\n    {\n        BlockType.Paragraph,\n        BlockType.Heading1,\n        BlockType.Heading2,\n        BlockType.BulletList,\n        BlockType.NumberedList,\n        BlockType.TodoItem,\n    };\n}\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                AggregateProvider=\"@AggregateProvider\"\n                AllowedBlockTypes=\"@AllowedTypes\"\n                InitialPageId=\"@_pageId\" />"
     },
     {
       "title": "Single-page mode — embed one page as a work-item description field",
-      "code": "@using Tempo.Blazor.NotionEditor.Enums\n\n@code {\n    // Rich-text description blocks only — multi-page blocks are removed automatically in SinglePageMode.\n    private static readonly IReadOnlySet<BlockType> DescriptionBlocks = new HashSet<BlockType>\n    {\n        BlockType.Paragraph, BlockType.Heading1, BlockType.Heading2, BlockType.Heading3,\n        BlockType.BulletList, BlockType.NumberedList, BlockType.TodoItem,\n        BlockType.Quote, BlockType.Callout, BlockType.Code, BlockType.Divider, BlockType.Image, BlockType.Table\n    };\n\n    void OpenElsewhere(string pageId) { /* host opens the linked page in a dialog / new tab */ }\n}\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                SinglePageMode=\"true\"\n                InitialPageId=\"@WorkItem.DescriptionPageId\"\n                AllowedBlockTypes=\"@DescriptionBlocks\"\n                OnPageNavigationRequested=\"OpenElsewhere\" />"
+      "code": "@using Tempo.Blazor.NotionEditor.Enums\n\n@code {\n    // Rich-text description blocks only — multi-page blocks are removed automatically in SinglePageMode.\n    private static readonly IReadOnlySet<BlockType> DescriptionBlocks = new HashSet<BlockType>\n    {\n        BlockType.Paragraph, BlockType.Heading1, BlockType.Heading2, BlockType.Heading3,\n        BlockType.BulletList, BlockType.NumberedList, BlockType.TodoItem,\n        BlockType.Quote, BlockType.Callout, BlockType.Code, BlockType.Divider, BlockType.Image, BlockType.Table\n    };\n\n    void OpenElsewhere(string pageId) { /* host opens the linked page in a dialog / new tab */ }\n}\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                AggregateProvider=\"@AggregateProvider\"\n                SinglePageMode=\"true\"\n                InitialPageId=\"@WorkItem.DescriptionPageId\"\n                AllowedBlockTypes=\"@DescriptionBlocks\"\n                OnPageNavigationRequested=\"OpenElsewhere\" />"
     }
   ],
   "packageId": "Tempo.Blazor.NotionEditor"

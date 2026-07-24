@@ -1,4 +1,5 @@
 using Tempo.Blazor.NotionEditor.Commands;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Interfaces;
 
 namespace Tempo.Blazor.Components.NotionEditor.Commands;
@@ -10,7 +11,7 @@ namespace Tempo.Blazor.Components.NotionEditor.Commands;
 /// </summary>
 public sealed class DeleteBlockCommand : INotionCommand
 {
-    private readonly INotionBlockProvider _provider;
+    private readonly INotionEditorBlockService _provider;
     private readonly List<IPageBlock>     _blocks;
     private readonly IPageBlock           _snapshot;
     private readonly IPageBlock[]         _descendants;
@@ -19,7 +20,7 @@ public sealed class DeleteBlockCommand : INotionCommand
     /// The block's subtree, captured before the deletion. Empty for a block that has no children.
     /// </param>
     public DeleteBlockCommand(
-        INotionBlockProvider     provider,
+        INotionEditorBlockService     provider,
         List<IPageBlock>         blocks,
         string                   pageId,
         IPageBlock               block,

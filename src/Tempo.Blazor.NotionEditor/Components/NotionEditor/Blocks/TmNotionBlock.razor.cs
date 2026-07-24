@@ -204,7 +204,7 @@ public partial class TmNotionBlock : ComponentBase
         });
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -228,7 +228,7 @@ public partial class TmNotionBlock : ComponentBase
 
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -252,7 +252,7 @@ public partial class TmNotionBlock : ComponentBase
 
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -263,7 +263,7 @@ public partial class TmNotionBlock : ComponentBase
         var updated = BuildBlockWithHtml(Block, html);
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -315,7 +315,7 @@ public partial class TmNotionBlock : ComponentBase
         });
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -326,7 +326,7 @@ public partial class TmNotionBlock : ComponentBase
         var updated = BuildBlockWithHtml(Block, html);
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -370,7 +370,7 @@ public partial class TmNotionBlock : ComponentBase
         });
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -389,7 +389,7 @@ public partial class TmNotionBlock : ComponentBase
         });
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -408,7 +408,7 @@ public partial class TmNotionBlock : ComponentBase
         });
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -433,7 +433,7 @@ public partial class TmNotionBlock : ComponentBase
         });
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -503,7 +503,7 @@ public partial class TmNotionBlock : ComponentBase
         var updated = BuildBlockWithContent(Block, content);
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -523,7 +523,7 @@ public partial class TmNotionBlock : ComponentBase
             Width     = img.Width,
             Alignment = img.Alignment
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -535,7 +535,7 @@ public partial class TmNotionBlock : ComponentBase
             Url = img.Url, FileId = img.FileId, AltText = img.AltText,
             Caption = img.Caption, Width = width, Alignment = img.Alignment
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -547,7 +547,7 @@ public partial class TmNotionBlock : ComponentBase
             Url = img.Url, FileId = img.FileId, AltText = img.AltText,
             Caption = caption, Width = img.Width, Alignment = img.Alignment
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -559,7 +559,7 @@ public partial class TmNotionBlock : ComponentBase
             Url = img.Url, FileId = img.FileId, AltText = img.AltText,
             Caption = img.Caption, Width = img.Width, Alignment = alignment
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -575,7 +575,7 @@ public partial class TmNotionBlock : ComponentBase
             Url = url, FileId = media.FileId ?? vid.FileId,
             Provider = provider, Caption = vid.Caption, Width = vid.Width
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -587,7 +587,7 @@ public partial class TmNotionBlock : ComponentBase
             Url = vid.Url, FileId = vid.FileId, Provider = vid.Provider,
             Caption = vid.Caption, Width = width
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -599,7 +599,7 @@ public partial class TmNotionBlock : ComponentBase
             Url = vid.Url, FileId = vid.FileId, Provider = vid.Provider,
             Caption = caption, Width = vid.Width
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -615,7 +615,7 @@ public partial class TmNotionBlock : ComponentBase
             Url = url, FileId = media.FileId ?? aud.FileId,
             Provider = provider, Caption = aud.Caption, Width = aud.Width
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -627,7 +627,7 @@ public partial class TmNotionBlock : ComponentBase
             Url = aud.Url, FileId = aud.FileId, Provider = aud.Provider,
             Caption = caption, Width = aud.Width
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -642,7 +642,7 @@ public partial class TmNotionBlock : ComponentBase
             FileName = file.FileName, FileSizeBytes = file.FileSizeBytes,
             ContentType = file.ContentType, Caption = file.Caption, Width = file.Width
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -655,7 +655,7 @@ public partial class TmNotionBlock : ComponentBase
             FileSizeBytes = file.FileSizeBytes, ContentType = file.ContentType,
             Caption = caption, Width = file.Width
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -664,7 +664,7 @@ public partial class TmNotionBlock : ComponentBase
     private async Task HandleBookmarkResolvedAsync(BookmarkBlockContent resolved)
     {
         var updated = BuildBlockWithContent(Block, resolved);
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -681,7 +681,7 @@ public partial class TmNotionBlock : ComponentBase
             Domain       = bm.Domain,
             Caption      = caption
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -701,7 +701,7 @@ public partial class TmNotionBlock : ComponentBase
             };
         }
         var updated = BuildBlockWithContent(Block, embed);
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -716,7 +716,7 @@ public partial class TmNotionBlock : ComponentBase
             Height  = size.H,
             Caption = em.Caption
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -731,7 +731,7 @@ public partial class TmNotionBlock : ComponentBase
             Height  = em.Height,
             Caption = caption
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -745,7 +745,7 @@ public partial class TmNotionBlock : ComponentBase
             Url = media.Url ?? pdf.Url, FileId = media.FileId ?? pdf.FileId,
             Caption = pdf.Caption, Width = pdf.Width
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -756,7 +756,7 @@ public partial class TmNotionBlock : ComponentBase
         {
             Url = pdf.Url, FileId = pdf.FileId, Caption = caption, Width = pdf.Width
         });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -765,7 +765,7 @@ public partial class TmNotionBlock : ComponentBase
     private async Task HandleDiagramContentSavedAsync(DiagramBlockContent content)
     {
         var updated = BuildBlockWithContent(Block, content);
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -774,14 +774,14 @@ public partial class TmNotionBlock : ComponentBase
     private async Task HandleWireframeContentSavedAsync(WireframeBlockContent content)
     {
         var updated = BuildBlockWithContent(Block, content);
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
     private async Task HandleSpreadsheetContentSavedAsync(SpreadsheetBlockContent content)
     {
         var updated = BuildBlockWithContent(Block, content);
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -790,7 +790,7 @@ public partial class TmNotionBlock : ComponentBase
     private async Task HandleEquationExpressionSavedAsync(string expression)
     {
         var updated = BuildBlockWithContent(Block, new EquationBlockContent { Expression = expression });
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -799,42 +799,42 @@ public partial class TmNotionBlock : ComponentBase
     private async Task HandleChildrenDisplayContentChangedAsync(ChildrenDisplayBlockContent content)
     {
         var updated = BuildBlockWithContent(Block, content);
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
     private async Task HandleExcerptContentChangedAsync(ExcerptBlockContent content)
     {
         var updated = BuildBlockWithContent(Block, content);
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
     private async Task HandlePagePropertiesContentChangedAsync(PagePropertiesBlockContent content)
     {
         var updated = BuildBlockWithContent(Block, content);
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
     private async Task HandlePagePropertiesReportContentChangedAsync(PagePropertiesReportBlockContent content)
     {
         var updated = BuildBlockWithContent(Block, content);
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
     private async Task HandleContentByLabelContentChangedAsync(ContentByLabelBlockContent content)
     {
         var updated = BuildBlockWithContent(Block, content);
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
     private async Task HandleWorkItemContentChangedAsync(WorkItemBlockContent content)
     {
         var updated = BuildBlockWithContent(Block, content);
-        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        try { await Context.BlockService.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }
 
@@ -853,7 +853,7 @@ public partial class TmNotionBlock : ComponentBase
         var updated = BuildBlockWithHtml(Block, html);
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -870,7 +870,7 @@ public partial class TmNotionBlock : ComponentBase
         {
             try
             {
-                var converted = await Context.BlockProvider.ConvertBlockTypeAsync(Block.Id.ToString(), BlockType.TodoItem);
+                var converted = await Context.BlockService.ConvertBlockTypeAsync(Block.Id.ToString(), BlockType.TodoItem);
 
                 // The "[x] " prefix has already been stripped by the shortcut handler; whatever
                 // the user typed after it must survive the conversion.
@@ -890,7 +890,7 @@ public partial class TmNotionBlock : ComponentBase
                     LastEditedAt  = DateTime.UtcNow
                 };
 
-                await Context.BlockProvider.UpdateBlockAsync(updated);
+                await Context.BlockService.UpdateBlockAsync(updated);
                 await OnUpdated.InvokeAsync(updated);
             }
             catch { }
@@ -931,7 +931,7 @@ public partial class TmNotionBlock : ComponentBase
         var updated = BuildBlockWithHtml(Block, html);
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -978,7 +978,7 @@ public partial class TmNotionBlock : ComponentBase
         var updated = BuildBlockWithHtml(Block, html);
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -1023,7 +1023,7 @@ public partial class TmNotionBlock : ComponentBase
         var updated = BuildBlockWithHtml(Block, html);
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -1077,7 +1077,7 @@ public partial class TmNotionBlock : ComponentBase
         });
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -1090,7 +1090,7 @@ public partial class TmNotionBlock : ComponentBase
         var updated = BuildBlockWithHtml(Block, html);
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -1114,7 +1114,7 @@ public partial class TmNotionBlock : ComponentBase
         });
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -1155,7 +1155,7 @@ public partial class TmNotionBlock : ComponentBase
         var updated = BuildBlockWithHtml(Block, html);
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -1179,7 +1179,7 @@ public partial class TmNotionBlock : ComponentBase
         });
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -1252,7 +1252,7 @@ public partial class TmNotionBlock : ComponentBase
 
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -1264,7 +1264,7 @@ public partial class TmNotionBlock : ComponentBase
         var updated = BuildBlockWithContent(Block, UpdateTextBlockColor(tc, textColor: color));
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }
@@ -1276,7 +1276,7 @@ public partial class TmNotionBlock : ComponentBase
         var updated = BuildBlockWithContent(Block, UpdateTextBlockColor(tc, backgroundColor: color));
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             await OnUpdated.InvokeAsync(updated);
         }
         catch { }

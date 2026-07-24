@@ -86,7 +86,7 @@ public partial class TmNotionColumnBlock : ComponentBase, IDisposable
         StateHasChanged();
         try
         {
-            var result = await Context.BlockProvider.GetChildBlocksAsync(Block.Id.ToString());
+            var result = await Context.BlockService.GetChildBlocksAsync(Block.Id.ToString());
             _children       = [.. result.OrderBy(b => b.Order)];
             _childrenLoaded = true;
         }
@@ -124,7 +124,7 @@ public partial class TmNotionColumnBlock : ComponentBase, IDisposable
 
         try
         {
-            await Context.BlockProvider.ReorderBlocksAsync(
+            await Context.BlockService.ReorderBlocksAsync(
                 Block.PageId.ToString(),
                 _children.Select(b => b.Id.ToString()));
         }
@@ -135,7 +135,7 @@ public partial class TmNotionColumnBlock : ComponentBase, IDisposable
     {
         try
         {
-            await Context.BlockProvider.MoveBlockAsync(request);
+            await Context.BlockService.MoveBlockAsync(request);
             _childrenLoaded = false;
             await LoadChildrenAsync();
         }
@@ -167,7 +167,7 @@ public partial class TmNotionColumnBlock : ComponentBase, IDisposable
         if (child is null) return;
         try
         {
-            await Context.BlockProvider.DeleteBlockAsync(childId);
+            await Context.BlockService.DeleteBlockAsync(childId);
             _children.Remove(child);
             if (_activeChildId == child.Id) _activeChildId = null;
             StateHasChanged();
@@ -191,7 +191,7 @@ public partial class TmNotionColumnBlock : ComponentBase, IDisposable
     {
         try
         {
-            var duplicated = await Context.BlockProvider.DuplicateBlockAsync(source.Id.ToString());
+            var duplicated = await Context.BlockService.DuplicateBlockAsync(source.Id.ToString());
             var srcIdx     = _children.FindIndex(b => b.Id == source.Id);
             _children.Insert(Math.Clamp(srcIdx + 1, 0, _children.Count), duplicated);
             _activeChildId = duplicated.Id;
@@ -208,7 +208,7 @@ public partial class TmNotionColumnBlock : ComponentBase, IDisposable
         if (child is null) return;
         try
         {
-            var converted = await Context.BlockProvider.ConvertBlockTypeAsync(args.childId, args.newType);
+            var converted = await Context.BlockService.ConvertBlockTypeAsync(args.childId, args.newType);
             var idx       = _children.FindIndex(b => b.Id == child.Id);
             if (idx >= 0) _children[idx] = converted;
             StateHasChanged();
@@ -238,7 +238,7 @@ public partial class TmNotionColumnBlock : ComponentBase, IDisposable
 
         try
         {
-            var created   = await Context.BlockProvider.CreateBlockAsync(
+            var created   = await Context.BlockService.CreateBlockAsync(
                 Block.PageId.ToString(), newBlock, args.AfterChildId);
             var insertIdx = afterChild is null
                 ? _children.Count
@@ -265,7 +265,7 @@ public partial class TmNotionColumnBlock : ComponentBase, IDisposable
         };
         try
         {
-            var created = await Context.BlockProvider.CreateBlockAsync(
+            var created = await Context.BlockService.CreateBlockAsync(
                 Block.PageId.ToString(), newBlock, null);
             _children.Add(created);
             _activeChildId = created.Id;

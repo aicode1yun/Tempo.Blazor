@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Xml.Linq;
+using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Mcp.Tests;
@@ -55,6 +56,33 @@ public sealed class NotionReleaseContractTests
         File.ReadAllText(path).Should().NotContain(
             "row.Cells",
             "the demo boundary must reject legacy rows instead of upgrading them at runtime");
+    }
+
+    [Fact]
+    public void NotionAuthoring_HasNoGranularProviderOrBlockEndpoints()
+    {
+        typeof(INotionAggregateProvider).Assembly.GetType(
+                "Tempo.Blazor.NotionEditor.Interfaces.INotionBlockProvider")
+            .Should().BeNull();
+
+        var sourceRoot = Path.Combine(RepoRoot(), "src");
+        var offenders = Directory.EnumerateFiles(
+                sourceRoot,
+                "*.*",
+                SearchOption.AllDirectories)
+            .Where(path => path.EndsWith(".cs", StringComparison.Ordinal) ||
+                           path.EndsWith(".razor", StringComparison.Ordinal))
+            .Where(path =>
+            {
+                var source = File.ReadAllText(path);
+                return source.Contains("INotionBlockProvider", StringComparison.Ordinal) ||
+                       source.Contains("/api/notion/blocks", StringComparison.Ordinal);
+            })
+            .Select(path => Path.GetRelativePath(RepoRoot(), path))
+            .ToList();
+
+        offenders.Should().BeEmpty(
+            "2.7 Notion authoring must persist exclusively through complete aggregate snapshots");
     }
 
     [Fact]

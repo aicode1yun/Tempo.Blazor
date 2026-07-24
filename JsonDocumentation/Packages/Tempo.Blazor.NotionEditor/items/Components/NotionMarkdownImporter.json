@@ -39,7 +39,7 @@
   "examples": [
     {
       "title": "Import Markdown into page blocks",
-      "code": "var blocks = NotionMarkdownImporter.Import(markdown, pageId);\n\n// persist through your IBlockProvider\nforeach (var block in blocks)\n{\n    await BlockProvider.CreateBlockAsync(pageId.ToString(), block, previousBlockId: null);\n}"
+      "code": "var blocks = NotionMarkdownImporter.Import(markdown, pageId);\nvar blockService = new NotionEditorBlockService(AggregateProvider);\n\n// The complete imported tree is persisted through one aggregate save.\nawait blockService.CreateBlocksAsync(pageId.ToString(), blocks, afterBlockId: null);"
     },
     {
       "title": "A table imports as a parent block with child rows",

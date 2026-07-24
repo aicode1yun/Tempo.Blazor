@@ -85,12 +85,12 @@ public sealed class TmNotionReadingModeTests : LocalizationTestBase
         var provider = new ReadingModeProvider();
         return Render<TmNotionEditor>(parameters => parameters
             .Add(component => component.DataProvider, provider)
-            .Add(component => component.BlockProvider, provider)
+            .Add(component => component.AggregateProvider, new NotionAggregateTestAdapter(provider, provider))
             .Add(component => component.InitialPageId, ReadingModeProvider.PageId.ToString("D"))
             .Add(component => component.ShowSidebar, true));
     }
 
-    private sealed class ReadingModeProvider : INotionDataProvider, INotionBlockProvider
+    private sealed class ReadingModeProvider : INotionDataProvider, INotionEditorBlockService
     {
         public static readonly Guid PageId = Guid.Parse("cf190000-0000-0000-0000-000000000001");
 

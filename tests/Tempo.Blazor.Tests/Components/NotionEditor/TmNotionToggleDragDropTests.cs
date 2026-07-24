@@ -58,13 +58,13 @@ public sealed class TmNotionToggleDragDropTests : LocalizationTestBase
 
     // ── Helpers ────────────────────────────────────────────────────────────
 
-    private INotionBlockProvider _provider = default!;
+    private INotionEditorBlockService _provider = default!;
 
     private (IRenderedComponent<TmNotionToggleBlock> Cut, Guid ToggleId) RenderToggle()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
 
-        _provider = Substitute.For<INotionBlockProvider>();
+        _provider = Substitute.For<INotionEditorBlockService>();
         _provider.GetChildBlocksAsync(Arg.Any<string>()).Returns([]);
 
         var toggleId = Guid.NewGuid();
@@ -77,7 +77,7 @@ public sealed class TmNotionToggleDragDropTests : LocalizationTestBase
         };
 
         var cut = Render<TmNotionToggleBlock>(parameters => parameters
-            .AddCascadingValue(new NotionEditorContext { BlockProvider = _provider })
+            .AddCascadingValue(new NotionEditorContext { BlockService = _provider })
             .Add(p => p.Block, block)
             .Add(p => p.Content, (IToggleBlockContent)block.Content));
 

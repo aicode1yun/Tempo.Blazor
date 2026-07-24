@@ -17,8 +17,8 @@ public partial class TmNotionPublicPage : TmComponentBase
     /// <summary>Provider used to load the shared Notion page.</summary>
     [Parameter, EditorRequired] public INotionDataProvider DataProvider { get; set; } = default!;
 
-    /// <summary>Provider used to load blocks for the shared Notion page.</summary>
-    [Parameter, EditorRequired] public INotionBlockProvider BlockProvider { get; set; } = default!;
+    /// <summary>Aggregate provider used to load the shared page and all of its blocks.</summary>
+    [Parameter, EditorRequired] public INotionAggregateProvider AggregateProvider { get; set; } = default!;
 
     /// <summary>Optional comments provider enabled only when the public share allows comments.</summary>
     [Parameter] public ITmCommentProvider? CommentProvider { get; set; }

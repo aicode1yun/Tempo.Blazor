@@ -53,7 +53,7 @@ public partial class TmNotionPageInfoPanel : ComponentBase
 
     private async Task LoadPanelDataAsync()
     {
-        var blocks = Blocks ?? (await Context.BlockProvider.GetBlocksAsync(Page.Id.ToString("D"))).ToArray();
+        var blocks = Blocks ?? (await Context.BlockService.GetBlocksAsync(Page.Id.ToString("D"))).ToArray();
         var fragments = new List<string?>();
         foreach (var block in blocks.OrderBy(block => block.Order))
         {
@@ -83,7 +83,7 @@ public partial class TmNotionPageInfoPanel : ComponentBase
 
         try
         {
-            var children = await Context.BlockProvider.GetChildBlocksAsync(block.Id.ToString("D"));
+            var children = await Context.BlockService.GetChildBlocksAsync(block.Id.ToString("D"));
             foreach (var child in children.OrderBy(item => item.Order))
                 await CollectTextFragmentsAsync(child, fragments);
         }

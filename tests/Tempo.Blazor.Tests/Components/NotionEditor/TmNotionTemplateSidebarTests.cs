@@ -17,7 +17,7 @@ public sealed class TmNotionTemplateSidebarTests : LocalizationTestBase
     public async Task NewPageButtonAppliesSelectedTemplateThroughProviders()
     {
         var dataProvider = new FakeDataProvider();
-        var blockProvider = new FakeBlockProvider();
+        var blockService = new FakeBlockService();
         var template = new NotionTemplateDto
         {
             Id = "project-plan",
@@ -46,7 +46,7 @@ public sealed class TmNotionTemplateSidebarTests : LocalizationTestBase
         var context = new NotionEditorContext
         {
             DataProvider = dataProvider,
-            BlockProvider = blockProvider,
+            BlockService = blockService,
             TemplateProvider = templateProvider,
             NavigateTo = pageId =>
             {
@@ -63,9 +63,9 @@ public sealed class TmNotionTemplateSidebarTests : LocalizationTestBase
 
         dataProvider.CreatedPages.Should().ContainSingle()
             .Which.Title.Should().Be("Project plan");
-        blockProvider.CreatedBatches.Should().ContainSingle();
-        blockProvider.CreatedBatches[0].Blocks.Should().HaveCount(2);
-        blockProvider.CreatedBatches[0].Blocks.Select(block => block.PageId)
+        blockService.CreatedBatches.Should().ContainSingle();
+        blockService.CreatedBatches[0].Blocks.Should().HaveCount(2);
+        blockService.CreatedBatches[0].Blocks.Select(block => block.PageId)
             .Should().OnlyContain(pageId => pageId == dataProvider.CreatedPages[0].Id);
         navigatedPageId.Should().Be(dataProvider.CreatedPages[0].Id.ToString());
     }
@@ -145,7 +145,7 @@ public sealed class TmNotionTemplateSidebarTests : LocalizationTestBase
             => Task.CompletedTask;
     }
 
-    private sealed class FakeBlockProvider : INotionBlockProvider
+    private sealed class FakeBlockService : INotionEditorBlockService
     {
         public List<(string PageId, IReadOnlyList<IPageBlock> Blocks, string? AfterBlockId)> CreatedBatches { get; } = [];
 

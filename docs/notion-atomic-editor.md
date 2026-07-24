@@ -3,13 +3,12 @@
 This contract is the required authoring path in Tempo.Blazor 2.7. See the
 [2.7 migration guide](notion-2.7-migration.md) for breaking changes.
 
-`TmNotionEditor` can use `INotionAggregateProvider` as a canonical, optimistic
+`TmNotionEditor` requires `INotionAggregateProvider` as its canonical, optimistic
 persistence boundary for logical changes that span multiple blocks. This is
 required for editable tables and structured multi-block paste.
 
 ```razor
 <TmNotionEditor DataProvider="@pages"
-                BlockProvider="@blocks"
                 AggregateProvider="@aggregates"
                 InitialPageId="@pageId" />
 ```
@@ -48,9 +47,8 @@ sanitized or normalized before rendering. `DisplayHtml` is a transient,
 non-serialized view derived from structured inlines; canonical `Html` remains
 separate.
 
-When `AggregateProvider` is omitted, canonical tables still render read-only,
-but their aggregate-only authoring controls are hidden. There is no partial
-sequential-write fallback.
+`AggregateProvider` is required for both editable and read-only editor instances.
+There is no granular or sequential-write fallback.
 
 ## DOCX and document-model table fidelity
 

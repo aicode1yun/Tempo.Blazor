@@ -23,7 +23,7 @@ public sealed class DomRect
 
 /// <summary>
 /// Renders a single Notion page: header (via TmNotionPageHeader), block list and comments area.
-/// Loads blocks via <see cref="NotionEditorContext.BlockProvider"/> and manages block state.
+/// Loads blocks via <see cref="NotionEditorContext.BlockService"/> and manages block state.
 /// </summary>
 public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 {
@@ -264,12 +264,12 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
         try
         {
-            var result = await Context.BlockProvider.GetBlocksAsync(Page.Id.ToString());
+            var result = await Context.BlockService.GetBlocksAsync(Page.Id.ToString());
             _blocks = [.. result.OrderBy(b => b.Order)];
         }
         catch
         {
-            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
+            SetBlockOperationError();
         }
         finally
         {
@@ -332,7 +332,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
         try
         {
-            var created   = await Context.BlockProvider.CreateBlockAsync(Page.Id.ToString(), newBlock, afterBlockId);
+            var created   = await Context.BlockService.CreateBlockAsync(Page.Id.ToString(), newBlock, afterBlockId);
             var insertIdx = afterBlock is null
                 ? _blocks.Count
                 : _blocks.IndexOf(afterBlock) + 1;
@@ -343,7 +343,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         }
         catch
         {
-            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
+            SetBlockOperationError();
             StateHasChanged();
         }
     }
@@ -366,7 +366,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
             var descendants = await CollectDescendantsAsync(block);
 
             await _commands.PushAsync(new DeleteBlockCommand(
-                Context.BlockProvider, _blocks, Page.Id.ToString(), block, descendants));
+                Context.BlockService, _blocks, Page.Id.ToString(), block, descendants));
 
             if (_activeBlockId == block.Id) _activeBlockId = previous?.Id;
             StateHasChanged();
@@ -380,7 +380,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         }
         catch
         {
-            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
+            SetBlockOperationError();
             StateHasChanged();
         }
     }
@@ -405,12 +405,11 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(merged);
-            await Context.BlockProvider.DeleteBlockAsync(blockId);
+            await Context.BlockService.UpdateBlockAndDeleteAsync(merged, blockId);
         }
         catch
         {
-            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
+            SetBlockOperationError();
             StateHasChanged();
             return;
         }
@@ -449,7 +448,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
         try
         {
-            await Context.BlockProvider.ReorderBlocksAsync(
+            await Context.BlockService.ReorderBlocksAsync(
                 Page.Id.ToString(),
                 _blocks.Select(b => b.Id.ToString()));
         }
@@ -504,7 +503,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         {
             var parent = frontier.Dequeue();
             IEnumerable<IPageBlock> children;
-            try { children = await Context.BlockProvider.GetChildBlocksAsync(parent.Id.ToString()); }
+            try { children = await Context.BlockService.GetChildBlocksAsync(parent.Id.ToString()); }
             catch { continue; }
 
             foreach (var child in children)
@@ -630,8 +629,8 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
         try
         {
-            await Context.BlockProvider.MoveBlockAsync(request);
-            var result = await Context.BlockProvider.GetBlocksAsync(Page.Id.ToString());
+            await Context.BlockService.MoveBlockAsync(request);
+            var result = await Context.BlockService.GetBlocksAsync(Page.Id.ToString());
             _blocks = [.. result.OrderBy(b => b.Order)];
             StateHasChanged();
         }
@@ -730,7 +729,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
         try
         {
-            var children = await Context.BlockProvider.GetChildBlocksAsync(converted.Id.ToString());
+            var children = await Context.BlockService.GetChildBlocksAsync(converted.Id.ToString());
             _blocks.RemoveAll(block => block.ParentBlockId == converted.Id);
             _blocks.AddRange(children);
         }
@@ -756,7 +755,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
         try
         {
-            var converted = await Context.BlockProvider.ConvertBlockTypeAsync(args.blockId, args.newType, liveHtml);
+            var converted = await Context.BlockService.ConvertBlockTypeAsync(args.blockId, args.newType, liveHtml);
             var idx = _blocks.FindIndex(b => b.Id == converted.Id);
             if (idx >= 0) _blocks[idx] = converted;
 
@@ -765,7 +764,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
             if (source is not null)
             {
                 _commands.Record(new ConvertBlockCommand(
-                    Context.BlockProvider, _blocks, converted.Id,
+                    Context.BlockService, _blocks, converted.Id,
                     source.Type, source.Content, converted.Type, converted.Content));
             }
 
@@ -780,7 +779,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         }
         catch
         {
-            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
+            SetBlockOperationError();
             StateHasChanged();
         }
     }
@@ -849,7 +848,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         }
         catch
         {
-            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
+            SetBlockOperationError();
             StateHasChanged();
         }
     }
@@ -913,6 +912,14 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
     private static string FormatAggregateIssues(IEnumerable<NotionAggregateIssue> issues)
         => string.Join(Environment.NewLine, issues.Select(issue => issue.Message));
+
+    private void SetBlockOperationError()
+    {
+        _hasAggregateConflict = Context.AggregateSession?.HasPendingConflict == true;
+        _loadBlocksError = _hasAggregateConflict
+            ? null
+            : Loc["TmNotionPage_BlocksLoadError"];
+    }
 
     private async Task HandleAddBlockAtEndAsync() =>
         await AddBlockAsync(BlockType.Paragraph);
@@ -1151,7 +1158,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
         try
         {
-            var created  = await Context.BlockProvider.CreateBlockAsync(
+            var created  = await Context.BlockService.CreateBlockAsync(
                 source.PageId.ToString(), duplicate, source.Id.ToString());
             var srcIdx   = _blocks.FindIndex(b => b.Id == source.Id);
             var insertAt = srcIdx >= 0 ? srcIdx + 1 : _blocks.Count;
@@ -1161,7 +1168,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         }
         catch
         {
-            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
+            SetBlockOperationError();
             StateHasChanged();
         }
     }
@@ -1547,7 +1554,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
         if (applied)
         {
-            try { await Context.BlockProvider.UpdateBlockAsync(block); }
+            try { await Context.BlockService.UpdateBlockAsync(block); }
             catch { /* best-effort */ }
             StateHasChanged();
         }
@@ -1582,7 +1589,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
         try
         {
-            var converted = await Context.BlockProvider.ConvertBlockTypeAsync(blockId, BlockType.Callout, liveHtml);
+            var converted = await Context.BlockService.ConvertBlockTypeAsync(blockId, BlockType.Callout, liveHtml);
             var content = converted.Content as ICalloutBlockContent;
             var updated = new PageBlock
             {
@@ -1605,7 +1612,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
                 }
             };
 
-            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await Context.BlockService.UpdateBlockAsync(updated);
             var idx = _blocks.FindIndex(b => b.Id == updated.Id);
             if (idx >= 0) _blocks[idx] = updated;
             Context.RaiseBlockConverted(updated);
@@ -1616,7 +1623,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         }
         catch
         {
-            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
+            SetBlockOperationError();
         }
     }
 
@@ -1785,13 +1792,13 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(block);
+            await Context.BlockService.UpdateBlockAsync(block);
             _blocks = [.._blocks];
             StateHasChanged();
         }
         catch
         {
-            _loadBlocksError = Loc["TmNotionPage_BlocksLoadError"];
+            SetBlockOperationError();
             StateHasChanged();
         }
     }

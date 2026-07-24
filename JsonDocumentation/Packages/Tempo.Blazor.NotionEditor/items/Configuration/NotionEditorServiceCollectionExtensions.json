@@ -17,7 +17,7 @@
   "examples": [
     {
       "title": "Register the editor services",
-      "code": "// Program.cs\nbuilder.Services.AddTempoBlazorNotionEditor();\n\n// then supply your own providers\nbuilder.Services.AddScoped<INotionDataProvider, MyNotionDataProvider>();\nbuilder.Services.AddScoped<INotionBlockProvider, MyNotionBlockProvider>();"
+      "code": "// Program.cs\nbuilder.Services.AddTempoBlazorNotionEditor();\n\n// then supply your own providers\nbuilder.Services.AddScoped<INotionDataProvider, MyNotionDataProvider>();\nbuilder.Services.AddScoped<INotionAggregateProvider, MyNotionAggregateProvider>();"
     }
   ]
 }

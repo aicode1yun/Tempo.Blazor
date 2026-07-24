@@ -2,7 +2,7 @@
   "itemName": "TmNotionTableBlock",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "Editable table block. The Table block itself carries the shape (column count, header flags, per-column alignment); its rows are separate TableRow blocks loaded as children via IBlockProvider.GetChildBlocksAsync(tableId) and ordered by Order. Supports adding/deleting rows and columns, a header row and header column, cell range selection with merge/split, cell background colours, column sorting, row drag-and-drop, and undo of the last table change.",
+  "description": "Editable table block. The Table block itself carries the shape (column count, header flags, per-column alignment); its rows are separate TableRow blocks loaded from the complete page aggregate and ordered by Order. Supports adding/deleting rows and columns, a header row and header column, cell range selection with merge/split, cell background colours, column sorting, row drag-and-drop, and undo of the last table change.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Blocks.Table",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Blocks/Table/TmNotionTableBlock.razor",

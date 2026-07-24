@@ -167,7 +167,7 @@ public partial class TmNotionIncludePageBlock : ComponentBase
 
             _sourcePage = page;
 
-            var blocks = await Context.BlockProvider.GetBlocksAsync(sourcePageId.Value.ToString());
+            var blocks = await Context.BlockService.GetBlocksAsync(sourcePageId.Value.ToString());
             _sourceBlocks = [.. blocks.OrderBy(block => block.Order)];
             await LoadChildBlocksAsync(_sourceBlocks, []);
         }
@@ -189,7 +189,7 @@ public partial class TmNotionIncludePageBlock : ComponentBase
             IReadOnlyList<IPageBlock> children;
             try
             {
-                var loaded = await Context.BlockProvider.GetChildBlocksAsync(block.Id.ToString());
+                var loaded = await Context.BlockService.GetChildBlocksAsync(block.Id.ToString());
                 children = [.. loaded.OrderBy(child => child.Order)];
             }
             catch
@@ -223,7 +223,7 @@ public partial class TmNotionIncludePageBlock : ComponentBase
             LastEditedAt = DateTime.UtcNow
         };
 
-        await Context.BlockProvider.UpdateBlockAsync(updated);
+        await Context.BlockService.UpdateBlockAsync(updated);
         await OnUpdated.InvokeAsync(updated);
         Block = updated;
         Content = (IIncludePageBlockContent)updated.Content;

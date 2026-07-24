@@ -133,7 +133,7 @@ public sealed class TmNotionShareDialogTests : LocalizationTestBase
         });
 
         var data = new FakeDataProvider(PageId);
-        var blocks = new FakeBlockProvider(PageId);
+        var blocks = new FakeBlockService(PageId);
 
         var cut = Render(builder =>
         {
@@ -141,7 +141,10 @@ public sealed class TmNotionShareDialogTests : LocalizationTestBase
             builder.AddAttribute(1, nameof(TmNotionPublicPage.Token), "share-public");
             builder.AddAttribute(2, nameof(TmNotionPublicPage.PublicShareProvider), provider);
             builder.AddAttribute(3, nameof(TmNotionPublicPage.DataProvider), data);
-            builder.AddAttribute(4, nameof(TmNotionPublicPage.BlockProvider), blocks);
+            builder.AddAttribute(
+                4,
+                nameof(TmNotionPublicPage.AggregateProvider),
+                new NotionAggregateTestAdapter(data, blocks));
             builder.CloseComponent();
         });
 
@@ -236,7 +239,7 @@ public sealed class TmNotionShareDialogTests : LocalizationTestBase
         public Task SetPageLabelsAsync(Guid pageId, IReadOnlyList<string> labels, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
-    private sealed class FakeBlockProvider(Guid pageId) : INotionBlockProvider
+    private sealed class FakeBlockService(Guid pageId) : INotionEditorBlockService
     {
         private readonly PageBlock _block = new()
         {

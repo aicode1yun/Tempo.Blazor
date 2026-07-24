@@ -130,7 +130,7 @@ public class NotionStatusMacroE2ETests : NotionE2ETestBase
     private async Task<IPage> OpenStatusEditorAsync()
     {
         var page = await OpenNotionEditorAsync();
-        await SeedMentionTokenPageAsync();
+        await InvokeSeedAsync("seedMentionTokenPage");
         await page.WaitForSelectorAsync(StatusBlockSelector, new PageWaitForSelectorOptions
         {
             State = WaitForSelectorState.Visible,
@@ -223,7 +223,7 @@ public class NotionStatusMacroE2ETests : NotionE2ETestBase
                 const range = document.createRange();
                 const next = chip.nextSibling;
                 if (next && next.nodeType === Node.TEXT_NODE) {
-                    range.setStart(next, Math.min(1, next.textContent.length));
+                    range.setStart(next, 0);
                 } else {
                     range.setStartAfter(chip);
                 }
@@ -258,10 +258,11 @@ public class NotionStatusMacroE2ETests : NotionE2ETestBase
                 const pageEl = document.querySelector('.tm-notion-page');
                 const pageId = pageEl?.dataset.pageId;
                 if (!pageId) throw new Error('Notion page id was not found.');
-                const response = await fetch(`https://localhost:5100/api/notion/blocks/page/${pageId}`);
-                if (!response.ok) throw new Error(`Blocks request failed: ${response.status}`);
-                const blocks = await response.json();
-                const block = blocks.find(b => String(b.id).toLowerCase() === args.blockId);
+                const response = await fetch(`https://localhost:5100/api/notion/aggregate/pages/${pageId}`);
+                if (!response.ok) throw new Error(`Aggregate request failed: ${response.status}`);
+                const aggregate = await response.json();
+                const block = aggregate.snapshot.blocks.find(
+                    b => String(b.id).toLowerCase() === args.blockId);
                 return block?.content?.html || '';
             }
             """,

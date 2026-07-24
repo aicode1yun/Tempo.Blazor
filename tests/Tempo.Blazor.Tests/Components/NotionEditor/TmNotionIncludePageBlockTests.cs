@@ -122,7 +122,7 @@ public sealed class TmNotionIncludePageBlockTests : LocalizationTestBase
         var context = new NotionEditorContext
         {
             DataProvider = provider,
-            BlockProvider = provider,
+            BlockService = provider,
             NavigateTo = _ => Task.CompletedTask
         };
 
@@ -152,7 +152,7 @@ public sealed class TmNotionIncludePageBlockTests : LocalizationTestBase
         Content = new ListBlockContent { Html = text }
     };
 
-    private sealed class IncludePageProvider : INotionDataProvider, INotionBlockProvider
+    private sealed class IncludePageProvider : INotionDataProvider, INotionEditorBlockService
     {
         private readonly Dictionary<Guid, INotionPage> _pages = new()
         {

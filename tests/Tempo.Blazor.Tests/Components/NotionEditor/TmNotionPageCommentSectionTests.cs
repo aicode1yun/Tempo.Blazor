@@ -81,7 +81,7 @@ public sealed class TmNotionPageCommentSectionTests : LocalizationTestBase
         var context = new NotionEditorContext
         {
             DataProvider = default!,
-            BlockProvider = default!,
+            BlockService = default!,
             CommentProvider = provider
         };
         var cut = Render<PageCommentHost>(parameters => parameters

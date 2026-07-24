@@ -94,7 +94,7 @@ public sealed class TmNotionPageInfoPanelTests : LocalizationTestBase
         => new()
         {
             DataProvider = new FakeDataProvider(),
-            BlockProvider = new FakeBlockProvider(),
+            BlockService = new FakeBlockService(),
             AnalyticsProvider = analyticsProvider,
             MentionProvider = mentionProvider
         };
@@ -175,7 +175,7 @@ public sealed class TmNotionPageInfoPanelTests : LocalizationTestBase
         public Task SetPageLabelsAsync(Guid pageId, IReadOnlyList<string> labels, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 
-    private sealed class FakeBlockProvider : INotionBlockProvider
+    private sealed class FakeBlockService : INotionEditorBlockService
     {
         public Task<IEnumerable<IPageBlock>> GetBlocksAsync(string pageId) => Task.FromResult<IEnumerable<IPageBlock>>([]);
         public Task<IEnumerable<IPageBlock>> GetChildBlocksAsync(string parentBlockId) => Task.FromResult<IEnumerable<IPageBlock>>([]);

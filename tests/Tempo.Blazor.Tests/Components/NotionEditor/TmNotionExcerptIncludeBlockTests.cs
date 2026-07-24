@@ -75,7 +75,7 @@ public sealed class TmNotionExcerptIncludeBlockTests : LocalizationTestBase
         var context = new NotionEditorContext
         {
             DataProvider = provider,
-            BlockProvider = provider,
+            BlockService = provider,
             NavigateTo = _ => Task.CompletedTask
         };
 
@@ -96,7 +96,7 @@ public sealed class TmNotionExcerptIncludeBlockTests : LocalizationTestBase
         Content = new ExcerptIncludeBlockContent { SourcePageId = sourcePageId }
     };
 
-    private sealed class ExcerptIncludeProvider : INotionDataProvider, INotionBlockProvider
+    private sealed class ExcerptIncludeProvider : INotionDataProvider, INotionEditorBlockService
     {
         private readonly Dictionary<Guid, INotionPage> _pages = new()
         {

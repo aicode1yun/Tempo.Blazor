@@ -136,7 +136,7 @@ public partial class TmNotionExcerptIncludeBlock : ComponentBase
             }
 
             _sourcePage = page;
-            var blocks = await Context.BlockProvider.GetBlocksAsync(sourcePageId.Value.ToString("D"));
+            var blocks = await Context.BlockService.GetBlocksAsync(sourcePageId.Value.ToString("D"));
             var excerpt = blocks
                 .Where(block => block.Type == BlockType.Excerpt)
                 .OrderBy(block => block.Order)
@@ -167,7 +167,7 @@ public partial class TmNotionExcerptIncludeBlock : ComponentBase
             LastEditedAt = DateTime.UtcNow
         };
 
-        await Context.BlockProvider.UpdateBlockAsync(updated);
+        await Context.BlockService.UpdateBlockAsync(updated);
         await OnUpdated.InvokeAsync(updated);
         Block = updated;
         Content = (IExcerptIncludeBlockContent)updated.Content;

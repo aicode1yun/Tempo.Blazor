@@ -811,7 +811,7 @@ public abstract class NotionE2ETestBase : WasmTestBase
         }
     }
 
-    private async Task InvokeSeedAsync(string methodName)
+    protected async Task InvokeSeedAsync(string methodName)
     {
         _ = Page;
         await Page.WaitForFunctionAsync(

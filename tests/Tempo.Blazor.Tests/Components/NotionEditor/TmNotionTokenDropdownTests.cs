@@ -36,7 +36,7 @@ public class TmNotionTokenDropdownTests : LocalizationTestBase
         => new()
         {
             DataProvider  = Substitute.For<INotionDataProvider>(),
-            BlockProvider = Substitute.For<INotionBlockProvider>(),
+            BlockService = Substitute.For<INotionEditorBlockService>(),
             TokenProvider = tokenProvider,
         };
 

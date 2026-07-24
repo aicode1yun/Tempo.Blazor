@@ -25,7 +25,7 @@ public class TmNotionMediaBlockDragDropTests : LocalizationTestBase
         => new()
         {
             DataProvider  = Substitute.For<INotionDataProvider>(),
-            BlockProvider = Substitute.For<INotionBlockProvider>(),
+            BlockService = Substitute.For<INotionEditorBlockService>(),
             FileProvider  = fileProvider,
         };
 

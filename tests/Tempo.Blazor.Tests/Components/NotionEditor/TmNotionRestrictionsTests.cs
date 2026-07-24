@@ -95,7 +95,7 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
 
         var cut = Render<TmNotionEditor>(parameters => parameters
             .Add(component => component.DataProvider, provider)
-            .Add(component => component.BlockProvider, provider)
+            .Add(component => component.AggregateProvider, new NotionAggregateTestAdapter(provider, provider))
             .Add(component => component.PermissionProvider, provider)
             .Add(component => component.CurrentUserId, "bob")
             .Add(component => component.CurrentUserGroupIds, ["readers"])
@@ -122,7 +122,7 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
 
         var cut = Render<TmNotionEditor>(parameters => parameters
             .Add(component => component.DataProvider, provider)
-            .Add(component => component.BlockProvider, provider)
+            .Add(component => component.AggregateProvider, new NotionAggregateTestAdapter(provider, provider))
             .Add(component => component.AuthorizationProvider, authorization)
             .Add(component => component.CurrentUserId, "bob")
             .Add(component => component.CurrentUserGroupIds, ["readers"])
@@ -158,7 +158,7 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
 
         var cut = Render<TmNotionEditor>(parameters => parameters
             .Add(component => component.DataProvider, provider)
-            .Add(component => component.BlockProvider, provider)
+            .Add(component => component.AggregateProvider, new NotionAggregateTestAdapter(provider, provider))
             .Add(component => component.AuthorizationProvider, authorization)
             .Add(component => component.InitialPageId, RestrictionProvider.PageId.ToString("D"))
             .Add(component => component.ShowSidebar, true));
@@ -180,7 +180,7 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
 
         var cut = Render<TmNotionEditor>(parameters => parameters
             .Add(component => component.DataProvider, provider)
-            .Add(component => component.BlockProvider, provider)
+            .Add(component => component.AggregateProvider, new NotionAggregateTestAdapter(provider, provider))
             .Add(component => component.ReadOnly, true)
             .Add(component => component.InitialPageId, RestrictionProvider.PageId.ToString("D"))
             .Add(component => component.ShowSidebar, true));
@@ -209,7 +209,7 @@ public sealed class TmNotionRestrictionsTests : LocalizationTestBase
         });
     }
 
-    private sealed class RestrictionProvider : INotionDataProvider, INotionBlockProvider, INotionPermissionProvider
+    private sealed class RestrictionProvider : INotionDataProvider, INotionEditorBlockService, INotionPermissionProvider
     {
         public static readonly Guid PageId = Guid.Parse("cf200000-0000-0000-0000-000000000001");
         public PageRestrictionPermission EffectivePermission { get; set; } = PageRestrictionPermission.Edit;

@@ -206,20 +206,20 @@ Chybí ale univerzální create/list API na úrovni provideru. MCP create proto 
 
 ### NotionEditor má nejširší provider povrch
 
-- [x] Navrhnout Notion MCP jako page/block API, ne jako jeden monolitický editor snapshot.
+- [x] Navrhnout Notion MCP jako page API s atomickými aggregate block operacemi.
 
 `TmNotionEditor` vyžaduje:
 
 - `INotionDataProvider`
-- `INotionBlockProvider`
+- `INotionAggregateProvider`
 
-Volitelně umí desítky dalších providerů, včetně diagram/wireframe/spreadsheet/document-library vazeb. Základní MCP kontrakt má stát na stránkách a blocích:
+Volitelně umí desítky dalších providerů, včetně diagram/wireframe/spreadsheet/document-library vazeb. Základní MCP kontrakt stojí na stránkách a úplných aggregate snapshotech:
 
 - stránky: list/get/create/update/delete/move/duplicate/favorite/restore
 - bloky: list/create/update/delete/reorder/move/duplicate/convert
 - validace: parent-child vazby, order, block type/content kompatibilita
 
-Notion concurrency není providerem vynucená. Dá se dělat best-effort přes `LastEditedAt` na stránkách a blocích, nebo přidat volitelné MCP rozhraní pro striktní tokeny.
+Notion concurrency je vynucená přes opaque aggregate concurrency tokeny.
 
 ## Architektura MCP rozšíření
 
@@ -398,7 +398,7 @@ Notion concurrency není providerem vynucená. Dá se dělat best-effort přes `
 
 ### Rozhodnutí
 
-- [x] Rozhodnout, jestli Notion MCP bude minimálně vyžadovat jen `INotionDataProvider` + `INotionBlockProvider`.
+- [x] Rozhodnout, jestli Notion MCP bude minimálně vyžadovat jen `INotionDataProvider` + `INotionAggregateProvider`.
 - [x] Rozhodnout, které volitelné providery dostanou samostatné tooly v první fázi.
 - [x] Rozhodnout concurrency strategii: zvolený a implementovaný je best-effort přes `LastEditedAt`.
 - [x] Rozhodnout, jestli MCP blokové schema vznikne reflexí `IBlockContent` polymorfních typů, nebo ručně udržovaným katalogem.
@@ -457,7 +457,7 @@ Notion concurrency není providerem vynucená. Dá se dělat best-effort přes `
 
 - [x] Unit test registrace Notion MCP tool typů.
 - [x] Unit test list/get page přes fake `INotionDataProvider`.
-- [x] Unit test list block tree přes fake `INotionBlockProvider`.
+- [x] Unit test list block tree přes `FakeNotionAggregateProvider`.
 - [x] Unit test create/update/delete block operací.
 - [x] Unit test reorder/move block operací.
 - [x] Unit test validation fail pro parent reference na neexistující blok.
@@ -595,7 +595,7 @@ Poznámka k ověření: v této implementační dávce prošly cílené MCP test
 - [x] Každá nová doména má document/read tool, mutation tool, validation tool a testy conflict/error pathů.
 - [x] Diagram/Draw MCP používá `TempoDocumentKind.Diagram` a `IDiagramDocumentProvider`.
 - [x] DocumentEditor MCP používá `IDocumentEditorProvider` a nevolá UI hosty.
-- [x] Notion MCP používá `INotionDataProvider` a `INotionBlockProvider` jako minimální kontrakt.
+- [x] Notion MCP používá `INotionDataProvider` a `INotionAggregateProvider` jako minimální kontrakt.
 - [x] `TmDocumentEditor` po cutoveru nerenderuje legacy ani core host.
 - [x] Legacy/core DocumentEditor JS assety nejsou načítané demo aplikacemi.
 - [x] Testy nepoužívají `RenderDocumentEditorLegacy`.

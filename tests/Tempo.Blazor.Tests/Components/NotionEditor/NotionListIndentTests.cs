@@ -68,7 +68,7 @@ public sealed class TmNotionBlockListIndentWiringTests : LocalizationTestBase
         };
 
         var cut = Render<TmNotionBlockList>(parameters => parameters
-            .AddCascadingValue(new NotionEditorContext { BlockProvider = Substitute.For<INotionBlockProvider>() })
+            .AddCascadingValue(new NotionEditorContext { BlockService = Substitute.For<INotionEditorBlockService>() })
             .Add(p => p.PageId, PageId)
             .Add(p => p.ReadOnly, true)
             .Add(p => p.Blocks, blocks));

@@ -1,0 +1,10 @@
+{
+  "kind": "Class",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.NotionEditor.Services",
+  "description": "Applies interactive block mutations to complete Notion page snapshots and persists each logical change through exactly one SaveAsync call.",
+  "packageId": "Tempo.Blazor.NotionEditor",
+  "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Services/NotionEditorBlockService.cs",
+  "documentationStatus": "generated",
+  "itemName": "NotionEditorBlockService"
+}

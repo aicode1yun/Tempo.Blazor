@@ -17,7 +17,6 @@ public static class NotionEditorEndpoints
     public static void MapNotionEditorEndpoints(this IEndpointRouteBuilder app)
     {
         var pageGroup = app.MapGroup("/api/notion/pages").WithTags("Notion Editor");
-        var blockGroup = app.MapGroup("/api/notion/blocks").WithTags("Notion Editor");
         var taskGroup = app.MapGroup("/api/notion/tasks").WithTags("Notion Editor");
         var reactionGroup = app.MapGroup("/api/notion/reactions").WithTags("Notion Editor");
         var templateGroup = app.MapGroup("/api/notion/templates").WithTags("Notion Editor");
@@ -566,154 +565,6 @@ public static class NotionEditorEndpoints
             catch (Exception) when (importFormat == NotionImportFormat.Word)
             {
                 return Results.BadRequest();
-            }
-        });
-
-        // Blocks endpoints
-        blockGroup.MapGet("/page/{pageId}", (string pageId, MockNotionBlockStore store) =>
-        {
-            var blocks = store.GetBlocksAsync(pageId).Result;
-            return Results.Ok(blocks);
-        });
-
-        blockGroup.MapGet("/parent/{parentBlockId}", (string parentBlockId, MockNotionBlockStore store) =>
-        {
-            var children = store.GetChildBlocksAsync(parentBlockId).Result;
-            return Results.Ok(children);
-        });
-
-        blockGroup.MapPost("/", (CreateBlockRequest request, MockNotionBlockStore store) =>
-        {
-            try
-            {
-                var block = store.CreateBlockAsync(request.PageId, request.Block, request.AfterBlockId).Result;
-                return Results.Created($"/api/notion/blocks/{block.Id}", block);
-            }
-            catch (Exception ex)
-            {
-                return Results.BadRequest(ex.Message);
-            }
-        });
-
-        blockGroup.MapPost("/restore", async (List<PageBlock> blocks, MockNotionBlockStore store) =>
-        {
-            try
-            {
-                await store.RestoreBlocksAsync(blocks);
-                return Results.Ok(blocks);
-            }
-            catch (Exception ex)
-            {
-                return Results.BadRequest(ex.Message);
-            }
-        });
-
-        blockGroup.MapPost("/batch", (BatchCreateBlocksRequest request, MockNotionBlockStore store) =>
-        {
-            try
-            {
-                var created = store.CreateBlocksAsync(request.PageId, request.Blocks, request.AfterBlockId).Result;
-                return Results.Ok(created);
-            }
-            catch (Exception ex)
-            {
-                return Results.BadRequest(ex.Message);
-            }
-        });
-
-        blockGroup.MapPut("/{blockId}", async (
-            string blockId,
-            PageBlock request,
-            MockNotionBlockStore store,
-            DemoNotionWatchProvider watchProvider,
-            DemoNotionNotificationStore notificationStore,
-            CancellationToken cancellationToken) =>
-        {
-            if (!Guid.TryParse(blockId, out var id))
-                return Results.BadRequest("Invalid block id");
-            request.Id = id;
-            await store.UpdateBlockAsync(request);
-            await NotifyPageWatchersAsync(request.PageId, "alice", watchProvider, notificationStore, cancellationToken);
-            return Results.Ok(request);
-        });
-
-        blockGroup.MapDelete("/{blockId}", (string blockId, MockNotionBlockStore store) =>
-        {
-            store.DeleteBlockAsync(blockId).Wait();
-            return Results.NoContent();
-        });
-
-        blockGroup.MapPost("/reorder", (ReorderBlocksRequest request, MockNotionBlockStore store) =>
-        {
-            store.ReorderBlocksAsync(request.PageId, request.OrderedBlockIds).Wait();
-            return Results.NoContent();
-        });
-
-        blockGroup.MapPost("/move", async (MoveNotionBlockRequest request, MockNotionBlockStore store) =>
-        {
-            try
-            {
-                await store.MoveBlockAsync(request);
-                return Results.NoContent();
-            }
-            catch (ArgumentException ex)
-            {
-                return Results.BadRequest(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(ex.Message);
-            }
-            catch (KeyNotFoundException)
-            {
-                return Results.NotFound();
-            }
-        });
-
-        blockGroup.MapPost("/{blockId}/move-to-page", async (string blockId, MoveBlockToPageRequest request, MockNotionBlockStore store) =>
-        {
-            try
-            {
-                await store.MoveBlockToPageAsync(blockId, request.TargetPageId, request.AfterBlockId);
-                return Results.NoContent();
-            }
-            catch (ArgumentException ex)
-            {
-                return Results.BadRequest(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(ex.Message);
-            }
-            catch (KeyNotFoundException)
-            {
-                return Results.NotFound();
-            }
-        });
-
-        blockGroup.MapPost("/{blockId}/duplicate", (string blockId, MockNotionBlockStore store) =>
-        {
-            try
-            {
-                var duplicated = store.DuplicateBlockAsync(blockId).Result;
-                return Results.Created($"/api/notion/blocks/{duplicated.Id}", duplicated);
-            }
-            catch (KeyNotFoundException)
-            {
-                return Results.NotFound();
-            }
-        });
-
-        blockGroup.MapPost("/{blockId}/convert", (string blockId, ConvertBlockRequest request, MockNotionBlockStore store) =>
-        {
-            try
-            {
-                var converted = store.ConvertBlockTypeAsync(blockId, request.NewType, request.CurrentHtml).Result;
-                return Results.Ok(converted);
-            }
-            catch (KeyNotFoundException)
-            {
-                return Results.NotFound();
             }
         });
 
@@ -1521,9 +1372,5 @@ public static class NotionEditorEndpoints
 public record CreatePageRequest(string Title, string? ParentId = null);
 public record UpdatePageRequest(string? Title, string? Description, string? IconEmoji,
     bool? IsFullWidth = null, bool? IsSmallText = null, bool? IsLocked = null);
-public record CreateBlockRequest(string PageId, PageBlock Block, string? AfterBlockId = null);
-public record ReorderBlocksRequest(string PageId, IEnumerable<string> OrderedBlockIds);
-public record ConvertBlockRequest(BlockType NewType, string? CurrentHtml = null);
-public record BatchCreateBlocksRequest(string PageId, IEnumerable<PageBlock> Blocks, string? AfterBlockId = null);
 public record TaskCompletionRequest(bool Completed);
 public record MovePageToSpaceRequest(string SpaceId);

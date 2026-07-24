@@ -205,7 +205,7 @@ public partial class TmNotionSidebar : ComponentBase, IAsyncDisposable
                     LastEditedAt = DateTime.UtcNow
                 }).ToArray();
 
-                await Context.BlockProvider.CreateBlocksAsync(page.Id.ToString("D"), blocks, null);
+                await Context.BlockService.CreateBlocksAsync(page.Id.ToString("D"), blocks, null);
             }
 
             _localTemplateGalleryOpen = false;

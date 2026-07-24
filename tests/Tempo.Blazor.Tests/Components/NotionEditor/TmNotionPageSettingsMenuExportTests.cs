@@ -108,7 +108,7 @@ public class TmNotionPageSettingsMenuExportTests : LocalizationTestBase
         var context = new NotionEditorContext
         {
             DataProvider = new EmptyNotionProvider(),
-            BlockProvider = new EmptyNotionProvider(),
+            BlockService = new EmptyNotionProvider(),
             ImportExportProvider = importExportProvider
         };
 
@@ -162,7 +162,7 @@ public class TmNotionPageSettingsMenuExportTests : LocalizationTestBase
         }
     }
 
-    private sealed class EmptyNotionProvider : INotionDataProvider, INotionBlockProvider
+    private sealed class EmptyNotionProvider : INotionDataProvider, INotionEditorBlockService
     {
         public Task<INotionPage> GetPageAsync(string pageId) => Task.FromResult<INotionPage>(new NotionPage { Id = Guid.Parse(pageId), Title = "Page" });
         public Task<IEnumerable<INotionPage>> GetChildPagesAsync(string? parentId) => Task.FromResult<IEnumerable<INotionPage>>([]);

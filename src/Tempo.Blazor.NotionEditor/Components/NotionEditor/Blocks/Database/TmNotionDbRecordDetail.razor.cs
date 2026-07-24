@@ -60,12 +60,12 @@ public partial class TmNotionDbRecordDetail : ComponentBase
 
     private async Task LoadBlocksAsync()
     {
-        if (Context.BlockProvider is null) return;
+        if (Context.BlockService is null) return;
         _loadingBlocks = true;
         StateHasChanged();
         try
         {
-            var blocks = await Context.BlockProvider.GetBlocksAsync(Record.Id.ToString());
+            var blocks = await Context.BlockService.GetBlocksAsync(Record.Id.ToString());
             _contentBlocks = blocks.OrderBy(b => b.Order).ToList();
         }
         catch { _contentBlocks = []; }
@@ -153,7 +153,7 @@ public partial class TmNotionDbRecordDetail : ComponentBase
 
     private async Task HandleAddBlockAfterAsync((string AfterBlockId, BlockType Type, string? InitialHtml) args)
     {
-        if (Context.BlockProvider is null || ReadOnly) return;
+        if (Context.BlockService is null || ReadOnly) return;
 
         var afterBlock  = _contentBlocks.FirstOrDefault(b => b.Id.ToString() == args.AfterBlockId);
         var insertOrder = afterBlock is null
@@ -171,7 +171,7 @@ public partial class TmNotionDbRecordDetail : ComponentBase
 
         try
         {
-            var created   = await Context.BlockProvider.CreateBlockAsync(Record.Id.ToString(), newBlock, args.AfterBlockId);
+            var created   = await Context.BlockService.CreateBlockAsync(Record.Id.ToString(), newBlock, args.AfterBlockId);
             var insertIdx = afterBlock is null
                 ? _contentBlocks.Count
                 : _contentBlocks.IndexOf(afterBlock) + 1;
@@ -203,12 +203,12 @@ public partial class TmNotionDbRecordDetail : ComponentBase
 
     private async Task HandleBlockDeletedAsync(string blockId)
     {
-        if (Context.BlockProvider is null || ReadOnly) return;
+        if (Context.BlockService is null || ReadOnly) return;
         var block = _contentBlocks.FirstOrDefault(b => b.Id.ToString() == blockId);
         if (block is null) return;
         try
         {
-            await Context.BlockProvider.DeleteBlockAsync(blockId);
+            await Context.BlockService.DeleteBlockAsync(blockId);
             _contentBlocks.Remove(block);
             StateHasChanged();
         }
@@ -217,10 +217,10 @@ public partial class TmNotionDbRecordDetail : ComponentBase
 
     private async Task HandleBlockDuplicatedAsync(IPageBlock source)
     {
-        if (Context.BlockProvider is null || ReadOnly) return;
+        if (Context.BlockService is null || ReadOnly) return;
         try
         {
-            var dup      = await Context.BlockProvider.DuplicateBlockAsync(source.Id.ToString());
+            var dup      = await Context.BlockService.DuplicateBlockAsync(source.Id.ToString());
             var insertAt = _contentBlocks.FindIndex(b => b.Id == source.Id) + 1;
             _contentBlocks.Insert(Math.Clamp(insertAt, 0, _contentBlocks.Count), dup);
             StateHasChanged();
@@ -238,17 +238,17 @@ public partial class TmNotionDbRecordDetail : ComponentBase
         StateHasChanged();
         try
         {
-            await Context.BlockProvider.ReorderBlocksAsync(Record.Id.ToString(), _contentBlocks.Select(b => b.Id.ToString()));
+            await Context.BlockService.ReorderBlocksAsync(Record.Id.ToString(), _contentBlocks.Select(b => b.Id.ToString()));
         }
         catch { await LoadBlocksAsync(); }
     }
 
     private async Task HandleConvertBlockAsync((string blockId, BlockType newType) args)
     {
-        if (Context.BlockProvider is null || ReadOnly) return;
+        if (Context.BlockService is null || ReadOnly) return;
         try
         {
-            var converted = await Context.BlockProvider.ConvertBlockTypeAsync(args.blockId, args.newType);
+            var converted = await Context.BlockService.ConvertBlockTypeAsync(args.blockId, args.newType);
             var idx       = _contentBlocks.FindIndex(b => b.Id.ToString() == args.blockId);
             if (idx >= 0) { _contentBlocks[idx] = converted; StateHasChanged(); }
         }

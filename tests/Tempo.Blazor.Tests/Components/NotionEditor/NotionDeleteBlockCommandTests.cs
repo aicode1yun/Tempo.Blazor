@@ -18,7 +18,7 @@ public sealed class NotionDeleteBlockCommandTests
     [Fact]
     public async Task Undo_RestoresTheBlockWithItsOriginalId()
     {
-        var provider = Substitute.For<INotionBlockProvider>();
+        var provider = Substitute.For<INotionEditorBlockService>();
         var block = Paragraph("gone", order: 1);
         var blocks = new List<IPageBlock> { Paragraph("before", 0), block, Paragraph("after", 2) };
 
@@ -34,7 +34,7 @@ public sealed class NotionDeleteBlockCommandTests
     [Fact]
     public async Task Undo_RestoresTheWholeSubtree()
     {
-        var provider = Substitute.For<INotionBlockProvider>();
+        var provider = Substitute.For<INotionEditorBlockService>();
         var table = new PageBlock { Id = Guid.NewGuid(), PageId = PageId, Type = BlockType.Table, Order = 0, Content = new TableBlockContent() };
         var rows = new IPageBlock[] { Row(table.Id, 0), Row(table.Id, 1) };
         var blocks = new List<IPageBlock> { table };
@@ -50,7 +50,7 @@ public sealed class NotionDeleteBlockCommandTests
     [Fact]
     public async Task Execute_RemovesTheBlockFromTheLocalList()
     {
-        var provider = Substitute.For<INotionBlockProvider>();
+        var provider = Substitute.For<INotionEditorBlockService>();
         var block = Paragraph("gone", 1);
         var blocks = new List<IPageBlock> { Paragraph("before", 0), block };
 
@@ -63,7 +63,7 @@ public sealed class NotionDeleteBlockCommandTests
     [Fact]
     public async Task Undo_PutsTheBlockBackBetweenItsNeighbours()
     {
-        var provider = Substitute.For<INotionBlockProvider>();
+        var provider = Substitute.For<INotionEditorBlockService>();
         var block = Paragraph("middle", 1);
         var blocks = new List<IPageBlock> { Paragraph("before", 0), block, Paragraph("after", 2) };
 
@@ -77,7 +77,7 @@ public sealed class NotionDeleteBlockCommandTests
     [Fact]
     public async Task Undo_DoesNotAddChildrenToThePagesTopLevelList()
     {
-        var provider = Substitute.For<INotionBlockProvider>();
+        var provider = Substitute.For<INotionEditorBlockService>();
         var table = new PageBlock { Id = Guid.NewGuid(), PageId = PageId, Type = BlockType.Table, Order = 0, Content = new TableBlockContent() };
         var blocks = new List<IPageBlock> { table };
 

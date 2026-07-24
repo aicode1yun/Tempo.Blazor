@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Tempo.Blazor.Demo.Api.Data;
 using Tempo.Blazor.DocumentFormats;
@@ -86,10 +85,10 @@ public class NotionImportExportEndpointTests : IClassFixture<WebApplicationFacto
         var page = await ImportAsync(exported.Content, "cf26-word-import.docx", NotionImportFormat.Word);
 
         Assert.Equal("CF26 Word Import", page.Title);
-        var blocks = await _client.GetStringAsync($"/api/notion/blocks/page/{page.Id:D}");
-        Assert.Contains("Imported heading", blocks);
-        Assert.Contains("Converted from DOCX bridge", blocks);
-        Assert.Contains("Ready", await GetTableRowsJsonAsync(blocks));
+        var aggregate = await GetAggregateJsonAsync(page.Id);
+        Assert.Contains("Imported heading", aggregate);
+        Assert.Contains("Converted from DOCX bridge", aggregate);
+        Assert.Contains("Ready", aggregate);
     }
 
     [Theory]
@@ -104,8 +103,7 @@ public class NotionImportExportEndpointTests : IClassFixture<WebApplicationFacto
         var page = await ImportAsync(Encoding.UTF8.GetBytes(body), fileName, format, mediaType);
 
         Assert.Contains("CF26", page.Title);
-        var blocks = await _client.GetStringAsync($"/api/notion/blocks/page/{page.Id:D}");
-        Assert.Contains("Ready", blocks + await GetTableRowsJsonAsync(blocks));
+        Assert.Contains("Ready", await GetAggregateJsonAsync(page.Id));
     }
 
     [Fact]
@@ -226,22 +224,6 @@ public class NotionImportExportEndpointTests : IClassFixture<WebApplicationFacto
         _ => "application/octet-stream"
     };
 
-    private async Task<string> GetTableRowsJsonAsync(string blocksJson)
-    {
-        using var document = JsonDocument.Parse(blocksJson);
-        foreach (var block in document.RootElement.EnumerateArray())
-        {
-            if (!block.TryGetProperty("type", out var type) || type.GetInt32() != (int)BlockType.Table)
-            {
-                continue;
-            }
-
-            var tableId = block.GetProperty("id").GetString();
-            return string.IsNullOrWhiteSpace(tableId)
-                ? string.Empty
-                : await _client.GetStringAsync($"/api/notion/blocks/parent/{tableId}");
-        }
-
-        return string.Empty;
-    }
+    private Task<string> GetAggregateJsonAsync(Guid pageId)
+        => _client.GetStringAsync($"/api/notion/aggregate/pages/{pageId:D}");
 }

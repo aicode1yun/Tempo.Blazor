@@ -4,7 +4,7 @@ using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Mcp.Tests.Fixtures;
 
-public sealed class FakeNotionBackend : INotionDataProvider, INotionBlockProvider
+public sealed class FakeNotionBackend : INotionDataProvider
 {
     private readonly Dictionary<Guid, NotionPage> _pages = new();
     private readonly Dictionary<Guid, PageBlock> _blocks = new();

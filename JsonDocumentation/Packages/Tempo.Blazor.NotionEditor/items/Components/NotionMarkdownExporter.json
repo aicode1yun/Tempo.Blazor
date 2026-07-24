@@ -40,7 +40,7 @@
   "examples": [
     {
       "title": "Export page blocks to Markdown",
-      "code": "var blocks   = await BlockProvider.GetBlocksAsync(pageId.ToString());\nvar markdown = NotionMarkdownExporter.Export(blocks, pageTitle: page.Title);"
+      "code": "var blockService = new NotionEditorBlockService(AggregateProvider);\nvar blocks = (await blockService.GetBlocksAsync(pageId.ToString())).ToList();\nvar markdown = NotionMarkdownExporter.Export(blocks, pageTitle: page.Title);"
     },
     {
       "title": "Alignment survives the round-trip",

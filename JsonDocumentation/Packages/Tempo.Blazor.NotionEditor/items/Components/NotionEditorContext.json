@@ -77,9 +77,9 @@
       "description": "Raised by nested blocks when they create a sibling block through the shared provider."
     },
     {
-      "name": "BlockProvider",
+      "name": "BlockService",
       "kind": "Property",
-      "type": "INotionBlockProvider"
+      "type": "INotionEditorBlockService"
     },
     {
       "name": "BlogProvider",

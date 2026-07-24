@@ -2,7 +2,7 @@
   "itemName": "TmNotionPage",
   "kind": "Component",
   "category": "Notion Editor",
-  "description": "Renders a single Notion page: header (via TmNotionPageHeader), block list and comments area. Loads blocks via BlockProvider and manages block state.",
+  "description": "Renders a single Notion page: header (via TmNotionPageHeader), block list and comments area. Loads blocks through the aggregate-backed editor service and manages block state.",
   "packageId": "Tempo.Blazor.NotionEditor",
   "namespace": "Tempo.Blazor.Components.NotionEditor.Page",
   "sourcePath": "src/Tempo.Blazor.NotionEditor/Components/NotionEditor/Page/TmNotionPage.razor",

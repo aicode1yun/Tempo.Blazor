@@ -294,7 +294,7 @@ public partial class TmNotionTextBlock : ComponentBase, IAsyncDisposable
 
         if (resolved is not null &&
             string.Equals(displayMode, "Card", StringComparison.OrdinalIgnoreCase) &&
-            Context?.BlockProvider is not null &&
+            Context?.BlockService is not null &&
             Block is not null)
         {
             var bookmark = new PageBlock
@@ -316,7 +316,7 @@ public partial class TmNotionTextBlock : ComponentBase, IAsyncDisposable
                 LastEditedAt = DateTime.UtcNow
             };
 
-            var created = await Context.BlockProvider.CreateBlockAsync(Block.PageId.ToString("D"), bookmark, Block.Id.ToString("D"));
+            var created = await Context.BlockService.CreateBlockAsync(Block.PageId.ToString("D"), bookmark, Block.Id.ToString("D"));
             await Context.RaiseBlockCreatedAsync(created);
             return;
         }

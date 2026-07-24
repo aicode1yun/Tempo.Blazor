@@ -94,7 +94,7 @@ public sealed class TmNotionBlockListKeyTests : LocalizationTestBase
     {
         var context = new NotionEditorContext
         {
-            BlockProvider = Substitute.For<INotionBlockProvider>()
+            BlockService = Substitute.For<INotionEditorBlockService>()
         };
 
         return Render<TmNotionBlockList>(parameters => parameters

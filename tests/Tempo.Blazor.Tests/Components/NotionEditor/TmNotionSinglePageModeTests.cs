@@ -129,7 +129,7 @@ public sealed class TmNotionSinglePageModeTests : LocalizationTestBase
         var provider = new SinglePageProvider();
         var cut = Render<TmNotionEditor>(p => p
             .Add(c => c.DataProvider, provider)
-            .Add(c => c.BlockProvider, provider)
+            .Add(c => c.AggregateProvider, new NotionAggregateTestAdapter(provider, provider))
             .Add(c => c.SinglePageMode, true)); // no InitialPageId
 
         cut.WaitForAssertion(() =>
@@ -159,7 +159,7 @@ public sealed class TmNotionSinglePageModeTests : LocalizationTestBase
         return Render<TmNotionEditor>(p =>
         {
             p.Add(c => c.DataProvider, provider)
-             .Add(c => c.BlockProvider, provider)
+             .Add(c => c.AggregateProvider, new NotionAggregateTestAdapter(provider, provider))
              .Add(c => c.InitialPageId, SinglePageProvider.MainPageId.ToString("D"))
              .Add(c => c.ShowSidebar, showSidebar)
              .Add(c => c.SinglePageMode, singlePage)
@@ -169,7 +169,7 @@ public sealed class TmNotionSinglePageModeTests : LocalizationTestBase
         });
     }
 
-    private sealed class SinglePageProvider : INotionDataProvider, INotionBlockProvider
+    private sealed class SinglePageProvider : INotionDataProvider, INotionEditorBlockService
     {
         public static readonly Guid MainPageId = Guid.Parse("dd190000-0000-0000-0000-000000000001");
         public static readonly Guid OtherPageId = Guid.Parse("dd190000-0000-0000-0000-000000000002");

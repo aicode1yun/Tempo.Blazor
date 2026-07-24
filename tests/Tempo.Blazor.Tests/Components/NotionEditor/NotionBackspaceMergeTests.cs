@@ -157,7 +157,7 @@ public sealed class NotionBackspaceMergeTests : LocalizationTestBase
 
     private static NotionEditorContext EditorContext() => new()
     {
-        BlockProvider = Substitute.For<INotionBlockProvider>()
+        BlockService = Substitute.For<INotionEditorBlockService>()
     };
 
     [Fact]

@@ -32,7 +32,7 @@ public sealed class TmNotionSmartLinkTests : LocalizationTestBase
         JSInterop.Setup<string>("tmNotionEditor.getHtml", _ => true)
             .SetResult("<a class=\"tm-notion-smart-link\" href=\"https://docs.tempo.local/notion/special-blocks\">Tempo Notion special blocks</a>");
 
-        var cut = RenderBlock(new SmartLinkBlockProvider(), new SmartLinkProvider(), updated =>
+        var cut = RenderBlock(new SmartLinkBlockService(), new SmartLinkProvider(), updated =>
         {
             savedHtml = (updated.Content as ITextBlockContent)?.Html;
         });
@@ -53,15 +53,15 @@ public sealed class TmNotionSmartLinkTests : LocalizationTestBase
     [Fact]
     public async Task SmartLinkCard_ResolvesMetadataAndCreatesBookmarkBlock()
     {
-        var blockProvider = new SmartLinkBlockProvider();
-        var cut = RenderBlock(blockProvider, new SmartLinkProvider());
+        var blockService = new SmartLinkBlockService();
+        var cut = RenderBlock(blockService, new SmartLinkProvider());
 
         var textBlock = cut.FindComponent<TmNotionTextBlock>();
         await cut.InvokeAsync(() => textBlock.Instance.OnSmartLinkPasteRequested("docs.tempo.local/notion/special-blocks", "Card"));
 
-        blockProvider.CreatedBlock.Should().NotBeNull();
-        blockProvider.CreatedBlock!.Type.Should().Be(BlockType.Bookmark);
-        blockProvider.CreatedBlock.Content.Should().BeOfType<BookmarkBlockContent>()
+        blockService.CreatedBlock.Should().NotBeNull();
+        blockService.CreatedBlock!.Type.Should().Be(BlockType.Bookmark);
+        blockService.CreatedBlock.Content.Should().BeOfType<BookmarkBlockContent>()
             .Which.Should().BeEquivalentTo(new BookmarkBlockContent
             {
                 Url = "https://docs.tempo.local/notion/special-blocks",
@@ -80,7 +80,7 @@ public sealed class TmNotionSmartLinkTests : LocalizationTestBase
         JSInterop.Setup<string>("tmNotionEditor.getHtml", _ => true)
             .SetResult("<a href=\"https://unknown.tempo.local/\">https://unknown.tempo.local/</a>");
 
-        var cut = RenderBlock(new SmartLinkBlockProvider(), new FailingSmartLinkProvider(), updated =>
+        var cut = RenderBlock(new SmartLinkBlockService(), new FailingSmartLinkProvider(), updated =>
         {
             savedHtml = (updated.Content as ITextBlockContent)?.Html;
         });
@@ -93,7 +93,7 @@ public sealed class TmNotionSmartLinkTests : LocalizationTestBase
     }
 
     private IRenderedComponent<CascadingValue<NotionEditorContext>> RenderBlock(
-        SmartLinkBlockProvider blockProvider,
+        SmartLinkBlockService blockService,
         ISmartLinkProvider smartLinkProvider,
         Action<IPageBlock>? updated = null)
     {
@@ -108,7 +108,7 @@ public sealed class TmNotionSmartLinkTests : LocalizationTestBase
 
         var context = new NotionEditorContext
         {
-            BlockProvider = blockProvider,
+            BlockService = blockService,
             SmartLinkProvider = smartLinkProvider
         };
 
@@ -139,7 +139,7 @@ public sealed class TmNotionSmartLinkTests : LocalizationTestBase
             => throw new InvalidOperationException("Resolver unavailable.");
     }
 
-    private sealed class SmartLinkBlockProvider : INotionBlockProvider
+    private sealed class SmartLinkBlockService : INotionEditorBlockService
     {
         public IPageBlock? CreatedBlock { get; private set; }
 

@@ -1,4 +1,5 @@
 using Tempo.Blazor.NotionEditor.Commands;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
@@ -10,7 +11,7 @@ namespace Tempo.Blazor.Components.NotionEditor.Commands;
 /// </summary>
 public sealed class AddBlockCommand : INotionCommand
 {
-    private readonly INotionBlockProvider _provider;
+    private readonly INotionEditorBlockService _provider;
     private readonly List<IPageBlock>    _blocks;
     private readonly string              _pageId;
     private readonly IPageBlock          _template;     // prototype (Id is pre-generated)
@@ -19,7 +20,7 @@ public sealed class AddBlockCommand : INotionCommand
     private IPageBlock? _created;   // set after first ExecuteAsync, reused on redo
 
     public AddBlockCommand(
-        INotionBlockProvider provider,
+        INotionEditorBlockService provider,
         List<IPageBlock>     blocks,
         string               pageId,
         IPageBlock           template,

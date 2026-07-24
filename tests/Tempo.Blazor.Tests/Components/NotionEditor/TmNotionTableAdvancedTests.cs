@@ -169,7 +169,7 @@ public sealed class TmNotionTableAdvancedTests : LocalizationTestBase
     [Fact]
     public void TableWithoutAggregateSession_RendersCanonicalCellsAsReadOnly()
     {
-        var cut = RenderTable(new TableBlockProvider());
+        var cut = RenderTable(new TableBlockService());
 
         cut.WaitForAssertion(() =>
             cut.FindAll(".tm-notion-table__cell-td").Should().HaveCount(9));
@@ -310,9 +310,9 @@ public sealed class TmNotionTableAdvancedTests : LocalizationTestBase
         cell.InnerHtml.Should().NotContain("<script");
     }
 
-    private IRenderedComponent<CascadingValue<NotionEditorContext>> RenderTable(TableBlockProvider provider)
+    private IRenderedComponent<CascadingValue<NotionEditorContext>> RenderTable(TableBlockService provider)
     {
-        var context = new NotionEditorContext { BlockProvider = provider };
+        var context = new NotionEditorContext { BlockService = provider };
 
         return Render<CascadingValue<NotionEditorContext>>(parameters => parameters
             .Add(component => component.Value, context)
@@ -329,7 +329,7 @@ public sealed class TmNotionTableAdvancedTests : LocalizationTestBase
         var view = NotionCanonicalTableBridge.ToView(session.CurrentSnapshot!, provider.TableId);
         var context = new NotionEditorContext
         {
-            BlockProvider = new TableBlockProvider(),
+            BlockService = new TableBlockService(),
             AggregateSession = session
         };
 
@@ -411,7 +411,7 @@ public sealed class TmNotionTableAdvancedTests : LocalizationTestBase
             Content = JsonSerializer.SerializeToElement(content, NotionAggregateJson.Options)
         };
 
-    private sealed class TableBlockProvider : INotionBlockProvider
+    private sealed class TableBlockService : INotionEditorBlockService
     {
         private static readonly Guid PageId = Guid.Parse("cf110000-0000-0000-0000-000000000001");
 

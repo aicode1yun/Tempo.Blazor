@@ -12,10 +12,10 @@
   ],
   "parameters": [
     {
-      "name": "BlockProvider",
-      "type": "INotionBlockProvider",
+      "name": "AggregateProvider",
+      "type": "INotionAggregateProvider",
       "isRequired": true,
-      "description": "Provider used to load blocks for the shared Notion page.",
+      "description": "Provider used to load the complete shared page aggregate.",
       "editorRequired": true
     },
     {

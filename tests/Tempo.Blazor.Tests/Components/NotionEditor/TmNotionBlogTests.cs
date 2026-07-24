@@ -101,7 +101,7 @@ public sealed class TmNotionBlogTests : LocalizationTestBase
         var context = new NotionEditorContext
         {
             DataProvider = new FakeDataProvider(),
-            BlockProvider = new FakeBlockProvider()
+            BlockService = new FakeBlockService()
         };
 
         return Render(builder =>
@@ -214,7 +214,7 @@ public sealed class TmNotionBlogTests : LocalizationTestBase
         };
     }
 
-    private sealed class FakeBlockProvider : INotionBlockProvider
+    private sealed class FakeBlockService : INotionEditorBlockService
     {
         public Task<IEnumerable<IPageBlock>> GetBlocksAsync(string pageId) => Task.FromResult<IEnumerable<IPageBlock>>([]);
         public Task<IEnumerable<IPageBlock>> GetChildBlocksAsync(string parentBlockId) => Task.FromResult<IEnumerable<IPageBlock>>([]);

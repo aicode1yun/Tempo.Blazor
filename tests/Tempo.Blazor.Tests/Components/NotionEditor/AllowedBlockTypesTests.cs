@@ -20,7 +20,7 @@ public class AllowedBlockTypesTests : LocalizationTestBase
         => new()
         {
             DataProvider  = Substitute.For<INotionDataProvider>(),
-            BlockProvider = Substitute.For<INotionBlockProvider>(),
+            BlockService = Substitute.For<INotionEditorBlockService>(),
             AllowedBlockTypes = allowed
         };
 

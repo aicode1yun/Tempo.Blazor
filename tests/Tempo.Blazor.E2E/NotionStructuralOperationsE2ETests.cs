@@ -56,20 +56,16 @@ public class NotionStructuralOperationsE2ETests : NotionE2ETestBase
         var tableBlockId = await table.EvaluateAsync<string>(
             "el => el.closest('[data-block-id]').getAttribute('data-block-id')");
 
-        // The demo WASM and the demo API sit on different origins, so talk to the API directly.
-        var deleted = await page.APIRequest.DeleteAsync($"https://localhost:5100/api/notion/blocks/{tableBlockId}");
-        Assert.IsTrue(deleted.Ok, "The delete call must succeed.");
+        Assert.IsTrue(
+            await DeleteAggregateSubtreeAsync(page, tableBlockId),
+            "The atomic aggregate replacement must succeed.");
         await ReloadAsync(page);
 
         Assert.AreEqual(0, await page.Locator($"[data-block-id='{tableBlockId}']").CountAsync());
 
-        // Orphaned rows keep a ParentBlockId that no longer resolves, so they never render — the
-        // page alone cannot see them. Ask the table for its children instead: it must have none.
-        var children = await page.APIRequest.GetAsync(
-            $"https://localhost:5100/api/notion/blocks/parent/{tableBlockId}");
-        Assert.IsTrue(children.Ok);
-        Assert.AreEqual("[]", (await children.TextAsync()).Replace(" ", string.Empty),
-            "A surviving TableRow is invisible on the page but still lives in the store.");
+        Assert.IsFalse(
+            await AggregateContainsBlockOrChildAsync(page, tableBlockId),
+            "A surviving TableRow is invisible on the page but would still exist in the aggregate.");
     }
 
     [TestMethod]
@@ -87,11 +83,16 @@ public class NotionStructuralOperationsE2ETests : NotionE2ETestBase
         var tableBlockId = await table.EvaluateAsync<string>(
             "el => el.closest('[data-block-id]').getAttribute('data-block-id')");
 
-        var duplicated = await page.APIRequest.PostAsync($"https://localhost:5100/api/notion/blocks/{tableBlockId}/duplicate");
-        Assert.IsTrue(duplicated.Ok, "The duplicate call must succeed.");
+        Assert.IsTrue(
+            await DuplicateAggregateSubtreeAsync(page, tableBlockId),
+            "The atomic aggregate replacement must succeed.");
         await ReloadAsync(page);
 
-        var tables = page.Locator(".tm-notion-table").Filter(new() { HasTextString = "Dup" });
+        var tables = page
+            .Locator("[data-notion-block-list]:not([data-parent-block-id])")
+            .First
+            .Locator(":scope > [data-block-type='Table']")
+            .Filter(new() { HasTextString = "Dup" });
         Assert.AreEqual(2, await tables.CountAsync(), "The duplicate must exist.");
 
         // The copy must carry its own rows; a shallow copy renders an empty table.
@@ -187,6 +188,144 @@ public class NotionStructuralOperationsE2ETests : NotionE2ETestBase
             """,
             html);
     }
+
+    private static Task<bool> DeleteAggregateSubtreeAsync(IPage page, string blockId) =>
+        page.EvaluateAsync<bool>(
+            """
+            async blockId => {
+                const loaded = await fetch(`https://localhost:5100/api/notion/aggregate/blocks/${blockId}`);
+                if (!loaded.ok) return false;
+                const aggregate = await loaded.json();
+                const snapshot = aggregate.snapshot;
+                const removed = new Set([blockId.toLowerCase()]);
+                let changed;
+                do {
+                    changed = false;
+                    for (const block of snapshot.blocks) {
+                        const parentId = String(block.parentBlockId || '').toLowerCase();
+                        const id = String(block.id).toLowerCase();
+                        if (parentId && removed.has(parentId) && !removed.has(id)) {
+                            removed.add(id);
+                            changed = true;
+                        }
+                    }
+                } while (changed);
+
+                snapshot.blocks = snapshot.blocks.filter(
+                    block => !removed.has(String(block.id).toLowerCase()));
+                normalizeOrders(snapshot.blocks);
+
+                const saved = await fetch('https://localhost:5100/api/notion/aggregate/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        pages: [{
+                            snapshot,
+                            baseConcurrencyToken: snapshot.concurrencyToken
+                        }]
+                    })
+                });
+                return saved.ok && (await saved.json()).success === true;
+
+                function normalizeOrders(blocks) {
+                    const groups = new Map();
+                    for (const block of blocks) {
+                        const key = String(block.parentBlockId || '');
+                        if (!groups.has(key)) groups.set(key, []);
+                        groups.get(key).push(block);
+                    }
+                    for (const siblings of groups.values()) {
+                        siblings.sort((a, b) => a.order - b.order);
+                        siblings.forEach((block, index) => block.order = index);
+                    }
+                }
+            }
+            """,
+            blockId);
+
+    private static Task<bool> DuplicateAggregateSubtreeAsync(IPage page, string blockId) =>
+        page.EvaluateAsync<bool>(
+            """
+            async blockId => {
+                const loaded = await fetch(`https://localhost:5100/api/notion/aggregate/blocks/${blockId}`);
+                if (!loaded.ok) return false;
+                const aggregate = await loaded.json();
+                const snapshot = aggregate.snapshot;
+                const root = snapshot.blocks.find(
+                    block => String(block.id).toLowerCase() === blockId.toLowerCase());
+                if (!root) return false;
+
+                const sourceIds = new Set([String(root.id).toLowerCase()]);
+                let changed;
+                do {
+                    changed = false;
+                    for (const block of snapshot.blocks) {
+                        const parentId = String(block.parentBlockId || '').toLowerCase();
+                        const id = String(block.id).toLowerCase();
+                        if (parentId && sourceIds.has(parentId) && !sourceIds.has(id)) {
+                            sourceIds.add(id);
+                            changed = true;
+                        }
+                    }
+                } while (changed);
+
+                const source = snapshot.blocks.filter(
+                    block => sourceIds.has(String(block.id).toLowerCase()));
+                const ids = new Map(source.map(
+                    block => [String(block.id).toLowerCase(), crypto.randomUUID()]));
+                const timestamp = new Date().toISOString();
+                const copies = source.map(block => {
+                    const copy = JSON.parse(JSON.stringify(block));
+                    copy.id = ids.get(String(block.id).toLowerCase());
+                    const parentId = String(block.parentBlockId || '').toLowerCase();
+                    if (ids.has(parentId)) copy.parentBlockId = ids.get(parentId);
+                    copy.createdAt = timestamp;
+                    copy.lastEditedAt = timestamp;
+                    return copy;
+                });
+                const rootCopy = copies.find(
+                    block => String(block.id) === ids.get(String(root.id).toLowerCase()));
+                const rootParent = String(root.parentBlockId || '').toLowerCase();
+                for (const sibling of snapshot.blocks) {
+                    if (String(sibling.parentBlockId || '').toLowerCase() === rootParent &&
+                        sibling.order > root.order) {
+                        sibling.order++;
+                    }
+                }
+                rootCopy.order = root.order + 1;
+                snapshot.blocks.push(...copies);
+
+                const saved = await fetch('https://localhost:5100/api/notion/aggregate/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        pages: [{
+                            snapshot,
+                            baseConcurrencyToken: snapshot.concurrencyToken
+                        }]
+                    })
+                });
+                return saved.ok && (await saved.json()).success === true;
+            }
+            """,
+            blockId);
+
+    private static Task<bool> AggregateContainsBlockOrChildAsync(IPage page, string blockId) =>
+        page.EvaluateAsync<bool>(
+            """
+            async blockId => {
+                const pageId = document.querySelector('.tm-notion-page')?.dataset.pageId;
+                if (!pageId) throw new Error('Notion page id was not found.');
+                const loaded = await fetch(`https://localhost:5100/api/notion/aggregate/pages/${pageId}`);
+                if (!loaded.ok) throw new Error(`Aggregate request failed: ${loaded.status}`);
+                const blocks = (await loaded.json()).snapshot.blocks;
+                const id = blockId.toLowerCase();
+                return blocks.some(block =>
+                    String(block.id).toLowerCase() === id ||
+                    String(block.parentBlockId || '').toLowerCase() === id);
+            }
+            """,
+            blockId);
 
     private static async Task<string> FocusTopLevelParagraphAsync(IPage page, string text)
     {

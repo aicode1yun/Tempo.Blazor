@@ -1,4 +1,5 @@
 using Tempo.Blazor.NotionEditor.Commands;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -11,7 +12,7 @@ namespace Tempo.Blazor.Components.NotionEditor.Commands;
 /// </summary>
 public sealed class ConvertBlockCommand : INotionCommand
 {
-    private readonly INotionBlockProvider _provider;
+    private readonly INotionEditorBlockService _provider;
     private readonly List<IPageBlock>    _blocks;
     private readonly Guid                _blockId;
     private readonly BlockType           _fromType;
@@ -20,7 +21,7 @@ public sealed class ConvertBlockCommand : INotionCommand
     private readonly IBlockContent       _toContent;
 
     public ConvertBlockCommand(
-        INotionBlockProvider provider,
+        INotionEditorBlockService provider,
         List<IPageBlock>     blocks,
         Guid                 blockId,
         BlockType            fromType,

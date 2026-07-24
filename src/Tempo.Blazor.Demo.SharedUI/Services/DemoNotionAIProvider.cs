@@ -2,6 +2,7 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -12,12 +13,14 @@ public sealed class DemoNotionAIProvider : INotionAIProvider
 {
     private const int ChunkSize = 36;
     private readonly DemoNotionDataProvider _dataProvider;
-    private readonly DemoNotionBlockProvider _blockProvider;
+    private readonly NotionEditorBlockService _blockService;
 
-    public DemoNotionAIProvider(DemoNotionDataProvider dataProvider, DemoNotionBlockProvider blockProvider)
+    public DemoNotionAIProvider(
+        DemoNotionDataProvider dataProvider,
+        DemoNotionAggregateProvider aggregateProvider)
     {
         _dataProvider = dataProvider;
-        _blockProvider = blockProvider;
+        _blockService = new NotionEditorBlockService(aggregateProvider);
     }
 
     public bool SlowResponses { get; set; }
@@ -90,7 +93,7 @@ public sealed class DemoNotionAIProvider : INotionAIProvider
         var page = await _dataProvider.GetPageAsync(pageId.Trim());
         cancellationToken.ThrowIfCancellationRequested();
 
-        var blocks = await _blockProvider.GetBlocksAsync(pageId.Trim());
+        var blocks = await _blockService.GetBlocksAsync(pageId.Trim());
         cancellationToken.ThrowIfCancellationRequested();
 
         var blockTexts = blocks

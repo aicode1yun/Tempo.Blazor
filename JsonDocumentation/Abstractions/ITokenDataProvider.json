@@ -49,7 +49,7 @@
     },
     {
       "title": "Wiring to TmNotionEditor",
-      "code": "@inject MyTokenProvider TokenProvider\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                TokenProvider=\"@TokenProvider\" />"
+      "code": "@inject MyTokenProvider TokenProvider\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                AggregateProvider=\"@AggregateProvider\"\n                TokenProvider=\"@TokenProvider\" />"
     }
   ]
 }
