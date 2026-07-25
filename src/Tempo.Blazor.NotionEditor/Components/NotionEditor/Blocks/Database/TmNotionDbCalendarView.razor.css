@@ -138,7 +138,8 @@
     background: color-mix(in srgb, var(--tm-primary, #2383e2) 4%, white);
 }
 
-:global(.tm-dark) .tm-dbcal__cell--today {
+:global(.tm-dark) .tm-dbcal__cell--today,
+:global([data-theme="dark"]) .tm-dbcal__cell--today {
     background: color-mix(in srgb, var(--tm-primary, #2383e2) 8%, var(--tm-bg, #1a1a1a));
 }
 
@@ -243,19 +244,23 @@
 
 /* ── Dark mode ──────────────────────────────────────────────────────────── */
 
-:global(.tm-dark) .tm-dbcal__cell--other-month {
+:global(.tm-dark) .tm-dbcal__cell--other-month,
+:global([data-theme="dark"]) .tm-dbcal__cell--other-month {
     background: var(--tm-bg-subtle, #1a1a1a);
 }
 
-:global(.tm-dark) .tm-dbcal__event {
+:global(.tm-dark) .tm-dbcal__event,
+:global([data-theme="dark"]) .tm-dbcal__event {
     background: color-mix(in srgb, var(--event-color, #2383e2) 18%, #222);
     color: color-mix(in srgb, var(--event-color, #2383e2) 60%, #eee);
 }
 
-:global(.tm-dark) .tm-dbcal__event:hover {
+:global(.tm-dark) .tm-dbcal__event:hover,
+:global([data-theme="dark"]) .tm-dbcal__event:hover {
     background: color-mix(in srgb, var(--event-color, #2383e2) 28%, #222);
 }
 
-:global(.tm-dark) .tm-dbcal__cell--target {
+:global(.tm-dark) .tm-dbcal__cell--target,
+:global([data-theme="dark"]) .tm-dbcal__cell--target {
     background: color-mix(in srgb, var(--tm-primary, #2383e2) 12%, #222) !important;
 }

@@ -635,15 +635,18 @@
 }
 
 /* ── Dark mode overrides ────────────────────────────────────── */
-[data-theme="dark"] .tm-chat__attachment {
+[data-theme="dark"] .tm-chat__attachment,
+.tm-dark .tm-chat__attachment {
   background: rgba(255, 255, 255, 0.05);
 }
 
-[data-theme="dark"] .tm-chat__attachment:hover {
+[data-theme="dark"] .tm-chat__attachment:hover,
+.tm-dark .tm-chat__attachment:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme="dark"] .tm-chat__reaction {
+[data-theme="dark"] .tm-chat__reaction,
+.tm-dark .tm-chat__reaction {
   background: var(--tm-bg-muted);
 }
 

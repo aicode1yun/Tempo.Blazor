@@ -16,8 +16,11 @@
      would be invalid at computed-value time and the box would lose its outline altogether. */
   border: 1.5px solid var(--tm-border-color-control, var(--tm-border-color));
   border-radius: var(--tm-radius-sm);
+  /* border-width is in here because hover animates it (see the hover rule). Without it the ring
+     would SNAP while the tint fades in — two timing profiles inside one state read as a render bug. */
   transition: background-color var(--tm-transition-fast),
               border-color var(--tm-transition-fast),
+              border-width var(--tm-transition-fast),
               box-shadow var(--tm-transition-fast);
 }
 /* The mixed state is keyed off the class the component renders, NOT off `:indeterminate`: nothing
@@ -28,8 +31,63 @@
   background-color: var(--tm-color-primary);
   border-color: var(--tm-color-primary);
 }
+/* THE MIXED BOX KEEPS ITS RESTING APPEARANCE UNDER THE POINTER. Both declarations here are copies
+   of a value declared elsewhere, and each has to move if its source moves:
+     - `background-color` ← the rule DIRECTLY ABOVE. Always the same expression, never a literal and
+       never another token, or a hovered mixed box quietly gets a different colour from a resting one.
+     - `border-width`     ← the resting width in the `border` shorthand of `.tm-checkbox-custom`.
+       That one is a literal there, so this is a second place holding the same number: change one and
+       you have to change the other, or mixed becomes the only state with its own geometry.
+   Why it is needed at all: the hover rule below is scoped to :not(:checked), which reaches the
+   CHECKED box but not the MIXED one — mixed renders checked="false" and is carried by a class
+   (TmCheckbox: IsIndeterminate => Indeterminate && !Value). Without this rule the pale hover tint
+   covers the primary fill and the dash drops from 5.17:1 to 1.22:1 in light and 7.02:1 to 1.72:1 in
+   dark, i.e. a hovered mixed box becomes indistinguishable from a hovered EMPTY one — at the moment
+   the user is about to click it.
+   Why the COMPOUND `.tm-checkbox-custom.tm-checkbox-custom-indeterminate` (0,6,0), and not the
+   modifier on its own: TmCheckbox puts both classes on the same span, and the modifier alone scores
+   (0,5,0) — a TIE with the hover rule, which the cascade then breaks by SOURCE ORDER. This rule sits
+   BEFORE that one, so a tie would lose it and the fix would be a no-op that still reads as applied.
+   Winning on specificity is what makes the position of this rule irrelevant.
+   Why `border-width` returns to 1.5px instead of keeping the generic 2.5px: the thicker ring is the
+   affordance of the UNCHECKED state, where it replaces surface with outline colour. On a FILLED box
+   the outline and the fill are the same token, so it paints primary over primary — 1.00:1, invisible
+   — while still eating 1px of the fill around the glyph, which is one of the two reasons the checked
+   box is excluded from that rule. The glyph has no size of its own (the SVG carries only a viewBox),
+   so its rendered size follows the parent's content box, and the width is animated: mixed would be
+   the only state whose glyph changes size on hover. This is a RESET to rest, not a second ring. */
+.tm-checkbox-label:hover .tm-checkbox-input:not(:checked) ~ .tm-checkbox-custom.tm-checkbox-custom-indeterminate {
+  background-color: var(--tm-color-primary);
+  border-width: 1.5px;
+}
 .tm-checkbox-label:hover .tm-checkbox-custom {
   border-color: var(--tm-color-primary);
+}
+/* HOVER = AN AREA CHANGE, NOT A HUE CHANGE.
+   Once the resting outline was strengthened to gray-500/gray-400, re-colouring that same outline to
+   primary was a near-isoluminant swap: 1.07:1 in light, 1.01:1 in dark, i.e. 1.00 in greyscale.
+   The affordance is therefore carried by the outline GROWING from 1.5px to 2.5px: the extra ring
+   replaces box fill with the outline colour, which is 5.17:1 (light) / 5.75:1 (dark) against the
+   resting fill — over the 3:1 that WCAG 2.2 SC 1.4.11 asks of the visual information identifying a
+   component's STATE, and hover is a state. It survives greyscale and colour-vision deficiency, and
+   it introduces no new colour. The tint on top is cosmetic, not the affordance.
+   No layout jitter: base.css sets `box-sizing: border-box` and the box has a fixed 1rem square, so
+   only the inner area shrinks (13px → 11px); the control does not move.
+   A ring is used instead of `box-shadow: inset` on purpose — :focus-visible already owns box-shadow,
+   and box-shadow does not accumulate across rules, so hover+focus together would silently drop one
+   of them. That would break "hover ≠ focus" exactly when both are true.
+   Scoped to :not(:checked) for BOTH declarations: unscoped, the rule matches a checked box at equal
+   specificity, wins on order, paints the pale tint over the primary fill (hiding the tick the user
+   just switched on) and eats 1px of that fill with the thicker ring.
+   That guard covers only TWO of the checkbox's THREE states, because `checked` encodes two. The
+   MIXED state is not `checked` at all — TmCheckbox renders checked="false" for it and marks the box
+   with a class — so this rule matches it and the tint would cover the mixed fill too. It is taken
+   back above, next to the fill it belongs to, rather than by a third guard here.
+   The fallback keeps the declaration valid on a consumer whose token file predates
+   --tm-control-hover-fill. */
+.tm-checkbox-label:hover .tm-checkbox-input:not(:checked) ~ .tm-checkbox-custom {
+  border-width: 2.5px;
+  background-color: var(--tm-control-hover-fill, var(--tm-bg-surface));
 }
 .tm-checkbox-input:focus-visible ~ .tm-checkbox-custom {
   box-shadow: var(--tm-shadow-focus);

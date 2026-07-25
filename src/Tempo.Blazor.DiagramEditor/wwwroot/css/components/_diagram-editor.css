@@ -2433,18 +2433,21 @@ line.tm-diagram-rotate-handle-stem {
 }
 
 /* Dark mode adjustments */
-[data-theme="dark"] .tm-diagram-properties__color {
+[data-theme="dark"] .tm-diagram-properties__color,
+.tm-dark .tm-diagram-properties__color {
     background: var(--tm-color-surface-elevated, #1f2937);
     border-color: var(--tm-color-border-strong, #374151);
 }
 
-[data-theme="dark"] .tm-diagram-properties__toggle-btn {
+[data-theme="dark"] .tm-diagram-properties__toggle-btn,
+.tm-dark .tm-diagram-properties__toggle-btn {
     background: var(--tm-color-surface-elevated, #1f2937);
     border-color: var(--tm-color-border-strong, #374151);
     color: var(--tm-color-text, #f3f4f6);
 }
 
-[data-theme="dark"] .tm-diagram-properties__toggle-btn--active {
+[data-theme="dark"] .tm-diagram-properties__toggle-btn--active,
+.tm-dark .tm-diagram-properties__toggle-btn--active {
     background: rgba(59, 130, 246, 0.2);
     border-color: var(--tm-color-primary, #3b82f6);
 }
@@ -2612,36 +2615,43 @@ line.tm-diagram-rotate-handle-stem {
 }
 
 /* Dark mode adjustments */
-[data-theme="dark"] .tm-diagram-template-card {
+[data-theme="dark"] .tm-diagram-template-card,
+.tm-dark .tm-diagram-template-card {
     background: var(--tm-color-surface-elevated, #1f2937);
     border-color: var(--tm-color-border-strong, #374151);
 }
 
-[data-theme="dark"] .tm-diagram-template-card__thumb {
+[data-theme="dark"] .tm-diagram-template-card__thumb,
+.tm-dark .tm-diagram-template-card__thumb {
     background: var(--tm-color-surface, #111827);
 }
 
-[data-theme="dark"] .tm-diagram-template-card__placeholder {
+[data-theme="dark"] .tm-diagram-template-card__placeholder,
+.tm-dark .tm-diagram-template-card__placeholder {
     background: var(--tm-color-border-strong, #374151);
     color: var(--tm-color-text-muted, #9ca3af);
 }
 
-[data-theme="dark"] .tm-diagram-template-card__name {
+[data-theme="dark"] .tm-diagram-template-card__name,
+.tm-dark .tm-diagram-template-card__name {
     color: var(--tm-color-text, #f3f4f6);
 }
 
-[data-theme="dark"] .tm-diagram-template-card__tag {
+[data-theme="dark"] .tm-diagram-template-card__tag,
+.tm-dark .tm-diagram-template-card__tag {
     background: var(--tm-color-surface, #111827);
     color: var(--tm-color-text-muted, #9ca3af);
 }
 
-[data-theme="dark"] .tm-diagram-template-gallery__filter {
+[data-theme="dark"] .tm-diagram-template-gallery__filter,
+.tm-dark .tm-diagram-template-gallery__filter {
     background: var(--tm-color-surface-elevated, #1f2937);
     border-color: var(--tm-color-border-strong, #374151);
     color: var(--tm-color-text, #f3f4f6);
 }
 
-[data-theme="dark"] .tm-diagram-template-gallery__filter:hover {
+[data-theme="dark"] .tm-diagram-template-gallery__filter:hover,
+.tm-dark .tm-diagram-template-gallery__filter:hover {
     background: var(--tm-color-surface-hover, #374151);
 }
 
@@ -2704,26 +2714,32 @@ line.tm-diagram-rotate-handle-stem {
 }
 
 /* Dark mode */
-[data-theme="dark"] .tm-diagram-table-inserter-popover {
+[data-theme="dark"] .tm-diagram-table-inserter-popover,
+.tm-dark .tm-diagram-table-inserter-popover {
     background: var(--tm-color-surface-elevated, #1f2937);
     border-color: var(--tm-color-border-strong, #374151);
 }
 
-[data-theme="dark"] .tm-diagram-table-inserter__title {
+[data-theme="dark"] .tm-diagram-table-inserter__title,
+.tm-dark .tm-diagram-table-inserter__title {
     color: var(--tm-color-text, #f3f4f6);
 }
 
-[data-theme="dark"] .tm-diagram-table-inserter__cell {
+[data-theme="dark"] .tm-diagram-table-inserter__cell,
+.tm-dark .tm-diagram-table-inserter__cell {
     background: var(--tm-color-surface, #111827);
     border-color: var(--tm-color-border-strong, #374151);
 }
 
 [data-theme="dark"] .tm-diagram-table-inserter__cell:hover,
-[data-theme="dark"] .tm-diagram-table-inserter__cell--highlighted {
+[data-theme="dark"] .tm-diagram-table-inserter__cell--highlighted,
+.tm-dark .tm-diagram-table-inserter__cell:hover,
+.tm-dark .tm-diagram-table-inserter__cell--highlighted {
     background: var(--tm-color-primary, #60a5fa);
     border-color: var(--tm-color-primary, #60a5fa);
 }
 
-[data-theme="dark"] .tm-diagram-table-inserter__dims {
+[data-theme="dark"] .tm-diagram-table-inserter__dims,
+.tm-dark .tm-diagram-table-inserter__dims {
     color: var(--tm-color-text-muted, #9ca3af);
 }

@@ -1,5 +1,109 @@
 # Changelog
 
+## 2.8.0 - 2026-07-25
+
+### Both dark-theme switches, hover you can actually see, and ink that survives the dark fill
+
+> **What this section covers, and what is missing from this file.** The entries below describe the
+> changes of THIS release only. **Versions 2.6.0, 2.6.1 and 2.7.0 were tagged and released but have
+> no entry in this changelog** — nobody wrote one, and this release does not reconstruct them. So the
+> step from `## 2.8.0` straight to `## 2.5.5` below is a *gap in the document*, not a renumbering:
+> upgrading from 2.5.x picks up three undocumented releases as well as everything listed here. Read
+> `git log v2.5.5..v2.8.0` for those. The version number is 2.8.0 (not 2.5.6) because it has to be
+> higher than the already-published 2.7.0, and a minor because a new public token is added.
+
+### Changed — behaviour
+
+**`--tm-color-on-primary` is no longer white; it follows the theme.** It resolves through
+`--tm-text-inverse`, so it stays white in light but becomes the dark ink `#0f172a` in the dark theme —
+and with it every "ink on a primary fill" in the library. This is a visible change for any consumer
+who is on the dark theme, and a *breaking* one for anyone who built their own rule on the assumption
+that the token is white, or who hardcoded `white` next to a primary fill; such a rule now paints
+white ink on a light `primary-400` box at 2.54:1 while the rest of the library flips to dark ink.
+`--tm-color-primary-contrast` and `--tm-control-glyph-color` become aliases of it, so the three names
+are one source instead of three copies that drifted apart.
+
+The reason is a contrast failure, not a preference: the dark theme repoints `--tm-color-primary` to
+the lighter `primary-400`, on which white text measures **2.54:1** — under the 4.5:1 SC 1.4.3 asks of
+body text. Dark ink on it is **7.02:1**. `.tm-btn-primary` already had that fix in a per-component
+dark block; that block is gone now, because a shadowed patch left behind is what the next reader
+takes for the rule. The flip reaches every site at once and through **both** theming APIs: the filled
+primary button, the `TmMultiSelect` confirm button and option tick, the `TmCheckbox` tick, the
+`TmChat` outgoing bubble / send / edit-save buttons, the NotionEditor primary buttons and audit
+panel, the Spreadsheet resize dialog and the DocumentEditor toolbar. Light is untouched by
+construction — `--tm-text-inverse` is white there.
+
+`.tm-btn-danger` keeps its own dark rule: its fill is `--tm-color-danger`, not primary, and there is
+no `--tm-color-on-danger` yet. The collaborative cursor label was DISCONNECTED from this token
+instead — it paints on `--tm-wysiwyg-remote-cursor-color`, a per-user runtime colour, so it takes a
+paired `--tm-wysiwyg-remote-cursor-ink` and keeps the theme-independent white it was built on.
+
+### Added
+
+- **`--tm-control-hover-fill`** — the tint a selection control takes while hovered and unselected
+  (`primary-100` light, `primary-900` dark). It resolves from the primary scale, so a consumer that
+  repoints that scale gets a matching tint automatically and must NOT redeclare it per accent.
+
+### Fixed
+
+**The appearance of several components changes in the DARK theme only.** The light theme is unchanged
+by construction: every new value resolves to exactly what it resolved to before in light.
+
+- **`.tm-dark` now really is equal to `[data-theme="dark"]`.** Both are documented as public switches,
+  but 93 dark rules across 15 stylesheets listed only the attribute — a consumer toggling the theme
+  with the CLASS kept light colours in `TmButton`, `TmChat`, `TmDataTable`, `TmScheduler`, `TmStepper`,
+  `TmValidationSummary`, `TmAIPrompt`, the PDF viewer and the diagram editor. The drift also ran the
+  other way: 34 rules in the six NotionEditor database views were written class-first and never
+  reached an attribute consumer. Both directions are fixed and both are now guarded by
+  `DarkThemeSelectorParityTests`, which sweeps every shipped stylesheet (scoped `.razor.css`
+  included) rather than the files that happened to be broken.
+- **`TmCheckbox` / `TmRadio` hover is now an AREA change, not a hue change.** Strengthening the
+  resting outline in 2.5.4 had a side effect: hover re-coloured that same outline from `gray-500` to
+  `primary-600`, two near-isoluminant tones, so the pointer feedback measured **1.07:1 in light and
+  1.01:1 in dark** — 1.00 in greyscale, i.e. nothing for a reader who does not separate those hues.
+  And it could not be fixed by picking a better outline colour: the outline has to stay above 3:1
+  against the surface in BOTH states, which leaves no pair of outline colours that also differ enough
+  from each other. So the outline **grows from 1.5px to 2.5px** on hover. The ring it gains replaces
+  box fill with the outline colour — **5.17:1 light / 5.75:1 dark** against what it covered, over the
+  3:1 that SC 1.4.11 asks of the information identifying a component's state. No new colour, no
+  layout shift (`box-sizing: border-box` with a fixed 1rem box), and it survives greyscale and
+  colour-vision deficiency.
+  The new `--tm-control-hover-fill` adds a tint on top; that is cosmetic, not the affordance.
+  `border-width` joined both controls' `transition`, and `TmRadio` also gained the `background-color`
+  it was missing — without them the ring would snap while the tint faded, and the radio would have
+  flickered where the checkbox faded.
+  Both declarations are scoped to `:not(:checked)` so a selected control keeps its fill, its glyph
+  and its ring. The **mixed** checkbox needed separate handling, because it is not `checked` at all —
+  `Indeterminate` renders `checked="false"` and marks the box with a class — so that guard does not
+  reach it and the pale tint would have covered the mixed fill: the dash would have dropped from
+  5.17:1 to 1.22:1 in light and 7.02:1 to 1.72:1 in dark, leaving a hovered mixed box looking exactly
+  like a hovered empty one. A rule next to the mixed fill takes the fill back on hover. It does not
+  reset the thicker ring, and that is deliberate: on a filled box the outline and the fill are the
+  same token, so the ring paints primary over primary at 1.00:1 — the growing ring is the affordance
+  of the UNCHECKED state, which is also why the checked box is excluded from it. `TmRadio` has no
+  third state and needs nothing extra.
+  A ring is used rather than an inset `box-shadow` on purpose: `:focus-visible` already owns
+  `box-shadow` and shadows do not accumulate across rules, so hover+focus together would have
+  silently dropped one of them.
+- **`TmMultiSelect` confirm button.** Its label was a hardcoded `white`, bypassing the token graph
+  entirely, and its hover repainted `primary-600` — which IS `--tm-color-primary` in light, so the
+  button had **no hover feedback at all** in the light theme, and in dark it moved to a darker shade,
+  the wrong way. It now takes `--tm-color-on-primary` and `--tm-color-primary-hover`: 5.17:1 → 6.70:1
+  in light, 7.02:1 → 9.90:1 in dark.
+- **`TmValidationSummary` no longer prints the same message twice.** `GetValidationMessages()` walks
+  the store per FIELD, so one sentence attached to several fields — a cross-field rule, or a server
+  response merged into the live store — was listed once per field. The summary is a per-FORM list;
+  the messages are de-duplicated with first-seen order preserved, so reading and screen-reader order
+  are unchanged.
+- **New guard `DesignTokenDocumentationTests`** compares the token table published in
+  `JsonDocumentation/gettingStarted.json` against `tokens.css`. Nothing had ever compared them and
+  four values had drifted: the documentation still described `--tm-color-primary` as `primary-500`
+  (it is `-600`), the hover/active aliases one step too light, and the old system font stack. A
+  consumer following the documentation would have computed contrast against the wrong shade.
+- `SelectionControlContrastTests` now matches selectors EXACTLY instead of by fragment. The previous
+  matcher took the first rule sharing a fragment, so two of its measurements were reading the right
+  declaration only by rule ordering.
+
 ## 2.5.5 - 2026-07-22
 
 ### TmCodeEditor — leaving the editor with Tab, and wrapping long lines

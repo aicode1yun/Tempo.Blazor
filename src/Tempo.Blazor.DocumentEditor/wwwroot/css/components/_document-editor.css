@@ -2548,7 +2548,14 @@
     padding: 0 var(--tm-space-1);
     max-width: 10rem;
     overflow: hidden;
-    color: var(--tm-color-on-primary);
+    /* This is the ONE place where the ink does NOT sit on a primary fill: the background is
+       --tm-wysiwyg-remote-cursor-color, a per-collaborator RUNTIME colour. --tm-color-on-primary is
+       therefore the wrong name here, and once it flips to dark ink in the dark theme it would stop
+       being the theme-independent white this label was built on — a behaviour change, not just a gap
+       in coverage. It gets its own paired knob instead, defaulting to white exactly as before: whoever
+       sets the cursor colour sets the ink with it. Computing the ink from the background's luminance
+       (color-mix / light-dark) is the real fix and is recorded as a carry-forward. */
+    color: var(--tm-wysiwyg-remote-cursor-ink, var(--tm-color-white));
     background: var(--tm-wysiwyg-remote-cursor-color, var(--tm-color-primary));
     border-radius: var(--tm-radius-xs);
     font-size: var(--tm-font-size-xs);

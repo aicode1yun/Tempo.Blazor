@@ -22,7 +22,13 @@
      shorthand valid against an older token file. */
   border: 1.5px solid var(--tm-border-color-control, var(--tm-border-color));
   margin-top: 0.125rem;
-  transition: border-color var(--tm-transition-fast), box-shadow var(--tm-transition-fast);
+  /* background-color was MISSING here while the checkbox had it, so the new hover tint would have
+     snapped on the radio and faded on the checkbox — two timing profiles in the same form. Both it
+     and border-width (which hover now animates) belong in the list. */
+  transition: background-color var(--tm-transition-fast),
+              border-color var(--tm-transition-fast),
+              border-width var(--tm-transition-fast),
+              box-shadow var(--tm-transition-fast);
 }
 .tm-radio-input:checked ~ .tm-radio-custom { border-color: var(--tm-color-primary); }
 .tm-radio-input:checked ~ .tm-radio-custom::after {
@@ -34,5 +40,12 @@
   background-color: var(--tm-color-primary);
 }
 .tm-radio-option:hover .tm-radio-custom { border-color: var(--tm-color-primary); }
+/* Same reasoning as the checkbox, and the same shape: the affordance is the outline GROWING
+   (1.5px → 2.5px, new pixels 5.17:1 light / 5.75:1 dark against the resting fill, SC 1.4.11), the
+   tint is cosmetic on top. Scoped to :not(:checked) so a selected radio keeps its ring and its dot. */
+.tm-radio-option:hover .tm-radio-input:not(:checked) ~ .tm-radio-custom {
+  border-width: 2.5px;
+  background-color: var(--tm-control-hover-fill, var(--tm-bg-surface));
+}
 .tm-radio-input:focus-visible ~ .tm-radio-custom { box-shadow: var(--tm-shadow-focus); }
 .tm-radio-text { font-size: var(--tm-font-size-sm); color: var(--tm-text-primary); line-height: 1.375; }

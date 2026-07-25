@@ -501,42 +501,51 @@
 
 /* ── Dark mode ──────────────────────────────────────────────────────────── */
 
-:global(.tm-dark) .tm-dbie__modal {
+:global(.tm-dark) .tm-dbie__modal,
+:global([data-theme="dark"]) .tm-dbie__modal {
     background: var(--tm-surface, #1e1e1e);
     border-color: var(--tm-border, #3a3a3a);
 }
 
 :global(.tm-dark) .tm-dbie__toolbar,
-:global(.tm-dark) .tm-dbie__tabs {
+:global(.tm-dark) .tm-dbie__tabs,
+:global([data-theme="dark"]) .tm-dbie__toolbar,
+:global([data-theme="dark"]) .tm-dbie__tabs {
     background: var(--tm-surface-secondary, #252525);
     border-color: var(--tm-border, #3a3a3a);
 }
 
-:global(.tm-dark) .tm-dbie__drop-label {
+:global(.tm-dark) .tm-dbie__drop-label,
+:global([data-theme="dark"]) .tm-dbie__drop-label {
     background: var(--tm-bg-subtle, #2a2a2a);
     border-color: var(--tm-border, #444);
 }
 
-:global(.tm-dark) .tm-dbie__map-table thead th {
+:global(.tm-dark) .tm-dbie__map-table thead th,
+:global([data-theme="dark"]) .tm-dbie__map-table thead th {
     background: var(--tm-bg-2, #252525);
     border-color: var(--tm-border, #3a3a3a);
 }
 
-:global(.tm-dark) .tm-dbie__map-table tbody tr {
+:global(.tm-dark) .tm-dbie__map-table tbody tr,
+:global([data-theme="dark"]) .tm-dbie__map-table tbody tr {
     border-color: var(--tm-border, #333);
 }
 
-:global(.tm-dark) .tm-dbie__map-wrap {
+:global(.tm-dark) .tm-dbie__map-wrap,
+:global([data-theme="dark"]) .tm-dbie__map-wrap {
     border-color: var(--tm-border, #3a3a3a);
 }
 
-:global(.tm-dark) .tm-dbie__map-select {
+:global(.tm-dark) .tm-dbie__map-select,
+:global([data-theme="dark"]) .tm-dbie__map-select {
     background: var(--tm-surface, #1e1e1e);
     border-color: var(--tm-border, #3a3a3a);
     color: var(--tm-text, #e0e0e0);
 }
 
-:global(.tm-dark) .tm-dbie__export-opt {
+:global(.tm-dark) .tm-dbie__export-opt,
+:global([data-theme="dark"]) .tm-dbie__export-opt {
     background: var(--tm-surface, #1e1e1e);
     border-color: var(--tm-border, #3a3a3a);
 }

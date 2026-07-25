@@ -59,6 +59,23 @@ public class ThemeTokenBaselineScreenshots : WasmTestBase
         throw new DirectoryNotFoundException("Could not locate TempoBlazor.slnx.");
     }
 
+    /// <summary>
+    /// Every animation and transition on the page, killed. Without this the pair is not a measurement:
+    /// two captures of the SAME code differed on 6 of 18 images — a running progress bar, chart entry
+    /// animations, and the theme toggle's own hover tooltip caught mid fade-in. A comparison whose
+    /// instrument moves cannot tell a code change from a frame number.
+    /// <para>
+    /// It has to be re-injected after every navigation and after the theme switch: a style tag does not
+    /// survive a <c>goto</c>, and the switch re-renders the shell.
+    /// </para>
+    /// </summary>
+    private static Task FreezeAnimationsAsync(IPage page) => page.AddStyleTagAsync(new PageAddStyleTagOptions
+    {
+        Content = "*,*::before,*::after{animation:none!important;transition:none!important;"
+                  + "animation-duration:0s!important;transition-duration:0s!important;"
+                  + "animation-delay:0s!important;transition-delay:0s!important;caret-color:transparent!important}",
+    });
+
     private static async Task CaptureAsync(IPage page, string theme, string name)
     {
         var dir = Path.Combine(OutputRoot, theme);
@@ -82,6 +99,7 @@ public class ThemeTokenBaselineScreenshots : WasmTestBase
         await page.GotoAsync($"{BaseUrl}{route}",
             new PageGotoOptions { WaitUntil = WaitUntilState.Load, Timeout = 60000 });
         await WaitForAppReadyAsync(page);
+        await FreezeAnimationsAsync(page);
         await page.WaitForTimeoutAsync(800);   // let charts/canvases settle
 
         await CaptureAsync(page, "light", name);
@@ -90,6 +108,13 @@ public class ThemeTokenBaselineScreenshots : WasmTestBase
         // shell), so click the visible one and wait for data-theme rather than for a class on <html>.
         await page.Locator("button[title*='dark' i]:visible").First.ClickAsync();
         await page.WaitForSelectorAsync("[data-theme='dark']", new PageWaitForSelectorOptions { Timeout = 15000 });
+
+        // The click leaves the pointer ON the toggle, which raises its hover tooltip — the single
+        // biggest source of run-to-run difference, at the same coordinates on four dark pages.
+        // Freezing animations is not enough: the tooltip would then simply be permanently visible and
+        // still depend on where the pointer happened to land.
+        await page.Mouse.MoveAsync(0, 0);
+        await FreezeAnimationsAsync(page);
         await page.WaitForTimeoutAsync(800);
 
         await CaptureAsync(page, "dark", name);

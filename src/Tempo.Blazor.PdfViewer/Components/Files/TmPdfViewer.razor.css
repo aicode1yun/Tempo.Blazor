@@ -259,51 +259,63 @@
 
 /* ── Dark mode overrides ─────────────────────────────────────────────────── */
 
-[data-theme="dark"] .tm-pdf-viewer {
+[data-theme="dark"] .tm-pdf-viewer,
+.tm-dark .tm-pdf-viewer {
     border-color: var(--tm-border-dark, #374151);
     background: var(--tm-surface-dark, #1f2937);
     color: var(--tm-text-dark, #f9fafb);
 }
 
 [data-theme="dark"] .tm-pdf-viewer__toolbar,
-[data-theme="dark"] .tm-pdf-viewer__search-bar {
+[data-theme="dark"] .tm-pdf-viewer__search-bar,
+.tm-dark .tm-pdf-viewer__toolbar,
+.tm-dark .tm-pdf-viewer__search-bar {
     background: var(--tm-surface-elevated-dark, #111827);
     border-bottom-color: var(--tm-border-dark, #374151);
 }
 
 [data-theme="dark"] .tm-pdf-viewer__canvas-wrap,
-[data-theme="dark"] .tm-pdf-viewer__continuous-wrap {
+[data-theme="dark"] .tm-pdf-viewer__continuous-wrap,
+.tm-dark .tm-pdf-viewer__canvas-wrap,
+.tm-dark .tm-pdf-viewer__continuous-wrap {
     background: var(--tm-bg-subtle-dark, #111827);
 }
 
-[data-theme="dark"] .tm-pdf-viewer__canvas {
+[data-theme="dark"] .tm-pdf-viewer__canvas,
+.tm-dark .tm-pdf-viewer__canvas {
     background: var(--tm-surface-dark, #1f2937);
 }
 
-[data-theme="dark"] .tm-pdf-viewer__btn:hover:not(:disabled) {
+[data-theme="dark"] .tm-pdf-viewer__btn:hover:not(:disabled),
+.tm-dark .tm-pdf-viewer__btn:hover:not(:disabled) {
     background: var(--tm-hover-dark, #374151);
 }
 
-[data-theme="dark"] .tm-pdf-viewer__btn--active {
+[data-theme="dark"] .tm-pdf-viewer__btn--active,
+.tm-dark .tm-pdf-viewer__btn--active {
     background: var(--tm-primary-900, #1e3a8a);
     color: var(--tm-primary-300, #93c5fd);
 }
 
-[data-theme="dark"] .tm-pdf-viewer__link:hover {
+[data-theme="dark"] .tm-pdf-viewer__link:hover,
+.tm-dark .tm-pdf-viewer__link:hover {
     background: var(--tm-hover-dark, #374151);
 }
 
-[data-theme="dark"] .tm-pdf-viewer__separator {
+[data-theme="dark"] .tm-pdf-viewer__separator,
+.tm-dark .tm-pdf-viewer__separator {
     background: var(--tm-border-dark, #374151);
 }
 
-[data-theme="dark"] .tm-pdf-viewer__search-input {
+[data-theme="dark"] .tm-pdf-viewer__search-input,
+.tm-dark .tm-pdf-viewer__search-input {
     background: var(--tm-surface-dark, #1f2937);
     border-color: var(--tm-border-dark, #374151);
     color: var(--tm-text-dark, #f9fafb);
 }
 
-[data-theme="dark"] .tm-pdf-viewer__thumbnails {
+[data-theme="dark"] .tm-pdf-viewer__thumbnails,
+.tm-dark .tm-pdf-viewer__thumbnails {
     background: var(--tm-surface-elevated-dark, #111827);
     border-right-color: var(--tm-border-dark, #374151);
 }

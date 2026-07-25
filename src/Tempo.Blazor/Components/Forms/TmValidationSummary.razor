@@ -53,8 +53,14 @@
         ? Show && Errors.Any()
         : Errors.Any();
 
+    // De-duplicated on purpose. GetValidationMessages() walks the store PER FIELD, so one sentence
+    // attached to several fields — a cross-field rule, or a server response merged into the live
+    // store — comes back once per field. The summary is a per-FORM list: printing the same
+    // instruction twice tells the user nothing the first line did not, and hides how many distinct
+    // problems there really are. Distinct preserves first-seen order, so the reading (and screen
+    // reader) order of the remaining messages is unchanged.
     private IEnumerable<string> Errors =>
-        EditContext?.GetValidationMessages() ?? Enumerable.Empty<string>();
+        EditContext?.GetValidationMessages().Distinct(StringComparer.Ordinal) ?? Enumerable.Empty<string>();
 
     protected override void OnInitialized()
     {

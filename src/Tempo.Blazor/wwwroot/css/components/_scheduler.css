@@ -159,20 +159,24 @@
 }
 
 /* Dark mode support */
-[data-theme="dark"] .tm-scheduler-context-menu {
+[data-theme="dark"] .tm-scheduler-context-menu,
+.tm-dark .tm-scheduler-context-menu {
     background: var(--tm-bg-surface, #1e293b);
     border-color: var(--tm-border-color, #334155);
 }
 
-[data-theme="dark"] .tm-scheduler-context-menu-item {
+[data-theme="dark"] .tm-scheduler-context-menu-item,
+.tm-dark .tm-scheduler-context-menu-item {
     color: var(--tm-text-primary, #f1f5f9);
 }
 
-[data-theme="dark"] .tm-scheduler-context-menu-item:hover {
+[data-theme="dark"] .tm-scheduler-context-menu-item:hover,
+.tm-dark .tm-scheduler-context-menu-item:hover {
     background: var(--tm-color-surface-hover, #334155);
 }
 
-[data-theme="dark"] .tm-scheduler-context-menu-divider {
+[data-theme="dark"] .tm-scheduler-context-menu-divider,
+.tm-dark .tm-scheduler-context-menu-divider {
     background: var(--tm-border-color, #334155);
 }
 

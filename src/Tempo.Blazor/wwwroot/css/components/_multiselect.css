@@ -215,7 +215,12 @@
 .tm-multiselect__confirm-btn {
     padding: var(--tm-space-1) var(--tm-space-3);
     background: var(--tm-color-primary);
-    color: white;
+    /* Was a hardcoded `white`, which bypassed the token graph: the dark theme repoints the fill to
+       the lighter primary-400, on which white is 2.54:1 — this is body-sized TEXT, so SC 1.4.3 asks
+       4.5:1. --tm-color-on-primary resolves through --tm-text-inverse and is therefore already
+       flipped by tokens-dark.css (7.02:1). The fallback keeps the declaration valid against a token
+       file that predates the alias. */
+    color: var(--tm-color-on-primary, var(--tm-color-white));
     border: none;
     border-radius: var(--tm-radius-md);
     font-size: var(--tm-font-size-sm);
@@ -223,8 +228,13 @@
     cursor: pointer;
     transition: background-color var(--tm-transition-fast);
 }
+/* primary-600 IS --tm-color-primary in the light theme, so this hover repainted the resting colour
+   and the button had no pointer feedback at all in light; in dark it moved from the lighter
+   primary-400 to a darker shade, i.e. the wrong way. --tm-color-primary-hover is the theme-aware
+   step (primary-700 light, primary-300 dark), so both themes move away from their own resting fill
+   and the label keeps 6.70:1 / 9.90:1. */
 .tm-multiselect__confirm-btn:hover {
-    background: var(--tm-color-primary-600);
+    background: var(--tm-color-primary-hover);
 }
 .tm-multiselect__confirm-btn:focus {
     outline: none;

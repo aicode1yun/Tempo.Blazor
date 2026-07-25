@@ -280,34 +280,42 @@
 
 /* ── Dark mode ───────────────────────────────────────────────────────────── */
 
-[data-theme="dark"] .tm-pdf-annotator-panel {
+[data-theme="dark"] .tm-pdf-annotator-panel,
+.tm-dark .tm-pdf-annotator-panel {
     background: var(--tm-surface-elevated-dark, #111827);
     border-left-color: var(--tm-border-dark, #374151);
     color: var(--tm-text-dark, #f9fafb);
 }
 
-[data-theme="dark"] .tm-pdf-annotator-panel__header {
+[data-theme="dark"] .tm-pdf-annotator-panel__header,
+.tm-dark .tm-pdf-annotator-panel__header {
     background: var(--tm-surface-elevated-dark, #111827);
     border-bottom-color: var(--tm-border-dark, #374151);
 }
 
-[data-theme="dark"] .tm-pdf-annotator-panel__item {
+[data-theme="dark"] .tm-pdf-annotator-panel__item,
+.tm-dark .tm-pdf-annotator-panel__item {
     border-color: var(--tm-border-dark, #374151);
 }
 
-[data-theme="dark"] .tm-pdf-annotator-panel__item--selected {
+[data-theme="dark"] .tm-pdf-annotator-panel__item--selected,
+.tm-dark .tm-pdf-annotator-panel__item--selected {
     background: var(--tm-surface-dark, #1f2937);
 }
 
 [data-theme="dark"] .tm-pdf-annotator-panel__input,
 [data-theme="dark"] .tm-pdf-annotator-panel__comment,
-[data-theme="dark"] .tm-pdf-annotator-panel__quote {
+[data-theme="dark"] .tm-pdf-annotator-panel__quote,
+.tm-dark .tm-pdf-annotator-panel__input,
+.tm-dark .tm-pdf-annotator-panel__comment,
+.tm-dark .tm-pdf-annotator-panel__quote {
     background: var(--tm-surface-dark, #1f2937);
     border-color: var(--tm-border-dark, #374151);
     color: var(--tm-text-dark, #f9fafb);
 }
 
-[data-theme="dark"] .tm-pdf-annotator-panel__thread-head:hover {
+[data-theme="dark"] .tm-pdf-annotator-panel__thread-head:hover,
+.tm-dark .tm-pdf-annotator-panel__thread-head:hover {
     background: var(--tm-hover-dark, #374151);
 }
 

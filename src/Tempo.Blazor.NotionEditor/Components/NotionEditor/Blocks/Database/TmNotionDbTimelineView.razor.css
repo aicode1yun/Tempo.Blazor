@@ -491,36 +491,45 @@
 
 /* ── Dark mode ───────────────────────────────────────────────────────────── */
 
-:global(.tm-dark) .tm-dbt__sidebar {
+:global(.tm-dark) .tm-dbt__sidebar,
+:global([data-theme="dark"]) .tm-dbt__sidebar {
     background: var(--tm-bg, #1a1a1a);
 }
 
 :global(.tm-dark) .tm-dbt__sidebar-head,
-:global(.tm-dark) .tm-dbt__gantt-head {
+:global(.tm-dark) .tm-dbt__gantt-head,
+:global([data-theme="dark"]) .tm-dbt__sidebar-head,
+:global([data-theme="dark"]) .tm-dbt__gantt-head {
     background: var(--tm-bg-subtle, #222);
 }
 
-:global(.tm-dark) .tm-dbt__tool-btn--active {
+:global(.tm-dark) .tm-dbt__tool-btn--active,
+:global([data-theme="dark"]) .tm-dbt__tool-btn--active {
     background: color-mix(in srgb, var(--tm-primary, #2383e2) 20%, #333);
 }
 
-:global(.tm-dark) .tm-dbt__zoom-btn--active {
+:global(.tm-dark) .tm-dbt__zoom-btn--active,
+:global([data-theme="dark"]) .tm-dbt__zoom-btn--active {
     background: var(--tm-primary, #2383e2);
 }
 
-:global(.tm-dark) .tm-dbt__bar {
+:global(.tm-dark) .tm-dbt__bar,
+:global([data-theme="dark"]) .tm-dbt__bar {
     background: color-mix(in srgb, var(--bar-color, #2383e2) 20%, #2a2a2a);
     border-color: color-mix(in srgb, var(--bar-color, #2383e2) 40%, #444);
 }
 
-:global(.tm-dark) .tm-dbt__bar-label {
+:global(.tm-dark) .tm-dbt__bar-label,
+:global([data-theme="dark"]) .tm-dbt__bar-label {
     color: color-mix(in srgb, var(--bar-color, #2383e2) 70%, #eee);
 }
 
-:global(.tm-dark) .tm-dbt__col-stripe--weekend {
+:global(.tm-dark) .tm-dbt__col-stripe--weekend,
+:global([data-theme="dark"]) .tm-dbt__col-stripe--weekend {
     background: rgba(255, 255, 255, 0.02);
 }
 
-:global(.tm-dark) .tm-dbt__col-stripe--today {
+:global(.tm-dark) .tm-dbt__col-stripe--today,
+:global([data-theme="dark"]) .tm-dbt__col-stripe--today {
     background: color-mix(in srgb, var(--tm-primary, #2383e2) 8%, transparent);
 }

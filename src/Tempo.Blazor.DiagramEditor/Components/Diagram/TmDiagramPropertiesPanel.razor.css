@@ -56,16 +56,19 @@
 }
 
 /* Dark mode adjustments */
-[data-theme="dark"] .tm-diagram-replace-shape__item {
+[data-theme="dark"] .tm-diagram-replace-shape__item,
+.tm-dark .tm-diagram-replace-shape__item {
     background: var(--tm-color-surface-elevated, #1f2937);
     border-color: var(--tm-color-border-strong, #374151);
 }
 
-[data-theme="dark"] .tm-diagram-replace-shape__item:hover {
+[data-theme="dark"] .tm-diagram-replace-shape__item:hover,
+.tm-dark .tm-diagram-replace-shape__item:hover {
     background: rgba(59, 130, 246, 0.15);
     border-color: var(--tm-color-primary, #3b82f6);
 }
 
-[data-theme="dark"] .tm-diagram-replace-shape__item span {
+[data-theme="dark"] .tm-diagram-replace-shape__item span,
+.tm-dark .tm-diagram-replace-shape__item span {
     color: var(--tm-color-text, #f3f4f6);
 }

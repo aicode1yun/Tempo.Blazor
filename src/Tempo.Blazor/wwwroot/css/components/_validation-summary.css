@@ -65,22 +65,26 @@
 
 /* Dark mode */
 [data-theme="dark"] .tm-validation-summary,
-.dark .tm-validation-summary {
+.dark .tm-validation-summary,
+.tm-dark .tm-validation-summary {
     background: rgba(220, 38, 38, 0.15);
     border-color: rgba(248, 113, 113, 0.3);
 }
 
 [data-theme="dark"] .tm-validation-summary-title,
-.dark .tm-validation-summary-title {
+.dark .tm-validation-summary-title,
+.tm-dark .tm-validation-summary-title {
     color: #fca5a5;
 }
 
 [data-theme="dark"] .tm-validation-summary-list,
-.dark .tm-validation-summary-list {
+.dark .tm-validation-summary-list,
+.tm-dark .tm-validation-summary-list {
     color: #fca5a5;
 }
 
 [data-theme="dark"] .tm-validation-summary-list li::before,
-.dark .tm-validation-summary-list li::before {
+.dark .tm-validation-summary-list li::before,
+.tm-dark .tm-validation-summary-list li::before {
     background: #f87171;
 }

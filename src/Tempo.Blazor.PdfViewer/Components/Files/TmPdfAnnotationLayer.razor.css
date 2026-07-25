@@ -113,7 +113,8 @@
 
 /* ── Dark mode ───────────────────────────────────────────────────────────── */
 
-[data-theme="dark"] .tm-pdf-annotation-layer__marker {
+[data-theme="dark"] .tm-pdf-annotation-layer__marker,
+.tm-dark .tm-pdf-annotation-layer__marker {
     border-color: var(--tm-surface-dark, #1f2937);
 }
 

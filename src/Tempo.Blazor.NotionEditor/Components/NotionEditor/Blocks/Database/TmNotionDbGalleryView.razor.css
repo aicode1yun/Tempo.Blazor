@@ -166,19 +166,23 @@
 
 /* ── Dark mode ──────────────────────────────────────────────────────────── */
 
-:global(.tm-dark) .tm-dbg__card {
+:global(.tm-dark) .tm-dbg__card,
+:global([data-theme="dark"]) .tm-dbg__card {
     background: var(--tm-bg-card, #1e1e1e);
     border-color: var(--tm-border, #3a3a3a);
 }
 
-:global(.tm-dark) .tm-dbg__card:hover {
+:global(.tm-dark) .tm-dbg__card:hover,
+:global([data-theme="dark"]) .tm-dbg__card:hover {
     border-color: var(--tm-border-hover, #555);
 }
 
-:global(.tm-dark) .tm-dbg__card-cover {
+:global(.tm-dark) .tm-dbg__card-cover,
+:global([data-theme="dark"]) .tm-dbg__card-cover {
     background: var(--tm-bg-2, #2a2a2a);
 }
 
-:global(.tm-dark) .tm-dbg__card-prop-val {
+:global(.tm-dark) .tm-dbg__card-prop-val,
+:global([data-theme="dark"]) .tm-dbg__card-prop-val {
     color: var(--tm-text-secondary, #b0b0b0);
 }

@@ -309,15 +309,18 @@
    Dark Mode Adjustments
    ═══════════════════════════════════════════════════════════════ */
 
-[data-theme="dark"] .tm-stepper-step {
+[data-theme="dark"] .tm-stepper-step,
+.tm-dark .tm-stepper-step {
   background: var(--tm-bg-surface);
 }
 
-[data-theme="dark"] .tm-stepper-step--pending .tm-stepper-indicator {
+[data-theme="dark"] .tm-stepper-step--pending .tm-stepper-indicator,
+.tm-dark .tm-stepper-step--pending .tm-stepper-indicator {
   background: var(--tm-bg-surface-secondary);
   border-color: var(--tm-border-color);
 }
 
-[data-theme="dark"] .tm-stepper-connector-line {
+[data-theme="dark"] .tm-stepper-connector-line,
+.tm-dark .tm-stepper-connector-line {
   background: var(--tm-color-border-subtle, #374151);
 }

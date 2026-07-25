@@ -261,19 +261,23 @@
 
 /* ── Dark mode ─────────────────────────────────────────────────────────── */
 
-:global(.tm-dark) .tm-dbb__col {
+:global(.tm-dark) .tm-dbb__col,
+:global([data-theme="dark"]) .tm-dbb__col {
     background: var(--tm-bg-2, #2a2a2a);
 }
 
-:global(.tm-dark) .tm-dbb__card {
+:global(.tm-dark) .tm-dbb__card,
+:global([data-theme="dark"]) .tm-dbb__card {
     background: var(--tm-bg-card, #1e1e1e);
     border-color: var(--tm-border, #3a3a3a);
 }
 
-:global(.tm-dark) .tm-dbb__card:hover {
+:global(.tm-dark) .tm-dbb__card:hover,
+:global([data-theme="dark"]) .tm-dbb__card:hover {
     border-color: var(--tm-border-hover, #555);
 }
 
-:global(.tm-dark) .tm-dbb__card-cover {
+:global(.tm-dark) .tm-dbb__card-cover,
+:global([data-theme="dark"]) .tm-dbb__card-cover {
     background: var(--tm-bg-subtle, #333);
 }

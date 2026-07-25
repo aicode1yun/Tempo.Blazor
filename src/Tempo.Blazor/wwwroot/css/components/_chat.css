@@ -219,5 +219,7 @@
 .tm-chat__send-btn:hover:not(:disabled) { opacity: 0.9; transform: scale(1.05); }
 .tm-chat__send-btn:disabled { background: var(--tm-bg-muted); color: var(--tm-color-text-muted); cursor: not-allowed; }
 
-[data-theme="dark"] .tm-chat__attachment { background: rgba(255, 255, 255, 0.05); }
-[data-theme="dark"] .tm-chat__attachment:hover { background: rgba(255, 255, 255, 0.08); }
+[data-theme="dark"] .tm-chat__attachment,
+.tm-dark .tm-chat__attachment { background: rgba(255, 255, 255, 0.05); }
+[data-theme="dark"] .tm-chat__attachment:hover,
+.tm-dark .tm-chat__attachment:hover { background: rgba(255, 255, 255, 0.08); }

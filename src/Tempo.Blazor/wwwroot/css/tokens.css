@@ -106,10 +106,21 @@
      and 4.39:1 on --tm-bg-muted. Decorative separators keep using --tm-border-color. */
   --tm-border-color-control:   var(--tm-color-gray-500);
   --tm-border-color-focus:     var(--tm-color-primary);
-  /* Glyph drawn ON a selection control's filled state (checkbox tick and indeterminate dash,
-     multiselect option tick). It is a token, not a per-component rule, because the dark theme has
-     to flip it in one place: dark fills with the lighter primary-400, on which white is 2.54:1. */
-  --tm-control-glyph-color:    var(--tm-color-white);
+  /* Glyph drawn ON a selection control's filled state — the checkbox tick and indeterminate dash
+     (_checkbox.css) and the multiselect option tick (_multiselect.css). Exactly the same usage role
+     as --tm-color-on-primary (ink on a primary fill), so it ALIASES it instead of carrying a second
+     definition with its own dark override: two independent copies of one role is how one of them
+     kept the light-only white. It only differs in the threshold it has to meet — a glyph is non-text
+     UI (3:1), a button label is text (4.5:1). NOTE the radio is NOT a consumer: its dot is
+     `background-color: var(--tm-color-primary)`, i.e. primary ON the surface, not ink ON primary. */
+  --tm-control-glyph-color:    var(--tm-color-on-primary);
+  /* Fill an UNCHECKED selection control takes while hovered. Hover used to re-colour the outline
+     only, from gray-500 to primary-600 — near-isoluminant (1.07:1 light, 1.01:1 dark), so the
+     feedback existed solely as a hue change. Moving it onto the box fill makes it a luminance step
+     (1.22:1 light, 1.41:1 dark). It stays a light tint on purpose: the outline turns primary on
+     hover and must keep 3:1 against what it now encloses (4.24:1 light, 4.07:1 dark), and it must
+     not be mistaken for the checked fill (4.24:1 / 4.07:1 against it). */
+  --tm-control-hover-fill:     var(--tm-color-primary-100);
 
   /* ── Text ───────────────────────────────────────────────────── */
   --tm-text-primary:           var(--tm-color-gray-900);
@@ -232,10 +243,18 @@
   --tm-color-danger-soft:      var(--tm-color-danger-subtle);
   --tm-color-error:            var(--tm-color-danger);
   --tm-color-neutral-900:      var(--tm-color-gray-900);
-  --tm-color-on-primary:       var(--tm-color-white);
+  /* Ink ON a primary fill. It resolves through --tm-text-inverse (white in light, #0f172a in dark)
+     rather than being pinned to white, because the dark theme repoints --tm-color-primary to the
+     LIGHTER primary-400, on which white text is 2.54:1 — under the 4.5:1 SC 1.4.3 asks of body
+     text. Dark ink on it is 7.02:1, the rule .tm-btn-primary already applies through a per-component
+     dark block. Because --tm-text-inverse is flipped in tokens-dark.css, this covers BOTH theming
+     APIs and every use site at once. Light is unchanged: --tm-text-inverse is white there. */
+  --tm-color-on-primary:       var(--tm-text-inverse);
   --tm-color-primary-bg:       var(--tm-color-primary);
   --tm-color-primary-bg-subtle: var(--tm-color-primary-subtle);
-  --tm-color-primary-contrast: var(--tm-color-white);
+  /* Older name for --tm-color-on-primary. It aliases the other one instead of repeating its value:
+     two independent definitions of "ink on primary" is how one of them kept the light-only white. */
+  --tm-color-primary-contrast: var(--tm-color-on-primary);
   --tm-color-primary-light:    var(--tm-color-primary-300);
   --tm-color-primary-lighter:  var(--tm-color-primary-100);
   --tm-color-primary-soft:     var(--tm-color-primary-subtle);

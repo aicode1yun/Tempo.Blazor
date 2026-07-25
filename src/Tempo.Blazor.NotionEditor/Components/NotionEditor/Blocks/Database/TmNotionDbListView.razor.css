@@ -199,16 +199,19 @@
 
 /* ── Dark mode ───────────────────────────────────────────────────────────── */
 
-:global(.tm-dark) .tm-dblv__chip {
+:global(.tm-dark) .tm-dblv__chip,
+:global([data-theme="dark"]) .tm-dblv__chip {
     background: var(--tm-bg-subtle, #2a2a2a);
     color: var(--tm-text-secondary, #a0a0a0);
 }
 
-:global(.tm-dark) .tm-dblv__chip--colored {
+:global(.tm-dark) .tm-dblv__chip--colored,
+:global([data-theme="dark"]) .tm-dblv__chip--colored {
     background: color-mix(in srgb, var(--chip-color, #2383e2) 18%, #222);
     color: color-mix(in srgb, var(--chip-color, #2383e2) 65%, #eee);
 }
 
-:global(.tm-dark) .tm-dblv__row:hover {
+:global(.tm-dark) .tm-dblv__row:hover,
+:global([data-theme="dark"]) .tm-dblv__row:hover {
     background: var(--tm-bg-hover, rgba(255,255,255,.04));
 }

@@ -485,7 +485,8 @@
    ═══════════════════════════════════════════════════════════════ */
 .tm-column-picker { position: relative; }
 .tm-column-picker-toggle { white-space: nowrap; color: var(--tm-color-primary-600); }
-[data-theme="dark"] .tm-column-picker-toggle { color: var(--tm-color-primary-300); }
+[data-theme="dark"] .tm-column-picker-toggle,
+.tm-dark .tm-column-picker-toggle { color: var(--tm-color-primary-300); }
 .tm-column-picker-panel {
   position: absolute;
   right: 0;

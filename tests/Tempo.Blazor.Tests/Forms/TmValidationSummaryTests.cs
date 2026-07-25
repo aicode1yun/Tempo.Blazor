@@ -274,6 +274,75 @@ public class TmValidationSummaryTests : LocalizationTestBase
         summary.GetAttribute("role").Should().Be("alert");
     }
 
+    /// <summary>
+    /// The summary is a per-FORM list, not a per-FIELD one, so the same sentence attached to two fields —
+    /// which is exactly what a cross-field rule ("Fill in at least one contact") and a server response
+    /// merged into the live store both produce — was printed once per field. The user then reads the same
+    /// instruction twice and cannot tell whether two things are wrong or one.
+    /// </summary>
+    [Fact]
+    public void ValidationSummary_SameMessageOnTwoFields_IsListedOnce()
+    {
+        var model = new TestModel();
+        var cut = RenderInEditForm(model);
+
+        var editForm = cut.FindComponent<EditForm>();
+        var editContext = editForm.Instance.EditContext!;
+        var messageStore = new ValidationMessageStore(editContext);
+        messageStore.Add(editContext.Field(nameof(TestModel.Name)), "Fill in at least one contact.");
+        messageStore.Add(editContext.Field(nameof(TestModel.Email)), "Fill in at least one contact.");
+        editContext.NotifyValidationStateChanged();
+
+        var items = cut.FindAll(".tm-validation-summary-list li");
+        items.Count.Should().Be(1, "the same sentence twice tells the user nothing the first one did not");
+        items[0].TextContent.Should().Contain("Fill in at least one contact.");
+    }
+
+    /// <summary>
+    /// The de-duplication must not swallow genuinely different messages, and must not reorder them: the
+    /// list is read top to bottom and the first entry is the one a screen reader announces first.
+    /// </summary>
+    [Fact]
+    public void ValidationSummary_KeepsDistinctMessages_InOrder()
+    {
+        var model = new TestModel();
+        var cut = RenderInEditForm(model);
+
+        var editForm = cut.FindComponent<EditForm>();
+        var editContext = editForm.Instance.EditContext!;
+        var messageStore = new ValidationMessageStore(editContext);
+        messageStore.Add(editContext.Field(nameof(TestModel.Name)), "Name is required.");
+        messageStore.Add(editContext.Field(nameof(TestModel.Name)), "Name is required.");
+        messageStore.Add(editContext.Field(nameof(TestModel.Email)), "Email is invalid.");
+        editContext.NotifyValidationStateChanged();
+
+        var items = cut.FindAll(".tm-validation-summary-list li");
+        items.Count.Should().Be(2);
+        items[0].TextContent.Should().Contain("Name is required.");
+        items[1].TextContent.Should().Contain("Email is invalid.");
+    }
+
+    /// <summary>
+    /// Visibility keys off the same collection the list renders, so it has to survive the de-duplication:
+    /// a summary that hides itself because "one duplicate is not really an error" would be a data-loss bug
+    /// dressed as a cosmetic one.
+    /// </summary>
+    [Fact]
+    public void ValidationSummary_StaysVisible_WhenTheOnlyErrorIsDuplicated()
+    {
+        var model = new TestModel();
+        var cut = RenderInEditForm(model);
+
+        var editForm = cut.FindComponent<EditForm>();
+        var editContext = editForm.Instance.EditContext!;
+        var messageStore = new ValidationMessageStore(editContext);
+        messageStore.Add(editContext.Field(nameof(TestModel.Name)), "Duplicated.");
+        messageStore.Add(editContext.Field(nameof(TestModel.Email)), "Duplicated.");
+        editContext.NotifyValidationStateChanged();
+
+        cut.Find(".tm-validation-summary").Should().NotBeNull();
+    }
+
     private class TestModel
     {
         public string Name { get; set; } = string.Empty;
