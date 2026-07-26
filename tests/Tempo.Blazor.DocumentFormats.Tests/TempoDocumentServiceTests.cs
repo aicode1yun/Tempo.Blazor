@@ -281,6 +281,53 @@ public class TempoDocumentServiceTests
             "unresolved sources stay unembedded — their footprint renders as a placeholder");
     }
 
+    [Fact]
+    public async Task RenderPdfAsync_InlineDrawing_PreservesNestedDrawingPayloadInSnapshot()
+    {
+        var service = CreateService();
+        var document = DocumentEditorDocument.Empty("inline-drawing-doc");
+        document.Theme.BodyFontFamily = "Dancing Script";
+        document.Blocks =
+        [
+            new DocumentBlock
+            {
+                Id = "signature-paragraph",
+                Type = DocumentBlockType.Paragraph,
+                Order = 0,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines =
+                    [
+                        new TextRun { Text = "Signature: " },
+                        new DocumentDrawingRun
+                        {
+                            Id = "signature-run",
+                            ObjectId = "signature-image",
+                            Kind = DocumentDrawingKind.Image,
+                            Source = DocumentImageSource.Url,
+                            Url = TinyPngDataUri,
+                            AltText = "Drawn signature",
+                            Size = new DocumentImageSize { Width = 200, Height = 48, LockAspectRatio = false },
+                            NaturalSize = new DocumentImageSize { Width = 200, Height = 48, LockAspectRatio = false },
+                            Layout = DocumentObjectLayout.Inline(),
+                        },
+                    ],
+                },
+            },
+        ];
+
+        var result = await service.RenderPdfAsync(new TempoDocumentRenderRequest
+        {
+            Document = document,
+            Fonts = CreateFonts(),
+        });
+
+        result.LayoutSnapshotJson.Should().Contain(TinyPngDataUri);
+        result.LayoutSnapshotJson.Should().Contain("\"type\":\"image\"");
+        result.LayoutSnapshotJson.Should().Contain("\"width\":200");
+        result.LayoutSnapshotJson.Should().Contain("\"height\":48");
+    }
+
     // ── DI ─────────────────────────────────────────────────────────────────────────────────────
 
     [Fact]

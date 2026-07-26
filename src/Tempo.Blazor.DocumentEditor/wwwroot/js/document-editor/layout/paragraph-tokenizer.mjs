@@ -201,7 +201,7 @@ export function createParagraphTokenizer(options) {
                 ? uppercasePreservingLength(rawText)
                 : rawText;
             const object = kind === 'drawing'
-                ? normalizeImageObject(run, {
+                ? normalizeImageObject(run.object || run.Object || run, {
                     blockId: source.id || source.Id || source.blockId || source.BlockId || '',
                     inlineIndex: index,
                 })

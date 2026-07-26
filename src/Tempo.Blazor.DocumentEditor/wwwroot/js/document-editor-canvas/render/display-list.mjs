@@ -313,6 +313,27 @@ function buildParagraphBlockCommands(block, options, contentControlRenderMode) {
 
         const lineSegments = positionedLineSegments(line);
         for (const segment of lineSegments) {
+            if (isDrawingSegment(segment)) {
+                const rect = segment.objectRect || segment.rect || {};
+                const imageCommands = imageDisplayCommands({
+                    blockId: block.blockId || '',
+                    runId: segment.runId || '',
+                    objectId: segment.objectId || segment.object?.objectId || '',
+                    role: 'drawingRun',
+                    pageIndex: Number(segment.pageIndex ?? line.pageIndex ?? block.pageIndex) || 0,
+                    rect: {
+                        x: Number(rect.x || 0) || 0,
+                        y: Number(rect.y || 0) || 0,
+                        width: Math.max(1, Number(rect.width || segment.object?.width || 1) || 1),
+                        height: Math.max(1, Number(rect.height || segment.object?.height || 1) || 1),
+                    },
+                    object: segment.object || {},
+                }, localSequence, options);
+                commands.push(...imageCommands);
+                localSequence += imageCommands.length;
+                continue;
+            }
+
             if (isMathSegment(segment)) {
                 const command = mathCommandForSegment(segment, line, block, options, localSequence++);
                 commands.push(command);
@@ -377,6 +398,11 @@ function buildParagraphBlockCommands(block, options, contentControlRenderMode) {
     }
 
     return commands;
+}
+
+function isDrawingSegment(segment) {
+    return String(segment?.kind || segment?.type || '').toLowerCase() === 'drawing'
+        || (segment?.inlineObject === true && !!segment?.object);
 }
 
 function isMathSegment(segment) {

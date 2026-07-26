@@ -35,8 +35,9 @@ export function normalizeImageObject(block, options) {
     const opts = options || {};
     const isDrawing = block && (block.kind === 'drawing'
         || block.Kind === 'drawing' || isDrawingRunSource(block));
+    const nestedDrawing = block && (block.drawing || block.Drawing);
     const content = isDrawing
-        ? (block || {})
+        ? (nestedDrawing || block || {})
         : ((block && (block.content || block.Content)) || {});
     const layout = content.layout || content.Layout || {};
     const anchor = layout.anchor || layout.Anchor || {};
