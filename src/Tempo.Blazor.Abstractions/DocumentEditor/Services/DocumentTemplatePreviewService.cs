@@ -25,47 +25,11 @@ public sealed class DocumentTemplatePreviewService
         CancellationToken cancellationToken = default)
     {
         var preview = Clone(document);
-        var tokens = ExtractTokensRecursive(preview);
+        var tokens = DocumentTokenHelper.ExtractTokens(preview);
         // The provider is always consulted: assembly expressions and conditional blocks may
         // reference values that never appear as token runs in the template body.
         var values = await _tokenValueProvider.ResolveTokenValuesAsync(context, tokens, cancellationToken);
         return new DocumentAssemblyService().Assemble(preview, values);
-    }
-
-    private static IReadOnlyList<TokenRun> ExtractTokensRecursive(DocumentEditorDocument document)
-    {
-        var tokens = new List<TokenRun>();
-        void Walk(DocumentBlock block)
-        {
-            switch (block.Content)
-            {
-                case ParagraphBlockContent paragraph:
-                    tokens.AddRange(paragraph.Inlines.OfType<TokenRun>());
-                    break;
-                case HeadingBlockContent heading:
-                    tokens.AddRange(heading.Inlines.OfType<TokenRun>());
-                    break;
-                case ListBlockContent list:
-                    tokens.AddRange(list.Inlines.OfType<TokenRun>());
-                    break;
-                case QuoteBlockContent quote:
-                    tokens.AddRange(quote.Inlines.OfType<TokenRun>());
-                    break;
-                case ContentControlBlockContent control:
-                    control.Blocks.ForEach(Walk);
-                    break;
-                case TableBlockContent table:
-                    foreach (var cellBlock in table.Rows.SelectMany(row => row.Cells).SelectMany(cell => cell.Blocks))
-                    {
-                        Walk(cellBlock);
-                    }
-
-                    break;
-            }
-        }
-
-        document.Blocks.ForEach(Walk);
-        return tokens;
     }
 
     private static T Clone<T>(T value)

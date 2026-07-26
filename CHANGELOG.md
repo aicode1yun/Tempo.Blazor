@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.8.1 - 2026-07-26
+
+### Fixed
+
+- `DocumentTokenHelper.ExtractTokens` now traverses tables, nested block content controls and inline
+  content controls, so headless document assembly discovers the same tokens as visual previews.
+- Document-assembly conditions now interpret raw `true` and `false` token values as booleans instead
+  of treating every non-empty string as true.
+- `DocumentTemplatePreviewService` now uses the public recursive token helper, removing a divergent
+  private extraction implementation.
+
 ## 2.8.0 - 2026-07-25
 
 ### Both dark-theme switches, hover you can actually see, and ink that survives the dark fill

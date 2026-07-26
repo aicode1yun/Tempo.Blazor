@@ -109,10 +109,9 @@ public static class DocumentTokenHelper
             return [];
         }
 
-        return document.Blocks
-            .SelectMany(block => GetInlineList(block.Content) ?? [])
-            .OfType<TokenRun>()
-            .ToList();
+        var tokens = new List<TokenRun>();
+        WalkBlocks(document.Blocks, tokens);
+        return tokens;
     }
 
     /// <summary>Validates document token keys against an optional catalog of known token keys.</summary>
@@ -157,15 +156,51 @@ public static class DocumentTokenHelper
             : typeLabel.Trim().ToLowerInvariant().Replace(' ', '-');
     }
 
-    private static List<InlineContent>? GetInlineList(DocumentBlockContent content)
+    private static void WalkBlocks(IEnumerable<DocumentBlock> blocks, List<TokenRun> tokens)
     {
-        return content switch
+        foreach (var block in blocks)
         {
-            ParagraphBlockContent paragraph => paragraph.Inlines,
-            HeadingBlockContent heading => heading.Inlines,
-            ListBlockContent list => list.Inlines,
-            QuoteBlockContent quote => quote.Inlines,
-            _ => null
-        };
+            switch (block.Content)
+            {
+                case ParagraphBlockContent paragraph:
+                    WalkInlines(paragraph.Inlines, tokens);
+                    break;
+                case HeadingBlockContent heading:
+                    WalkInlines(heading.Inlines, tokens);
+                    break;
+                case ListBlockContent list:
+                    WalkInlines(list.Inlines, tokens);
+                    break;
+                case QuoteBlockContent quote:
+                    WalkInlines(quote.Inlines, tokens);
+                    break;
+                case ContentControlBlockContent contentControl:
+                    WalkBlocks(contentControl.Blocks, tokens);
+                    break;
+                case TableBlockContent table:
+                    foreach (var cell in table.Rows.SelectMany(row => row.Cells))
+                    {
+                        WalkBlocks(cell.Blocks, tokens);
+                    }
+
+                    break;
+            }
+        }
+    }
+
+    private static void WalkInlines(IEnumerable<InlineContent> inlines, List<TokenRun> tokens)
+    {
+        foreach (var inline in inlines)
+        {
+            switch (inline)
+            {
+                case TokenRun token:
+                    tokens.Add(token);
+                    break;
+                case DocumentContentControlRun contentControl:
+                    WalkInlines(contentControl.Inlines, tokens);
+                    break;
+            }
+        }
     }
 }

@@ -449,6 +449,8 @@ public static class DocumentAssemblyExpression
         private static DocumentAssemblyValue FromRaw(string? raw)
             => decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out var number)
                 ? DocumentAssemblyValue.FromNumber(number)
+                : bool.TryParse(raw, out var boolean)
+                    ? DocumentAssemblyValue.FromBoolean(boolean)
                 : DocumentAssemblyValue.FromText(raw);
 
         private string ParseIdentifier()

@@ -60,6 +60,12 @@ public class DocumentAssemblyExpressionTests
     public void MissingToken_EvaluatesAsEmpty_AndComparesFalseToNumbers()
         => Evaluate("missing > 0").ToBoolean().Should().BeFalse();
 
+    [Theory]
+    [InlineData("true", true)]
+    [InlineData("false", false)]
+    public void Resolves_BooleanTokenValues_AsBooleans(string rawValue, bool expected)
+        => Evaluate("enabled", Values(("enabled", rawValue))).ToBoolean().Should().Be(expected);
+
     // ── SUM over collection rows ────────────────────────────────────────────────────────────────
 
     [Fact]

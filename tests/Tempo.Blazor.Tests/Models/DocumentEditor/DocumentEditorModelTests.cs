@@ -775,6 +775,86 @@ public class DocumentEditorModelTests
     }
 
     [Fact]
+    public void DocumentTokenHelper_ExtractTokens_TraversesTablesAndNestedContentControls()
+    {
+        var inlineControl = new DocumentContentControlRun
+        {
+            Control = new DocumentContentControl
+            {
+                Kind = DocumentContentControlKind.RichText,
+                Scope = DocumentContentControlScope.Inline
+            },
+            Inlines = [new TokenRun { Key = "inline.token" }]
+        };
+        var table = new DocumentBlock
+        {
+            Type = DocumentBlockType.Table,
+            Content = new TableBlockContent
+            {
+                Rows =
+                [
+                    new TableRowContent
+                    {
+                        Cells =
+                        [
+                            new TableCellContent
+                            {
+                                Blocks =
+                                [
+                                    new DocumentBlock
+                                    {
+                                        Type = DocumentBlockType.Paragraph,
+                                        Content = new ParagraphBlockContent
+                                        {
+                                            Inlines = [new TokenRun { Key = "table.token" }]
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        };
+        var document = DocumentEditorDocument.Empty("recursive-tokens");
+        document.Blocks =
+        [
+            new DocumentBlock
+            {
+                Type = DocumentBlockType.ContentControl,
+                Content = new ContentControlBlockContent
+                {
+                    Control = new DocumentContentControl
+                    {
+                        Kind = DocumentContentControlKind.RichText,
+                        Scope = DocumentContentControlScope.Block
+                    },
+                    Blocks =
+                    [
+                        new DocumentBlock
+                        {
+                            Type = DocumentBlockType.Paragraph,
+                            Content = new ParagraphBlockContent
+                            {
+                                Inlines =
+                                [
+                                    new TokenRun { Key = "nested.token" },
+                                    inlineControl
+                                ]
+                            }
+                        },
+                        table
+                    ]
+                }
+            }
+        ];
+
+        var keys = DocumentTokenHelper.ExtractTokens(document).Select(token => token.Key);
+
+        keys.Should().Equal("nested.token", "inline.token", "table.token");
+    }
+
+    [Fact]
     public async Task TemplatePreview_ReplacesTokensWithValuesAndKeepsSourceUnchanged()
     {
         var document = DocumentEditorDocument.Empty("doc-1");
