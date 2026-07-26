@@ -22,8 +22,8 @@ namespace Tempo.Blazor.Tests.Theme;
 /// </para>
 /// <para>
 /// LIMIT, stated on purpose: this runs against Tempo's own two token files. A consumer that
-/// repoints the primary scale (EmusCz ships six accents) is NOT covered here — that matrix belongs
-/// next to the consumer's theme file.
+/// repoints the primary scale per accent — a six-accent palette is a realistic case — is NOT covered
+/// here; that matrix belongs next to the consumer's theme file.
 /// </para>
 /// </summary>
 public class SelectionControlContrastTests
@@ -392,16 +392,53 @@ public class SelectionControlContrastTests
                 "a hover tint that reads as the checked fill would announce a state the user has not chosen");
 
     /// <summary>
-    /// Neither the tint nor the thicker ring may repaint a SELECTED control, so both live in one rule scoped
-    /// to the unchecked state. Unscoped it would match a checked box at equal specificity and win on order:
-    /// the tint would cover the primary fill and hide the glyph the user just switched on, and the ring would
-    /// eat 1px of that fill.
+    /// Neither the tint nor the thicker ring may repaint a SELECTED control, so every rule that gives the box
+    /// one of them under the pointer is scoped to the unchecked state. Unscoped, such a rule matches a checked
+    /// box at equal specificity and wins on order: the tint covers the primary fill and hides the glyph the
+    /// user just switched on, and the ring eats 1px of that fill.
+    /// <para>
+    /// SWEPT OVER THE STYLESHEET, and it has to be. This assertion used to read
+    /// <c>control.HoverSelector.Should().Contain(":not(:checked)")</c> — <see cref="Control.HoverSelector"/>
+    /// is a constant OF THIS TEST, so that was the test reading back its own text: no edit to the CSS could
+    /// falsify it, and dropping the scope from the stylesheet left it green. Sweeping the rules also covers
+    /// what a lookup structurally cannot see, a SECOND hover rule repainting the box unscoped while the
+    /// scoped one stays exactly where the constant expects it.
+    /// </para>
+    /// <para>
+    /// SUBJECT, stated because the sweep has to pick its rules out of the whole file: a rule is in scope when
+    /// it repaints the control's own box (its selector carries <see cref="Control.BoxSelector"/>) under
+    /// <c>:hover</c>, and declares the fill or the border width — the two properties this state changes.
+    /// A hover rule that only re-colours the outline is deliberately NOT in scope: it is safe on a checked
+    /// box, whose border already takes the primary token, and <see cref="HoverOutline"/> reads it on purpose.
+    /// LIMIT: it asks for the literal <c>:not(:checked)</c>, which is how the scope is written here; a rule
+    /// kept off the checked box some other way would be reported as unscoped.
+    /// </para>
     /// </summary>
     [Theory]
     [MemberData(nameof(HoverFillControls))]
     public void HoverFillAndRing_AreScopedToTheUncheckedState(Control control)
     {
-        control.HoverSelector.Should().Contain(":not(:checked)",
+        // THE POPULATION IS ASSERTED BEFORE IT IS DESCRIBED. "No unscoped rule" is vacuously true when
+        // NO rule was read at all — a renamed stylesheet, a moved css directory or a regex that stopped
+        // matching would all leave this green while sweeping nothing.
+        // The gate counts RULES PARSED, not rules found relevant: zero relevant rules is a legitimate
+        // state for a stylesheet that gives its box no hover fill, so gating on relevance would fail a
+        // correct file. Zero rules parsed is never legitimate.
+        var rules = ThemeCss.Rules(control.Stylesheet).ToList();
+
+        rules.Should().NotBeEmpty(
+            $"{control.Stylesheet} must actually be read for this guard to mean anything");
+
+        var unscoped = rules
+            .Where(rule => ThemeCss.Declares(rule.Body, "border-width") ||
+                           ThemeCss.Declares(rule.Body, "background-color"))
+            .SelectMany(rule => ThemeCss.SelectorParts(rule.Selector))
+            .Where(part => part.Contains(":hover", StringComparison.Ordinal) &&
+                           part.Contains(control.BoxSelector, StringComparison.Ordinal) &&
+                           !part.Contains(":not(:checked)", StringComparison.Ordinal))
+            .ToList();
+
+        unscoped.Should().BeEmpty(
             "a hover rule that also matches the checked box overrides the checked fill on pointer-over");
 
         ThemeCss.TryProperty(control.Stylesheet, control.HoverSelector!, "border-width")

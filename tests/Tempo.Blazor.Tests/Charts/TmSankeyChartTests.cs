@@ -55,19 +55,43 @@ public class TmSankeyChartTests : LocalizationTestBase
         links.Should().OnlyContain(link => link.GetAttribute("stroke") == "#123456");
     }
 
+    /// <summary>
+    /// The subject is that the component USES the supplied formatter — whatever string that formatter
+    /// returns has to reach the label. The decimal separator is no part of that subject, so the
+    /// formatter fixes its own culture.
+    /// <para>
+    /// It did not, and the test measured the RUNNER instead of the component: <c>$"EUR {value:0.00}"</c>
+    /// interpolates under <see cref="CultureInfo.CurrentCulture"/>, so on any cs-CZ machine it produced
+    /// "EUR 30,00" against an assert spelling "EUR 30.00" — red on a correct component. Pinning the
+    /// thread's culture would have cured the symptom and kept the coupling; making the test's OWN
+    /// formatter deterministic removes it.
+    /// </para>
+    /// <para>
+    /// NOT a statement about the default: <c>FormatValue</c> falls back to
+    /// <c>CultureInfo.CurrentCulture</c> on purpose, because a chart should render numbers in the
+    /// viewer's locale. That default is exercised by the tests that supply no formatter.
+    /// </para>
+    /// </summary>
     [Fact]
     public void SankeyChart_LabelsIncludeValuesUsingCustomFormatter()
     {
         var cut = Render<TmSankeyChart>(parameters => parameters
             .Add(component => component.Data, ValidData())
-            .Add(component => component.ValueFormatter, value => $"EUR {value:0.00}"));
+            .Add(component => component.ValueFormatter,
+                value => $"EUR {value.ToString("0.00", CultureInfo.InvariantCulture)}"));
 
         var labels = cut.FindAll("text.tm-sankey__label");
         labels.Should().HaveCount(3);
-        labels.Select(label => label.TextContent).Should().Contain(
+        // The expected values are passed as ONE collection on purpose. FluentAssertions has no params
+        // overload of Contain for a collection subject, so Contain("a", "b", "c") binds to
+        // Contain(expected, because, becauseArgs): only "a" is asserted and "b"/"c" silently become the
+        // failure-message arguments. The test claimed three labels and measured one.
+        labels.Select(label => label.TextContent).Should().Contain(new[]
+        {
             "Income — EUR 30.00",
             "Housing — EUR 10.00",
-            "Savings — EUR 20.00");
+            "Savings — EUR 20.00",
+        });
     }
 
     [Fact]
@@ -108,12 +132,14 @@ public class TmSankeyChartTests : LocalizationTestBase
     {
         var cut = RenderChart(ValidData());
 
+        // One collection, not loose arguments — see the note in
+        // SankeyChart_LabelsIncludeValuesUsingCustomFormatter: loose arguments assert only the first.
         cut.FindAll("rect.tm-sankey__node title")
             .Select(title => title.TextContent)
-            .Should().Contain("Income — 30", "Housing — 10", "Savings — 20");
+            .Should().Contain(new[] { "Income — 30", "Housing — 10", "Savings — 20" });
         cut.FindAll("path.tm-sankey__link title")
             .Select(title => title.TextContent)
-            .Should().Contain("Income → Housing: 10", "Income → Savings: 20");
+            .Should().Contain(new[] { "Income → Housing: 10", "Income → Savings: 20" });
     }
 
     [Fact]

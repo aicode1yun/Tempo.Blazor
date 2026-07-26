@@ -161,6 +161,29 @@ internal static class ThemeCss
         return (inner, null);
     }
 
+    /// <summary>
+    /// Every rule of a component stylesheet, in source order, as its selector list and its declaration
+    /// body.
+    /// <para>
+    /// Exposed next to <see cref="TryProperty"/> because the two answer different questions and only one
+    /// of them can answer "is there a rule I did not expect": a lookup is given the selector it is
+    /// looking for, so it can report FOUND or NOT FOUND and nothing else — never "a second rule declares
+    /// this too". A guard about which rules EXIST has to sweep them.
+    /// </para>
+    /// </summary>
+    public static IEnumerable<(string Selector, string Body)> Rules(string stylesheet) =>
+        RuleBlock.Matches(ComponentCss(stylesheet))
+            .Select(rule => (Normalise(rule.Groups["selector"].Value), rule.Groups["body"].Value));
+
+    /// <summary>Whether a declaration body sets <paramref name="property"/> itself (not as a shorthand).</summary>
+    public static bool Declares(string body, string property) =>
+        body.Split(';').Any(declaration =>
+        {
+            var separator = declaration.IndexOf(':', StringComparison.Ordinal);
+            return separator > 0 &&
+                   string.Equals(declaration[..separator].Trim(), property, StringComparison.Ordinal);
+        });
+
     /// <summary>The comma-separated parts of a selector list, whitespace-normalised.</summary>
     public static IReadOnlyList<string> SelectorParts(string selector) =>
         Normalise(selector).Split(',').Select(part => part.Trim()).Where(part => part.Length > 0).ToList();
