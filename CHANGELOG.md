@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.8.3 - 2026-07-26
+
+### Fixed
+
+- Headless document layout now preserves nested inline drawing payloads and emits their image
+  display commands, so drawn signatures and other inline images render in exported PDFs with their
+  requested geometry.
+
 ## 2.8.1 - 2026-07-26
 
 ### Fixed
