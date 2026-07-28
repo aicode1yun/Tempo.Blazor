@@ -83,7 +83,14 @@ public class ReplaceShapeCommandTests
         node.W.Should().Be(160);
         node.H.Should().Be(120);
         node.Ports.Should().HaveCount(2);
-        node.Ports.Select(p => p.Name).Should().Contain("Top", "Right");
+        // ONE collection, not loose arguments. FluentAssertions 8.4.0 (the version this is measured against —
+        // re-check if it is upgraded) has no `params` overload of Contain for a COLLECTION subject, so
+        // `Contain("Top", "Right")` binds to Contain(expected, because, becauseArgs): only "Top" would be
+        // asserted and "Right" would silently become failure-message text. Measured, not assumed: replacing
+        // "Right" with a nonsense string left this test GREEN, while doing the same to "Top" turned it RED.
+        // The subject's TYPE is what decides this — over a Dictionary the same shape binds Contain(key, value)
+        // and does assert both — so no grep or regex over the call shape can tell the two apart.
+        node.Ports.Select(p => p.Name).Should().Contain(new[] { "Top", "Right" });
     }
 
     [Fact]
