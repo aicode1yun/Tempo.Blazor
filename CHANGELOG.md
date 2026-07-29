@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.8.4 - 2026-07-29
+
+### Added
+
+- **Durable MCP idempotency boundary for Notion authoring.** `INotionIdempotentAggregateProvider`
+  lets a host commit the complete response receipt of `notion_apply_block_operations` in the same
+  transaction as the aggregate writes the request performs, so a host restart between the write and
+  the receipt can no longer produce a second application of the same logical request. Hosts that do
+  not implement it keep using the in-process receipt store unchanged. This shipped as 2.7.1 on a
+  branch that never reached `main`; it is carried here so the line is single again.
+- **`notion_apply_block_operations` accepts `scopeAppId`.** A stateless MCP call carries no ambient
+  application scope, so a caller whose credentials reach more than one application could not use the
+  tool at all against a host that scopes data per application — every call failed before touching
+  the data, while `notion_create_page` and `notion_list_pages` had taken `scopeAppId` since 2.7. The
+  value reaches the host as `NotionIdempotentExecutionRequest.ScopeAppId` and stays OUT of the
+  request hash: it says where the write lands, not what it writes, and receipts are already scoped
+  per application, so an unchanged single-application caller keeps replaying its existing receipts.
+
 ## 2.8.3 - 2026-07-26
 
 ### Fixed
