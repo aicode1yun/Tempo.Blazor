@@ -152,6 +152,77 @@ public sealed class NotionDurableIdempotencyTests
         concurrentCompiler.CallCount.Should().Be(0);
     }
 
+    /// <summary>
+    /// A stateless caller whose credentials reach more than one application has no ambient scope to
+    /// fall back on, so the tool must carry <c>scopeAppId</c> through to the provider — otherwise a
+    /// durable host can only reject the write (or, worse, write unscoped).
+    /// </summary>
+    [Fact]
+    public async Task ApplyBlockOperations_ForwardsScopeAppIdToDurableProvider()
+    {
+        var page = Page("11111111-1111-1111-1111-111111111111", "token-1");
+        var provider = new DurableAggregateProvider(page);
+        using var services = new ServiceCollection().BuildServiceProvider();
+
+        var json = await NotionBlockTools.ApplyBlockOperations(
+            services,
+            provider,
+            "scoped-durable-request",
+            """
+            [{
+              "op":"createBlock",
+              "pageId":"11111111-1111-1111-1111-111111111111",
+              "clientRef":"created",
+              "block":{
+                "type":"paragraph",
+                "content":{"html":"Scoped write"}
+              }
+            }]
+            """,
+            """
+            [{
+              "pageId":"11111111-1111-1111-1111-111111111111",
+              "concurrencyToken":"token-1"
+            }]
+            """,
+            "  8f1d2c3b-4a5e-4f60-9c71-2d3e4f506172  ");
+
+        var result = JsonNode.Parse(json)!.AsObject();
+        result["success"]!.GetValue<bool>().Should().BeTrue(json);
+        provider.LastIdempotencyRequest!.ScopeAppId.Should()
+            .Be("8f1d2c3b-4a5e-4f60-9c71-2d3e4f506172");
+    }
+
+    [Fact]
+    public async Task ApplyBlockOperations_WithoutScopeAppId_LeavesProviderScopeUnset()
+    {
+        var page = Page("11111111-1111-1111-1111-111111111111", "token-1");
+        var provider = new DurableAggregateProvider(page);
+        using var services = new ServiceCollection().BuildServiceProvider();
+
+        await NotionBlockTools.ApplyBlockOperations(
+            services,
+            provider,
+            "unscoped-durable-request",
+            """
+            [{
+              "op":"createBlock",
+              "pageId":"11111111-1111-1111-1111-111111111111",
+              "block":{"type":"paragraph","content":{"html":"Ambient scope"}}
+            }]
+            """,
+            """
+            [{
+              "pageId":"11111111-1111-1111-1111-111111111111",
+              "concurrencyToken":"token-1"
+            }]
+            """,
+            scopeAppId: "   ");
+
+        provider.LastIdempotencyRequest!.ScopeAppId.Should().BeNull(
+            "blank input must not masquerade as an explicit scope");
+    }
+
     private static NotionAtomicAuthoringEngine Engine(
         INotionAggregateProvider provider,
         INotionAtomicOperationCompiler compiler)

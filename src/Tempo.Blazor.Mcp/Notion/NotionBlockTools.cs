@@ -82,13 +82,14 @@ public static class NotionBlockTools
     }
 
     [McpServerTool(Name = "notion_apply_block_operations")]
-    [Description("Atomically apply a strict JSON operation array. Supported op values: createBlock, createBlocks, createTable, patchBlockContent, moveBlock, reorderBlocks, convertBlockType, deleteBlock, replaceBlocks. Every request requires a stable idempotencyKey. Legacy aliases and unknown fields are rejected.")]
+    [Description("Atomically apply a strict JSON operation array. Supported op values: createBlock, createBlocks, createTable, patchBlockContent, moveBlock, reorderBlocks, convertBlockType, deleteBlock, replaceBlocks. Every request requires a stable idempotencyKey. Pass scopeAppId (app GUID) when your API key grants access to more than one app. Legacy aliases and unknown fields are rejected.")]
     public static async Task<string> ApplyBlockOperations(
         IServiceProvider services,
         INotionAggregateProvider? provider,
         [Description("Stable idempotency key for this logical request. Reusing it with the same canonical request replays the original result; a different request is rejected.")] string idempotencyKey,
         [Description("Strict JSON array of operations. Each item uses the 'op' discriminator and may include clientRef for created/updated/deleted ID mapping.")] string operationsJson,
         [Description("Optional JSON array of {pageId, concurrencyToken} values from the latest aggregate read. Stale tokens reject the whole request before application.")] string expectedPageVersionsJson = "[]",
+        [Description("Optional app id (GUID) scoping this write; required when the API key grants access to more than one app, because a stateless call carries no ambient app scope.")] string? scopeAppId = null,
         CancellationToken cancellationToken = default)
     {
         if (provider is null)
@@ -126,7 +127,8 @@ public static class NotionBlockTools
             {
                 IdempotencyKey = idempotencyKey,
                 OperationsJson = operationsJson,
-                ExpectedPageVersions = expectedVersions
+                ExpectedPageVersions = expectedVersions,
+                ScopeAppId = string.IsNullOrWhiteSpace(scopeAppId) ? null : scopeAppId.Trim()
             },
             cancellationToken);
         return Serialize(result);

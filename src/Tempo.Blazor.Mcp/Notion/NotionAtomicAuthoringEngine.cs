@@ -105,7 +105,8 @@ internal sealed class NotionAtomicAuthoringEngine(
                 OperationScope = OperationScope,
                 Key = request.IdempotencyKey,
                 RequestHash = requestHash,
-                Retention = _receiptRetention
+                Retention = _receiptRetention,
+                ScopeAppId = request.ScopeAppId
             },
             async (transactionProvider, transactionCancellationToken) =>
             {

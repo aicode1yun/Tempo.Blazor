@@ -24,6 +24,12 @@ internal sealed class NotionAtomicAuthoringRequest
     public string OperationsJson { get; init; } = "[]";
     public IReadOnlyList<NotionAggregateTarget> Targets { get; init; } = [];
     public IReadOnlyList<NotionExpectedPageVersion> ExpectedPageVersions { get; init; } = [];
+
+    /// <summary>
+    /// Optional host scope forwarded to a durable provider (see
+    /// <see cref="NotionIdempotentExecutionRequest.ScopeAppId"/>). Not part of the request hash.
+    /// </summary>
+    public string? ScopeAppId { get; init; }
 }
 
 internal sealed record NotionEntityChange(

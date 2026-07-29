@@ -75,6 +75,13 @@ The result includes the new page versions, deterministic reference mappings,
 structured issues, and canonical readback. No granular block-write alias or
 sequential compatibility path is available.
 
+Pass `scopeAppId` (app GUID) when the caller's credentials reach more than one application, exactly
+as for `notion_create_page` and `notion_list_pages`. A stateless MCP call carries no ambient scope,
+so a host that scopes its data per application cannot infer the target and has to reject the write.
+The value travels to `INotionIdempotentAggregateProvider` as
+`NotionIdempotentExecutionRequest.ScopeAppId` and is deliberately excluded from the request hash:
+it says where the write lands, not what it writes.
+
 ### `notion_list_block_types`
 
 Lists every canonical block type as a compact summary. Call `notion_get_block_schema` for the

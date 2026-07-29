@@ -20,6 +20,20 @@ public sealed class NotionIdempotentExecutionRequest
     /// <summary>How long a committed receipt remains eligible for replay.</summary>
     [JsonPropertyName("retention")]
     public TimeSpan Retention { get; init; } = TimeSpan.FromHours(24);
+
+    /// <summary>
+    /// Caller-supplied host scope (application identifier) for stateless callers whose credentials
+    /// reach more than one application, so the provider can scope the receipt without ambient state.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately OUTSIDE <see cref="RequestHash"/>: the hash covers what is written (targets,
+    /// expected versions, operations), while this only says where it is written. Receipts are scoped
+    /// per host application anyway, so two applications using the same key never collide. Hosts that
+    /// can resolve their own scope must keep ignoring this value; hosts that cannot must reject the
+    /// request when it is absent rather than fall back to an unscoped write.
+    /// </remarks>
+    [JsonPropertyName("scopeAppId")]
+    public string? ScopeAppId { get; init; }
 }
 
 /// <summary>Outcome of a provider-level idempotent aggregate execution.</summary>
