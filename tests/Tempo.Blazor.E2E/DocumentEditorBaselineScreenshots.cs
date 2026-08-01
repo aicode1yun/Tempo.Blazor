@@ -9,8 +9,7 @@ namespace Tempo.Blazor.E2E;
 /// dialogs, and the overall Blazor shell.
 /// </summary>
 [TestClass]
-[TestCategory("BaselineGeneration")]
-public class DocumentEditorBaselineScreenshots : WasmTestBase
+public class DocumentEditorBaselineScreenshots : BaselineGeneratorTestBase
 {
     private static string OutputDir
     {

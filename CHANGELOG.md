@@ -1,5 +1,67 @@
 # Changelog
 
+## 2.8.6 - 2026-08-01
+
+### Fixed
+
+- **The CSS bundler was destroying every `calc()` that adds.** `BundleCss` stripped the whitespace
+  around `+` as if it were only a sibling combinator, so `calc(100% + 8px)` shipped as
+  `calc(100%+8px)` — invalid per css-values-3 §8.1, which makes the browser drop the **whole**
+  declaration. Measured in the committed bundle: **30 such operators across 29 `calc()`
+  expressions**, and **0** in the 975 `calc()` expressions of the sources — the defect was made
+  entirely by the minifier. The worst of them was `.tm-data-table-scroll`, where the negative margin
+  survived but the matching width compensation did not, so **every data table overflowed its
+  container**; the rest were dropped `top:`/offset declarations on tooltips, popovers, dropdowns and
+  the date picker, which fall back to `auto` and land at the static position instead of the intended
+  offset. `+` and `~` are no longer stripped (leaving the space around a combinator is valid CSS and
+  costs ~96 bytes); `>` still is, because it is not a `calc()` operator.
+- The bundle went unmeasured for a structural reason, now closed: the demo app links the **source**
+  `tempo-blazor.css` through its `@import` graph, so no e2e run ever loaded
+  `tempo-blazor.bundled.css` — the file the documentation tells consumers to reference. New
+  `CssBundleCalcWhitespaceTests` asserts on the **bundle**, tokenising each `calc()` rather than
+  pattern-matching it, so `--tm-space-1-5`, `env(safe-area-inset-bottom)`, `calc(-1 * x)` and `1e-5`
+  are not mistaken for operators (18 such control samples are pinned alongside 14 defective ones).
+
+### Changed
+
+- `--tm-tab-row-height` is derived with `calc()` again instead of the four per-variant literals it
+  carried while `calc()` was broken in the bundle. The literals only held while the root font size,
+  the tab padding and the line box all stayed at their defaults: with `:root { font-size: 20px }` a
+  Line row measures `2×12.5 + 25 + 2 = 52px`, while the literal still claimed 42px — a centred slot
+  then sits 5px off the row. `.tm-tab` now reads its padding and line box from
+  `--tm-tab-padding-y`/`-x` and `--tm-tab-line-box`, which is also what the row height is computed
+  from, so the two cannot drift apart. Because var() substitution happens at computed-value time on
+  the `.tm-tabs` element itself, the token now has a **single** declaration and the variants
+  re-declare only the inputs — replacing four same-specificity literals whose winner was decided by
+  their order in the file. Rendered geometry is unchanged: `TmTabsHeaderSlotGeometryE2ETests`
+  measures slot boxes of 42/38px (Line above/below the 640px breakpoint), 44px (Pill) and 37px
+  (Enclosed) with a **0.00px** alignment delta in all 12 measurements.
+
+### Internal
+
+- **An ordinary `dotnet test` can no longer overwrite a committed screenshot.** Two separate routes
+  reached them and only one was obvious. The *generators* — classes that exist to rewrite the PNGs —
+  were held back by nothing but a doc comment, and three of the seven (`DebtTokenBaselineScreenshots`,
+  `ThemeTokenBaselineScreenshots`, `SpreadsheetPhase6BaselineScreenshots`) did not even carry the
+  `BaselineGeneration` category. They now inherit `BaselineGeneratorTestBase` and skip unless
+  `TM_WRITE_BASELINES` is `1`/`true`/`yes`.
+- The larger route was *ordinary* tests writing baselines as a side effect: `NotionE2ETestBase` and
+  four Notion test classes each carried a byte-identical private path calculation that wrote
+  straight into `__baseline__/notion/`, reaching **765 committed PNGs — 66% of every tracked PNG in
+  the repository — from 276 call sites**. A single ordinary test rewrote 12 of them. These are not
+  skipped, because they assert real behaviour; their destination is REDIRECTED instead, through
+  `BaselineOutput`, exactly as `Demo__DiagramsDbPath` redirects the demo database.
+- Holding both routes is `BaselineWriteSweep`, whose predicate is the **write target** rather than a
+  class name: it hashes every tracked PNG under the screenshot roots in `[AssemblyInitialize]` and
+  fails the run from `[AssemblyCleanup]` if any changed without the opt-in. A guard keyed on naming
+  could not see any of those five Notion classes; a guard keyed on what the run touched cannot be
+  defeated by renaming. `BaselineGeneratorGateTests` remains as the fast, browser-free check on the
+  naming convention itself.
+- The demo API no longer writes into the committed `src/Tempo.Blazor.Demo.Api/diagrams.db`: the path
+  is overridable through `Demo__DiagramsDbPath`, which the Playwright host launcher points at a
+  per-run temp directory. Booting the demo from a test run previously left that file modified plus
+  an untracked `-wal`/`-shm` pair.
+
 ## 2.8.5 - 2026-08-01
 
 ### Added

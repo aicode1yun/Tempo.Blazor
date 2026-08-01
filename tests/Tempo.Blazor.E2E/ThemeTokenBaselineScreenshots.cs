@@ -14,7 +14,7 @@ namespace Tempo.Blazor.E2E;
 /// folder with the <c>TM_SCREENSHOT_PHASE</c> environment variable to capture a before/after pair.
 /// </summary>
 [TestClass]
-public class ThemeTokenBaselineScreenshots : WasmTestBase
+public class ThemeTokenBaselineScreenshots : BaselineGeneratorTestBase
 {
     /// <summary>Every demo route that renders at least one migrated component.</summary>
     private static readonly (string Route, string Name)[] Routes =

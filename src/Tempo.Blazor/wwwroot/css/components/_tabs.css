@@ -8,23 +8,44 @@
     flex-direction: column;
     width: 100%;
 
-    /* Height of ONE tab row measured from the top of the strip. Consumed by the wrap-mode
-       slot alignment further down, which has to sit beside the FIRST row of a wrapped band
-       rather than in the middle of it.
-       Line default: 2 x 0.625rem padding + 1.25rem line box + the 2px baseline = 42px.
-       It is a literal, NOT a calc(): the CSS bundler in Tempo.Blazor.csproj strips the
-       whitespace around `+`, and `calc(a+b)` is invalid CSS (measured: the bundled
-       `top: calc(100%+8px)` computes to 0px, the un-minified form to 108px). The values are
-       therefore pinned from the other side, by the geometry assertions in
-       TmTabsHeaderSlotGeometryE2ETests, which run on BOTH sides of the 640px breakpoint.
+    /* ── Row metrics ────────────────────────────────────────────────────────────────────
+       The three quantities a tab row is built from. `.tm-tab` further down is the only rule
+       that consumes them for its own box, so a variant changes the row by re-declaring the
+       token here rather than by out-specifying `.tm-tab`'s padding. */
+    --tm-tab-padding-y: 0.625rem;
+    --tm-tab-padding-x: 1rem;
+    --tm-tab-line-box: 1.25rem;
 
-       ALL FOUR declarations of this token (here, --pill, --enclosed, and --line inside the
-       640px media query) have specificity (0,1,0), so which one wins is decided by their ORDER
-       in this file and by nothing else. Reordering them is a silent defect, which is why every
-       one of the four is measured: the e2e file wraps a slotted strip in each variant and
-       compares the slot content against the LIVE centre of the first tab row, so a value that
-       reaches the slot from the wrong declaration lands off-centre and turns red. */
-    --tm-tab-row-height: 42px;
+    /* Whatever a variant adds OUTSIDE that padding box: Line's own 2px underline here, the
+       1px top border for Enclosed, the padded tray for Pill. */
+    --tm-tab-row-chrome: 2px;
+
+    /* Height of ONE tab row measured from the top of the strip: 2 x 0.625rem padding +
+       1.25rem line box + the 2px baseline = 42px for Line. Consumed by the wrap-mode slot
+       alignment further down, which has to sit beside the FIRST row of a wrapped band rather
+       than in the middle of it.
+
+       It used to be a literal per variant, because the CSS bundler stripped the whitespace
+       around `+` and shipped an invalid `calc(a+b)`. That is fixed in Tempo.Blazor.csproj and
+       guarded by CssBundleCalcWhitespaceTests, so the token is derived again — a literal held
+       only while the root font size, the padding and the line box all stayed at their defaults.
+       Work it through for a consumer with `:root { font-size: 20px }`: 0.625rem becomes 12.5px
+       and 1.25rem becomes 25px, so a Line row is 2x12.5 + 25 + 2 = 52px while the literal still
+       claims 42px — a centred slot then sits 5px off the row. The calc() follows the rem.
+
+       This is now the ONLY declaration of the token: a variant re-declares the INPUTS above,
+       and var() substitution happens at computed-value time on this same element, so this
+       calc() always sees whichever `--tm-tab-padding-y` WON, whatever order it won in. Order
+       still decides that contest — `.tm-tabs` 0.625rem and `.tm-tabs--pill` 0.5rem both carry
+       (0,1,0), which is why the media query below is scoped to --line. What went away is the
+       second, redundant contest: four order-dependent declarations of the DERIVED token, on
+       top of the inputs they were meant to follow. Four down to one. The result is
+       still measured live by TmTabsHeaderSlotGeometryE2ETests on both sides of the 640px
+       breakpoint in all three variants — the expected value there is the LIVE centre of the
+       first tab row, never a constant. */
+    --tm-tab-row-height: calc(
+        (2 * var(--tm-tab-padding-y)) + var(--tm-tab-line-box) + var(--tm-tab-row-chrome)
+    );
 }
 
 /* ── Tab header strip ──────────────────────────────────── */
@@ -122,10 +143,16 @@
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
-    padding: 0.625rem 1rem;
+
+    /* Single source for the row geometry: --tm-tab-row-height on .tm-tabs is computed from
+       these same two tokens, so a padding change moves the tab and the slot together. Read
+       without a fallback ON PURPOSE — .tm-tab is a BEM element of .tm-tabs and is never
+       emitted outside it (TmTabs.razor is its only producer); a fallback would put the
+       numbers back in two places, which is the drift this replaced. */
+    padding: var(--tm-tab-padding-y) var(--tm-tab-padding-x);
     font-size: 0.875rem;
     font-weight: 500;
-    line-height: 1.25rem;
+    line-height: var(--tm-tab-line-box);
     color: var(--tm-text-secondary);
     background: transparent;
     border: none;
@@ -229,20 +256,28 @@
     /* Pill is the one variant where the slot box and the tab row do NOT start at the same
        edge: the strip is a padded tray, the slot box begins at the tray's OUTER edge, and the
        first row of pills is centred inside that padding. The quantity the slot has to match is
-       therefore the whole tray, not the pill:
+       therefore the whole tray, not the pill — so the tray's own padding is what Pill puts in
+       --tm-tab-row-chrome:
        2 x 0.25rem tray padding + 2 x 0.5rem pill padding + 1.25rem line box = 44px, on both
-       sides of the 640px breakpoint (the media query below changes the horizontal padding and
-       the font size; the vertical padding is already 0.5rem and the line box is fixed).
-       Measured, not derived: at 40px — the height of the PILL, which is the wrong quantity —
-       the slot content sat 2.0px above the centre of the first row. */
-    --tm-tab-row-height: 44px;
+       sides of the 640px breakpoint (the media query below changes only the Line padding and
+       the font size; Pill's vertical padding is already 0.5rem and the line box is fixed).
+       The pill's OWN height is the wrong quantity to size the slot with — measured live by
+       TmTabsHeaderSlotGeometryE2ETests, the pill is 36px against a 44px tray, so a slot sized to
+       the pill lands above the centre of the first row by half that difference. */
+    --tm-tab-padding-y: 0.5rem;
+    --tm-tab-padding-x: 0.875rem;
+    --tm-tab-tray-padding: 0.25rem;
+    --tm-tab-row-chrome: calc(2 * var(--tm-tab-tray-padding));
 }
 
 .tm-tabs--pill .tm-tabs__header {
     gap: 0.25rem;
     background-color: var(--tm-bg-muted);
     border-radius: var(--tm-radius-lg);
-    padding: 0.25rem;
+
+    /* The same token --tm-tab-row-chrome is computed from: the tray padding is part of the
+       row height the slots align to, so the two must not be able to drift apart. */
+    padding: var(--tm-tab-tray-padding);
 }
 
 /* The row's default `stretch` exists for Line/Enclosed, whose tabs meet an underline drawn
@@ -253,9 +288,10 @@
     align-items: center;
 }
 
+/* Padding comes from --tm-tab-padding-* on .tm-tabs--pill above, not from a rule that
+   out-specifies .tm-tab — that is what keeps it in the same place the row height reads it. */
 .tm-tabs--pill .tm-tab {
     border-radius: var(--tm-radius-md);
-    padding: 0.5rem 0.875rem;
 }
 
 .tm-tabs--pill .tm-tab--active {
@@ -273,8 +309,11 @@
    ═══════════════════════════════════════════════════════ */
 .tm-tabs--enclosed {
     /* 1px top border + 2 x 0.5rem padding + 1.25rem line box, bottom border suppressed
-       = 37px, on both sides of the 640px breakpoint. */
-    --tm-tab-row-height: 37px;
+       = 37px, on both sides of the 640px breakpoint. The single border the tab keeps is what
+       Enclosed puts in --tm-tab-row-chrome. */
+    --tm-tab-padding-y: 0.5rem;
+    --tm-tab-padding-x: 1rem;
+    --tm-tab-row-chrome: 1px;
 }
 
 .tm-tabs--enclosed .tm-tabs__header {
@@ -289,12 +328,13 @@
     border-bottom: none;
 }
 
+/* The surviving top border is the 1px in --tm-tab-row-chrome above; padding comes from
+   --tm-tab-padding-* there too. */
 .tm-tabs--enclosed .tm-tab {
     border: 1px solid transparent;
     border-bottom: none;
     border-radius: var(--tm-radius-md) var(--tm-radius-md) 0 0;
     margin-bottom: -1px;
-    padding: 0.5rem 1rem;
 }
 
 .tm-tabs--enclosed .tm-tab--active {
@@ -341,15 +381,19 @@
    Responsive — smaller tabs on mobile
    ═══════════════════════════════════════════════════════ */
 @media (max-width: 640px) {
-    /* The tab gets shorter here, so the wrap-mode slot alignment token must follow it.
-       Scoped to --line: pill/enclosed keep the same padding on both sides of the
-       breakpoint, and an unscoped .tm-tabs rule would out-order their values. */
+    /* Only the Line padding shrinks here; --tm-tab-row-height on .tm-tabs is computed from it
+       and follows on its own (2 x 0.5rem + 1.25rem + 2px = 38px). Scoped to --line: Pill and
+       Enclosed keep their padding on both sides of the breakpoint, and an unscoped .tm-tabs
+       rule would out-order their values — they carry the same (0,1,0) specificity and sit
+       earlier in this file. */
     .tm-tabs--line {
-        --tm-tab-row-height: 38px;
+        --tm-tab-padding-y: 0.5rem;
+        --tm-tab-padding-x: 0.75rem;
     }
 
+    /* Applies to every variant, exactly as before — it is the padding, not the type size,
+       that Pill and Enclosed opt out of. */
     .tm-tab {
-        padding: 0.5rem 0.75rem;
         font-size: 0.8125rem;
     }
 

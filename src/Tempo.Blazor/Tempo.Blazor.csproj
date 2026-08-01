@@ -9,7 +9,7 @@
     <!-- NuGet Package Metadata -->
     <IsPackable>true</IsPackable>
     <PackageId>Tempo.Blazor</PackageId>
-<Version>2.8.5</Version>
+<Version>2.8.6</Version>
     <Authors>ptyll</Authors>
     <Description>Comprehensive Blazor component library with 100+ components. Supports WebAssembly, Server, and InteractiveAuto render modes. Multi-targets .NET 8/9/10. Includes multilingual support (EN/CS), CSS variable theming, and dark mode. Optional FluentValidation integration is available through Tempo.Blazor.FluentValidation.</Description>
     <PackageTags>blazor;components;ui;server;wasm;interactive-auto;localization</PackageTags>
@@ -132,8 +132,22 @@ try
         content = Regex.Replace(content, @"/\*[\s\S]*?\*/", "");
         // Collapse runs of whitespace to single space
         content = Regex.Replace(content, @"\s+", " ");
-        // Remove space around structural characters
-        content = Regex.Replace(content, @"\s*([{};:,>~+])\s*", "$1");
+        // Remove space around structural characters.
+        // '+' and '~' are DELIBERATELY absent from this class. They are sibling combinators
+        // in a selector, but inside calc() they are ARITHMETIC operators, and css-values-3
+        // §8.1 requires whitespace on BOTH sides of '+' and '-' there. Stripping it turned
+        // every `calc(100% + 8px)` in the bundle into `calc(100%+8px)`, which is invalid and
+        // makes the browser drop the whole declaration. Measured 30 such operators across 29
+        // calc() expressions in the bundle this line was fixed in; the same measurement on
+        // today's bundle gives 32, because _tabs.css has since gone back to deriving
+        // --tm-tab-row-height with two additions of its own. 30 is what the defect WAS, 32 is
+        // what reverting this line would break now - do not read either as a constant.
+        // Leaving the space around a combinator is valid CSS and costs 96 bytes (48 operators
+        // x 2 spaces). '>' stays: it is not a math operator, and no math function in the
+        // bundle contains one. Guarded from the other side by CssBundleCalcWhitespaceTests,
+        // which asserts on the COMMITTED BUNDLE, not on the sources - the sources were fine
+        // all along, so a guard over them would have measured a permanently green population.
+        content = Regex.Replace(content, @"\s*([{};:,>])\s*", "$1");
         // Restore newline after } for minimal readability
         content = content.Replace("}", "}\n");
         content = content.Trim();

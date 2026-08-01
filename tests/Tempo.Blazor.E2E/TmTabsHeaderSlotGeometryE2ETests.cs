@@ -18,16 +18,21 @@ namespace Tempo.Blazor.E2E;
 /// stale <c>.png</c> can never make it pass or fail.
 /// </para>
 /// <para>
-/// It is also the pin for the <c>--tm-tab-row-height</c> literals in <c>_tabs.css</c>. That token has
-/// to equal the real height of one tab row and cannot be derived with <c>calc()</c> (the CSS bundler
-/// strips the whitespace around <c>+</c>, which makes <c>calc()</c> invalid), so it is measured here
-/// instead — ALL FOUR of its declarations: <c>.tm-tabs</c> (42px), <c>.tm-tabs--pill</c> (44px),
-/// <c>.tm-tabs--enclosed</c> (37px) and <c>.tm-tabs--line</c> inside the 640px media query (38px),
-/// each on both sides of that breakpoint. Those four selectors all have specificity (0,1,0), so the
-/// winner is decided by their ORDER in the stylesheet and by nothing else; reordering them is a
-/// silent defect. Nothing here compares against a literal — every expected value is the LIVE centre
-/// of the first tab row of the very strip under test, so a token arriving from the wrong declaration
-/// puts the slot off-centre and turns this file red.
+/// It is also the pin for <c>--tm-tab-row-height</c> in <c>_tabs.css</c>. That token has to equal the
+/// real height of one tab row; it is now DERIVED with <c>calc()</c> from
+/// <c>--tm-tab-padding-y</c>, <c>--tm-tab-line-box</c> and <c>--tm-tab-row-chrome</c>, which the
+/// variants re-declare. (It was four per-variant literals while the CSS bundler stripped the
+/// whitespace around <c>+</c> and shipped an invalid <c>calc(a+b)</c>; that is fixed in
+/// <c>Tempo.Blazor.csproj</c> and guarded by <c>CssBundleCalcWhitespaceTests</c>. This file measures
+/// the un-minified stylesheet — the demo links the source <c>tempo-blazor.css</c> — so it can say
+/// nothing about the bundle either way.)
+/// </para>
+/// <para>
+/// All three variants are measured on both sides of the 640px breakpoint, which is what pins BOTH
+/// the arithmetic and the cascade the inputs arrive through: Line 42px above / 38px below, Pill 44px
+/// and Enclosed 37px unchanged across it. Nothing here compares against a literal — every expected
+/// value is the LIVE centre of the first tab row of the very strip under test, so an input reaching
+/// the calc() from the wrong declaration puts the slot off-centre and turns this file red.
 /// </para>
 /// </summary>
 [TestClass]

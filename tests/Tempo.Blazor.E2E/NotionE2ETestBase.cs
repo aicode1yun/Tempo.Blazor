@@ -821,19 +821,13 @@ public abstract class NotionE2ETestBase : WasmTestBase
         await Page.EvaluateAsync("methodName => window.tmNotionDemo[methodName]()", methodName);
     }
 
-    private static string GetBaselineDirectory(string area)
-    {
-        var dir = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "..",
-            "..",
-            "..",
-            "__baseline__",
-            "notion",
-            SanitizePathPart(area)));
-        Directory.CreateDirectory(dir);
-        return dir;
-    }
+    /// <summary>
+    /// Routed through <see cref="BaselineOutput"/>: without TM_WRITE_BASELINES the capture lands in
+    /// TestResults, not on the committed baseline. The redirect is deliberately NOT a skip — the
+    /// tests around these captures assert behaviour.
+    /// </summary>
+    private string GetBaselineDirectory(string area) =>
+        BaselineOutput.DirectoryFor(TestContext, "notion", SanitizePathPart(area));
 
     private static string SanitizePathPart(string value)
     {

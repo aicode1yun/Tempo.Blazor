@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Tempo.Blazor.E2E;
 
 [TestClass]
-public class SpreadsheetPhase6BaselineScreenshots : WasmTestBase
+public class SpreadsheetPhase6BaselineScreenshots : BaselineGeneratorTestBase
 {
     private static readonly string BaselineDir = Path.Combine(
         Path.GetDirectoryName(typeof(SpreadsheetPhase6BaselineScreenshots).Assembly.Location)!,

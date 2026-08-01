@@ -8,12 +8,13 @@ namespace Tempo.Blazor.E2E;
 /// (Fáze 0.7 v <c>planning/DIAGRAM_UNIFIED_SVG_PLAN.md</c>).
 ///
 /// <para>
-/// Běží v kategorii <c>BaselineGeneration</c>, aby se neřadil do běžného CI runu. Spouští se
-/// ručně po zvednutí WASM dema (<c>https://localhost:7106</c>):
+/// Dědí <see cref="BaselineGeneratorTestBase"/>, takže bez <c>TM_WRITE_BASELINES</c> se přeskočí —
+/// kategorie <c>BaselineGeneration</c> sama nikdy nikoho nevypnula, jen umožňovala filtr. Spouští
+/// se ručně po zvednutí WASM dema (<c>https://localhost:7106</c>):
 /// </para>
 ///
 /// <code>
-/// dotnet test tests/Tempo.Blazor.E2E --filter "TestCategory=BaselineGeneration"
+/// TM_WRITE_BASELINES=1 dotnet test tests/Tempo.Blazor.E2E --filter "TestCategory=BaselineGeneration"
 /// </code>
 ///
 /// <para>
@@ -25,8 +26,7 @@ namespace Tempo.Blazor.E2E;
 /// </para>
 /// </summary>
 [TestClass]
-[TestCategory("BaselineGeneration")]
-public class DiagramBaselineScreenshots : WasmTestBase
+public class DiagramBaselineScreenshots : BaselineGeneratorTestBase
 {
     private const string DiagramEditorUrl = "/diagram-editor";
 

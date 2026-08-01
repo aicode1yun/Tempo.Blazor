@@ -17,7 +17,14 @@ QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var dbPath = Path.Combine(builder.Environment.ContentRootPath, "diagrams.db");
+// `diagrams.db` next to the project is COMMITTED, so anything that boots this host mutates the
+// working tree — the e2e lane leaves it modified plus a -wal/-shm pair every run. Overridable via
+// `Demo__DiagramsDbPath`, which the Playwright host launcher points at a temp directory; unset it
+// keeps the committed file so a hand-started demo still has its seeded diagrams.
+var dbPath = builder.Configuration["Demo:DiagramsDbPath"] is { Length: > 0 } configuredDbPath
+    ? Path.GetFullPath(configuredDbPath)
+    : Path.Combine(builder.Environment.ContentRootPath, "diagrams.db");
+Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
 builder.Services.AddDbContext<DemoDiagramDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
 

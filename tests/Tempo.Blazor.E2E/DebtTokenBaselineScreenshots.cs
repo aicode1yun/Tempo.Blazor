@@ -12,7 +12,7 @@ namespace Tempo.Blazor.E2E;
 /// <c>TM_SCREENSHOT_PHASE</c> to capture a before/after pair.
 /// </summary>
 [TestClass]
-public class DebtTokenBaselineScreenshots : WasmTestBase
+public class DebtTokenBaselineScreenshots : BaselineGeneratorTestBase
 {
     private static readonly (string Route, string Name)[] Routes =
     [

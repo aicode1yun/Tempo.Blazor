@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using Microsoft.Playwright;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -18,6 +19,21 @@ public abstract class PlaywrightTestBase
     private static readonly SemaphoreSlim HostLock = new(1, 1);
     private static readonly List<DemoHostProcess> DemoHostProcesses = [];
     private static bool _demoHostsInitialized;
+
+    /// <summary>
+    /// Scratch directory the demo hosts write their mutable state into, so a test run leaves the
+    /// working tree alone. Created once per run and deliberately NOT deleted — a failed run's SQLite
+    /// file is worth keeping, and the OS temp directory is where it belongs either way.
+    /// </summary>
+    private static readonly Lazy<string> DemoDataDirectory = new(() =>
+    {
+        var directory = Path.Combine(
+            Path.GetTempPath(),
+            "tempo-blazor-e2e",
+            Environment.ProcessId.ToString(CultureInfo.InvariantCulture));
+        Directory.CreateDirectory(directory);
+        return directory;
+    });
 
     /// <summary>
     /// Additional teardown callbacks run by the single assembly cleanup. Derived lanes that self-host
@@ -107,6 +123,11 @@ public abstract class PlaywrightTestBase
         {
             HostLock.Release();
         }
+
+        // Deliberately OUTSIDE the loop above: that loop swallows exceptions so a stuck host cannot
+        // block teardown, and a baseline failure raised inside it would be silent. This is the last
+        // thing the assembly does, so by now every capture the run made has landed.
+        BaselineWriteSweep.AssertNothingWasOverwritten();
     }
 
     /// <summary>
@@ -430,6 +451,13 @@ public abstract class PlaywrightTestBase
         startInfo.ArgumentList.Add("--property:TreatWarningsAsErrors=false");
         startInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
         startInfo.Environment["DOTNET_ENVIRONMENT"] = "Development";
+
+        // The demo API keeps its diagrams in a SQLite file that is COMMITTED next to the project, so
+        // booting it from a test run left `diagrams.db` modified and a -wal/-shm pair untracked in the
+        // working tree. Point it at a per-run temp file instead; the demo API is the only host that
+        // reads this key, and it is harmless on the others.
+        startInfo.Environment["Demo__DiagramsDbPath"] =
+            Path.Combine(DemoDataDirectory.Value, "diagrams.db");
 
         var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
         var host = new DemoHostProcess(name, process);

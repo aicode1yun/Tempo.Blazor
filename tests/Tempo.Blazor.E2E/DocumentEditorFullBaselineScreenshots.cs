@@ -9,8 +9,7 @@ namespace Tempo.Blazor.E2E;
 /// Každý krok má vlastní try/catch – selhání jednoho screenshotu nezastaví ostatní.
 /// </summary>
 [TestClass]
-[TestCategory("BaselineGeneration")]
-public class DocumentEditorFullBaselineScreenshots : WasmTestBase
+public class DocumentEditorFullBaselineScreenshots : BaselineGeneratorTestBase
 {
     private static string OutputDir
     {

@@ -11,8 +11,7 @@ namespace Tempo.Blazor.E2E;
 /// WASM demo to (re)generate the PNG baselines under __baseline__/spreadsheet.
 /// </summary>
 [TestClass]
-[TestCategory("BaselineGeneration")]
-public partial class SpreadsheetBaselineScreenshots : WasmTestBase
+public partial class SpreadsheetBaselineScreenshots : BaselineGeneratorTestBase
 {
     private static string OutputDir
     {
