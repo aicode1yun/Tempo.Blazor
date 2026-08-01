@@ -45,12 +45,15 @@ public sealed class TmTabsHeaderSlotGeometryE2ETests : WasmTestBase
 
     /// <summary>
     /// Tighter than <see cref="Tolerance"/>, and deliberately so. Flex centring is exact arithmetic —
-    /// every measured centre here lands on a whole or half pixel — while the gap between two
-    /// candidate values of <c>--tm-tab-row-height</c> can be as small as 2px (pill 44 vs the
-    /// container default 42), which a slot box halves into a 1px displacement. A 1px band would
-    /// swallow that error whole and the pin would stop discriminating exactly where it is needed.
+    /// every correct delta measured here is exactly 0.00px — while the gap between two candidate
+    /// values of <c>--tm-tab-row-height</c> can be as small as 1px (enclosed 37 vs the &lt;640px
+    /// media value 38), which a centred slot box halves into a 0.5px displacement. The comparison in
+    /// <see cref="AssertClose"/> is inclusive, so a 0.5px band would ADMIT that error: the enclosed
+    /// pair measures +0.50 at both widths and the line pair −0.50, i.e. those arms would not
+    /// discriminate the token substitution at all. 0.25 is below the smallest error to catch and
+    /// still far above the layout noise floor (Chromium LayoutUnit = 1/64px).
     /// </summary>
-    private const float AlignmentTolerance = 0.5f;
+    private const float AlignmentTolerance = 0.25f;
 
     [TestMethod]
     [DataRow(430)] // below the 640px breakpoint that shrinks the tab: one row is 38px
