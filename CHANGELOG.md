@@ -1,5 +1,35 @@
 # Changelog
 
+## 2.8.5 - 2026-08-01
+
+### Added
+
+- **`TmTabs` gains `HeaderLeading` and `HeaderTrailing` slots.** Content supplied to either slot is
+  rendered beside the tab strip as a **sibling** of the `role="tablist"` element, never inside it:
+  the strip runs a roving tabindex (arrow keys, `tabindex` 0/-1, `aria-selected`), so an element
+  that can never be selected would both misreport the strip's contract to assistive technology and
+  become arrow-key reachable. The slots therefore add nothing the roving focus walks over.
+- The wrapping `.tm-tabs__header-row` flex row is emitted **only** when at least one slot is
+  supplied. With neither slot the rendered markup is byte-identical to the pre-slot component
+  (measured, not asserted by eye: `TmTabsHeaderSlotsTests` compares a sha256 of the rendered markup
+  against a hash frozen before the slots existed), so the strip stays a direct child of `.tm-tabs`
+  and every consumer selector shaped `.tm-tabs > .tm-tabs__header` keeps matching.
+- Consumers with a **sticky** tab strip must stick the row, not the header — pinning
+  `.tm-tabs__header` alone leaves the slot content free to scroll out from beside it. The Line and
+  Enclosed variants move their underline onto the row when it exists, so the rule spans the slots
+  instead of stopping at the edge of the strip.
+- The slots work with `Wrap="true"`. A wrapped strip is a multi-row band, so two things follow and
+  both are enforced: the row drops its bottom border (every wrapped row already draws its own
+  baseline — keeping it left a rule stranded 41px below the active indicator and a doubled line
+  under the last row), and the slots are aligned to the **first** row of the band rather than
+  centred over the whole of it.
+- The Pill variant centres its header row instead of stretching it. Line and Enclosed stretch so
+  their tabs meet the underline drawn on the row; Pill has no underline, and stretching let a 60px
+  slot drag the grey tray from 44px to 60px and the pills from 36px to 52px.
+- Layout of the slots is guarded by `TmTabsHeaderSlotGeometryE2ETests`, which measures bounding
+  boxes in a real browser on both sides of the 640px breakpoint. It takes no screenshots, so the
+  nightly baseline lane neither feeds nor gates it.
+
 ## 2.8.4 - 2026-07-29
 
 ### Added

@@ -2,7 +2,51 @@
 @using Tempo.Blazor.Components.Icons
 
 <div class="tm-tabs @VariantClass @Class" @attributes="AdditionalAttributes">
-    <div class="tm-tabs__header" role="tablist" @onkeydown="HandleKeyDown">
+    @HeaderContent
+
+    <CascadingValue Value="this" IsFixed="true">
+        @ChildContent
+    </CascadingValue>
+
+    @{
+        var activePanel = _panels.FirstOrDefault(p => p.Id == ActiveTabId);
+    }
+    @if (activePanel?.ChildContent is not null)
+    {
+        <div class="tm-tabs__panel"
+             role="tabpanel"
+             id="@($"tabpanel-{activePanel.Id}")"
+             aria-labelledby="@($"tab-{activePanel.Id}")"
+             tabindex="0">
+            @activePanel.ChildContent
+        </div>
+    }
+</div>
+
+@code {
+    private readonly List<TmTabPanel> _panels = [];
+
+    private bool HasHeaderSlots => HeaderLeading is not null || HeaderTrailing is not null;
+
+    // The wrapper row is emitted ONLY when a slot is in use. That conditionality is not an
+    // optimisation: it is the reason this component can gain slots without touching a single
+    // existing consumer, because with no slot the emitted markup stays byte-identical (the
+    // strip remains a DIRECT child of .tm-tabs, so `.tm-tabs > .tm-tabs__header` still matches).
+    private RenderFragment HeaderContent => HasHeaderSlots ? HeaderRow : HeaderStrip;
+
+    private RenderFragment HeaderRow => @<div class="tm-tabs__header-row">
+        @if (HeaderLeading is not null)
+        {
+            <div class="tm-tabs__header-leading">@HeaderLeading</div>
+        }
+        @HeaderStrip
+        @if (HeaderTrailing is not null)
+        {
+            <div class="tm-tabs__header-trailing">@HeaderTrailing</div>
+        }
+    </div>;
+
+    private RenderFragment HeaderStrip => @<div class="tm-tabs__header" role="tablist" @onkeydown="HandleKeyDown">
         @foreach (var panel in _panels)
         {
             var isActive = panel.Id == ActiveTabId;
@@ -32,29 +76,7 @@
                 }
             </button>
         }
-    </div>
-
-    <CascadingValue Value="this" IsFixed="true">
-        @ChildContent
-    </CascadingValue>
-
-    @{
-        var activePanel = _panels.FirstOrDefault(p => p.Id == ActiveTabId);
-    }
-    @if (activePanel?.ChildContent is not null)
-    {
-        <div class="tm-tabs__panel"
-             role="tabpanel"
-             id="@($"tabpanel-{activePanel.Id}")"
-             aria-labelledby="@($"tab-{activePanel.Id}")"
-             tabindex="0">
-            @activePanel.ChildContent
-        </div>
-    }
-</div>
-
-@code {
-    private readonly List<TmTabPanel> _panels = [];
+    </div>;
 
     /// <summary>ID of the currently active tab.</summary>
     [Parameter] public string ActiveTabId { get; set; } = default!;
@@ -70,6 +92,45 @@
     /// scrolling horizontally. Use when many tabs would otherwise overflow/truncate in a narrow container.
     /// </summary>
     [Parameter] public bool Wrap { get; set; }
+
+    /// <summary>
+    /// Optional content rendered immediately BEFORE the tab strip, as a SIBLING of the
+    /// <c>role="tablist"</c> element — never inside it. The tab strip owns a roving tabindex
+    /// (arrow keys, <c>tabindex</c> 0/-1, <c>aria-selected</c>); an element that can never be
+    /// selected would misreport that contract to assistive technology and would be reachable
+    /// with the arrow keys as if it were a tab.
+    /// <para>
+    /// Setting this (or <see cref="HeaderTrailing"/>) wraps the strip in an extra
+    /// <c>.tm-tabs__header-row</c> flex row. The wrapper is emitted ONLY when at least one slot
+    /// is supplied; with neither slot the rendered markup is byte-identical to a tab strip that
+    /// has no slots at all, so existing CSS and tests that rely on
+    /// <c>.tm-tabs &gt; .tm-tabs__header</c> keep working.
+    /// </para>
+    /// <para>
+    /// CONTRACT FOR STICKY CONSUMERS: when the slots are in use, a sticky tab strip must stick
+    /// the ROW (<c>.tm-tabs__header-row</c>), not the header (<c>.tm-tabs__header</c>). Sticking
+    /// the header alone pins only the strip and lets the slot content scroll away.
+    /// </para>
+    /// </summary>
+    [Parameter] public RenderFragment? HeaderLeading { get; set; }
+
+    /// <summary>
+    /// Optional content rendered immediately AFTER the tab strip, as a SIBLING of the
+    /// <c>role="tablist"</c> element — never inside it, for the same roving-focus reason as
+    /// <see cref="HeaderLeading"/>.
+    /// <para>
+    /// Setting this (or <see cref="HeaderLeading"/>) wraps the strip in an extra
+    /// <c>.tm-tabs__header-row</c> flex row. The wrapper is emitted ONLY when at least one slot
+    /// is supplied; with neither slot the rendered markup is byte-identical to a tab strip that
+    /// has no slots at all.
+    /// </para>
+    /// <para>
+    /// CONTRACT FOR STICKY CONSUMERS: when the slots are in use, stick the ROW
+    /// (<c>.tm-tabs__header-row</c>), not the header (<c>.tm-tabs__header</c>), otherwise the
+    /// slot content scrolls away from under the pinned strip.
+    /// </para>
+    /// </summary>
+    [Parameter] public RenderFragment? HeaderTrailing { get; set; }
 
     /// <summary>Tab panel children.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
