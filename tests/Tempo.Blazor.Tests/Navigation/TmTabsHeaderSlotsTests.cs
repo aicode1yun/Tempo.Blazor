@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
@@ -31,12 +32,43 @@ public class TmTabsHeaderSlotsTests : LocalizationTestBase
     private const string PreSlotMarkupSha256 =
         "9ed0c8d568723921558b342e9f54c02c47648ab880369de2b7e01a35b5c572cf";
 
+    /// <summary>
+    /// The ONE thing normalised away before hashing: the element-reference capture marker the
+    /// renderer stamps on each tab button since TmTabs began moving DOM focus with the roving
+    /// tabindex (<c>ElementReference.FocusAsync</c> needs a handle on the button).
+    /// <para>
+    /// It is normalised rather than folded into a new constant because its value is a fresh GUID on
+    /// every render, so no hash over markup containing it can be stable — recomputing
+    /// <see cref="PreSlotMarkupSha256"/> would produce a test that fails on its next run. Removing
+    /// it is safe for what this hash is FOR: it is a renderer bookkeeping marker, not part of the
+    /// component's contract with consumers — it carries no class, no role, no id, and matches no
+    /// selector any consumer could write, because its value is unknowable before the render.
+    /// </para>
+    /// <para>
+    /// Measured delta when the markers are left in: 1458 bytes vs the frozen 1269, i.e. exactly
+    /// 3 x 63 characters for the three tab buttons and NOTHING else. That is the whole reason the
+    /// removal count is asserted below: a normaliser that quietly swallowed a second change would
+    /// hand back a green hash for markup that really had moved.
+    /// </para>
+    /// </summary>
+    private static readonly Regex ElementReferenceMarker =
+        new(" blazor:elementReference=\"[0-9a-f-]{36}\"", RegexOptions.Compiled);
+
     // ── The byte-identity guarantee ────────────────────────
 
     [Fact]
     public void NoSlotMarkupIsByteIdenticalToTheFrozenPreSlotBaseline()
     {
-        var markup = RenderNoSlots().Markup;
+        var rendered = RenderNoSlots().Markup;
+        var markup = ElementReferenceMarker.Replace(rendered, string.Empty);
+
+        ElementReferenceMarker.Matches(rendered).Count.Should().Be(
+            3,
+            "exactly one element-reference marker per tab button may be normalised away — one per "
+            + "@ref in the strip. A different count means the marker moved somewhere else in the "
+            + "markup and the normaliser is no longer removing only what it documents; rendered:\n{0}",
+            rendered);
+
         var bytes = Encoding.UTF8.GetBytes(markup);
         var sha = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
 
@@ -113,9 +145,9 @@ public class TmTabsHeaderSlotsTests : LocalizationTestBase
 
         slot.Closest("[role='tablist']").Should().BeNull(
             "{0} must be a SIBLING of the tab strip, not a descendant: TmTabs runs a roving tabindex "
-            + "(arrow keys, tabindex 0/-1, aria-selected) and an element inside the tablist that can "
-            + "never be selected both misreports the strip's contract to assistive technology and "
-            + "becomes arrow-key reachable",
+            + "(Arrow/Home/End, tabindex 0/-1, aria-selected and the DOM focus) and an element inside "
+            + "the tablist that can never be selected both misreports the strip's contract to "
+            + "assistive technology and becomes arrow-key reachable",
             slotSelector);
 
         slot.ParentElement!.ClassList.Should().Contain(

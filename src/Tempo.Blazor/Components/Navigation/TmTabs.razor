@@ -26,6 +26,43 @@
 @code {
     private readonly List<TmTabPanel> _panels = [];
 
+    /// <summary>
+    /// Live element handles of the tab buttons, keyed by panel id. They exist for ONE reason: the
+    /// roving tabindex is only half a roving tabindex without them. Moving <c>aria-selected</c> and
+    /// the <c>tabindex</c> 0/-1 pair leaves the real DOM focus sitting on the tab the user just left
+    /// — which now carries <c>tabindex="-1"</c> — so a screen reader announces nothing, the focus
+    /// ring stays behind, and the next Tab keypress leaves from the wrong place.
+    /// </summary>
+    private readonly Dictionary<string, ElementReference> _tabElements = [];
+
+    /// <summary>
+    /// Set by EITHER path that changes the selection — a navigation key or a click — to claim a
+    /// focus move for the render that follows it. It records only THAT one was asked for, never
+    /// WHICH tab asked: the target is read back off <see cref="ActiveTabId"/> after the render, so
+    /// focus follows the CONFIRMED selection. Both paths claim it because the invariant it exists
+    /// to hold — the focused tab IS the selected tab — is not about the keyboard; a click whose
+    /// change is refused leaves the browser's native focus on the refused tab just as squarely.
+    /// <para>
+    /// Focusing the requested tab directly would re-introduce the very divergence this component
+    /// was fixed for, only mirrored: a consumer that ignores or vetoes
+    /// <see cref="ActiveTabIdChanged"/> would get the focus ring on a tab that is not
+    /// <c>aria-selected</c> and carries <c>tabindex="-1"</c>. Resolved this way, a veto degrades to
+    /// re-focusing the tab that is still selected — which is where the focus already was, so it
+    /// costs nothing and the invariant "the focused tab IS the selected tab" holds on both paths.
+    /// </para>
+    /// <para>
+    /// BOUND: the claim is resolved on the FIRST render after the interaction and not carried
+    /// further. A consumer that resolves the change asynchronously past that render still gets a
+    /// focus move — but resolved against the selection as it stood then, i.e. onto the tab that is
+    /// still selected, which is a no-op rather than "nothing happens". When its update finally
+    /// arrives, the selection moves and the focus does not follow. Holding the claim open instead
+    /// would let the strip steal focus an arbitrary number of renders later, no longer attributable
+    /// to the interaction that asked for it. A gap, not a regression: before this, no arrow key
+    /// moved focus at all.
+    /// </para>
+    /// </summary>
+    private bool _focusSelectedTabAfterRender;
+
     private bool HasHeaderSlots => HeaderLeading is not null || HeaderTrailing is not null;
 
     // The wrapper row is emitted ONLY when a slot is in use. That conditionality is not an
@@ -55,6 +92,7 @@
                 (panel.Disabled ? " tm-tab--disabled" : "");
 
             <button type="button"
+                    @ref="_tabElements[panel.Id]"
                     role="tab"
                     id="@($"tab-{panel.Id}")"
                     class="@tabClass"
@@ -96,9 +134,9 @@
     /// <summary>
     /// Optional content rendered immediately BEFORE the tab strip, as a SIBLING of the
     /// <c>role="tablist"</c> element — never inside it. The tab strip owns a roving tabindex
-    /// (arrow keys, <c>tabindex</c> 0/-1, <c>aria-selected</c>); an element that can never be
-    /// selected would misreport that contract to assistive technology and would be reachable
-    /// with the arrow keys as if it were a tab.
+    /// (Arrow/Home/End, <c>tabindex</c> 0/-1, <c>aria-selected</c> AND the DOM focus, which moves
+    /// with the selection); an element that can never be selected would misreport that contract to
+    /// assistive technology and would be reachable with the arrow keys as if it were a tab.
     /// <para>
     /// Setting this (or <see cref="HeaderTrailing"/>) wraps the strip in an extra
     /// <c>.tm-tabs__header-row</c> flex row. The wrapper is emitted ONLY when at least one slot
@@ -169,17 +207,71 @@
     internal void UnregisterPanel(TmTabPanel panel)
     {
         _panels.RemoveAll(p => p.Id == panel.Id);
+        _tabElements.Remove(panel.Id);
         StateHasChanged();
     }
 
+    /// <summary>
+    /// Pointer path into the same selection change the keyboard makes — and it claims the same
+    /// focus move, for the same reason.
+    /// <para>
+    /// The browser has already focused the clicked button by the time this runs, so on the
+    /// ACCEPTING path the claim is a no-op: it re-focuses the tab that is now both clicked and
+    /// selected. It earns its keep on the REJECTED path. There the browser's native focus has moved
+    /// to a tab the consumer refuses to select, and nothing would pull it back: the focus ring would
+    /// sit on a tab that is not <c>aria-selected</c> and carries <c>tabindex="-1"</c> — measured
+    /// before this line existed: <c>activeElement=#tab-veto-second, selected=[tab-veto-first],
+    /// tabindex0=[tab-veto-first]</c>. That is the same divergence the arrow keys were fixed for,
+    /// arriving through the pointer instead, so the invariant "the focused tab IS the selected tab"
+    /// has to be claimed here too or it is a claim about the keyboard only.
+    /// </para>
+    /// </summary>
     private async Task SelectTab(TmTabPanel panel)
     {
         if (panel.Disabled || panel.Id == ActiveTabId)
             return;
 
+        _focusSelectedTabAfterRender = true;
         await ActiveTabIdChanged.InvokeAsync(panel.Id);
     }
 
+    /// <summary>
+    /// Keyboard contract of the tab strip, per the ARIA APG tablist pattern: Left/Right move by one
+    /// (wrapping, skipping disabled tabs), Home/End jump to the first/last selectable tab.
+    /// <para>
+    /// TWO DELIBERATE DEPARTURES from the APG pattern, both left out rather than overlooked.
+    /// </para>
+    /// <para>
+    /// (1) NOT MIRRORED IN RTL. The comparison is against the physical key names, so in a
+    /// right-to-left strip ArrowRight still moves towards the END of the panel list rather than
+    /// towards the tab drawn to its right. There is no direction to mirror AGAINST: no Tempo Blazor
+    /// component reads <c>dir</c> for its own markup, and no stylesheet carries an RTL rule, so a
+    /// strip that mirrored its keys would be guessing at a direction nothing sets.
+    /// </para>
+    /// <para>
+    /// Bidi machinery DOES exist inside the Blazor packages — the document editor's canvas ships a
+    /// Unicode bidi resolver (<c>document-editor/layout/bidi.mjs</c>) and stamps
+    /// <c>dir="rtl"</c> on the spans it renders (<c>render/atomic-renderer.mjs</c>) — but that is
+    /// the editor laying out its OWN canvas text, not a direction context another component can
+    /// read. Nothing hands a direction to a tab strip.
+    /// </para>
+    /// <para>
+    /// (2) THE DEFAULT SCROLL IS NOT SUPPRESSED. Home/End scroll the page as usual, so on a long
+    /// page the viewport jumps before <c>FocusAsync</c> brings the strip back. Bounded by
+    /// <c>HomeScrollsThePage_ButLeavesTheFocusedTabInsideTheViewport</c>, which reproduces the
+    /// settled scroll position (2437) and the focused tab's rectangle (top=429/bottom=471 in a
+    /// 900px viewport); the positions on the way there vary run to run and are logged, not
+    /// asserted. Transient jank, not a lost strip.
+    /// <para>
+    /// Suppressing the scroll needs <c>@onkeydown:preventDefault</c>. That directive DOES take a
+    /// bool expression — six places in Tempo use it that way, e.g. <c>TmRichEditorFull</c>'s
+    /// <c>_suppressKeyDown</c> and <c>TmDocumentPageViewer</c>'s
+    /// <c>ShouldPreventCommentPointerDefault</c> — but the expression is evaluated at RENDER time,
+    /// so it cannot depend on which key was pressed. It would therefore have to be on for every
+    /// keydown on the tablist, which also swallows Tab and traps focus inside the strip: a worse
+    /// accessibility defect than the scroll it fixes.
+    /// </para>
+    /// </summary>
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
         if (_panels.Count == 0) return;
@@ -187,42 +279,57 @@
         var currentIndex = _panels.FindIndex(p => p.Id == ActiveTabId);
         if (currentIndex < 0) currentIndex = 0;
 
-        int newIndex = currentIndex;
+        var newIndex = e.Key switch
+        {
+            // Wrap around the strip, skipping disabled tabs.
+            "ArrowRight" => Step(currentIndex, +1, currentIndex),
+            "ArrowLeft" => Step(currentIndex, -1, currentIndex),
+            // Scan inwards from the edge, so a disabled first/last tab is stepped over rather than
+            // swallowing the key — the same "disabled tabs are not stops" rule the arrows follow.
+            "Home" => Step(-1, +1, currentIndex),
+            "End" => Step(_panels.Count, -1, currentIndex),
+            _ => currentIndex
+        };
 
-        if (e.Key == "ArrowRight")
+        if (newIndex == currentIndex) return;
+
+        // Selection and DOM focus move TOGETHER. Either one alone is a broken roving tabindex, and
+        // the focus half is the half that is invisible to any assertion phrased over aria-selected.
+        // Note what is NOT stored here: the requested id. See _focusSelectedTabAfterRender.
+        _focusSelectedTabAfterRender = true;
+        await ActiveTabIdChanged.InvokeAsync(_panels[newIndex].Id);
+    }
+
+    /// <summary>
+    /// First selectable tab strictly after <paramref name="from"/> in direction
+    /// <paramref name="delta"/>, wrapping at most once around the strip; <paramref name="fallback"/>
+    /// when every other tab is disabled. Callers pass an out-of-range <paramref name="from"/>
+    /// (<c>-1</c> / <c>Count</c>) to scan from an edge inwards without wrapping past it.
+    /// </summary>
+    private int Step(int from, int delta, int fallback)
+    {
+        for (var i = 1; i <= _panels.Count; i++)
         {
-            // Move forward, skip disabled
-            for (int i = 1; i <= _panels.Count; i++)
-            {
-                var candidate = (currentIndex + i) % _panels.Count;
-                if (!_panels[candidate].Disabled)
-                {
-                    newIndex = candidate;
-                    break;
-                }
-            }
-        }
-        else if (e.Key == "ArrowLeft")
-        {
-            // Move backward, skip disabled
-            for (int i = 1; i <= _panels.Count; i++)
-            {
-                var candidate = (currentIndex - i + _panels.Count) % _panels.Count;
-                if (!_panels[candidate].Disabled)
-                {
-                    newIndex = candidate;
-                    break;
-                }
-            }
-        }
-        else
-        {
-            return;
+            var candidate = ((from + (delta * i)) % _panels.Count + _panels.Count) % _panels.Count;
+            if (!_panels[candidate].Disabled) return candidate;
         }
 
-        if (newIndex != currentIndex)
+        return fallback;
+    }
+
+    /// <summary>
+    /// Resolves a claimed focus move against the selection the consumer actually accepted. The
+    /// target is <see cref="ActiveTabId"/> as of THIS render — never the tab the key asked for.
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focusSelectedTabAfterRender) return;
+
+        _focusSelectedTabAfterRender = false;
+
+        if (ActiveTabId is not null && _tabElements.TryGetValue(ActiveTabId, out var element))
         {
-            await ActiveTabIdChanged.InvokeAsync(_panels[newIndex].Id);
+            await element.FocusAsync();
         }
     }
 }

@@ -292,6 +292,101 @@ public class TmTabsTests : LocalizationTestBase
         activeId.Should().Be("tab1");
     }
 
+    // ── Home / End ─────────────────────────────────────────
+    //
+    // These say only WHICH tab gets selected. That the DOM focus follows the selection — the other
+    // half of a roving tabindex, and the half no bUnit assertion can see because bUnit renders a
+    // DOM and never owns a focused element — is measured in TmTabsKeyboardFocusE2ETests.
+
+    [Theory]
+    [InlineData("tab3", "Home", "tab1")]
+    [InlineData("tab1", "End", "tab3")]
+    public void Tabs_HomeAndEnd_JumpToTheFirstAndLastTab(string startId, string key, string expectedId)
+    {
+        var activeId = startId;
+        var cut = RenderKeyboardTabs(startId, v => activeId = v, disableLast: false);
+
+        cut.Find("[role='tablist']").KeyDown(new KeyboardEventArgs { Key = key });
+
+        activeId.Should().Be(
+            expectedId,
+            "{0} must jump to the {1} tab of the strip",
+            key,
+            key == "Home" ? "first" : "last");
+    }
+
+    [Fact]
+    public void Tabs_End_StepsOverADisabledLastTab()
+    {
+        // Starts on tab1 so the expected outcome (tab2) is a MOVE: had End been left unhandled the
+        // selection would stay on tab1 and this would be red, which is what stops "skips disabled"
+        // from being satisfied by "does nothing".
+        var activeId = "tab1";
+        var cut = RenderKeyboardTabs("tab1", v => activeId = v, disableLast: true);
+
+        cut.Find("[role='tablist']").KeyDown(new KeyboardEventArgs { Key = "End" });
+
+        activeId.Should().Be("tab2", "End must not stop on the disabled last tab, it scans inwards");
+    }
+
+    [Fact]
+    public void Tabs_HomeFromADisabledFirstTab_LandsOnTheFirstSelectableTab()
+    {
+        var activeId = "tab3";
+        var cut = Render<TmTabs>(p => p
+            .Add(x => x.ActiveTabId, activeId)
+            .Add(x => x.ActiveTabIdChanged, EventCallback.Factory.Create<string>(this, v => activeId = v))
+            .AddChildContent<TmTabPanel>(tp => tp
+                .Add(x => x.Id, "tab1")
+                .Add(x => x.Title, "First")
+                .Add(x => x.Disabled, true)
+                .AddChildContent("One"))
+            .AddChildContent<TmTabPanel>(tp => tp
+                .Add(x => x.Id, "tab2")
+                .Add(x => x.Title, "Second")
+                .AddChildContent("Two"))
+            .AddChildContent<TmTabPanel>(tp => tp
+                .Add(x => x.Id, "tab3")
+                .Add(x => x.Title, "Third")
+                .AddChildContent("Three")));
+
+        cut.Find("[role='tablist']").KeyDown(new KeyboardEventArgs { Key = "Home" });
+
+        activeId.Should().Be("tab2", "Home scans inwards from the edge instead of stopping on a disabled tab");
+    }
+
+    [Fact]
+    public void Tabs_UnhandledKey_LeavesTheSelectionAlone()
+    {
+        var activeId = "tab2";
+        var cut = RenderKeyboardTabs("tab2", v => activeId = v, disableLast: false);
+
+        cut.Find("[role='tablist']").KeyDown(new KeyboardEventArgs { Key = "PageDown" });
+
+        activeId.Should().Be("tab2", "only Arrow/Home/End belong to the tablist");
+    }
+
+    private IRenderedComponent<TmTabs> RenderKeyboardTabs(
+        string activeId,
+        Action<string> onChanged,
+        bool disableLast)
+        => Render<TmTabs>(p => p
+            .Add(x => x.ActiveTabId, activeId)
+            .Add(x => x.ActiveTabIdChanged, EventCallback.Factory.Create<string>(this, onChanged))
+            .AddChildContent<TmTabPanel>(tp => tp
+                .Add(x => x.Id, "tab1")
+                .Add(x => x.Title, "First")
+                .AddChildContent("One"))
+            .AddChildContent<TmTabPanel>(tp => tp
+                .Add(x => x.Id, "tab2")
+                .Add(x => x.Title, "Second")
+                .AddChildContent("Two"))
+            .AddChildContent<TmTabPanel>(tp => tp
+                .Add(x => x.Id, "tab3")
+                .Add(x => x.Title, "Third")
+                .Add(x => x.Disabled, disableLast)
+                .AddChildContent("Three")));
+
     // ── Lazy rendering ─────────────────────────────────────
 
     [Fact]

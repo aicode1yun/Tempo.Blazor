@@ -1,5 +1,115 @@
 # Changelog
 
+## 2.8.7 - 2026-08-02
+
+### Fixed
+
+- **`TmTabs` had half a roving tabindex.** `ArrowRight`/`ArrowLeft` moved the *selection* —
+  `aria-selected` and the `tabindex` 0/-1 pair — but never moved the **DOM focus**, so after a key
+  press the browser focus was still sitting on the tab the user had just left, on an element that
+  now carried `tabindex="-1"`. Measured before the fix on the demo strip:
+  `selected=tab-details, activeElement=tab-overview`. Consequences for a keyboard user: the focus
+  ring and the screen-reader cursor stay behind, the next arrow key is dispatched from the wrong
+  element (so two `ArrowRight`s advance **one** tab, not two), and the next `Tab` leaves the strip
+  from the wrong place. The tab buttons now carry an element handle and the newly selected one is
+  focused after the render that re-assigns the `tabindex` values.
+- **`Home` and `End` were not handled at all** — the key handler had a bare `else return` after the
+  two arrows. They now jump to the first/last *selectable* tab, scanning inwards from the edge so a
+  disabled first/last tab is stepped over rather than swallowing the key, which is the same rule the
+  arrows already followed.
+- **A REFUSED CLICK left the focus ring on the refused tab.** The browser focuses a clicked button
+  before any component code runs, so on a strip whose consumer rejects the change the ring stayed on
+  a tab that is neither `aria-selected` nor in the tab order — measured:
+  `activeElement=#tab-veto-second, selected=[tab-veto-first], tabindex0=[tab-veto-first]`. Same
+  divergence as the keyboard one, reached through the pointer. `SelectTab` now claims the same focus
+  move the keys do, which is a no-op when the change is accepted and pulls the ring back when it is
+  not. Without this the release's own invariant would have been true of the keyboard only.
+
+### Internal
+
+Test counts below are exact: **45** bUnit tests cover the component (25 `TmTabsTests` + 18
+`TmTabsHeaderSlotsTests` + 2 `TmTabsAccessibilityTests`; `--filter ~TmTabs` reports 46 because it
+also matches one method in `Wireframe.TempoPackStructurePhase10Tests`), and
+`TmTabsKeyboardFocusE2ETests` has **8** `[TestMethod]`s.
+
+- New `TmTabsKeyboardFocusE2ETests` measures the contract at `document.activeElement` in a real
+  browser and sends its keys through `IKeyboard` (i.e. to whatever holds focus), never at a located
+  element. This closes a whole class of vacuously-green tests: *every* assertion phrased over the
+  rendered DOM stays green when the focus move is reverted, because the selection really does move.
+- Mutation results, all measured against the shipped implementation:
+  - removing the focus move entirely — **45/45 bUnit green**, **7 of 8** e2e red, each on the focus
+    assertion with the selection assertion already passed;
+  - leaving `Home`/`End` unhandled — **4** bUnit red, **2** e2e red, all on the selection floor;
+  - focusing the tab the interaction *requested* instead of the one the consumer confirmed —
+    **45/45 bUnit green**, **2** e2e red (both veto arms);
+  - reverting only the click's focus claim — **45/45 bUnit green**, **1** e2e red (the click veto
+    arm), reproducing `selected=#tab-veto-first activeElement=#tab-veto-second`.
+- `HomeScrollsThePage_ButLeavesTheFocusedTabInsideTheViewport` is **not** a focus discriminator and
+  must not be counted as one: it is the single method that stays green when the focus move is
+  removed, because the browser's own scroll-into-view reaches the rectangle it asserts. It
+  discriminates on key handling and on the scroll bound only.
+- `TmTabsHeaderSlotsTests` keeps its frozen pre-slot markup hash. The `@ref` needed for focus makes
+  the renderer stamp an element-reference marker on each tab button (measured: 1458 bytes vs the
+  frozen 1269, i.e. exactly 3 × 63 characters and nothing else); its value is a fresh GUID on every
+  render, so it is normalised away before hashing — with the removal **count** asserted, so a
+  normaliser that swallowed a second change could not hand back a green hash.
+- `TmTabsHeaderSlotsTests` keeps its frozen pre-slot markup hash. The `@ref` needed for focus makes
+  the renderer stamp an element-reference marker on each tab button (measured: 1458 bytes vs the
+  frozen 1269, i.e. exactly 3 × 63 characters and nothing else); its value is a fresh GUID on every
+  render, so it is normalised away before hashing — with the removal **count** asserted, so a
+  normaliser that swallowed a second change could not hand back a green hash.
+
+### Known gaps
+
+Both are deliberate, and neither is a regression — before this release the arrow keys moved no
+focus at all and `Home`/`End` did nothing.
+
+- The arrow keys are **not mirrored in RTL**: the handler compares physical key names, so in a
+  right-to-left strip `ArrowRight` moves towards the end of the panel list rather than towards the
+  tab drawn to its right. Left out because nothing hands a Tempo Blazor component a direction to
+  mirror against. Population: **3090** own `.razor`/`.cs`/`.css` files under `src/` (excluding
+  `obj/`, `bin/`, `wwwroot/lib/`); needles `dir="rtl"`, `[dir=`, `:dir(`, `direction: rtl`, `IsRtl`
+  → **0** hits. That population deliberately does **not** cover the 530 `.mjs` files under `src/`,
+  and RTL machinery does live there, *inside* a Blazor package: the document editor ships a Unicode
+  bidi resolver (`Tempo.Blazor.DocumentEditor/wwwroot/js/document-editor/layout/bidi.mjs`,
+  `core-engine/bidi-line.mjs`) and stamps `dir="rtl"` on spans it renders
+  (`render/atomic-renderer.mjs:306`). It is the editor laying out its **own** canvas text, not a
+  direction context another component can read — 16 `.mjs` files match `rtl|RightToLeft|bidi` and
+  none of them is reachable from a tab strip. (The reporting engine's `ReportTextDirection` is a
+  separate stack again, and its `HbDirection` is an alias for `HarfBuzzSharp.Direction`, not a
+  product type.) A lone direction-aware component would have nothing to test it against.
+- **`Home`/`End` do not suppress the browser's default scroll.** On a long page the viewport jumps
+  before the focus call brings the strip back. Bounded by
+  `HomeScrollsThePage_ButLeavesTheFocusedTabInsideTheViewport`, which reproduces the **settled**
+  scroll position (`2437`) and the focused tab's rectangle (`top=429`/`bottom=471` in a 900px
+  viewport); the positions on the way there vary run to run (`346 → 1788` and `285 → 1872` were both
+  observed) and are logged, never asserted. So the strip is never lost, but the scroll is visible.
+  Suppressing it means `@onkeydown:preventDefault`, which *does* accept a bool expression — **6**
+  places in Tempo use that form (`TmRichEditorSimple`, `TmMarkdownEditor`, `TmRichEditorFull`,
+  `TmSigningFieldOverlay`, and `TmDocumentPageViewer` twice) out of **187** `:preventDefault=`
+  directives under `src/`, the other **181** being the literal `"true"` — but the expression is
+  evaluated at **render** time and so cannot
+  depend on which key was pressed. It would have to apply to every keydown on the tablist,
+  swallowing `Tab` and trapping focus inside the strip: a worse defect than the one it fixes.
+
+### Contract
+
+- **`TmTabs` is a controlled component, and the focus now obeys that — on both input paths.** A key
+  or a click *asks* through `ActiveTabIdChanged`; the focus target is read back off `ActiveTabId`
+  **after** the render, never from the tab the interaction requested. A consumer that ignores or
+  vetoes the change therefore keeps both its selection and its focus ring on the same tab. Focusing
+  the requested tab would have re-created the exact focus/selection divergence this release removes,
+  mirrored. Pinned by `AVetoedChange_LeavesTheFocusOnTheStillSelectedTab` (keyboard) and
+  `AVetoedCLICK_PullsTheFocusBackToTheStillSelectedTab` (pointer) against a demo strip whose handler
+  rejects everything, each with the accepting strip driven by the same interaction first as a
+  liveness floor — under the "no focus at all" mutation it is that floor that fails, so a dead page
+  cannot pass either arm vacuously.
+  The bound: the claim is resolved on the first render after the interaction and not carried
+  further. A consumer that resolves the change asynchronously past that render still gets a focus
+  move, resolved against the selection as it stood then — i.e. onto the tab that is still selected,
+  a no-op rather than "nothing happens"; when its update lands, the selection moves and the focus
+  does not follow.
+
 ## 2.8.6 - 2026-08-01
 
 ### Fixed
