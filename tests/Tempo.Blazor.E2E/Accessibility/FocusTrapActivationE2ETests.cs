@@ -28,9 +28,11 @@ namespace Tempo.Blazor.E2E.Accessibility;
 /// FLOOR (both tests): the glob carries a wildcard because Blazor fingerprints static web assets
 /// (<c>tm-focus-trap.&lt;hash&gt;.js</c>) — a literal <c>**/tm-focus-trap.js</c> silently matches NOTHING,
 /// the module then loads before the test places focus, and "focus stayed put" becomes trivially true.
-/// So every test asserts the gate actually caught a request, and the inside-branch additionally proves the
-/// trap was LIVE in this run (Tab from the last focusable wraps to the first — only the trap's keydown
-/// handler does that) before it believes "nothing moved".
+/// <see cref="AssertGateHeldEveryModuleRequest"/> therefore asserts BOTH that the gate caught a request
+/// and that it caught EVERY one — the second half matters because a glob that holds 1 of 2 requests
+/// leaves the other free to load the module early, and a mere "at least one" check cannot see that.
+/// The inside-branch additionally proves the trap was LIVE in this run (Tab from the last focusable wraps
+/// to the first — only the trap's keydown handler does that) before it believes "nothing moved".
 /// </para>
 /// </remarks>
 [TestClass]
@@ -104,13 +106,42 @@ public sealed class FocusTrapActivationE2ETests : WasmTestBase
         return (page, module);
     }
 
-    private static string GlobFloorMessage(GatedModule module)
+    /// <summary>
+    /// FLOOR: the gate caught EVERY focus-trap module request this run made — not merely at least one.
+    /// <para>
+    /// The two counts come from two independent mechanisms, which is the only reason comparing them
+    /// says anything: <c>Gated</c> is appended by the <see cref="IBrowserContext.RouteAsync(string, Action{IRoute})"/>
+    /// handler, so it counts Playwright GLOB matches, while <c>Seen</c> is appended by the page's
+    /// <c>Request</c> event using a plain <c>Contains</c> substring test that never consults the glob.
+    /// Comparing one filter with itself would be vacuous; these disagree whenever the glob is wrong.
+    /// </para>
+    /// <para>
+    /// Every URL the glob can match necessarily contains the needle, so Gated ⊆ Seen and the failure
+    /// this catches is one-directional and concrete: a SECOND, ungated route to the same module, which
+    /// would load it before the test places focus and turn "focus did not move" trivially true. The
+    /// weaker <c>Gated &gt; 0</c> check alone stays green in exactly that case.
+    /// </para>
+    /// </summary>
+    private static void AssertGateHeldEveryModuleRequest(GatedModule module)
     {
-        string[] seen;
+        string[] gated, seen;
+        lock (module.Gated) gated = [.. module.Gated];
         lock (module.Seen) seen = [.. module.Seen];
-        return $"FLOOR: the route glob '{FocusTrapModuleGlob}' held NO request, so the focus trap module was "
-             + "never gated and this test measured nothing. Requests whose URL contained "
-             + $"'{ModuleUrlNeedle}': [{string.Join(", ", seen)}].";
+
+        Assert.IsTrue(
+            gated.Length > 0,
+            $"FLOOR: the route glob '{FocusTrapModuleGlob}' held NO request, so the focus trap module was "
+          + "never gated and this test measured nothing. Requests whose URL contained "
+          + $"'{ModuleUrlNeedle}': [{string.Join(", ", seen)}].");
+
+        Assert.AreEqual(
+            seen.Length,
+            gated.Length,
+            $"FLOOR: the route glob '{FocusTrapModuleGlob}' held {gated.Length} of {seen.Length} focus-trap "
+          + $"module request(s) — {seen.Length - gated.Length} slipped past it UNGATED and could have loaded "
+          + "the module before this test placed focus, which would make the result trivially true. "
+          + $"Gated (glob): [{string.Join(", ", gated)}]. Seen (substring '{ModuleUrlNeedle}'): "
+          + $"[{string.Join(", ", seen)}].");
     }
 
     /// <summary>Emits the run's floor values into the .trx so the numbers come from an artifact, not from prose.</summary>
@@ -189,7 +220,7 @@ public sealed class FocusTrapActivationE2ETests : WasmTestBase
 
         TestContext.WriteLine(FloorReport(module, $"tab-from-last='{afterTab}'", log));
 
-        Assert.IsTrue(module.Gated.Count > 0, GlobFloorMessage(module));
+        AssertGateHeldEveryModuleRequest(module);
         Assert.IsTrue(markIndex >= 0, "FLOOR: the focus recorder never saw the probe mark — the log is not the one this test wrote.");
         Assert.AreEqual(
             "button.tm-modal-close",
@@ -231,7 +262,7 @@ public sealed class FocusTrapActivationE2ETests : WasmTestBase
 
         TestContext.WriteLine(FloorReport(module, $"focus-before='{placed}' focus-after='{landed}'", log));
 
-        Assert.IsTrue(module.Gated.Count > 0, GlobFloorMessage(module));
+        AssertGateHeldEveryModuleRequest(module);
 
         Assert.AreEqual(
             "button.tm-modal-close",
