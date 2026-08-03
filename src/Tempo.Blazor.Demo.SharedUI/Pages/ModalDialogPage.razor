@@ -110,7 +110,7 @@
 <section class="demo-section">
     <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Custom Modal Content</h2>
     <div class="flex flex-wrap gap-3">
-        <TmButton OnClick="() => _showCustomModal = true" Variant="ButtonVariant.Secondary">
+        <TmButton OnClick="() => _showCustomModal = true" Variant="ButtonVariant.Secondary" data-testid="open-custom-modal">
             Open Custom Modal
         </TmButton>
     </div>
@@ -204,8 +204,8 @@
         </div>
         
         <div class="flex justify-end gap-2 pt-2">
-            <TmButton Variant="ButtonVariant.Ghost" OnClick="() => _showCustomModal = false">Close</TmButton>
-            <TmButton Variant="ButtonVariant.Primary" OnClick="() => { _showCustomModal = false; }">Got it!</TmButton>
+            <TmButton Variant="ButtonVariant.Ghost" OnClick="() => _showCustomModal = false" data-testid="custom-modal-close-btn">Close</TmButton>
+            <TmButton Variant="ButtonVariant.Primary" OnClick="() => { _showCustomModal = false; }" data-testid="custom-modal-gotit-btn">Got it!</TmButton>
         </div>
     </div>
 </TmModal>

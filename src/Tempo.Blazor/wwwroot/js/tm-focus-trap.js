@@ -63,8 +63,22 @@ export function activate(element, id, escapeHandler, closeOnEscape) {
 
     traps.set(id, { element, tabHandler, escHandler, returnTarget });
 
-    const list = visibleFocusable(element);
-    (list[0] || element).focus();
+    // ARIA wants initial focus INSIDE the overlay, but only when it is not already there.
+    // Activation is gated on a lazy ES-module import (FocusTrap.ActivateAsync), so it can land an
+    // arbitrary amount of time after the overlay rendered — long enough for the user to have clicked
+    // or typed into a field inside it. An unconditional `(list[0] || element).focus()` then STEALS
+    // that focus and yanks the caret to the first focusable (typically the close button).
+    //
+    // `document.activeElement` is never null in practice but is `<body>` when focus is "nowhere",
+    // and `<body>` is not contained by the overlay, so that case correctly still moves focus in.
+    // The container itself is deliberately NOT treated as "inside": it only ever holds focus via the
+    // tabindex="-1" fallback, and from there focus still belongs on the first real control.
+    const active = document.activeElement;
+    const alreadyInside = !!active && active !== element && element.contains(active);
+    if (!alreadyInside) {
+        const list = visibleFocusable(element);
+        (list[0] || element).focus();
+    }
 }
 
 export function deactivate(id) {
