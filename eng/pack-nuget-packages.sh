@@ -18,6 +18,23 @@ fi
 mapfile -t projects < <(grep -vE '^[[:space:]]*(#|$)' "$manifest" | sed 's/[[:space:]]*$//')
 
 mkdir -p "$output"
+# This delete is load-bearing, and nothing else in the pipeline knows it.
+#
+# The staging directory survives between packs and `*.nupkg` is in .gitignore, so a previous run's
+# packages sit there INVISIBLY — `git status` is clean with a full set of them present. Nothing about
+# the FILENAME distinguishes them: measured on 2026-08-03, ./packages already held all 26
+# *.2.8.7.nupkg from a pack two commits earlier, and only the CONTENT told them apart —
+# `alreadyInside` 0x vs 1x in staticwebassets/js/tm-focus-trap.js, and an informational version of
+# 2.8.7+7ad76259... vs 2.8.7+0ffc0248.... The same version number had been minted twice over
+# different source. So this line is the only thing standing between a repack and shipping stale
+# bytes under a version that claims to be fresh.
+#
+# Two consequences worth knowing before you change anything here:
+#   * Never point PACKAGE_OUTPUT at a directory you did not create for this purpose (a consuming
+#     project's local NuGet feed, say) — this deletes EVERY nupkg it finds there, not only ours.
+#     Pack into staging, then copy the versioned files out.
+#   * `dotnet pack` runs with --no-build, so the version lands in the DLL at BUILD time, not here.
+#     Build with -p:Version=$VERSION first or the nuspec and the assembly will disagree.
 find "$output" -maxdepth 1 -type f \( -name '*.nupkg' -o -name '*.snupkg' \) -delete
 
 for project in "${projects[@]}"; do

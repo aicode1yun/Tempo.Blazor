@@ -19,8 +19,45 @@ namespace Tempo.Blazor.E2E;
 /// </para>
 /// <para>
 /// Only files git already tracks are measured. A NEW png is a run artefact and not this guard's
-/// business; a MODIFIED one is a committed reference that this run destroyed. That matches the
-/// acceptance criterion exactly — a clean <c>git status</c>.
+/// business; a MODIFIED one is a committed reference that this run destroyed.
+/// </para>
+/// <para>
+/// SCOPE: <c>__baseline__/</c> and nothing else. It first swept all three png roots, and that was
+/// too wide — it failed runs whose every test method was green. Measured on
+/// <c>ComponentAccessibilityE2ETests</c> at a clean HEAD: 6/6 methods passed, the run died in
+/// <c>AssemblyCleanup</c> over 9 pngs under <c>__screenshots__/accessibility/</c>.
+/// </para>
+/// <para>
+/// The two dropped roots are not references, and that is measurable rather than a matter of taste.
+/// <c>ToHaveScreenshotAsync</c> appears <b>0 times</b> in this project and nothing reads any png
+/// back, so no assertion anywhere consumes one. What separates <c>__baseline__</c> is that it is the
+/// only root with a DELIBERATE-CHANGE MECHANISM: <see cref="BaselineOutput.CommittedRoot"/> is
+/// hardcoded to it, <see cref="BaselineGeneratorTestBase.WritesAllowed"/> / <c>TM_WRITE_BASELINES</c>
+/// gate writes to it, and <see cref="BaselineGeneratorGateTests"/> polices the generator convention
+/// that feeds it. <c>__screenshots__/</c> (315 pngs, 57 classes) and <c>screenshots/</c> (7 pngs,
+/// 3 classes) have none of that — every one of those classes builds its path with
+/// <c>Path.Combine</c> and writes unconditionally, and their own doc comments call the output
+/// "for UX review". So the old scope demanded a redirect that does not exist for them:
+/// <see cref="BaselineOutput"/> can only ever point at <c>__baseline__</c>, and it has 5 call sites,
+/// all Notion. A guard whose remedy cannot be applied is a guard that only teaches people to
+/// distrust it.
+/// </para>
+/// <para>
+/// REACHABILITY, so the next reader knows what this can and cannot catch: CI never runs it. Both
+/// publish workflows test with <c>--filter "FullyQualifiedName!~Tempo.Blazor.E2E&amp;…"</c>
+/// (<c>publish-nuget.yml</c>, <c>publish-nuget-org.yml</c>), which excludes this whole assembly.
+/// This guard fires on a developer's machine or not at all.
+/// </para>
+/// <para>
+/// Do NOT read this narrowing as "the E2E suite is now green". What was measured is the scope of
+/// this guard, not the health of the suite: ordinary (non-generator, therefore un-skipped) classes
+/// still write straight into <c>__baseline__</c> with a bare <c>Path.Combine</c>, bypassing
+/// <see cref="BaselineOutput"/> — <c>NotionKrDocxFidelityE2ETests</c>,
+/// <c>NotionRestrictionsE2ETests</c>, <c>NotionTableE2ETests</c>, <c>StencilStructurePhase10E2ETests</c>,
+/// <c>StencilComplexPhase12E2ETests</c>, <c>StencilFormControlsGalleryE2ETests</c> and
+/// <c>WireframeServerPreviewE2ETests</c>. Whether a given run of those actually trips this guard
+/// depends on whether their capture comes out byte-identical, which was not measured. If one does
+/// trip it, that is the guard working, not a regression in it.
 /// </para>
 /// <para>
 /// It is not a test method, because it has to observe the whole run rather than one test. The
@@ -119,8 +156,8 @@ public static class BaselineWriteSweep
     }
 
     /// <summary>
-    /// The tracked png files under the screenshot roots, hashed. <c>git ls-files</c> is what makes
-    /// "tracked" mean the same thing here as it does in the acceptance criterion.
+    /// The tracked png files under the COMMITTED BASELINE root, hashed. <c>git ls-files</c> is what
+    /// makes "tracked" mean the same thing here as it does in the acceptance criterion.
     /// </summary>
     private static Dictionary<string, string> HashTrackedScreenshots(string repositoryRoot)
     {
@@ -153,9 +190,8 @@ public static class BaselineWriteSweep
         };
         startInfo.ArgumentList.Add("ls-files");
         startInfo.ArgumentList.Add("--");
+        // __baseline__ ONLY. See the type doc for why __screenshots__/ and screenshots/ are out.
         startInfo.ArgumentList.Add("tests/Tempo.Blazor.E2E/__baseline__/*.png");
-        startInfo.ArgumentList.Add("tests/Tempo.Blazor.E2E/__screenshots__/*.png");
-        startInfo.ArgumentList.Add("tests/Tempo.Blazor.E2E/screenshots/*.png");
 
         using var process = Process.Start(startInfo)
             ?? throw new InvalidOperationException("could not start git");
