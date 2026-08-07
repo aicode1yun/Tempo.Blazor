@@ -1335,6 +1335,40 @@ public partial class TmDataTable<TItem> : IDisposable
             RefreshClientItems();
     }
 
+    /// <summary>
+    /// Returns the table to the first page and reloads. Call it from the host whenever the result set
+    /// changes underneath the table — after a search, a filter change, or any other narrowing the page
+    /// performs itself.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A page that owns its own filter surface (<see cref="DataToolbarMode.ContentOnly"/>, feeding the
+    /// table pre-filtered <see cref="Items"/> or a <see cref="DataProvider"/>) narrows the result set
+    /// without the table knowing why. The table only clamps the current page *down* to the new last page,
+    /// so searching while on page 3 leaves the user on page 3 — or on the new last page — instead of at
+    /// the top of the results. The table's own search box resets the page, but that path is not taken
+    /// when the host does the searching.
+    /// </para>
+    /// <para>
+    /// Deliberately not automatic on an <see cref="Items"/> reference change: a table that re-polls the
+    /// same list on a timer would then yank a reading user back to page 1 on every refresh. The host knows
+    /// which change is a new query and which is the same query again, so it makes the call.
+    /// </para>
+    /// </remarks>
+    public async Task ResetPageAsync()
+    {
+        _currentPage = 1;
+        _groupPageRequests.Clear();
+
+        if (DataProvider is not null)
+            await LoadFromProviderAsync();
+        else
+            RefreshClientItems();
+
+        // Called from the host's event handler, not the table's, so the table is not re-rendered for us.
+        StateHasChanged();
+    }
+
     private async Task ChangePageSizeAsync(int size)
     {
         _pageSize = size;
@@ -1819,6 +1853,17 @@ public partial class TmDataTable<TItem> : IDisposable
         if (e.Key is "Enter" or " ")
             return HandleRowClickAsync(item);
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Keyboard equivalent of clicking a sortable column header, so sorting is not mouse-only (WCAG 2.1.1).
+    /// Shift mirrors the multi-sort modifier of the click.
+    /// </summary>
+    private Task HandleHeaderKeyDownAsync(KeyboardEventArgs e, TmDataTableColumn<TItem> col)
+    {
+        if (!col.Sortable) return Task.CompletedTask;
+        if (e.Key is not ("Enter" or " ")) return Task.CompletedTask;
+        return SortByAsync(col, e.ShiftKey);
     }
 
     // ── Helper methods ────────────────────────────────────────────

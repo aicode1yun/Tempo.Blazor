@@ -167,13 +167,20 @@
                         }
                         @foreach (var col in _visibleColumns)
                         {
+                            @* A sortable header is operable by keyboard, not only by mouse: it is a focus
+                               stop and answers Enter/Space (Shift for multi-sort), mirroring the click.
+                               The sort target stays the <th> itself — the header may hold a consumer's
+                               HeaderTemplate as well as the pin button and resize handle, so it cannot be
+                               wrapped in a <button> without nesting interactive elements. *@
                             <th class="@GetHeaderClass(col)"
                                 style="@GetColumnStyle(col)"
                                 data-sortable="@col.Sortable.ToString().ToLower()"
+                                tabindex="@(col.Sortable ? "0" : null)"
                                 draggable="@(col.Groupable ? "true" : "false")"
                                 aria-sort="@GetAriaSortValue(col)"
                                 @ondragstart="() => OnColumnDragStart(col.Key)"
                                 @ondragend="OnColumnDragEnd"
+                                @onkeydown="e => HandleHeaderKeyDownAsync(e, col)"
                                 @onclick="e => SortByAsync(col, e.ShiftKey)">
                                 @if (col.HeaderTemplate is not null)
                                 {
@@ -199,6 +206,7 @@
                                             aria-label="@Loc["TmDataTable_PinColumn"]"
                                             data-testid="@TestId($"pin-{col.Key}")"
                                             @onclick:stopPropagation="true"
+                                            @onkeydown:stopPropagation="true"
                                             @onclick="() => CyclePinAsync(col)">
                                         <span aria-hidden="true">@GetPinGlyph(col)</span>
                                     </button>

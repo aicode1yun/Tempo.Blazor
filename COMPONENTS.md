@@ -3489,6 +3489,16 @@ Patička stránkování nese `data-testid="pagination-container"` a text s počt
 (`pagination-prev`, `pagination-next`, `pagination-page-{n}`, `pagination-page-size`) — viz
 [TmPagination](#tmpagination). Dvě tabulky na jedné stránce rozliš přes `TestIdPrefix`.
 
+**Metody** (přes `@ref`):
+
+| Metoda | Popis |
+|--------|-------|
+| `ResetPageAsync()` | Vrátí tabulku na první stránku a přenačte. **Volej po každém vlastním hledání/filtrování stránky** — tabulka si stránku sama neresetuje, jen ji klampuje dolů na novou poslední, takže bez toho uživatel po hledání zůstane na stránce 3. Záměrně to není automatické při změně `Items`: tabulka, která se periodicky přenačítá, by uživatele trhala zpět na první stránku při každém obnovení |
+
+Řadicí hlavička je **dostupná z klávesnice**: je fokusovatelná (`tabindex="0"`) a reaguje na `Enter`
+i `Mezerník`, se `Shift` pro multi-sort — stejně jako `Shift`+klik. Neřaditelné hlavičky fokusovatelné
+nejsou. Do 2.8.8 šlo řadit jen myší (WCAG 2.1.1).
+
 Rozsah položek vypisuje **právě jedno** místo, které vybírá `PaginationInfoPlacement`: buď souhrn
 tabulky (`pagination-summary`, výchozí — jen ten respektuje `PaginationInfoTemplate`), nebo vlastní
 popisek lišty stránkování (`pagination-info`), nebo žádné. V DOM tedy vždy existuje jen `data-testid`
