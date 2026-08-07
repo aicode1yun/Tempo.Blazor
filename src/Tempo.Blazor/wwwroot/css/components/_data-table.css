@@ -157,18 +157,40 @@
 .tm-data-table td.tm-col-pinned-right { box-shadow: -2px 0 3px -2px rgba(0, 0, 0, 0.18); }
 .tm-data-table tbody tr.tm-row-selected td.tm-col-pinned { background: var(--tm-color-primary-subtle); }
 
-/* Column pin toggle */
+/* Column pin toggle
+   ------------------------------------------------------------------
+   Positioned OUT OF FLOW on purpose, and that is the whole point of the rule.
+
+   In flow the button reserved 1.1rem + 0.25rem = 21.6px of inline space AFTER the
+   header label — and reserved it permanently, because it hides with `opacity: 0`,
+   which paints nothing but still takes its width. On a left-aligned column the
+   slack simply drains to the right and nobody notices. On a column whose Align is
+   Right it is `text-align: right` that pays: the browser right-aligns the whole
+   inline run "label + invisible button", so the LABEL lands 21.6px short of the
+   cell's content edge while the cells below it sit flush against it. Measured on a
+   real 1440px page: cell content ended at x=1398, the header text at x=1375.
+
+   Absolute positioning removes the reservation without hiding the control: the
+   button still sits at the inline end of its header, it just no longer pushes the
+   label. `inset-inline-end` clears the 6px resize handle so the two do not fight
+   over the same pointer target, and the background matches the header row, so on
+   hover/focus the button reads as an overlay instead of colliding with the tail of
+   a long label. That background lives on the element itself (specificity 0-1-0) so
+   the `:hover` rule below still wins over it. */
 .tm-col-pin-btn {
+  position: absolute;
+  top: 50%;
+  inset-inline-end: 6px;
+  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 1.1rem;
   height: 1.1rem;
-  margin-left: 0.25rem;
   padding: 0;
   border: none;
   border-radius: var(--tm-radius-sm, 3px);
-  background: transparent;
+  background: var(--tm-bg-surface-secondary);
   color: var(--tm-text-secondary);
   font-size: 0.75rem;
   line-height: 1;
@@ -176,10 +198,33 @@
   opacity: 0;
   transition: opacity 0.12s ease, color 0.12s ease, background 0.12s ease;
 }
+/* Visible whenever the pointer OR the keyboard is on the header.
+   `:hover` alone made this button a Tab stop that the user could not see: it is a
+   real <button> without `tabindex="-1"`, so it is in the keyboard path for every
+   visible column, and with `ShowColumnMenu` defaulting to true a five-column header
+   is nine Tab stops of which five were invisible — WCAG 2.4.7 Focus Visible.
+   `:focus-within` covers the button being focused inside its own header;
+   `.tm-col-pin-btn:focus-visible` keeps it visible if a consumer ever restyles the
+   header so that `:focus-within` no longer reaches it. */
 .tm-data-table th:hover .tm-col-pin-btn,
+.tm-data-table th:focus-within .tm-col-pin-btn,
+.tm-col-pin-btn:focus-visible,
 .tm-col-pin-btn--active { opacity: 1; }
 .tm-col-pin-btn:hover { background: var(--tm-bg-muted); color: var(--tm-text-primary); }
 .tm-col-pin-btn--active { color: var(--tm-color-primary, #3b82f6); }
+
+/* The library brings its own focus ring instead of borrowing the application's.
+   Tempo made the sortable header a focus stop in 2.8.9 but shipped no `:focus`
+   style for it, so how a focused header looked depended on whether the consuming
+   app happened to declare a global `*:focus-visible` outline. A component that
+   turns an element into a control owns that element's focus indicator. */
+.tm-data-table th:focus-visible,
+.tm-data-table tbody tr:focus-visible,
+.tm-col-pin-btn:focus-visible {
+  outline: 2px solid var(--tm-color-primary, #3b82f6);
+  outline-offset: -2px;
+}
+.tm-col-sortable:focus-visible { color: var(--tm-text-primary); }
 
 /* Column resize handle */
 .tm-col-resize-handle {

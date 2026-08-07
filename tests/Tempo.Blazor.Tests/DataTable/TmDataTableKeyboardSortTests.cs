@@ -14,7 +14,12 @@ namespace Tempo.Blazor.Tests.DataTable;
 /// focusable and had no key handler, so a keyboard user could not sort at all. It cannot simply be
 /// wrapped in a <c>&lt;button&gt;</c> either — the header also carries the consumer's
 /// <c>HeaderTemplate</c>, the pin toggle and the resize handle, and a button around those would nest
-/// interactive elements. So the header itself becomes the focus stop and answers Enter/Space.
+/// interactive elements. So the header itself becomes the focus stop and answers <b>Enter</b>.
+/// </para>
+/// <para>
+/// Enter and not Space: on a plain <c>&lt;th&gt;</c> Space still means "scroll one screen", and Blazor
+/// cannot cancel that default for one key only. See
+/// <see cref="Space_DoesNotSort_SoItKeepsScrollingThePage"/>.
 /// </para>
 /// </summary>
 public class TmDataTableKeyboardSortTests : LocalizationTestBase
@@ -88,14 +93,36 @@ public class TmDataTableKeyboardSortTests : LocalizationTestBase
         cut.Find("th[data-sortable='true']").GetAttribute("aria-sort").Should().Be("ascending");
     }
 
+    /// <summary>
+    /// Space must NOT sort — it stays the browser's "scroll one screen".
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This assertion is the reverse of what it was in 2.8.9, and the reversal is the fix. The header is
+    /// a <c>&lt;th tabindex="0"&gt;</c>, not a <c>&lt;button&gt;</c>, so Space keeps its default action
+    /// there. Accepting it as a sort key therefore did not replace the scroll, it ADDED to it: one press
+    /// re-sorted the table and threw the user a screen down, off the result they had just asked for.
+    /// </para>
+    /// <para>
+    /// Keeping Space and cancelling the scroll is not available from Blazor. <c>:preventDefault</c> is
+    /// bound at handler registration, not per event, so it cannot look at the key — a static <c>true</c>
+    /// would cancel Tab as well and trap the keyboard (WCAG 2.1.2), which is strictly worse than the
+    /// annoyance it fixes.
+    /// </para>
+    /// <para>
+    /// Nothing is lost in coverage terms: Enter sorts, so WCAG 2.1.1 Keyboard still holds, and Space is
+    /// not an activation key for a <c>columnheader</c> in the first place.
+    /// </para>
+    /// </remarks>
     [Fact]
-    public void Space_SortsAscending()
+    public void Space_DoesNotSort_SoItKeepsScrollingThePage()
     {
         var cut = RenderTable();
 
         cut.Find("th[data-sortable='true']").KeyDown(new KeyboardEventArgs { Key = " " });
 
-        Names(cut).Should().Equal("Alice", "Bob", "Charlie");
+        Names(cut).Should().Equal("Charlie", "Alice", "Bob");
+        cut.Find("th[data-sortable='true']").GetAttribute("aria-sort").Should().Be("none");
     }
 
     [Fact]

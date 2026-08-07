@@ -1,5 +1,76 @@
 # Changelog
 
+## 2.8.10 - 2026-08-08
+
+Three defects that all trace back to the same element — the column pin toggle — plus the keyboard
+contract 2.8.9 got half right. Making the sortable header focusable in 2.8.9 was correct, but it sent
+keyboard users into a header nobody had ever been able to reach, and what was waiting there had been
+broken since the pin toggle shipped.
+
+### Fixed (accessibility)
+
+- **Five of the nine Tab stops in a header painted nothing (WCAG 2.4.7 Focus Visible).** `ShowColumnMenu`
+  defaults to `true`, so a pin `<button>` is rendered for **every visible column**, sortable or not, with
+  no `tabindex="-1"` — it is a native focus stop. The only rule that made it visible was
+  `.tm-data-table th:hover .tm-col-pin-btn`; the stylesheet contained no `:focus` or `:focus-within` rule
+  for it at all. A five-column header is therefore nine Tab stops, five of which a keyboard user cannot
+  see. It is now revealed by `th:focus-within` and by its own `:focus-visible`, next to the existing
+  `:hover` — not instead of it.
+  - The button deliberately **keeps** its place in the tab order. Adding `tabindex="-1"` would have
+    removed the five invisible stops by making the control keyboard-inaccessible, trading a 2.4.7 failure
+    for a 2.1.1 one. Whether a grid should expose one stop per header at all (roving `tabindex`, arrow-key
+    navigation, one stop for the whole table) is a redesign of the keyboard model, not a fix.
+- **Tempo now ships its own focus ring for every element the table makes focusable** — the sortable
+  `<th>`, the pin button, and `tbody tr` (rows are `tabindex="0"` unconditionally). 2.8.9 turned the
+  header into a control but left its focus indicator to whatever the consuming application declared
+  globally. That turned out not to be a theoretical gap: measured on a live page in an application that
+  *does* declare `*:focus-visible { outline: 2px solid … }`, a focused sortable header still computed
+  `outline-width: 0px` with `outline-color: currentcolor` — the initial values — while an `<a>` on the
+  same page got the full 2px ring. Adding the rule below raised the same element to
+  `2px solid rgb(79, 70, 229)`. Whatever suppresses the global rule inside the table, a component that
+  turns an element into a control cannot depend on the host to make focus visible. `.tm-col-sortable`
+  also answers `:focus-visible` with the same emphasis it already gave `:hover`.
+- **Space on a sortable header sorted the table *and* scrolled the page away from the result.** The
+  header is a `<th tabindex="0">`, not a `<button>`, so Space keeps its browser meaning there — scroll one
+  screen — and accepting it as a sort key added to that default instead of replacing it. **Space no longer
+  sorts; Enter does**, with Shift still mirroring the multi-sort modifier.
+  - The scroll cannot be suppressed from Blazor. `@onkeydown:preventDefault` binds when the handler is
+    registered, not per event, so it cannot look at the key; a static `true` would cancel the default
+    action of **Tab** as well and trap the keyboard (WCAG 2.1.2) — strictly worse than the annoyance it
+    fixes. Doing it from JavaScript would make a keyboard path depend on an interop module the consumer
+    has to reference. Enter alone also matches the convention: Space activates a `button`, and this
+    element is a `columnheader` inside a `grid`, where Space carries no activation meaning.
+  - **This is a behaviour change from 2.8.9.** A host that documented Space as a sort key needs to say
+    Enter instead.
+
+### Fixed
+
+- **`Align=Right` still left the header short — the 2.8.9 fix landed on the specificity half only.** With
+  the cascade repaired, `text-align: right` reached the `<th>`, but the pin button sat **after** the label
+  and reserved `1.1rem + 0.25rem = 21.6px` of inline space permanently, because `opacity: 0` paints
+  nothing yet still takes its width. The browser was therefore right-aligning "label + invisible button",
+  so the label stopped ~22px short of the content edge its own cells sat flush against — measured on a
+  1440px page: cells ended at x=1398, the header text at x=1375. Left-aligned columns never showed it,
+  because the slack drained to the right; it appeared on exactly the columns the 2.8.9 fix was made for.
+  The pin is now positioned absolutely at the inline end of its header, so it reserves nothing, clears the
+  resize handle, and reads as an overlay rather than colliding with the tail of a long label.
+
+### Internal
+
+- `TmDataTablePinFocusTests` (7) resolves the cascade out of the shipped `_data-table.css` for a modelled
+  interaction state (header hovered / focus-within, pin hovered / focused / pinned) and asserts the
+  `opacity` and `position` that actually win on specificity-then-source-order — the same technique as
+  `TmDataTableAlignmentTests`, because both defects are invisible in the markup. Asserted in **both**
+  directions on purpose: a permanently visible pin would satisfy "visible on focus" while being a worse
+  component, so `PinButton_StaysHidden_WhenNothingIsHoveringOrFocusingTheHeader` holds the other end.
+- `TmDataTableKeyboardSortTests.Space_SortsAscending` is **replaced** by
+  `Space_DoesNotSort_SoItKeepsScrollingThePage`. The assertion is reversed deliberately: the old one
+  encoded the defect.
+- Not done, and recorded rather than dropped: `HandleRowKeyDownAsync` accepts Space for row activation and
+  has the identical scroll-plus-activate problem. It is left alone in this release because row activation
+  is bound to consumer navigation far more widely than header sorting, so changing it is a wider
+  behavioural decision than this patch should make on its own.
+
 ## 2.8.9 - 2026-08-07
 
 ### Added

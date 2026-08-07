@@ -1859,10 +1859,32 @@ public partial class TmDataTable<TItem> : IDisposable
     /// Keyboard equivalent of clicking a sortable column header, so sorting is not mouse-only (WCAG 2.1.1).
     /// Shift mirrors the multi-sort modifier of the click.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Enter only — Space deliberately does not sort.</b> The header is a plain
+    /// <c>&lt;th tabindex="0"&gt;</c>, not a <c>&lt;button&gt;</c>, so Space keeps its browser meaning
+    /// there: scroll down one screen. Accepting Space as well meant every press did BOTH — the table
+    /// re-sorted and the page jumped a screen down, away from the result the user had just asked for.
+    /// </para>
+    /// <para>
+    /// The scroll cannot be suppressed from here. Blazor's <c>@onkeydown:preventDefault</c> is evaluated
+    /// when the handler is REGISTERED, not per event, so it cannot be made conditional on the key: a
+    /// static <c>true</c> would cancel the default action of every keydown on the header, including
+    /// <b>Tab</b>, turning a cosmetic annoyance into a keyboard trap (WCAG 2.1.2). Suppressing it from
+    /// JavaScript would make sorting depend on an interop module the consumer has to reference, which a
+    /// keyboard path must not.
+    /// </para>
+    /// <para>
+    /// Enter alone is also the conventional answer: Space is the activation key of a <c>button</c>, while
+    /// this element is a <c>columnheader</c> inside a <c>grid</c>, where Space carries no activation
+    /// meaning. WCAG 2.1.1 is satisfied by Enter, and a keyboard user keeps paging through the table with
+    /// the key that has always done it.
+    /// </para>
+    /// </remarks>
     private Task HandleHeaderKeyDownAsync(KeyboardEventArgs e, TmDataTableColumn<TItem> col)
     {
         if (!col.Sortable) return Task.CompletedTask;
-        if (e.Key is not ("Enter" or " ")) return Task.CompletedTask;
+        if (e.Key is not "Enter") return Task.CompletedTask;
         return SortByAsync(col, e.ShiftKey);
     }
 
