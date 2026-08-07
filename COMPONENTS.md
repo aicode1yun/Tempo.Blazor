@@ -1665,6 +1665,7 @@ Seznam s přepínáním zobrazení (tabulka/karty/seznam) a filtry.
 | `ShowSearch` | `bool` | `true` | Vyhledávání |
 | `ShowPagination` | `bool` | `true` | Stránkování |
 | `DefaultPageSize` | `int` | `25` | Výchozí stránka |
+| `PaginationInfoPlacement` | `DataTablePaginationInfoPlacement` | `Summary` | Kde se vypíše rozsah položek: `Summary` (souhrn seznamu), `Pagination` (uvnitř lišty stránkování), `None`. Mini-pagery skupin se netýká |
 | `TitleField` | `Func<TItem, string>?` | `null` | Hlavní text |
 | `SubTitleField` | `Func<TItem, string>?` | `null` | Podtitulek |
 | `AvatarUrlField` | `Func<TItem, string>?` | `null` | URL avataru |
@@ -3468,9 +3469,12 @@ Kompletní datová tabulka s řazením, filtrováním, stránkováním, grouping
 | `ShowColumnPicker` | `bool` | `true` | Výběr sloupců |
 | `ShowPagination` | `bool` | `true` | Stránkování |
 | `DefaultPageSize` | `int` | `25` | Výchozí stránka |
+| `DefaultSortColumn` | `string?` | `null` | Klíč sloupce (`PropertyName`, jinak `Title`), podle kterého je tabulka seřazená hned po prvním renderu — tedy dřív, než uživatel na cokoli klikne |
+| `DefaultSortDirection` | `DataTableSortDirection` | `Ascending` | Směr výchozího řazení; bez `DefaultSortColumn` se ignoruje |
 | `PageSizeOptions` | `IReadOnlyList<int>` | `[5,10,25,50,100]` | Možnosti velikosti stránky |
 | `PaginationAttributes` | `Dictionary<string, object>?` | `null` | Atributy splatnuté na kořen vestavěné `TmPagination` |
-| `PaginationInfoTemplate` | `RenderFragment<DataTablePaginationInfo>?` | `null` | Nahradí vestavěný text „zobrazeno X–Y z Z" vlastním |
+| `PaginationInfoTemplate` | `RenderFragment<DataTablePaginationInfo>?` | `null` | Nahradí vestavěný text „zobrazeno X–Y z Z" vlastním (platí pro placement `Summary`) |
+| `PaginationInfoPlacement` | `DataTablePaginationInfoPlacement` | `Summary` | Kde se vypíše rozsah položek: `Summary` (souhrn tabulky vlevo), `Pagination` (uvnitř lišty stránkování), `None` |
 | `ScrollMode` | `DataTableScrollMode` | `Pagination` | `Pagination` / `Virtualized` |
 | `ShowGrouping` | `bool` | `false` | Povolit grouping |
 | `OnRowClick` | `EventCallback<TItem>` | — | Klik na řádek |
@@ -3485,6 +3489,11 @@ Patička stránkování nese `data-testid="pagination-container"` a text s počt
 (`pagination-prev`, `pagination-next`, `pagination-page-{n}`, `pagination-page-size`) — viz
 [TmPagination](#tmpagination). Dvě tabulky na jedné stránce rozliš přes `TestIdPrefix`.
 
+Rozsah položek vypisuje **právě jedno** místo, které vybírá `PaginationInfoPlacement`: buď souhrn
+tabulky (`pagination-summary`, výchozí — jen ten respektuje `PaginationInfoTemplate`), nebo vlastní
+popisek lišty stránkování (`pagination-info`), nebo žádné. V DOM tedy vždy existuje jen `data-testid`
+zvoleného místa. Do 2.8.8 se renderovala obě naráz a počet záznamů byl v patičce dvakrát vedle sebe.
+
 #### TmDataTableColumn\<TItem\>
 
 | Parametr | Typ | Výchozí | Popis |
@@ -3497,7 +3506,7 @@ Patička stránkování nese `data-testid="pagination-container"` a text s počt
 | `Groupable` | `bool` | `false` | Povoleno groupování |
 | `Hideable` | `bool` | `false` | Povolit skrytí |
 | `Width` | `string?` | `null` | Šířka sloupce |
-| `Align` | `ColumnAlign` | `Left` | Zarovnání: `Left`, `Center`, `Right` |
+| `Align` | `ColumnAlign` | `Left` | Zarovnání: `Left`, `Center`, `Right`. Platí pro buňky **i pro hlavičku sloupce** — do 2.8.8 ho přebíjelo základní `text-align: left` tabulky, takže hlavička zůstávala vlevo |
 
 #### Příklady
 
@@ -3582,6 +3591,7 @@ Stránkování (samostatná komponenta).
 | `OnPageChange` | `EventCallback<int>` | — | Změna stránky |
 | `OnPageSizeChange` | `EventCallback<int>` | — | Změna velikosti |
 | `Disabled` | `bool` | `false` | Zakáže stránkování |
+| `ShowInfo` | `bool` | `true` | Vypisovat vlastní text „X–Y z Z". Nastav na `false`, když rozsah už uvádí hostitel vedle lišty (tak to dělá `TmDataTable` se svým souhrnem), ať se počet netiskne dvakrát |
 | `Class` | `string?` | `null` | Další CSS třídy |
 | `AdditionalAttributes` | `Dictionary<string, object>?` | `null` | Další HTML atributy |
 | `TestIdPrefix` | `string?` | `null` | Předřadí prefix všem `data-testid` uvnitř komponenty |
@@ -3594,7 +3604,7 @@ Selektuj na ně, ne na CSS třídy — třídy se mění při refaktoru stylů.
 | `data-testid` | Prvek |
 |---------------|-------|
 | `pagination` | Kořenový kontejner |
-| `pagination-info` | Text s rozsahem záznamů |
+| `pagination-info` | Text s rozsahem záznamů (jen když `ShowInfo` je `true`) |
 | `pagination-prev` | Předchozí stránka |
 | `pagination-next` | Následující stránka |
 | `pagination-page-{n}` | Tlačítko konkrétní stránky |

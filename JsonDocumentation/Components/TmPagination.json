@@ -35,6 +35,12 @@
       "isRequired": false
     },
     {
+      "name": "ShowInfo",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the \"X-Y of Z\" item range label is rendered inside the pagination bar. Default true, which is what a standalone pager needs. A host that already states the range next to the pager — as TmDataTable does with its own summary — sets this to false so the count is not printed twice."
+    },
+    {
       "name": "OnPageChange",
       "type": "EventCallback<int>",
       "isRequired": false

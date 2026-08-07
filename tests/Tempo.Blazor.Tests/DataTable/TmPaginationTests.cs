@@ -120,6 +120,36 @@ public class TmPaginationTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Pagination_ShowInfo_False_DropsTheRangeButKeepsTheControls()
+    {
+        // For a host that already states the range next to the pager (TmDataTable's summary does),
+        // so the count is not printed twice side by side.
+        var cut = Render<TmPagination>(p => p
+            .Add(c => c.CurrentPage, 2)
+            .Add(c => c.TotalPages, 5)
+            .Add(c => c.TotalCount, 50)
+            .Add(c => c.PageSize, 10)
+            .Add(c => c.ShowInfo, false));
+
+        cut.FindAll(".tm-pagination-info").Should().BeEmpty();
+        cut.FindAll("[data-testid='pagination-info']").Should().BeEmpty();
+        cut.Find("[data-testid='pagination-next']").Should().NotBeNull();
+        cut.FindAll(".tm-page-btn").Count.Should().Be(5);
+    }
+
+    [Fact]
+    public void Pagination_ShowInfo_DefaultsToTrue_SoAStandalonePagerKeepsItsRange()
+    {
+        var cut = Render<TmPagination>(p => p
+            .Add(c => c.CurrentPage, 2)
+            .Add(c => c.TotalPages, 5)
+            .Add(c => c.TotalCount, 50)
+            .Add(c => c.PageSize, 10));
+
+        cut.FindAll("[data-testid='pagination-info']").Should().ContainSingle();
+    }
+
+    [Fact]
     public void Pagination_EmitsDefaultTestIds_ForEveryControl()
     {
         var cut = Render<TmPagination>(p => p

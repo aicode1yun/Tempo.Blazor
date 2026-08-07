@@ -350,6 +350,16 @@
 .tm-text-center { text-align: center; }
 .tm-text-right  { text-align: right; }
 
+/* ColumnAlign must actually reach the table's own cells. The bare helpers above are a single class
+   (specificity 0-1-0), while `.tm-data-table th, .tm-data-table td { text-align: left }` further up is
+   a class plus a type (0-1-1) — so the base rule won every column that asked for Center or Right, in
+   the header AND in the body, no matter the source order. Re-stating them at the table's own
+   specificity is what makes `Align` do anything, and it keeps a header aligned with its cells. */
+.tm-data-table th.tm-text-center,
+.tm-data-table td.tm-text-center { text-align: center; }
+.tm-data-table th.tm-text-right,
+.tm-data-table td.tm-text-right  { text-align: right; }
+
 /* Numeric / right-aligned cells get tabular figures so digits line up. */
 .tm-data-table td.tm-text-right,
 .tm-data-table th.tm-text-right,

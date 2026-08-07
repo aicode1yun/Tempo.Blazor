@@ -499,6 +499,38 @@ public partial class TmDataTable<TItem> : IDisposable
     /// <summary>Initial page size. Default: 25.</summary>
     [Parameter] public int DefaultPageSize { get; set; } = 25;
 
+    /// <summary>
+    /// Key of the column the table is sorted by on first render, before the user has clicked any header.
+    /// The key is <see cref="TmDataTableColumn{TItem}.PropertyName"/>, falling back to
+    /// <see cref="TmDataTableColumn{TItem}.Title"/> when <c>PropertyName</c> is not set.
+    /// Null (the default) starts the table unsorted, in the order the items were supplied.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The default is seeded once during initialization, so it also reaches the first
+    /// <see cref="IDataTableDataProvider{TItem}"/> query as <c>SortColumn</c>/<c>SortDescending</c>
+    /// instead of being applied only to already-fetched rows.
+    /// </para>
+    /// <para>
+    /// It is a starting state, not a floor: clicking the header cycles from it normally
+    /// (a default of <see cref="DataTableSortDirection.Ascending"/> means the first click on that same
+    /// column sorts descending, and the second clears the sort), applying a saved view replaces it,
+    /// and an unknown key simply leaves the table unsorted.
+    /// </para>
+    /// <para>
+    /// The column need not be <see cref="TmDataTableColumn{TItem}.Sortable"/> — a non-sortable column
+    /// still orders the data, it just does not advertise <c>aria-sort</c> or react to clicks, which is
+    /// how you express "this list has a fixed order the user cannot change".
+    /// </para>
+    /// </remarks>
+    [Parameter] public string? DefaultSortColumn { get; set; }
+
+    /// <summary>
+    /// Direction applied to <see cref="DefaultSortColumn"/>. Ignored when that is null.
+    /// Default: <see cref="DataTableSortDirection.Ascending"/>.
+    /// </summary>
+    [Parameter] public DataTableSortDirection DefaultSortDirection { get; set; } = DataTableSortDirection.Ascending;
+
     /// <summary>Page size options shown in the pagination dropdown.</summary>
     [Parameter] public IReadOnlyList<int> PageSizeOptions { get; set; } = [5, 10, 25, 50, 100];
 
@@ -514,8 +546,19 @@ public partial class TmDataTable<TItem> : IDisposable
     /// Replaces the built-in "showing X–Y of Z" summary next to the pagination bar. The context carries the
     /// current paging state (<see cref="DataTablePaginationInfo"/>), so a host can render its own wording
     /// instead of the library's <c>TmDataTable_ShowingItems</c> resource. When null the localized default is used.
+    /// Applies to the <see cref="DataTablePaginationInfoPlacement.Summary"/> placement only, which is the
+    /// only placement the table itself renders.
     /// </summary>
     [Parameter] public RenderFragment<DataTablePaginationInfo>? PaginationInfoTemplate { get; set; }
+
+    /// <summary>
+    /// Which of the two item-range labels in the paging footer is rendered. The table's own summary and the
+    /// embedded <see cref="TmPagination"/> both know the range, so exactly one of them shows it.
+    /// Default: <see cref="DataTablePaginationInfoPlacement.Summary"/> — the table's summary, which is the
+    /// placement that honours <see cref="PaginationInfoTemplate"/> and keeps the range on the footer's left edge.
+    /// </summary>
+    [Parameter] public DataTablePaginationInfoPlacement PaginationInfoPlacement { get; set; }
+        = DataTablePaginationInfoPlacement.Summary;
 
     /// <summary>Current paging state as handed to <see cref="PaginationInfoTemplate"/>.</summary>
     private DataTablePaginationInfo CurrentPaginationInfo => new(
@@ -747,6 +790,13 @@ public partial class TmDataTable<TItem> : IDisposable
         _pageSize = DefaultPageSize;
         _searchText = SearchText ?? string.Empty;
         _lastSearchTextParam = SearchText;
+
+        // Seeded before the first load so a server-side provider receives the default order in its very
+        // first query, rather than the table re-sorting page one of an already differently-ordered result.
+        // Client-side the columns are not registered yet, so ApplySort finds nothing to sort by here; each
+        // AddColumn re-runs RefreshClientItems, which applies it as soon as the column exists.
+        if (!string.IsNullOrEmpty(DefaultSortColumn))
+            _sortDescriptors.Add(new SortDescriptor(DefaultSortColumn, DefaultSortDirection));
 
         await LoadLayoutAsync();
 

@@ -26,6 +26,32 @@ public enum ColumnAlign
     Right
 }
 
+/// <summary>
+/// Which element renders the "showing X–Y of Z" item range in a <see cref="TmDataTable{TItem}"/> paging footer.
+/// </summary>
+/// <remarks>
+/// The footer has two components that can state the range — the table's own summary and the embedded
+/// <see cref="TmPagination"/> — and showing both prints the count twice side by side. This picks one.
+/// </remarks>
+public enum DataTablePaginationInfoPlacement
+{
+    /// <summary>
+    /// The table's own summary on the left of the footer. Honours
+    /// <c>TmDataTable.PaginationInfoTemplate</c> and uses the <c>TmDataTable_ShowingItems</c> resource.
+    /// This is the default.
+    /// </summary>
+    Summary,
+
+    /// <summary>
+    /// The label inside the <see cref="TmPagination"/> bar itself, using the <c>TmDataTable_Pagination</c>
+    /// resource. Keeps the range attached to the page controls, matching a standalone <c>TmPagination</c>.
+    /// </summary>
+    Pagination,
+
+    /// <summary>Neither — the footer shows page controls only.</summary>
+    None
+}
+
 /// <summary>Scroll/pagination mode for data components.</summary>
 public enum DataTableScrollMode
 {

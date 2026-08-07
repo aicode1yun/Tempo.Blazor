@@ -56,6 +56,12 @@
       "description": "Default page size for pagination. Default: 25."
     },
     {
+      "name": "PaginationInfoPlacement",
+      "type": "DataTablePaginationInfoPlacement",
+      "isRequired": false,
+      "description": "Which of the two item-range labels in the paging footer is rendered — the list's own summary (Summary, the default) or the one inside the embedded TmPagination (Pagination), or neither (None). Showing both prints the count twice. Per-group mini-pagers are unaffected; they have no sibling summary and always state their own range."
+    },
+    {
       "name": "TitleField",
       "type": "Func<TItem, string>?",
       "isRequired": false,

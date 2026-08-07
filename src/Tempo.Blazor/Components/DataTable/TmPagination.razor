@@ -4,9 +4,12 @@
 <div class="tm-pagination @Class @(Disabled ? "tm-pagination-disabled" : "")"
      data-testid="@RootTestId("pagination")"
      @attributes="AdditionalAttributes">
-    <span class="tm-pagination-info" data-testid="@TestId("pagination-info")">
-        @Loc["TmDataTable_Pagination", StartItem, EndItem, TotalCount]
-    </span>
+    @if (ShowInfo)
+    {
+        <span class="tm-pagination-info" data-testid="@TestId("pagination-info")">
+            @Loc["TmDataTable_Pagination", StartItem, EndItem, TotalCount]
+        </span>
+    }
 
     <div class="tm-pagination-controls">
         <button class="tm-pagination-btn tm-pagination-prev"
@@ -85,6 +88,14 @@
 
     /// <summary>Whether the pagination is disabled.</summary>
     [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>
+    /// Whether the "X–Y of Z" item range label is rendered inside the pagination bar. Defaults to
+    /// <c>true</c>, which is what a standalone pager needs. A host that already states the range next to
+    /// the pager — as <c>TmDataTable</c> does with its own summary — sets this to <c>false</c> so the
+    /// count is not printed twice.
+    /// </summary>
+    [Parameter] public bool ShowInfo { get; set; } = true;
 
     /// <summary>Additional CSS class.</summary>
     [Parameter] public string? Class { get; set; }

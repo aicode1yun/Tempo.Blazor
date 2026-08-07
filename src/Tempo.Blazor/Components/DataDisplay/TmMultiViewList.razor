@@ -211,14 +211,18 @@
     @if (ShowPagination && _totalPages > 1 && ScrollMode == DataTableScrollMode.Pagination && !IsGrouped)
     {
         <div class="tm-pagination-container">
-            <div class="tm-pagination-info">
-                @Loc["TmDataTable_ShowingItems", ((_currentPage - 1) * _pageSize) + 1, Math.Min(_currentPage * _pageSize, _totalCount), _totalCount]
-            </div>
+            @if (PaginationInfoPlacement == DataTablePaginationInfoPlacement.Summary)
+            {
+                <div class="tm-pagination-info">
+                    @Loc["TmDataTable_ShowingItems", ((_currentPage - 1) * _pageSize) + 1, Math.Min(_currentPage * _pageSize, _totalCount), _totalCount]
+                </div>
+            }
             <div class="tm-pagination-center">
                 <TmPagination CurrentPage="@_currentPage"
                               TotalPages="@_totalPages"
                               TotalCount="@_totalCount"
                               PageSize="@_pageSize"
+                              ShowInfo="@(PaginationInfoPlacement == DataTablePaginationInfoPlacement.Pagination)"
                               OnPageChange="GoToPageAsync"
                               OnPageSizeChange="ChangePageSizeAsync" />
             </div>
@@ -237,6 +241,15 @@
 
     /// <summary>When true, shows pagination bar when more than one page. Default: true.</summary>
     [Parameter] public bool ShowPagination { get; set; } = true;
+
+    /// <summary>
+    /// Which of the two item-range labels in the paging footer is rendered — the list's own summary or the
+    /// one inside the embedded <see cref="TmPagination"/>. Showing both prints the count twice.
+    /// Default: <see cref="DataTablePaginationInfoPlacement.Summary"/>.
+    /// Per-group mini-pagers are unaffected; they have no sibling summary and always state their own range.
+    /// </summary>
+    [Parameter] public DataTablePaginationInfoPlacement PaginationInfoPlacement { get; set; }
+        = DataTablePaginationInfoPlacement.Summary;
 
     /// <summary>Default page size for pagination. Default: 25.</summary>
     [Parameter] public int DefaultPageSize { get; set; } = 25;

@@ -190,4 +190,77 @@ public class TmDataTablePaginationTests : LocalizationTestBase
 
         cut.Find("[data-testid='pagination-summary']").TextContent.Trim().Should().Be("21-22/22");
     }
+
+    // ── Where the item range is printed ───────────────────────────
+    //
+    // Both the table's summary and the embedded TmPagination know the range, and both used to render it,
+    // so the footer stated the count twice next to itself. Exactly one of them may show it.
+
+    [Fact]
+    public void DataTable_PaginationFooter_StatesTheItemRangeExactlyOnce()
+    {
+        var cut = Render<TmDataTable<PagePerson>>(p => p
+            .Add(c => c.Items, MakePeople(50))
+            .Add(c => c.DefaultPageSize, 10));
+
+        cut.FindAll(".tm-pagination-container .tm-pagination-info").Should().ContainSingle();
+    }
+
+    [Fact]
+    public void DataTable_ByDefault_TheRangeIsTheTableSummary_NotThePagerLabel()
+    {
+        var cut = Render<TmDataTable<PagePerson>>(p => p
+            .Add(c => c.Items, MakePeople(50))
+            .Add(c => c.DefaultPageSize, 10));
+
+        cut.Find("[data-testid='pagination-summary']").TextContent.Should().Contain("50");
+        cut.FindAll("[data-testid='pagination-info']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void DataTable_PaginationInfoPlacement_Pagination_MovesTheRangeIntoThePager()
+    {
+        var cut = Render<TmDataTable<PagePerson>>(p => p
+            .Add(c => c.Items, MakePeople(50))
+            .Add(c => c.DefaultPageSize, 10)
+            .Add(c => c.PaginationInfoPlacement, DataTablePaginationInfoPlacement.Pagination));
+
+        cut.Find("[data-testid='pagination-info']").TextContent.Should().Contain("50");
+        cut.FindAll("[data-testid='pagination-summary']").Should().BeEmpty();
+        cut.FindAll(".tm-pagination-container .tm-pagination-info").Should().ContainSingle();
+    }
+
+    [Fact]
+    public void DataTable_PaginationInfoPlacement_None_LeavesOnlyThePageControls()
+    {
+        var cut = Render<TmDataTable<PagePerson>>(p => p
+            .Add(c => c.Items, MakePeople(50))
+            .Add(c => c.DefaultPageSize, 10)
+            .Add(c => c.PaginationInfoPlacement, DataTablePaginationInfoPlacement.None));
+
+        cut.FindAll(".tm-pagination-container .tm-pagination-info").Should().BeEmpty();
+        cut.Find("[data-testid='pagination-next']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void DataTable_PaginationInfoPlacement_Pagination_DoesNotRenderTheSummaryTemplate()
+    {
+        // PaginationInfoTemplate customises the table's own summary; moving the range into the pager
+        // means the pager's own localized wording is what shows, and the template is simply not rendered.
+        var templateWasRendered = false;
+        RenderFragment<DataTablePaginationInfo> template = _ => builder =>
+        {
+            templateWasRendered = true;
+            builder.AddContent(0, "host wording");
+        };
+
+        var cut = Render<TmDataTable<PagePerson>>(p => p
+            .Add(c => c.Items, MakePeople(22))
+            .Add(c => c.DefaultPageSize, 10)
+            .Add(c => c.PaginationInfoTemplate, template)
+            .Add(c => c.PaginationInfoPlacement, DataTablePaginationInfoPlacement.Pagination));
+
+        templateWasRendered.Should().BeFalse();
+        cut.Find("[data-testid='pagination-info']").TextContent.Should().NotContain("host wording");
+    }
 }
