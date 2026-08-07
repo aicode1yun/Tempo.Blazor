@@ -1,5 +1,108 @@
 # Changelog
 
+## 2.8.9 - 2026-08-07
+
+### Added
+
+- **`TmDataTable.DefaultSortColumn` / `DefaultSortDirection`** — the order a table is in *before* the
+  user touches a header. Sorting is tri-state (ascending → descending → none) and always started at
+  "none", so a page whose list had previously arrived pre-sorted had no way to say so: not through a
+  parameter, and not through `LayoutStore`, which persists column widths and pin state only. The only
+  remaining route was to fake a header click during startup, and that is a *different* state — it
+  leaves the cycle one step along, so the user's next real click clears the sort instead of reversing
+  it. The parameters take a column key (`PropertyName`, falling back to `Title`) and a
+  `DataTableSortDirection`, and both defaults are unchanged behaviour: with `DefaultSortColumn` null
+  the table still starts unsorted.
+  - The default is seeded during initialization **before** the first data load, so a server-side
+    `IDataTableDataProvider` receives it as `SortColumn`/`SortDescending` in its very first query. A
+    table that sorted only after fetching would otherwise show page one of the *provider's* order
+    re-sorted in place — the wrong rows entirely, not merely the wrong order.
+  - It is a starting state, not a floor. Clicking cycles on from it (from `Ascending`, the first click
+    on that same column sorts descending and the second clears the sort), applying a saved view
+    replaces it, and an unknown key simply leaves the table unsorted rather than throwing.
+  - The column does not have to be `Sortable`. A non-sortable column still orders the data, it just
+    does not advertise `aria-sort` or respond to clicks — which is how you express "this list has a
+    fixed order the user cannot change".
+- **`TmPagination.ShowInfo`** (default `true`) — whether the pager renders its own "X–Y of Z" label.
+  Standalone pagers keep it; a host that already states the range beside the pager turns it off.
+- **`TmDataTable.ResetPageAsync()`** — the public way back to page one, for a host that narrows the
+  result set itself. A page that owns its filter surface (`ToolbarMode=ContentOnly`, feeding the table
+  pre-filtered `Items` or a `DataProvider`) hands over an already-narrowed list, and the table cannot
+  tell a new query from the same list arriving again: `RefreshClientItems` only clamps the current page
+  **down** to the new last page. So searching while on page 3 left the user on page 3 — reading the tail
+  of the new results — and the reset built into the table's own search box is never reached, because the
+  host did the searching. There was no public member that could fix it either: `GoToPageAsync` is
+  private, and handing the table `SearchText` to trigger its reset has side effects (it switches on the
+  built-in client-side filtering over the host's server-side filter).
+  - Deliberately **not** automatic on an `Items` reference change: a table re-polling the same list on a
+    timer would then yank a reading user back to page 1 on every refresh. The host knows which change is
+    a new query; the table does not.
+
+### Fixed (accessibility)
+
+- **Sorting was mouse-only (WCAG 2.1.1 Keyboard).** The click handler sits on the `<th>`, which is a
+  plain element — no `tabindex`, no key handler — so a keyboard user could not sort a table at all. The
+  sortable header is now a focus stop and answers **Enter** and **Space**, with **Shift** mirroring the
+  multi-sort modifier of Shift-click; `aria-sort` already carried the state. The target stays the `<th>`
+  itself rather than becoming a `<button>`: the header also hosts the consumer's `HeaderTemplate`, the
+  pin toggle and the resize handle, so a wrapping button would nest interactive elements. Non-sortable
+  headers are not focus stops. The pin toggle now stops keydown propagation, so operating it with the
+  keyboard does not also sort the column. The global `:focus-visible` ring covers the new focus stop.
+
+### Fixed
+
+- **`TmDataTable` printed the item count twice.** The paging footer rendered the range in the table's
+  own summary (`pagination-summary`) *and* again inside the embedded `TmPagination`
+  (`pagination-info`), side by side, so every paginated table showed "Showing 1–10 of 22   1–10 of 22".
+  2.8.8 flagged this as knowingly not done, because removing either one is a visual change to a
+  shipped component; it is done now, and the consumer picks which one via the new
+  **`TmDataTable.PaginationInfoPlacement`**:
+  - `Summary` (**default**) — the table's summary on the left of the footer. This is the placement
+    that honours `PaginationInfoTemplate` and the `TmDataTable_ShowingItems` resource, so the wording
+    a host had already customized is the wording that survives.
+  - `Pagination` — the range moves into the pager itself (`TmDataTable_Pagination` resource), matching
+    how a standalone `TmPagination` looks.
+  - `None` — page controls only.
+
+  Exactly one of the two `data-testid`s now exists in the DOM at a time, which is also what makes the
+  duplication impossible to reintroduce silently.
+- **The same duplication in `TmMultiViewList`**, which embeds `TmPagination` under its own identical
+  summary. It gets the same `PaginationInfoPlacement` parameter with the same default. Its per-group
+  mini-pagers are untouched: they have no sibling summary, so they keep stating their own range.
+- **`TmDataTableColumn.Align` did nothing inside a data table.** The markup was never at fault — the
+  table has always put `tm-text-center` / `tm-text-right` on both the `th` and its `td`s. The
+  stylesheet discarded them: `.tm-data-table th, .tm-data-table td { text-align: left }` is a class
+  plus a type (specificity 0-1-1) while the helpers `.tm-text-right` / `.tm-text-center` are a bare
+  class (0-1-0), so the base rule won every column regardless of source order. Applications did not
+  notice in the body because a right-aligned cell usually holds its own flex container that aligns
+  itself; a header is bare text, so an actions column read `Align="Right"` and rendered its cells
+  right but its **header left**. The helpers are now re-stated at the table's own specificity, so
+  `Align` reaches the header and the cells together.
+
+### Internal
+
+- 42 new bUnit test cases: `TmDataTableDefaultSortTests` (13, including the two server-side cases that
+  assert the default reaches the *first* provider query), `TmDataTableAlignmentTests` (9 cases from 5
+  methods), `TmDataTableKeyboardSortTests` (8), `TmDataTableResetPageTests` (5),
+  `TmDataTablePaginationTests` (+5), `TmPaginationTests` (+2). The `DataTable` namespace goes from 246
+  to 288 tests.
+- `TmDataTableResetPageTests` pins the regression itself, not only the fix: one test asserts that
+  without `ResetPageAsync` a narrowed result set leaves the user on the clamped last page, so the fix is
+  measured against the behaviour that was actually there.
+- The alignment fix is CSS-only, so a class assertion could not have caught it — the class was always
+  present. `TmDataTableAlignmentTests` therefore resolves the cascade out of the shipped
+  `_data-table.css`: it parses the rules, matches them against a modelled
+  `<table class="tm-data-table"> … <th class="tm-text-right">` chain, and asserts the `text-align`
+  that actually wins on specificity-then-source-order. Mutation-checked: deleting the four-line fix
+  from the stylesheet turns **exactly** the four cascade assertions red, and they report `left` — the
+  real defect — while the class-list assertions stay green, which is precisely the blind spot they had.
+- `JsonDocumentation` updated for the MCP server: `DefaultSortColumn`, `DefaultSortDirection` and
+  `PaginationInfoPlacement` on `TmDataTable`, `ShowInfo` on `TmPagination`, `PaginationInfoPlacement`
+  on `TmMultiViewList`.
+- Not done, and unchanged from 2.8.8: `TmMultiViewList` and `TmTreeList` still do not derive from
+  `TmComponentBase`, so their embedded pagers have no `TestIdPrefix` to forward and emit the bare
+  `pagination-*` ids.
+
 ## 2.8.8 - 2026-08-07
 
 ### Added
