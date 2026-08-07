@@ -1,5 +1,6 @@
 using Bunit;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components;
 using Tempo.Blazor.Components.DataTable;
 using Tempo.Blazor.Tests.Localization;
 
@@ -85,5 +86,108 @@ public class TmDataTablePaginationTests : LocalizationTestBase
             .Add(c => c.ShowPagination, false));
 
         cut.FindAll(".tm-pagination").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void DataTable_Pagination_ExposesTestIds_ForControlsAndSummary()
+    {
+        var cut = Render<TmDataTable<PagePerson>>(p => p
+            .Add(c => c.Items, MakePeople(50))
+            .Add(c => c.DefaultPageSize, 10));
+
+        cut.Find("[data-testid='pagination-container']").Should().NotBeNull();
+        cut.Find("[data-testid='pagination-summary']").TextContent.Should().Contain("50");
+        cut.Find("[data-testid='pagination-prev']").Should().NotBeNull();
+        cut.Find("[data-testid='pagination-next']").Should().NotBeNull();
+        cut.Find("[data-testid='pagination-page-2']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void DataTable_TestIdPrefix_IsPropagatedIntoTheBuiltInPagination()
+    {
+        var cut = Render<TmDataTable<PagePerson>>(p => p
+            .Add(c => c.Items, MakePeople(50))
+            .Add(c => c.DefaultPageSize, 10)
+            .Add(c => c.TestIdPrefix, "people"));
+
+        cut.Find("[data-testid='people-pagination']").Should().NotBeNull();
+        cut.Find("[data-testid='people-pagination-next']").Should().NotBeNull();
+        cut.Find("[data-testid='people-pagination-page-2']").Should().NotBeNull();
+        cut.Find("[data-testid='people-pagination-summary']").Should().NotBeNull();
+
+        // Two prefixed tables on one page must not collide on the bare ids.
+        cut.FindAll("[data-testid='pagination-next']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void DataTable_PaginationAttributes_AreSplattedOntoThePaginationRoot()
+    {
+        var cut = Render<TmDataTable<PagePerson>>(p => p
+            .Add(c => c.Items, MakePeople(50))
+            .Add(c => c.DefaultPageSize, 10)
+            .Add(c => c.PaginationAttributes, new Dictionary<string, object>
+            {
+                ["aria-label"] = "People pages",
+            }));
+
+        cut.Find(".tm-pagination").GetAttribute("aria-label").Should().Be("People pages");
+    }
+
+    [Fact]
+    public void DataTable_ClickingPageTestId_NavigatesToThatPage()
+    {
+        var cut = Render<TmDataTable<PagePerson>>(p =>
+        {
+            p.Add(c => c.Items, MakePeople(30));
+            p.Add(c => c.DefaultPageSize, 10);
+            p.AddChildContent<TmDataTableColumn<PagePerson>>(cp => cp
+                .Add(c => c.Title, "Name")
+                .Add(c => c.Field, (Func<PagePerson, object?>)(x => x.Name)));
+        });
+
+        cut.Find("[data-testid='pagination-page-3']").Click();
+
+        var rows = cut.FindAll("tbody tr");
+        rows.Count.Should().Be(10);
+        rows[0].TextContent.Should().Contain("Person 21");
+        cut.Find("[aria-current='page']").GetAttribute("data-testid").Should().Be("pagination-page-3");
+    }
+
+    [Fact]
+    public void DataTable_PaginationInfoTemplate_ReplacesTheBuiltInSummary()
+    {
+        DataTablePaginationInfo? captured = null;
+        RenderFragment<DataTablePaginationInfo> template = info => builder =>
+        {
+            captured = info;
+            builder.AddContent(0, $"Page {info.CurrentPage} of {info.TotalPages} ({info.TotalCount} records)");
+        };
+
+        var cut = Render<TmDataTable<PagePerson>>(p => p
+            .Add(c => c.Items, MakePeople(22))
+            .Add(c => c.DefaultPageSize, 10)
+            .Add(c => c.PaginationInfoTemplate, template));
+
+        cut.Find("[data-testid='pagination-summary']").TextContent.Trim()
+            .Should().Be("Page 1 of 3 (22 records)");
+
+        captured.Should().Be(new DataTablePaginationInfo(
+            CurrentPage: 1, TotalPages: 3, PageSize: 10, TotalCount: 22, StartItem: 1, EndItem: 10));
+    }
+
+    [Fact]
+    public void DataTable_PaginationInfoTemplate_SeesTheItemRangeOfTheLastPage()
+    {
+        RenderFragment<DataTablePaginationInfo> template = info => builder =>
+            builder.AddContent(0, $"{info.StartItem}-{info.EndItem}/{info.TotalCount}");
+
+        var cut = Render<TmDataTable<PagePerson>>(p => p
+            .Add(c => c.Items, MakePeople(22))
+            .Add(c => c.DefaultPageSize, 10)
+            .Add(c => c.PaginationInfoTemplate, template));
+
+        cut.Find("[data-testid='pagination-page-3']").Click();
+
+        cut.Find("[data-testid='pagination-summary']").TextContent.Trim().Should().Be("21-22/22");
     }
 }

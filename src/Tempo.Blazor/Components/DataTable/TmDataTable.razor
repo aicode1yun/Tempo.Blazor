@@ -460,10 +460,17 @@
     @* ── Pagination ───────────────────────────────────────────── *@
     @if (ShowPagination && _totalPages > 1 && ScrollMode == DataTableScrollMode.Pagination && _groupByColumns.Count == 0)
     {
-        <div class="tm-pagination-container">
+        <div class="tm-pagination-container" data-testid="@TestId("pagination-container")">
             @* Left: Info *@
-            <div class="tm-pagination-info">
-                @Loc["TmDataTable_ShowingItems", ((_currentPage - 1) * _pageSize) + 1, Math.Min(_currentPage * _pageSize, _totalCount), _totalCount]
+            <div class="tm-pagination-info" data-testid="@TestId("pagination-summary")">
+                @if (PaginationInfoTemplate is not null)
+                {
+                    @PaginationInfoTemplate(CurrentPaginationInfo)
+                }
+                else
+                {
+                    @Loc["TmDataTable_ShowingItems", CurrentPaginationInfo.StartItem, CurrentPaginationInfo.EndItem, _totalCount]
+                }
             </div>
 
             @* Center: Page controls + Page size (vše v jednom) *@
@@ -473,6 +480,8 @@
                               TotalCount="@_totalCount"
                               PageSize="@_pageSize"
                               PageSizeOptions="PageSizeOptions"
+                              TestIdPrefix="@TestIdPrefix"
+                              AdditionalAttributes="PaginationAttributes"
                               OnPageChange="GoToPageAsync"
                               OnPageSizeChange="ChangePageSizeAsync" />
             </div>

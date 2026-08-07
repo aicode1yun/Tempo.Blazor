@@ -21419,6 +21419,16 @@
       ]
     },
     {
+      "kind": "Interface",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+      "description": "Extends aggregate persistence with a durable, atomic idempotent execution boundary.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Interfaces/INotionIdempotentAggregateProvider.cs",
+      "documentationStatus": "generated",
+      "itemName": "INotionIdempotentAggregateProvider"
+    },
+    {
       "itemName": "INotionImportExportProvider",
       "kind": "Interface",
       "category": "Notion Editor",
@@ -23197,6 +23207,36 @@
           ]
         }
       ]
+    },
+    {
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Provider-neutral metadata for one idempotent aggregate operation.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionIdempotencyContracts.cs",
+      "documentationStatus": "generated",
+      "itemName": "NotionIdempotentExecutionRequest"
+    },
+    {
+      "kind": "Class",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Provider result containing an opaque authoring response when available.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionIdempotencyContracts.cs",
+      "documentationStatus": "generated",
+      "itemName": "NotionIdempotentExecutionResult"
+    },
+    {
+      "kind": "Enum",
+      "category": "Notion Editor",
+      "namespace": "Tempo.Blazor.NotionEditor.Models",
+      "description": "Outcome of a provider-level idempotent aggregate execution.",
+      "packageId": "Tempo.Blazor.Abstractions",
+      "sourcePath": "src/Tempo.Blazor.Abstractions/NotionEditor/Models/NotionIdempotencyContracts.cs",
+      "documentationStatus": "generated",
+      "itemName": "NotionIdempotentExecutionStatus"
     },
     {
       "itemName": "NotionImportFormat",
@@ -35888,11 +35928,11 @@
   ],
   "libraryExamples": [],
   "summary": {
-    "itemCount": 1468,
+    "itemCount": 1472,
     "manualItemCount": 1468,
-    "generatedItemCount": 1451,
-    "generatedOnlyItemCount": 0,
+    "generatedItemCount": 1455,
+    "generatedOnlyItemCount": 4,
     "componentCount": 0,
-    "publicApiTypeCount": 1451
+    "publicApiTypeCount": 1455
   }
 }

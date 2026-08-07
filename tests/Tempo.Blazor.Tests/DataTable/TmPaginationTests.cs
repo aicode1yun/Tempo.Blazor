@@ -118,4 +118,90 @@ public class TmPaginationTests : LocalizationTestBase
         cut.Find(".tm-pagination-info").TextContent.Should().Contain("20");
         cut.Find(".tm-pagination-info").TextContent.Should().Contain("50");
     }
+
+    [Fact]
+    public void Pagination_EmitsDefaultTestIds_ForEveryControl()
+    {
+        var cut = Render<TmPagination>(p => p
+            .Add(c => c.CurrentPage, 2)
+            .Add(c => c.TotalPages, 5)
+            .Add(c => c.TotalCount, 50)
+            .Add(c => c.PageSize, 10)
+            .Add(c => c.PageSizeOptions, new[] { 10, 25 }));
+
+        cut.Find("[data-testid='pagination']").ClassList.Should().Contain("tm-pagination");
+        cut.Find("[data-testid='pagination-info']").TextContent.Should().Contain("11");
+        cut.Find("[data-testid='pagination-prev']").ClassList.Should().Contain("tm-pagination-prev");
+        cut.Find("[data-testid='pagination-next']").ClassList.Should().Contain("tm-pagination-next");
+        cut.Find("[data-testid='pagination-page-3']").TextContent.Trim().Should().Be("3");
+        cut.Find("[data-testid='pagination-page-size']").TagName.Should().Be("SELECT");
+    }
+
+    [Fact]
+    public void Pagination_TestIdPrefix_NamespacesEveryTestId()
+    {
+        var cut = Render<TmPagination>(p => p
+            .Add(c => c.CurrentPage, 2)
+            .Add(c => c.TotalPages, 5)
+            .Add(c => c.TotalCount, 50)
+            .Add(c => c.PageSize, 10)
+            .Add(c => c.PageSizeOptions, new[] { 10, 25 })
+            .Add(c => c.TestIdPrefix, "users"));
+
+        cut.Find("[data-testid='users-pagination']").Should().NotBeNull();
+        cut.Find("[data-testid='users-pagination-info']").Should().NotBeNull();
+        cut.Find("[data-testid='users-pagination-prev']").Should().NotBeNull();
+        cut.Find("[data-testid='users-pagination-next']").Should().NotBeNull();
+        cut.Find("[data-testid='users-pagination-page-3']").Should().NotBeNull();
+        cut.Find("[data-testid='users-pagination-page-size']").Should().NotBeNull();
+
+        // The unprefixed ids must be gone, otherwise two prefixed instances would still collide.
+        cut.FindAll("[data-testid='pagination-next']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Pagination_DataTestId_OverridesRootTestId_ButNotTheParts()
+    {
+        var cut = Render<TmPagination>(p => p
+            .Add(c => c.CurrentPage, 1)
+            .Add(c => c.TotalPages, 5)
+            .Add(c => c.TotalCount, 50)
+            .Add(c => c.PageSize, 10)
+            .Add(c => c.DataTestId, "pager-of-invoices"));
+
+        cut.Find("[data-testid='pager-of-invoices']").ClassList.Should().Contain("tm-pagination");
+        cut.Find("[data-testid='pagination-next']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Pagination_ActivePageButton_IsMarkedAriaCurrent()
+    {
+        var cut = Render<TmPagination>(p => p
+            .Add(c => c.CurrentPage, 3)
+            .Add(c => c.TotalPages, 5)
+            .Add(c => c.TotalCount, 50)
+            .Add(c => c.PageSize, 10));
+
+        var current = cut.FindAll("[aria-current='page']");
+        current.Count.Should().Be(1);
+        current[0].GetAttribute("data-testid").Should().Be("pagination-page-3");
+
+        cut.Find("[data-testid='pagination-page-2']").HasAttribute("aria-current").Should().BeFalse();
+    }
+
+    [Fact]
+    public void Pagination_HostSplattedAttributes_StillReachTheRoot()
+    {
+        var cut = Render<TmPagination>(p => p
+            .Add(c => c.CurrentPage, 1)
+            .Add(c => c.TotalPages, 5)
+            .Add(c => c.TotalCount, 50)
+            .Add(c => c.PageSize, 10)
+            .AddUnmatched("data-testid", "host-owned-pager")
+            .AddUnmatched("aria-label", "Invoice pages"));
+
+        var root = cut.Find(".tm-pagination");
+        root.GetAttribute("data-testid").Should().Be("host-owned-pager");
+        root.GetAttribute("aria-label").Should().Be("Invoice pages");
+    }
 }

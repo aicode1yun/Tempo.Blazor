@@ -1,12 +1,16 @@
 @namespace Tempo.Blazor.Components.DataTable
+@inherits Tempo.Blazor.Components.TmComponentBase
 
-<div class="tm-pagination @Class @(Disabled ? "tm-pagination-disabled" : "")" @attributes="AdditionalAttributes">
-    <span class="tm-pagination-info">
+<div class="tm-pagination @Class @(Disabled ? "tm-pagination-disabled" : "")"
+     data-testid="@RootTestId("pagination")"
+     @attributes="AdditionalAttributes">
+    <span class="tm-pagination-info" data-testid="@TestId("pagination-info")">
         @Loc["TmDataTable_Pagination", StartItem, EndItem, TotalCount]
     </span>
 
     <div class="tm-pagination-controls">
         <button class="tm-pagination-btn tm-pagination-prev"
+                data-testid="@TestId("pagination-prev")"
                 @onclick="PrevPage"
                 disabled="@(CurrentPage <= 1)"
                 aria-label="@Loc["Tm_Previous"]">
@@ -22,6 +26,8 @@
             else
             {
                 <button class="tm-page-btn @(pageNum == CurrentPage ? "tm-page-btn-active" : "")"
+                        data-testid="@TestId($"pagination-page-{pageNum}")"
+                        aria-current="@(pageNum == CurrentPage ? "page" : null)"
                         @onclick="() => GoToPage(pageNum)">
                     @pageNum
                 </button>
@@ -29,6 +35,7 @@
         }
 
         <button class="tm-pagination-btn tm-pagination-next"
+                data-testid="@TestId("pagination-next")"
                 @onclick="NextPage"
                 disabled="@(CurrentPage >= TotalPages)"
                 aria-label="@Loc["Tm_Next"]">
@@ -41,6 +48,7 @@
         <div class="tm-pagination-size">
             <label class="tm-pagination-size-label">@Loc["TmDataTable_PageSize"]</label>
             <select class="tm-pagination-page-size"
+                    data-testid="@TestId("pagination-page-size")"
                     value="@PageSize"
                     aria-label="@Loc["TmDataTable_PageSize"]"
                     @onchange="OnPageSizeSelectChange">
@@ -54,12 +62,25 @@
 </div>
 
 @code {
+    /// <summary>1-based index of the page currently displayed. Defaults to 1.</summary>
     [Parameter] public int CurrentPage { get; set; } = 1;
+
+    /// <summary>Total number of pages.</summary>
     [Parameter] public int TotalPages { get; set; }
+
+    /// <summary>Total number of items across all pages.</summary>
     [Parameter] public int TotalCount { get; set; }
+
+    /// <summary>Number of items per page. Defaults to 25.</summary>
     [Parameter] public int PageSize { get; set; } = 25;
+
+    /// <summary>Page sizes offered by the page size selector. When null or empty the selector is not rendered.</summary>
     [Parameter] public IReadOnlyList<int>? PageSizeOptions { get; set; }
+
+    /// <summary>Invoked with the requested 1-based page number, already clamped to the valid range.</summary>
     [Parameter] public EventCallback<int> OnPageChange { get; set; }
+
+    /// <summary>Invoked with the page size picked in the page size selector.</summary>
     [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
 
     /// <summary>Whether the pagination is disabled.</summary>

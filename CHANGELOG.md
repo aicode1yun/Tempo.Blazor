@@ -1,5 +1,58 @@
 # Changelog
 
+## 2.8.8 - 2026-08-07
+
+### Added
+
+- **`TmPagination` is addressable from the outside.** It had no test hook of any kind: the only way
+  to reach the prev/next buttons, a specific page button or the item-range text was to select on the
+  presentational CSS classes (`.tm-pagination-next`, `.tm-page-btn:nth-child(n)`), which makes a
+  consumer's suite break on any styling refactor and gives it no way to tell two pagers apart. The
+  component now derives from `TmComponentBase` and renders the library's `data-testid` convention:
+  `pagination` on the root, `pagination-info` on the item-range text, `pagination-prev` /
+  `pagination-next` on the step buttons, `pagination-page-{n}` on each page button, and
+  `pagination-page-size` on the page size `<select>`. `TestIdPrefix` namespaces all of them
+  (`users-pagination-next`), `DataTestId` overrides the root id only. With neither set the bare ids
+  are used, so this is additive markup — no existing selector, class or style changes.
+- **`TmDataTable` propagates the hooks into its built-in pagination.** This was the actual blocker:
+  the table splats `AdditionalAttributes` onto its own wrapper but passed nothing to the embedded
+  `TmPagination`, so a consumer that had migrated its own pager to `TmDataTable` lost every handle on
+  the paging controls. The table's `TestIdPrefix` is now forwarded to the pagination, and the paging
+  footer carries `pagination-container` (the footer row) and `pagination-summary` (the table's own
+  "showing X–Y of Z" text, which is a *different* element from the pagination's `pagination-info`).
+- **`TmDataTable.PaginationAttributes`** — a `Dictionary<string, object>?` splatted onto the built-in
+  pagination's root element, for host-owned attributes that are not test ids (analytics ids, extra
+  ARIA).
+- **`TmDataTable.PaginationInfoTemplate`** — replaces the built-in `TmDataTable_ShowingItems` summary
+  with host markup. The context is the new `DataTablePaginationInfo` record (`CurrentPage`,
+  `TotalPages`, `PageSize`, `TotalCount`, `StartItem`, `EndItem`), so an application migrating its own
+  table to `TmDataTable` can keep its established wording — e.g. "Page 1 of 3 (22 records)" — instead
+  of being forced onto the library's phrasing. The resource key stays the default when the template is
+  null; no localization keys were added or changed in this release.
+- **The active page button is marked `aria-current="page"`.** It previously carried only the
+  `tm-page-btn-active` class, so assistive technology had no way to announce which page is current,
+  and a test had to assert on a styling class to find it.
+
+### Internal
+
+- Per-group mini-pagers (server-side group paging) get `TestIdPrefix` = `{table prefix-}group-{group
+  key}`, so several group pagers on one table stay individually targetable instead of all answering
+  to `pagination-next`.
+- 11 new bUnit tests (`TmPaginationTests`, `TmDataTablePaginationTests`). Verified: the whole
+  `Tempo.Blazor.Tests` suite is green at **9272/9272** on net10.0 with the change in.
+- Mutation-checked, because "the ids are there" is easy to assert vacuously: removing the
+  `TestIdPrefix="@TestIdPrefix"` propagation from `TmDataTable.razor` turns **exactly one** test red
+  (`DataTable_TestIdPrefix_IsPropagatedIntoTheBuiltInPagination`) and leaves the other 245 DataTable
+  tests green — the prefixed-id assertions are the only thing holding that wire, and they do hold it.
+- Not done, and it is a real gap: `TmMultiViewList` and `TmTreeList` also embed `TmPagination` but do
+  not derive from `TmComponentBase`, so they have no `TestIdPrefix` to forward. Their pagers emit the
+  bare `pagination-*` ids. A page that puts one of them next to a `TmDataTable` must set
+  `TestIdPrefix` on the table, otherwise the two pagers answer to the same ids.
+- Also not done: inside a `TmDataTable` the item range is rendered **twice** — once by the table
+  (`pagination-summary`) and once by `TmPagination` itself (`pagination-info`). That predates this
+  release; removing either one is a visual change to a shipped component and did not belong in a
+  test-hook release. The two ids at least tell them apart now.
+
 ## 2.8.7 - 2026-08-02
 
 ### Fixed

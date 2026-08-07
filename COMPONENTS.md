@@ -3469,12 +3469,21 @@ Kompletní datová tabulka s řazením, filtrováním, stránkováním, grouping
 | `ShowPagination` | `bool` | `true` | Stránkování |
 | `DefaultPageSize` | `int` | `25` | Výchozí stránka |
 | `PageSizeOptions` | `IReadOnlyList<int>` | `[5,10,25,50,100]` | Možnosti velikosti stránky |
+| `PaginationAttributes` | `Dictionary<string, object>?` | `null` | Atributy splatnuté na kořen vestavěné `TmPagination` |
+| `PaginationInfoTemplate` | `RenderFragment<DataTablePaginationInfo>?` | `null` | Nahradí vestavěný text „zobrazeno X–Y z Z" vlastním |
 | `ScrollMode` | `DataTableScrollMode` | `Pagination` | `Pagination` / `Virtualized` |
 | `ShowGrouping` | `bool` | `false` | Povolit grouping |
 | `OnRowClick` | `EventCallback<TItem>` | — | Klik na řádek |
 | `OnSelectionChanged` | `EventCallback<IReadOnlyList<TItem>>` | — | Změna výběru |
 | `ViewContext` | `string` | **povinný** | Unikátní ID pro ukládání view |
 | `AdditionalAttributes` | `Dictionary<string, object>?` | `null` | Další HTML atributy |
+| `TestIdPrefix` | `string?` | `null` | Prefix pro `data-testid` tabulky; **propaguje se i do vestavěné `TmPagination`** |
+| `DataTestId` | `string?` | `null` | Přebije `data-testid` kořenového prvku |
+
+Patička stránkování nese `data-testid="pagination-container"` a text s počtem záznamů
+`data-testid="pagination-summary"`; ovládací prvky přidává vestavěná `TmPagination`
+(`pagination-prev`, `pagination-next`, `pagination-page-{n}`, `pagination-page-size`) — viz
+[TmPagination](#tmpagination). Dvě tabulky na jedné stránce rozliš přes `TestIdPrefix`.
 
 #### TmDataTableColumn\<TItem\>
 
@@ -3575,6 +3584,24 @@ Stránkování (samostatná komponenta).
 | `Disabled` | `bool` | `false` | Zakáže stránkování |
 | `Class` | `string?` | `null` | Další CSS třídy |
 | `AdditionalAttributes` | `Dictionary<string, object>?` | `null` | Další HTML atributy |
+| `TestIdPrefix` | `string?` | `null` | Předřadí prefix všem `data-testid` uvnitř komponenty |
+| `DataTestId` | `string?` | `null` | Přebije `data-testid` kořenového prvku (částí se netýká) |
+
+#### Testovací úchyty (`data-testid`)
+
+Selektuj na ně, ne na CSS třídy — třídy se mění při refaktoru stylů.
+
+| `data-testid` | Prvek |
+|---------------|-------|
+| `pagination` | Kořenový kontejner |
+| `pagination-info` | Text s rozsahem záznamů |
+| `pagination-prev` | Předchozí stránka |
+| `pagination-next` | Následující stránka |
+| `pagination-page-{n}` | Tlačítko konkrétní stránky |
+| `pagination-page-size` | Select velikosti stránky |
+
+S `TestIdPrefix="users"` se všechna id jmenují `users-pagination-…`. Aktivní stránka navíc nese
+`aria-current="page"`.
 
 #### Příklady
 

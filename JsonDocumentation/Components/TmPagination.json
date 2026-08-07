@@ -2,7 +2,7 @@
   "itemName": "TmPagination",
   "kind": "Component",
   "category": "Data Table",
-  "description": "Page navigation control with previous/next buttons, numbered page links with ellipsis for large ranges, optional page-size selector dropdown, and item count display.",
+  "description": "Page navigation control with previous/next buttons, numbered page links with ellipsis for large ranges, optional page-size selector dropdown, and item count display. Test hooks: the root carries data-testid=\"pagination\", the item-range text \"pagination-info\", the step buttons \"pagination-prev\" / \"pagination-next\", each page button \"pagination-page-{n}\" and the page-size select \"pagination-page-size\"; the active page button is marked aria-current=\"page\". TestIdPrefix namespaces all of them (\"users-pagination-next\"), DataTestId overrides the root id only. Select on these, not on the CSS classes.",
   "requiredImports": [
     "@using Tempo.Blazor.Components.DataTable"
   ],

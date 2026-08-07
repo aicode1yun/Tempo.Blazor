@@ -1,0 +1,10 @@
+{
+  "kind": "Record",
+  "category": "Components",
+  "namespace": "Tempo.Blazor.Components.DataTable",
+  "description": "Paging state handed to TmDataTable.PaginationInfoTemplate: CurrentPage, TotalPages, PageSize, TotalCount and the 1-based StartItem/EndItem range of the current page (both 0 when there are no items). Lets a host render its own item-count wording instead of the built-in TmDataTable_ShowingItems text.",
+  "packageId": "Tempo.Blazor",
+  "sourcePath": "src/Tempo.Blazor/Components/DataTable/DataTablePaginationInfo.cs",
+  "documentationStatus": "generated",
+  "itemName": "DataTablePaginationInfo"
+}

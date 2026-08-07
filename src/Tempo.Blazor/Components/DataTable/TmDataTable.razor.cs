@@ -503,6 +503,30 @@ public partial class TmDataTable<TItem> : IDisposable
     [Parameter] public IReadOnlyList<int> PageSizeOptions { get; set; } = [5, 10, 25, 50, 100];
 
     /// <summary>
+    /// Additional HTML attributes splatted onto the built-in <see cref="TmPagination"/> root element.
+    /// Use it to attach host-owned hooks (analytics ids, extra ARIA) to the pagination bar; the
+    /// <c>data-testid</c>s of the pagination controls themselves come from <see cref="TmComponentBase.TestIdPrefix"/>,
+    /// which this table propagates to the pagination automatically.
+    /// </summary>
+    [Parameter] public Dictionary<string, object>? PaginationAttributes { get; set; }
+
+    /// <summary>
+    /// Replaces the built-in "showing X–Y of Z" summary next to the pagination bar. The context carries the
+    /// current paging state (<see cref="DataTablePaginationInfo"/>), so a host can render its own wording
+    /// instead of the library's <c>TmDataTable_ShowingItems</c> resource. When null the localized default is used.
+    /// </summary>
+    [Parameter] public RenderFragment<DataTablePaginationInfo>? PaginationInfoTemplate { get; set; }
+
+    /// <summary>Current paging state as handed to <see cref="PaginationInfoTemplate"/>.</summary>
+    private DataTablePaginationInfo CurrentPaginationInfo => new(
+        CurrentPage: _currentPage,
+        TotalPages: _totalPages,
+        PageSize: _pageSize,
+        TotalCount: _totalCount,
+        StartItem: _totalCount == 0 ? 0 : ((_currentPage - 1) * _pageSize) + 1,
+        EndItem: Math.Min(_currentPage * _pageSize, _totalCount));
+
+    /// <summary>
     /// Optional view persistence provider. When set, enables saved views and (by default) the external filter builder.
     /// Use <see cref="ShowExternalFilterBuilder"/> = false to keep saved views without rendering the inline filter builder,
     /// or <see cref="ToolbarMode"/> = <see cref="DataToolbarMode.ContentOnly"/> when the page owns the filtering UI.
@@ -1674,6 +1698,8 @@ public partial class TmDataTable<TItem> : IDisposable
                         builder.AddComponentParameter(seq++, nameof(TmPagination.PageSize), paging.PageSize);
                         builder.AddComponentParameter(seq++, nameof(TmPagination.PageSizeOptions), (IReadOnlyList<int>?)null);
                         builder.AddComponentParameter(seq++, nameof(TmPagination.Class), "tm-pagination-compact");
+                        // Namespace the per-group pager so several group pagers on one table stay individually targetable.
+                        builder.AddComponentParameter(seq++, nameof(TmPagination.TestIdPrefix), TestId($"group-{capturedKey}"));
                         builder.AddComponentParameter(seq++, nameof(TmPagination.OnPageChange),
                             EventCallback.Factory.Create<int>(this, page => NavigateGroupPageAsync(capturedKey, page)));
                         builder.CloseComponent();

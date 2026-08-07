@@ -310,9 +310,9 @@
               "--tm-color-primary-700": "#1d4ed8",
               "--tm-color-primary-800": "#1e40af",
               "--tm-color-primary-900": "#1e3a8a",
-              "--tm-color-primary": "var(--tm-color-primary-500)",
-              "--tm-color-primary-hover": "var(--tm-color-primary-600)",
-              "--tm-color-primary-active": "var(--tm-color-primary-700)",
+              "--tm-color-primary": "var(--tm-color-primary-600)",
+              "--tm-color-primary-hover": "var(--tm-color-primary-700)",
+              "--tm-color-primary-active": "var(--tm-color-primary-800)",
               "--tm-color-primary-subtle": "var(--tm-color-primary-50)",
               "--tm-color-primary-text": "var(--tm-color-primary-800)"
             }
@@ -388,12 +388,13 @@
             }
           },
           "borders": {
-            "description": "Border colors. --tm-border-color is the decorative divider tone; the boundary of a selection control (checkbox, radio, multiselect option), which conveys the control's state, uses --tm-border-color-control so it stays above the WCAG 1.4.11 3:1 minimum. Retheming a control must go through the -control token, not through --tm-border-color.",
+            "description": "Border colors. --tm-border-color is the decorative divider tone; the boundary of a selection control (checkbox, radio, multiselect option), which conveys the control's state, uses --tm-border-color-control so it stays above the WCAG 1.4.11 3:1 minimum. Retheming a control must go through the -control token, not through --tm-border-color. --tm-control-hover-fill is the fill an UNCHECKED control takes while hovered: the hover used to recolour the outline only, which is a hue change of ~1.05:1 and therefore invisible in greyscale. A palette override must keep the hovered outline (--tm-color-primary) at 3:1 against this fill.",
             "tokens": {
               "--tm-border-color": "var(--tm-color-gray-200)",
               "--tm-border-color-control": "var(--tm-color-gray-500)",
               "--tm-border-color-focus": "var(--tm-color-primary)",
-              "--tm-control-glyph-color": "var(--tm-color-white)"
+              "--tm-control-glyph-color": "var(--tm-color-on-primary)",
+              "--tm-control-hover-fill": "var(--tm-color-primary-100)"
             }
           },
           "text": {
@@ -410,7 +411,7 @@
           "typography": {
             "description": "Font families, sizes, weights, and line heights",
             "tokens": {
-              "--tm-font-sans": "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+              "--tm-font-sans": "'InterVariable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
               "--tm-font-mono": "ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, monospace",
               "--tm-font-size-xs": "0.75rem",
               "--tm-font-size-sm": "0.875rem",
@@ -4175,6 +4176,16 @@
       ]
     },
     {
+      "itemName": "DataTablePaginationInfo",
+      "kind": "Record",
+      "category": "Components",
+      "namespace": "Tempo.Blazor.Components.DataTable",
+      "description": "Paging state handed to TmDataTable.PaginationInfoTemplate: CurrentPage, TotalPages, PageSize, TotalCount and the 1-based StartItem/EndItem range of the current page (both 0 when there are no items). Lets a host render its own item-count wording instead of the built-in TmDataTable_ShowingItems text.",
+      "packageId": "Tempo.Blazor",
+      "sourcePath": "src/Tempo.Blazor/Components/DataTable/DataTablePaginationInfo.cs",
+      "documentationStatus": "merged"
+    },
+    {
       "itemName": "DataTableScrollMode",
       "kind": "Enum",
       "category": "Components",
@@ -7773,7 +7784,7 @@
       "kind": "Component",
       "category": "Data Table",
       "namespace": "Tempo.Blazor.Components.DataTable",
-      "description": "Full-featured data grid with declarative column definitions, client-side and server-side data modes, sorting, inline column filters, global search, row selection with bulk actions, column visibility picker, drag-to-group with multi-level grouping, pagination with per-group mini-pager for server-side grouping, virtualized scrolling, external filter builder, and saved view management.\\n\\nComposition rule: either the owning page filters the data and the table renders a content-only surface (set ToolbarMode=ContentOnly and supply pre-filtered Items/DataProvider), or the table owns filtering via its own toolbar and external filter builder. Avoid enabling both filter surfaces at the same time unless they are explicitly integrated (e.g. the page reads the table's ActiveFilters).",
+      "description": "Full-featured data grid with declarative column definitions, client-side and server-side data modes, sorting, inline column filters, global search, row selection with bulk actions, column visibility picker, drag-to-group with multi-level grouping, pagination with per-group mini-pager for server-side grouping, virtualized scrolling, external filter builder, and saved view management.\\n\\nComposition rule: either the owning page filters the data and the table renders a content-only surface (set ToolbarMode=ContentOnly and supply pre-filtered Items/DataProvider), or the table owns filtering via its own toolbar and external filter builder. Avoid enabling both filter surfaces at the same time unless they are explicitly integrated (e.g. the page reads the table's ActiveFilters).\n\nPagination test hooks: the paging footer carries data-testid=\"pagination-container\" and the table's own item-range text \"pagination-summary\"; the embedded TmPagination contributes \"pagination\", \"pagination-info\", \"pagination-prev\", \"pagination-next\", \"pagination-page-{n}\" and \"pagination-page-size\". TestIdPrefix set on the table is propagated into the embedded pagination, so two tables on one page do not collide. Use PaginationAttributes for non-test attributes on the pagination root and PaginationInfoTemplate (context: DataTablePaginationInfo) to replace the built-in \"showing X-Y of Z\" wording.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/DataTable/TmDataTable.razor",
       "documentationStatus": "merged",
@@ -7965,6 +7976,18 @@
           "isRequired": false,
           "default": "[5, 10, 25, 50, 100]",
           "description": "Page size options shown in the pagination dropdown."
+        },
+        {
+          "name": "PaginationAttributes",
+          "type": "Dictionary<string, object>?",
+          "isRequired": false,
+          "description": "Additional HTML attributes splatted onto the built-in TmPagination root element. Use it to attach host-owned hooks (analytics ids, extra ARIA) to the pagination bar; the data-testids of the pagination controls themselves come from TestIdPrefix, which this table propagates to the pagination automatically."
+        },
+        {
+          "name": "PaginationInfoTemplate",
+          "type": "RenderFragment<DataTablePaginationInfo>?",
+          "isRequired": false,
+          "description": "Replaces the built-in \"showing X–Y of Z\" summary next to the pagination bar. The context carries the current paging state (DataTablePaginationInfo), so a host can render its own wording instead of the library's TmDataTable_ShowingItems resource. When null the localized default is used."
         },
         {
           "name": "RowAttributes",
@@ -8418,7 +8441,7 @@
       "kind": "Component",
       "category": "Data Table",
       "namespace": "Tempo.Blazor.Components.DataTable",
-      "description": "Page navigation control with previous/next buttons, numbered page links with ellipsis for large ranges, optional page-size selector dropdown, and item count display.",
+      "description": "Page navigation control with previous/next buttons, numbered page links with ellipsis for large ranges, optional page-size selector dropdown, and item count display. Test hooks: the root carries data-testid=\"pagination\", the item-range text \"pagination-info\", the step buttons \"pagination-prev\" / \"pagination-next\", each page button \"pagination-page-{n}\" and the page-size select \"pagination-page-size\"; the active page button is marked aria-current=\"page\". TestIdPrefix namespaces all of them (\"users-pagination-next\"), DataTestId overrides the root id only. Select on these, not on the CSS classes.",
       "packageId": "Tempo.Blazor",
       "sourcePath": "src/Tempo.Blazor/Components/DataTable/TmPagination.razor",
       "documentationStatus": "merged",
@@ -8433,47 +8456,54 @@
           "description": "Additional CSS class."
         },
         {
+          "name": "CurrentPage",
+          "type": "int",
+          "isRequired": false,
+          "default": "1",
+          "description": "1-based index of the page currently displayed. Defaults to 1."
+        },
+        {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
           "description": "Whether the pagination is disabled."
         },
         {
+          "name": "OnPageChange",
+          "type": "EventCallback<int>",
+          "isRequired": false,
+          "description": "Invoked with the requested 1-based page number, already clamped to the valid range."
+        },
+        {
           "name": "OnPageSizeChange",
           "type": "EventCallback<int>",
-          "isRequired": false
-        },
-        {
-          "name": "CurrentPage",
-          "type": "int",
           "isRequired": false,
-          "default": "1"
-        },
-        {
-          "name": "TotalPages",
-          "type": "int",
-          "isRequired": false
-        },
-        {
-          "name": "TotalCount",
-          "type": "int",
-          "isRequired": false
+          "description": "Invoked with the page size picked in the page size selector."
         },
         {
           "name": "PageSize",
           "type": "int",
           "isRequired": false,
-          "default": "25"
+          "default": "25",
+          "description": "Number of items per page. Defaults to 25."
         },
         {
           "name": "PageSizeOptions",
           "type": "IReadOnlyList<int>?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Page sizes offered by the page size selector. When null or empty the selector is not rendered."
         },
         {
-          "name": "OnPageChange",
-          "type": "EventCallback<int>",
-          "isRequired": false
+          "name": "TotalCount",
+          "type": "int",
+          "isRequired": false,
+          "description": "Total number of items across all pages."
+        },
+        {
+          "name": "TotalPages",
+          "type": "int",
+          "isRequired": false,
+          "description": "Total number of pages."
         }
       ],
       "cssClasses": [
@@ -18118,6 +18148,18 @@
           "description": "Additional CSS class."
         },
         {
+          "name": "HeaderLeading",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Optional content rendered immediately BEFORE the tab strip, as a SIBLING of the role=\"tablist\" element — never inside it. The tab strip owns a roving tabindex (Arrow/Home/End, tabindex 0/-1, aria-selected AND the DOM focus, which moves with the selection); an element that can never be selected would misreport that contract to assistive technology and would be reachable with the arrow keys as if it were a tab. Setting this (or HeaderTrailing) wraps the strip in an extra .tm-tabs__header-row flex row. The wrapper is emitted ONLY when at least one slot is supplied; with neither slot the rendered markup is byte-identical to a tab strip that has no slots at all, so existing CSS and tests that rely on .tm-tabs > .tm-tabs__header keep working. CONTRACT FOR STICKY CONSUMERS: when the slots are in use, a sticky tab strip must stick the ROW (.tm-tabs__header-row), not the header (.tm-tabs__header). Sticking the header alone pins only the strip and lets the slot content scroll away."
+        },
+        {
+          "name": "HeaderTrailing",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Optional content rendered immediately AFTER the tab strip, as a SIBLING of the role=\"tablist\" element — never inside it, for the same roving-focus reason as HeaderLeading. Setting this (or HeaderLeading) wraps the strip in an extra .tm-tabs__header-row flex row. The wrapper is emitted ONLY when at least one slot is supplied; with neither slot the rendered markup is byte-identical to a tab strip that has no slots at all. CONTRACT FOR STICKY CONSUMERS: when the slots are in use, stick the ROW (.tm-tabs__header-row), not the header (.tm-tabs__header), otherwise the slot content scrolls away from under the pinned strip."
+        },
+        {
           "name": "Variant",
           "type": "TabVariant",
           "isRequired": false,
@@ -24205,11 +24247,11 @@
     }
   ],
   "summary": {
-    "itemCount": 339,
-    "manualItemCount": 339,
-    "generatedItemCount": 331,
+    "itemCount": 340,
+    "manualItemCount": 340,
+    "generatedItemCount": 332,
     "generatedOnlyItemCount": 0,
     "componentCount": 194,
-    "publicApiTypeCount": 137
+    "publicApiTypeCount": 138
   }
 }
