@@ -70,6 +70,33 @@
     // Only ever read/written on the renderer's synchronization context.
     private string? _lastDispatchedValue;
 
+    // The Value seen on the previous render, so an external write can be told apart from the
+    // consumer simply feeding our own dispatch back. Not a substitute for _lastDispatchedValue.
+    private string? _previousValueParameter;
+    private bool _hasSeenValueParameter;
+
+    protected override void OnParametersSet()
+    {
+        // React to Value *changing*, never to what Value currently is: a consumer that binds only
+        // ValueChanged leaves Value at string.Empty forever, so it never changes and this block stays
+        // inert for exactly the bindings the duplicate suppression has to keep protecting.
+        if (_hasSeenValueParameter && string.Equals(_previousValueParameter, Value, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _previousValueParameter = Value;
+        _hasSeenValueParameter = true;
+
+        // Value moved to something other than what we last delivered, so the consumer set it itself
+        // (a reset button, a restored saved search). The box no longer holds what we dispatched, so
+        // forget it — otherwise retyping that same text would be suppressed and never searched for.
+        if (!string.Equals(_lastDispatchedValue, Value, StringComparison.Ordinal))
+        {
+            _lastDispatchedValue = null;
+        }
+    }
+
     /// <summary>
     /// Hands <paramref name="value"/> to <see cref="ValueChanged"/> unless the very same value was
     /// already delivered. The input element raises both <c>input</c> and <c>change</c> for a single

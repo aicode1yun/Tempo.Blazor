@@ -36,6 +36,15 @@ delivered every edit to `ValueChanged` **twice**, and with `DebounceMs` set the 
   - Consecutive identical values are now collapsed on the undebounced path too (`DebounceMs = 0` had
     the same double-delivery on blur). Consumers that counted on receiving the same search string
     twice in a row will see one call; no consumer in the library did.
+  - **Suppressing a repeat does not outlive the consumer resetting `Value` itself.** Remembering the
+    last dispatched value alone would have swallowed a legitimate search: after a "clear filters"
+    button or a restored saved search writes `Value` from outside, the box no longer holds what was
+    delivered, and retyping that same text would never have reached the consumer. `OnParametersSet`
+    therefore forgets the remembered value when `Value` *changes* to anything other than what was
+    last dispatched. It keys on the change, never on what `Value` currently is — a consumer that
+    binds only `ValueChanged` leaves `Value` at `string.Empty` permanently, so it never changes and
+    the check stays inert exactly where the suppression must keep working. A parent re-rendering
+    mid-search (results arriving, a spinner toggling) is covered by its own regression test.
 
 ## 2.8.10 - 2026-08-08
 

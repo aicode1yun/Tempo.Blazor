@@ -238,6 +238,69 @@ public class TmSearchInputTests : LocalizationTestBase
         delivered.Should().Equal("a", "ab", "abc");
     }
 
+    /// <summary>
+    /// Suppressing a repeated value must not outlive the consumer resetting Value itself. After an
+    /// external reset (a "clear filters" button, a restored saved search) the box no longer holds
+    /// what was last dispatched, so retyping that same text has to reach the consumer again.
+    /// </summary>
+    [Fact]
+    public void TmSearchInput_External_Value_Reset_Allows_Retyping_The_Same_Text()
+    {
+        var delivered = new ConcurrentQueue<string>();
+        var cut = Render<TmSearchInput>(p => p
+            .Add(c => c.Value, string.Empty)
+            .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => delivered.Enqueue(v))));
+
+        cut.Find("input").Change("abc");
+        delivered.Should().Equal("abc");
+
+        cut.Render(p => p.Add(c => c.Value, "abc"));        // consumer stores it
+        cut.Render(p => p.Add(c => c.Value, string.Empty)); // consumer resets it itself
+
+        cut.Find("input").Change("abc"); // user retypes the same text
+
+        delivered.Should().Equal("abc", "abc");
+    }
+
+    /// <summary>
+    /// A consumer that binds only ValueChanged re-renders while the search runs (results arrive,
+    /// a spinner toggles), which sets this component's parameters again with Value still
+    /// string.Empty. That must not be mistaken for an external reset — otherwise the suppression is
+    /// disarmed between the input and the change of a single edit, which is the original defect.
+    /// </summary>
+    [Fact]
+    public void TmSearchInput_Parent_Rerender_Does_Not_Disarm_Suppression_When_Value_Not_Supplied()
+    {
+        var delivered = new ConcurrentQueue<string>();
+        var callback = EventCallback.Factory.Create<string>(this, v => delivered.Enqueue(v));
+        var cut = Render<TmSearchInput>(p => p.Add(c => c.ValueChanged, callback));
+
+        cut.Find("input").Input("abc");
+        cut.Render(p => p.Add(c => c.ValueChanged, callback)); // parent re-renders, Value still absent
+        cut.Find("input").Change("abc");                       // blur for the same edit
+
+        delivered.Should().Equal("abc");
+    }
+
+    /// <summary>
+    /// The consumer feeding Value back after a dispatch is the normal round trip and must NOT count
+    /// as an external reset — otherwise the duplicate suppression would be disarmed on every edit.
+    /// </summary>
+    [Fact]
+    public void TmSearchInput_Value_Fed_Back_By_Consumer_Keeps_Suppressing_The_Duplicate()
+    {
+        var delivered = new ConcurrentQueue<string>();
+        var cut = Render<TmSearchInput>(p => p
+            .Add(c => c.Value, string.Empty)
+            .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => delivered.Enqueue(v))));
+
+        cut.Find("input").Input("abc");
+        cut.Render(p => p.Add(c => c.Value, "abc")); // the @bind-Value round trip
+        cut.Find("input").Change("abc");                             // blur for the same edit
+
+        delivered.Should().Equal("abc");
+    }
+
     /// <summary>A pending debounce carrying the old text must not overwrite an explicit clear.</summary>
     [Fact]
     public void TmSearchInput_Clear_Cancels_Pending_Debounce()
