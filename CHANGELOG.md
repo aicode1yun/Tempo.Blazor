@@ -1,5 +1,42 @@
 # Changelog
 
+## 2.8.11 - 2026-08-08
+
+One defect, in one component, that turned out not to be a convenience problem. `TmSearchInput`
+delivered every edit to `ValueChanged` **twice**, and with `DebounceMs` set the two deliveries were
+`DebounceMs` apart — which is a broken parameter contract, not merely a redundant call.
+
+### Fixed
+
+- **`TmSearchInput` raised `ValueChanged` twice for a single user edit.** The `<input>` is bound to
+  `ValueChanged` on **both** `@oninput` and `@onchange`. `HandleInputAsync` armed the debounce timer,
+  but `HandleChangeAsync` fired immediately and never cancelled that timer, so one edit followed by a
+  blur (or Enter, or autofill, or the browser's native clear cross) produced two deliveries
+  `DebounceMs` apart. In a consuming application this issued two concurrent GETs for one keystroke
+  sequence and made an end-to-end test flaky: the waiter was satisfied by the *second* request while
+  the first was still in flight.
+  - The component now remembers the value it last handed to `ValueChanged` in a private field and
+    suppresses a delivery that would repeat it. The field is written on **every** dispatch path — both
+    branches of `HandleInputAsync`, the timer's `Elapsed` callback, `HandleChangeAsync`, and
+    `ClearValueAsync` — and only ever from the renderer's synchronization context; `Elapsed` runs on a
+    thread-pool thread, so it hops through `InvokeAsync` before touching it.
+  - The suppression deliberately does **not** compare against the `Value` parameter. `Value` is
+    optional, and a consumer may bind `ValueChanged` alone and never supply it, leaving `Value` at
+    `string.Empty` forever — a `Value`-based comparison would therefore fail to suppress the duplicate
+    on exactly the bindings that produced the flake. A regression test covers the no-`Value` binding
+    specifically.
+  - `@onchange` **stays bound**. Dropping it would have removed the duplicate at the cost of browser
+    autofill and the native clear cross of `<input type="search">`, neither of which necessarily raises
+    an `input` event this component sees. `HandleChangeAsync` now cancels the pending debounce instead,
+    so the edit is delivered once, immediately.
+  - `ClearValueAsync` also cancels the pending debounce. Without it, a timer still carrying the old
+    text would fire after the click and silently undo the clear. The clear button dispatches
+    unconditionally: it is an explicit user action, and a consumer may have set `Value` externally
+    since the last dispatch.
+  - Consecutive identical values are now collapsed on the undebounced path too (`DebounceMs = 0` had
+    the same double-delivery on blur). Consumers that counted on receiving the same search string
+    twice in a row will see one call; no consumer in the library did.
+
 ## 2.8.10 - 2026-08-08
 
 Three defects that all trace back to the same element — the column pin toggle — plus the keyboard

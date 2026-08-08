@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
@@ -9,6 +10,26 @@ namespace Tempo.Blazor.Tests.Components.Inputs;
 /// <summary>TDD tests for TmSearchInput.</summary>
 public class TmSearchInputTests : LocalizationTestBase
 {
+    /// <summary>Debounce delay used by the timing tests.</summary>
+    private const int DebounceMs = 60;
+
+    /// <summary>Comfortably longer than <see cref="DebounceMs"/>, so a pending timer has fired.</summary>
+    private const int DebounceSettleMs = 400;
+
+    /// <summary>
+    /// Polls until <paramref name="condition"/> holds or the timeout expires. ValueChanged does not
+    /// re-render the component when the consumer does not feed Value back, so bUnit's
+    /// WaitForAssertion (which only re-evaluates on renders) cannot be used here.
+    /// </summary>
+    private static void WaitUntil(Func<bool> condition, int timeoutMs = 2000)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (!condition() && DateTime.UtcNow < deadline)
+        {
+            Thread.Sleep(10);
+        }
+    }
+
     [Fact]
     public void TmSearchInput_Renders_Search_Input()
     {
@@ -81,5 +102,156 @@ public class TmSearchInputTests : LocalizationTestBase
         cut.Find("input").Input("test");
 
         captured.Should().Be("test");
+    }
+
+    // --- Single delivery per edit -------------------------------------------------------------
+    // The input element raises both `input` and `change` for one user edit. Both are bound to
+    // ValueChanged, so every edit used to be delivered twice — with DebounceMs the two deliveries
+    // were DebounceMs apart, which produced two concurrent searches in consuming applications.
+
+    /// <summary>
+    /// The regression case. The consumer binds ONLY ValueChanged and never supplies Value, so the
+    /// duplicate cannot be suppressed by comparing against the Value parameter — it would stay
+    /// string.Empty forever.
+    /// </summary>
+    [Fact]
+    public void TmSearchInput_Debounced_Input_Then_Change_Delivers_Once_When_Value_Not_Supplied()
+    {
+        var delivered = new ConcurrentQueue<string>();
+        var cut = Render<TmSearchInput>(p => p
+            .Add(c => c.DebounceMs, DebounceMs)
+            .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => delivered.Enqueue(v))));
+
+        var input = cut.Find("input");
+        input.Input("abc");   // starts the debounce timer
+        input.Change("abc");  // blur/Enter for the same edit — delivers immediately
+
+        delivered.Should().ContainSingle().Which.Should().Be("abc");
+
+        // The pending debounce must not deliver a second time once the timer would have elapsed.
+        Thread.Sleep(DebounceSettleMs);
+        delivered.Should().ContainSingle().Which.Should().Be("abc");
+    }
+
+    /// <summary>
+    /// The sequence cancelling the debounce timer alone does NOT fix: type, pause long enough for
+    /// the debounce to deliver, then blur. `change` arrives with no timer left to cancel, so the
+    /// second delivery can only be suppressed by remembering what was already dispatched. The
+    /// consumer again supplies no Value, so a Value-based comparison would not suppress it.
+    /// </summary>
+    [Fact]
+    public void TmSearchInput_Debounce_Elapsed_Then_Change_Delivers_Once_When_Value_Not_Supplied()
+    {
+        var delivered = new ConcurrentQueue<string>();
+        var cut = Render<TmSearchInput>(p => p
+            .Add(c => c.DebounceMs, DebounceMs)
+            .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => delivered.Enqueue(v))));
+
+        var input = cut.Find("input");
+        input.Input("abc");
+
+        WaitUntil(() => delivered.Count > 0);
+        delivered.Should().ContainSingle().Which.Should().Be("abc"); // the debounce delivered
+
+        input.Change("abc"); // blur for the same, unchanged text
+
+        delivered.Should().ContainSingle().Which.Should().Be("abc");
+    }
+
+    /// <summary>Same edit, same guarantee, with Value supplied — the other five consumers.</summary>
+    [Fact]
+    public void TmSearchInput_Debounced_Input_Then_Change_Delivers_Once_When_Value_Supplied()
+    {
+        var delivered = new ConcurrentQueue<string>();
+        var cut = Render<TmSearchInput>(p => p
+            .Add(c => c.Value, string.Empty)
+            .Add(c => c.DebounceMs, DebounceMs)
+            .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => delivered.Enqueue(v))));
+
+        var input = cut.Find("input");
+        input.Input("abc");
+        input.Change("abc");
+
+        Thread.Sleep(DebounceSettleMs);
+        delivered.Should().ContainSingle().Which.Should().Be("abc");
+    }
+
+    [Fact]
+    public void TmSearchInput_Undebounced_Input_Then_Change_Delivers_Once()
+    {
+        var delivered = new ConcurrentQueue<string>();
+        var cut = Render<TmSearchInput>(p => p
+            .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => delivered.Enqueue(v))));
+
+        var input = cut.Find("input");
+        input.Input("abc");
+        input.Change("abc");
+
+        delivered.Should().ContainSingle().Which.Should().Be("abc");
+    }
+
+    /// <summary>
+    /// `change` must stay bound: browser autofill and the native search clear cross can raise it
+    /// without a preceding `input` this component saw.
+    /// </summary>
+    [Fact]
+    public void TmSearchInput_Change_Alone_Is_Delivered()
+    {
+        var delivered = new ConcurrentQueue<string>();
+        var cut = Render<TmSearchInput>(p => p
+            .Add(c => c.DebounceMs, DebounceMs)
+            .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => delivered.Enqueue(v))));
+
+        cut.Find("input").Change("autofilled");
+
+        delivered.Should().ContainSingle().Which.Should().Be("autofilled");
+    }
+
+    [Fact]
+    public void TmSearchInput_Debounced_Input_Alone_Is_Delivered_After_Delay()
+    {
+        var delivered = new ConcurrentQueue<string>();
+        var cut = Render<TmSearchInput>(p => p
+            .Add(c => c.DebounceMs, DebounceMs)
+            .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => delivered.Enqueue(v))));
+
+        cut.Find("input").Input("abc");
+
+        delivered.Should().BeEmpty(); // debounced, not synchronous
+
+        WaitUntil(() => delivered.Count > 0);
+        delivered.Should().ContainSingle().Which.Should().Be("abc");
+    }
+
+    [Fact]
+    public void TmSearchInput_Distinct_Values_Are_All_Delivered()
+    {
+        var delivered = new ConcurrentQueue<string>();
+        var cut = Render<TmSearchInput>(p => p
+            .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => delivered.Enqueue(v))));
+
+        var input = cut.Find("input");
+        input.Input("a");
+        input.Input("ab");
+        input.Change("abc");
+
+        delivered.Should().Equal("a", "ab", "abc");
+    }
+
+    /// <summary>A pending debounce carrying the old text must not overwrite an explicit clear.</summary>
+    [Fact]
+    public void TmSearchInput_Clear_Cancels_Pending_Debounce()
+    {
+        var delivered = new ConcurrentQueue<string>();
+        var cut = Render<TmSearchInput>(p => p
+            .Add(c => c.Value, "hello")
+            .Add(c => c.DebounceMs, DebounceMs)
+            .Add(c => c.ValueChanged, EventCallback.Factory.Create<string>(this, v => delivered.Enqueue(v))));
+
+        cut.Find("input").Input("abc"); // starts the debounce timer
+        cut.Find(".tm-search-clear").Click();
+
+        Thread.Sleep(DebounceSettleMs);
+        delivered.Should().Equal(string.Empty);
     }
 }
