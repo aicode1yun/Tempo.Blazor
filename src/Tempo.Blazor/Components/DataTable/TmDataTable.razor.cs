@@ -393,6 +393,34 @@ public partial class TmDataTable<TItem> : IDisposable
     private int _totalCount;
     private int _totalPages;
 
+    /// <summary>
+    /// Last value of the <see cref="PageSize"/> parameter the component has already applied — either
+    /// because it arrived from the host, or because the table itself reported a change through
+    /// <see cref="PageSizeChanged"/>. Keeping it in sync before invoking the callback is what stops a
+    /// two-way bound value from coming back in as a "new" parameter and re-querying the provider twice.
+    /// </summary>
+    private int? _lastPageSizeParam;
+
+    /// <summary>
+    /// Page size the host has last been told about. Compared against <c>_pageSize</c> so
+    /// <see cref="PageSizeChanged"/> fires on real changes only — every provider load rewrites
+    /// <c>_pageSize</c> from the result, which is usually the same value that was asked for.
+    /// </summary>
+    private int _reportedPageSize;
+
+    /// <summary>
+    /// Set when the table changed the page size itself — the built-in dropdown, <see cref="ChangePageSizeAsync"/>
+    /// or an applied saved view — while <see cref="PageSize"/> is controlled but no <see cref="PageSizeChanged"/>
+    /// handler exists to carry the new value to the host. The host's value is then stale by definition, so the
+    /// next parameter set re-syncs to it instead of letting the two drift apart silently.
+    /// </summary>
+    /// <remarks>
+    /// A page size imposed by the <see cref="IDataTableDataProvider{TItem}"/> deliberately does <em>not</em> set
+    /// this: the provider would answer the re-synced query with the same imposed size again, so every parent
+    /// render would cost one more query and one more jump back to page one.
+    /// </remarks>
+    private bool _pageSizeOutOfSyncWithHost;
+
     // ── Data ─────────────────────────────────────────────────────
     private List<TItem> _displayedItems = [];
     private bool _isLoading;
@@ -496,8 +524,43 @@ public partial class TmDataTable<TItem> : IDisposable
     /// </summary>
     [Parameter] public bool ShowViewManager { get; set; } = true;
 
-    /// <summary>Initial page size. Default: 25.</summary>
+    /// <summary>
+    /// Initial page size, read once during initialization. Default: 25.
+    /// Ignored when <see cref="PageSize"/> is supplied, which is the controlled counterpart.
+    /// </summary>
     [Parameter] public int DefaultPageSize { get; set; } = 25;
+
+    /// <summary>
+    /// Controlled page size. When set, it wins over <see cref="DefaultPageSize"/> — including in the very
+    /// first <see cref="IDataTableDataProvider{TItem}"/> query — and changing it after the table is mounted
+    /// resizes the table in place. Null (the default) leaves the table uncontrolled: it starts at
+    /// <see cref="DefaultPageSize"/> and the built-in page-size dropdown owns the value from then on.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Pair it with <see cref="PageSizeChanged"/> (<c>@bind-PageSize</c>) when the host renders its own
+    /// page-size control, so the built-in dropdown and the host's control cannot drift apart. The
+    /// imperative <see cref="ChangePageSizeAsync"/> does the same job for a host that keeps no state of
+    /// its own.
+    /// </para>
+    /// <para>
+    /// Changing the size returns the table to page one — page <c>N</c> denotes a different slice of the
+    /// data at a different size, and may not exist at all once the size grows. This is the same behaviour
+    /// the built-in dropdown has always had.
+    /// </para>
+    /// <para>
+    /// A value of zero or less is rejected with <see cref="ArgumentOutOfRangeException"/>.
+    /// </para>
+    /// </remarks>
+    [Parameter] public int? PageSize { get; set; }
+
+    /// <summary>
+    /// Fires whenever the effective page size changes — from the built-in dropdown, from
+    /// <see cref="ChangePageSizeAsync"/>, from an applied saved view, or because an
+    /// <see cref="IDataTableDataProvider{TItem}"/> answered with a page size different from the one asked
+    /// for. Enables <c>@bind-PageSize</c>.
+    /// </summary>
+    [Parameter] public EventCallback<int> PageSizeChanged { get; set; }
 
     /// <summary>
     /// Key of the column the table is sorted by on first render, before the user has clicked any header.
@@ -787,7 +850,14 @@ public partial class TmDataTable<TItem> : IDisposable
     {
         if (_dataLoaded) return;
 
-        _pageSize = DefaultPageSize;
+        // A controlled PageSize wins over DefaultPageSize here, not later, so a server-side provider is
+        // asked for the right page size in its very first query instead of fetching the default first.
+        if (PageSize is { } initialPageSize)
+            ThrowIfNotPositive(initialPageSize, nameof(PageSize));
+        _pageSize = PageSize ?? DefaultPageSize;
+        _lastPageSizeParam = PageSize;
+        _reportedPageSize = _pageSize;
+
         _searchText = SearchText ?? string.Empty;
         _lastSearchTextParam = SearchText;
 
@@ -808,27 +878,54 @@ public partial class TmDataTable<TItem> : IDisposable
         _dataLoaded = true;
     }
 
-    /// <summary>Re-applies filters when Items collection reference changes in client-side mode and syncs controlled search text.</summary>
+    /// <summary>Re-applies filters when Items collection reference changes in client-side mode and syncs the controlled search text and page size.</summary>
     protected override async Task OnParametersSetAsync()
     {
-        // Sync externally supplied SearchText into internal state.
-        // When SearchText is null the component is uncontrolled; internal state is preserved.
-        if (SearchText != _lastSearchTextParam && SearchText is not null)
+        // Sync externally supplied PageSize into internal state.
+        // When PageSize is null the component is uncontrolled; internal state is preserved.
+        var pageSizeChanged = PageSize is not null && (PageSize != _lastPageSizeParam || _pageSizeOutOfSyncWithHost);
+        if (pageSizeChanged)
         {
-            _lastSearchTextParam = SearchText;
-            _searchText = SearchText;
+            ThrowIfNotPositive(PageSize!.Value, nameof(PageSize));
+            _pageSizeOutOfSyncWithHost = false;
+            _lastPageSizeParam = PageSize;
+            _pageSize = PageSize.Value;
+            _reportedPageSize = _pageSize; // the host set it, so it already knows
             _currentPage = 1;
             _groupPageRequests.Clear();
+        }
+        else if (PageSize is null && _lastPageSizeParam is not null)
+        {
+            // Track transition from controlled back to uncontrolled without overwriting internal state.
+            _lastPageSizeParam = null;
+        }
+
+        // Sync externally supplied SearchText into internal state.
+        // When SearchText is null the component is uncontrolled; internal state is preserved.
+        var searchTextChanged = SearchText is not null && SearchText != _lastSearchTextParam;
+        if (searchTextChanged)
+        {
+            _lastSearchTextParam = SearchText;
+            _searchText = SearchText!;
+            _currentPage = 1;
+            _groupPageRequests.Clear();
+        }
+        else if (SearchText is null && _lastSearchTextParam is not null)
+        {
+            // Track transition from controlled back to uncontrolled without overwriting internal state.
+            _lastSearchTextParam = null;
+        }
+
+        // One reload covers both, so a host that changes page size and search text in the same render
+        // does not issue two provider queries.
+        if (pageSizeChanged || searchTextChanged)
+        {
             if (DataProvider is not null)
                 await LoadFromProviderAsync();
             else
                 RefreshClientItems();
             return;
         }
-
-        // Track transition from controlled back to uncontrolled without overwriting internal state.
-        if (SearchText is null && _lastSearchTextParam is not null)
-            _lastSearchTextParam = null;
 
         // Re-apply when Items collection reference changes in client-side mode
         if (DataProvider is null)
@@ -1140,8 +1237,16 @@ public partial class TmDataTable<TItem> : IDisposable
 
     // ── Server-side data (DataProvider mode) ─────────────────────
 
+    /// <summary>
+    /// Id of the most recently issued provider query. Each load captures it and applies its result only while
+    /// it is still the newest one, so a slow earlier response cannot overwrite a faster later one — the pager,
+    /// the filters, sorting, search and the page size all start a load without waiting for the one in flight.
+    /// </summary>
+    private int _loadGeneration;
+
     private async Task LoadFromProviderAsync()
     {
+        var generation = ++_loadGeneration;
         _isLoading = true;
         StateHasChanged();
         try
@@ -1150,6 +1255,7 @@ public partial class TmDataTable<TItem> : IDisposable
             if (_groupByColumns.Count > 0)
             {
                 var grouped = await DataProvider!.GetGroupedDataAsync(BuildQuery());
+                if (generation != _loadGeneration) return; // superseded while in flight
                 if (grouped is not null)
                 {
                     // Server provided pre-grouped data — use directly
@@ -1168,6 +1274,7 @@ public partial class TmDataTable<TItem> : IDisposable
 
             // Flat data fetch (non-grouped, or server doesn't support grouping)
             var result = await DataProvider!.GetDataAsync(BuildQuery());
+            if (generation != _loadGeneration) return; // superseded while in flight
             _displayedItems = result.Items.ToList();
             _totalCount = result.TotalCount;
             _currentPage = result.Page;
@@ -1178,11 +1285,21 @@ public partial class TmDataTable<TItem> : IDisposable
             // Fallback: group the server-provided items client-side
             if (_groupByColumns.Count > 0)
                 RefreshGroupedData();
+
+            // The provider is allowed to answer with a page size other than the one asked for (a server-side
+            // cap, for instance). It wins — so a @bind-PageSize host has to hear about it, or its value
+            // silently stops describing what the table is actually showing. Reported last, and only for a
+            // result that was not superseded, so the host never hears a stale size.
+            await NotifyPageSizeChangedAsync();
         }
         finally
         {
-            _isLoading = false;
-            StateHasChanged();
+            // A superseded load must not clear the flag: the load that superseded it owns it now.
+            if (generation == _loadGeneration)
+            {
+                _isLoading = false;
+                StateHasChanged();
+            }
         }
     }
 
@@ -1369,14 +1486,84 @@ public partial class TmDataTable<TItem> : IDisposable
         StateHasChanged();
     }
 
-    private async Task ChangePageSizeAsync(int size)
+    /// <summary>
+    /// Changes how many rows a page holds and returns to page one, without remounting the table.
+    /// </summary>
+    /// <param name="size">New page size. Must be greater than zero.</param>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="size"/> is zero or negative.</exception>
+    /// <remarks>
+    /// <para>
+    /// This is the imperative counterpart of the <see cref="PageSize"/> parameter, for a host that renders
+    /// its own page-size control and keeps no state of its own. Before it existed, <see cref="DefaultPageSize"/>
+    /// was read once during initialization and nothing public could change it afterwards, so the only way to
+    /// resize a mounted table was to remount it through <c>@key</c> — which also throws away scroll position,
+    /// focus, selection and expanded rows.
+    /// </para>
+    /// <para>
+    /// The page is reset to one: page <c>N</c> denotes a different slice of the data at a different size, and
+    /// at a larger size it may not exist at all. This matches what the built-in page-size dropdown has always
+    /// done, so the public path and the built-in control behave identically.
+    /// </para>
+    /// <para>
+    /// In server-side mode the new size reaches the <see cref="IDataTableDataProvider{TItem}"/> as
+    /// <see cref="DataTableQuery.PageSize"/> of the immediately following query.
+    /// <see cref="PageSizeChanged"/> fires either way, so a <c>@bind-PageSize</c> host stays in sync.
+    /// </para>
+    /// </remarks>
+    public async Task ChangePageSizeAsync(int size)
     {
+        ThrowIfNotPositive(size, nameof(size));
+
         _pageSize = size;
+        await NotifyPageSizeChangedAsync(tableDriven: true);
+
         _currentPage = 1;
+        _groupPageRequests.Clear();
+
         if (DataProvider is not null)
             await LoadFromProviderAsync();
         else
             RefreshClientItems();
+
+        // May be called from the host's event handler, not the table's, in which case the table is not
+        // re-rendered for us.
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Reports the current <c>_pageSize</c> to a <c>@bind-PageSize</c> host. The remembered parameter value
+    /// is updated first, so the value coming back in as a parameter is not mistaken for a new host-driven
+    /// change and does not trigger a second load.
+    /// </summary>
+    /// <param name="tableDriven">
+    /// True when the table itself decided the new size (dropdown, <see cref="ChangePageSizeAsync"/>, applied
+    /// view) rather than the data provider answering with one. Only a table-driven change can leave a
+    /// controlled host stale, so only it arms <c>_pageSizeOutOfSyncWithHost</c>.
+    /// </param>
+    private Task NotifyPageSizeChangedAsync(bool tableDriven = false)
+    {
+        if (_pageSize == _reportedPageSize)
+            return Task.CompletedTask;
+
+        _reportedPageSize = _pageSize;
+
+        if (!PageSizeChanged.HasDelegate)
+        {
+            if (tableDriven && PageSize is not null)
+                _pageSizeOutOfSyncWithHost = true;
+            return Task.CompletedTask;
+        }
+
+        if (_lastPageSizeParam is not null)
+            _lastPageSizeParam = _pageSize;
+
+        return PageSizeChanged.InvokeAsync(_pageSize);
+    }
+
+    private static void ThrowIfNotPositive(int size, string paramName)
+    {
+        if (size <= 0)
+            throw new ArgumentOutOfRangeException(paramName, size, "Page size must be greater than zero.");
     }
 
     // ── Selection ─────────────────────────────────────────────────
@@ -1436,7 +1623,11 @@ public partial class TmDataTable<TItem> : IDisposable
         _sortDescriptors.Clear();
         if (!string.IsNullOrEmpty(view.SortField))
             _sortDescriptors.Add(new SortDescriptor(view.SortField, view.SortAscending ? DataTableSortDirection.Ascending : DataTableSortDirection.Descending));
-        if (view.PageSize.HasValue) _pageSize = view.PageSize.Value;
+        if (view.PageSize is > 0)
+        {
+            _pageSize = view.PageSize.Value;
+            await NotifyPageSizeChangedAsync(tableDriven: true);
+        }
 
         if (view.VisibleColumns.Count > 0)
         {

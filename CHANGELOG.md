@@ -1,5 +1,65 @@
 # Changelog
 
+## 2.8.12 - 2026-08-08
+
+Two gaps in the public API, not cosmetics: in both cases a consuming application could see the right
+thing on screen and still had no supported way to ask for it. Everything here is additive — no released
+member changed shape or meaning.
+
+### Added
+
+- **`TmDataTable<TItem>.PageSize` / `PageSizeChanged` / `public ChangePageSizeAsync(int)` — a way to
+  change the page size of a table that is already mounted.** `DefaultPageSize` was read exactly once, in
+  `OnInitializedAsync`, and the only member that could change the size afterwards was `private`. A page
+  with its own page-size control therefore had to remount the table through `@key` — which resets the
+  page size, and along with it the scroll position, the focus, the selection, the sort and every expanded
+  row. Both new routes resize in place.
+  - `PageSize` is the **controlled** counterpart of `DefaultPageSize`: nullable, and when supplied it wins
+    — including in the provider's *first* query, because it is applied in `OnInitializedAsync` rather than
+    afterwards, so a server-side table is not made to fetch the default page size first. Leaving it null
+    keeps the released `DefaultPageSize` behaviour exactly as it was.
+  - `PageSizeChanged` enables `@bind-PageSize`. It fires for the built-in dropdown, for
+    `ChangePageSizeAsync`, for an applied saved view, and when an `IDataTableDataProvider<TItem>` answers
+    with a page size other than the one asked for — a provider-imposed size wins, and a bound host that
+    never heard about it would be describing a table that no longer exists. The remembered parameter value
+    is updated **before** the callback is invoked, so the value coming straight back in as a parameter is
+    not mistaken for a new host-driven change and does not issue a second query.
+  - Changing the size **returns to page one**, deliberately: page *N* denotes a different slice of the
+    data at a different size and at a larger size may not exist at all. This is what the built-in dropdown
+    has always done, so the public routes and the built-in control cannot disagree.
+  - A size of zero or less is rejected with `ArgumentOutOfRangeException` rather than silently producing
+    an empty table (`Take(0)`).
+  - **Controlled without a binding re-syncs instead of drifting.** If `PageSize` is supplied but
+    `PageSizeChanged` is not, a change made through the dropdown, `ChangePageSizeAsync` or a saved view
+    can never reach the host, so the next parameter set snaps the table back to `PageSize`. Documentation
+    alone would not have prevented the two numbers from disagreeing silently. A page size imposed by the
+    *provider* deliberately does not arm this: the provider would answer the re-synced query with the same
+    imposed size again, costing one query and one jump back to page one per parent render.
+- **`TmToggle.AriaLabel` / `AriaLabelledBy` / `Id` — an accessible name without visible text.** `Label`
+  filled the visible `<span>` **and** the input's `aria-label` at once, and `AdditionalAttributes` splat
+  onto the wrapper `<div>`, so an `aria-label` supplied from outside named the wrapper and not the switch.
+  A page whose channel labels live next to the toggle — because the element carrying `data-testid` has to
+  contain the switch *alone*, or a click in its middle would miss the control — therefore shipped a switch
+  that a screen reader announced with no name at all.
+  - All three land on the inner `<input type="checkbox" role="switch">`, never on the wrapper. `AriaLabel`
+    takes precedence over `Label` for the accessible name and renders no visible text; `AriaLabelledBy`
+    points at a label the page already renders; `Id` lets a host-owned `<label for="…">` reach the switch.
+  - `Label` still sets `aria-label` on the input, and `AdditionalAttributes` still splat onto the wrapper,
+    so `data-testid` keeps addressing the same element as before.
+
+### Fixed
+
+- **`TmDataTable<TItem>` applied a superseded provider response over a newer one.** The pager, the
+  filters, sorting, search and the page size each start a load without awaiting the one in flight, and
+  `LoadFromProviderAsync` applied whatever arrived last to `_displayedItems`, `_totalCount`,
+  `_currentPage`, `_pageSize` and `_totalPages` — so a slow earlier query could overwrite a faster later
+  one, and the new `PageSizeChanged` would have reported the stale size to the host on top of that. Each
+  load now carries a generation id and applies its result, clears the loading flag and reports the page
+  size only while it is still the newest query.
+- **A saved view with `PageSize = 0` produced an empty table.** `ApplyViewAsync` accepted any non-null
+  value; it now ignores a stored size that is not greater than zero, matching the validation on the new
+  public routes.
+
 ## 2.8.11 - 2026-08-08
 
 One defect, in one component, that turned out not to be a convenience problem. `TmSearchInput`

@@ -8,11 +8,13 @@
     }
     <label class="tm-toggle-label">
         <input type="checkbox"
+               id="@Id"
                checked="@Value"
                disabled="@Disabled"
                class="tm-toggle-input"
                role="switch"
-               aria-label="@Label"
+               aria-label="@AccessibleName"
+               aria-labelledby="@AriaLabelledBy"
                aria-checked="@Value.ToString().ToLowerInvariant()"
                @onchange="HandleChangeAsync"
                @onkeydown="HandleKeyDownAsync" />
@@ -29,8 +31,36 @@
     /// <summary>Fires when the toggle state changes.</summary>
     [Parameter] public EventCallback<bool> ValueChanged { get; set; }
 
-    /// <summary>Label text shown beside the toggle.</summary>
+    /// <summary>
+    /// Label text shown beside the toggle. It also names the switch for assistive technology, unless
+    /// <see cref="AriaLabel"/> overrides it. Leave it null and use <see cref="AriaLabel"/>,
+    /// <see cref="AriaLabelledBy"/> or <see cref="Id"/> when the visible text belongs to the surrounding page.
+    /// </summary>
     [Parameter] public string? Label { get; set; }
+
+    /// <summary>
+    /// Accessible name for the switch, rendered as <c>aria-label</c> on the inner input rather than on the
+    /// wrapper. Use it when the switch must carry a name without any visible text of its own; it takes
+    /// precedence over <see cref="Label"/> for the accessible name and does not render a visible span.
+    /// </summary>
+    /// <remarks>
+    /// <c>aria-label</c> supplied through <see cref="AdditionalAttributes"/> lands on the wrapper element and
+    /// therefore does <em>not</em> name the input — use this parameter instead.
+    /// </remarks>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    /// <summary>
+    /// Space-separated id list of the element(s) that name the switch, rendered as <c>aria-labelledby</c> on
+    /// the inner input. Use it when the visible label already exists elsewhere on the page and the switch
+    /// itself has to stay alone inside its own element.
+    /// </summary>
+    [Parameter] public string? AriaLabelledBy { get; set; }
+
+    /// <summary>
+    /// Id applied to the inner input, so a host-owned <c>&lt;label for="…"&gt;</c> can point at the switch.
+    /// Null (the default) renders no id attribute.
+    /// </summary>
+    [Parameter] public string? Id { get; set; }
 
     /// <summary>Additional CSS class(es).</summary>
     [Parameter] public string? Class { get; set; }
@@ -40,6 +70,12 @@
 
     /// <summary>Additional attributes applied to the root element.</summary>
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    /// <summary>Accessible name rendered as <c>aria-label</c> on the input: explicit wins over the visible label.</summary>
+    private string? AccessibleName =>
+        !string.IsNullOrEmpty(AriaLabel) ? AriaLabel
+        : !string.IsNullOrEmpty(Label) ? Label
+        : null;
 
     private async Task HandleChangeAsync(ChangeEventArgs e)
     {

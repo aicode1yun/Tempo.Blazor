@@ -1111,10 +1111,13 @@ Přepínací spínač (switch).
 |----------|-----|---------|-------|
 | `Value` | `bool` | `false` | Zapnuto/vypnuto |
 | `ValueChanged` | `EventCallback<bool>` | — | Událost změny |
-| `Label` | `string?` | `null` | Popisek |
+| `Label` | `string?` | `null` | Viditelný popisek vedle spínače; zároveň jeho přístupné jméno (`aria-label` na `<input>`), pokud ho nepřebije `AriaLabel` |
+| `AriaLabel` | `string?` | `null` | Přístupné jméno **bez viditelného textu** — jde na `<input>`, ne na obal, a má přednost před `Label` |
+| `AriaLabelledBy` | `string?` | `null` | `aria-labelledby` na `<input>` — pro případ, kdy popisek je jinde na stránce |
+| `Id` | `string?` | `null` | `id` vnitřního `<input>`, aby na něj mohl ukázat vlastní `<label for="…">` |
 | `Disabled` | `bool` | `false` | Zakázáno |
 | `Class` | `string?` | `null` | Další CSS třídy |
-| `AdditionalAttributes` | `Dictionary<string, object>?` | `null` | Další HTML atributy |
+| `AdditionalAttributes` | `Dictionary<string, object>?` | `null` | Další HTML atributy — splatují se na **obalový `div`**, takže `aria-label` zadaný tudy spínač nepojmenuje; použij `AriaLabel` |
 
 #### Příklady
 
@@ -1122,6 +1125,13 @@ Přepínací spínač (switch).
 <TmToggle @bind-Value="_darkMode" Label="Tmavý režim" />
 <TmToggle @bind-Value="_notifications" Label="Povolit notifikace" />
 <TmToggle @bind-Value="_twoFactor" Label="Dvoufaktorové ověření" Disabled="_isLocked" />
+
+@* Popisek vlastní stránky, spínač musí zůstat v data-testid elementu sám: *@
+<span id="channel-email-label">E-mail</span>
+<TmToggle @bind-Value="_email" AriaLabelledBy="channel-email-label" data-testid="channel-email-toggle" />
+
+@* Nebo bez viditelného textu vůbec: *@
+<TmToggle @bind-Value="_compact" AriaLabel="Kompaktní zobrazení" />
 ```
 
 ### TmRadioGroup\<T\>
@@ -3468,7 +3478,9 @@ Kompletní datová tabulka s řazením, filtrováním, stránkováním, grouping
 | `ShowSearch` | `bool` | `true` | Vyhledávání |
 | `ShowColumnPicker` | `bool` | `true` | Výběr sloupců |
 | `ShowPagination` | `bool` | `true` | Stránkování |
-| `DefaultPageSize` | `int` | `25` | Výchozí stránka |
+| `DefaultPageSize` | `int` | `25` | Počáteční velikost stránky; přečte se jednou při inicializaci a `PageSize` ji přebíjí |
+| `PageSize` | `int?` | `null` | **Řízená** velikost stránky. Vyhrává nad `DefaultPageSize` (včetně prvního dotazu `DataProvider`) a změna po mountu tabulku přestránkuje na místě, bez remountu. Změna vždy vrací na stránku 1 |
+| `PageSizeChanged` | `EventCallback<int>` | — | Umožňuje `@bind-PageSize`. Vystřelí při změně z vestavěného výběru, z `ChangePageSizeAsync`, z aplikovaného pohledu i když `DataProvider` odpoví jinou velikostí, než o kterou tabulka požádala |
 | `DefaultSortColumn` | `string?` | `null` | Klíč sloupce (`PropertyName`, jinak `Title`), podle kterého je tabulka seřazená hned po prvním renderu — tedy dřív, než uživatel na cokoli klikne |
 | `DefaultSortDirection` | `DataTableSortDirection` | `Ascending` | Směr výchozího řazení; bez `DefaultSortColumn` se ignoruje |
 | `PageSizeOptions` | `IReadOnlyList<int>` | `[5,10,25,50,100]` | Možnosti velikosti stránky |
@@ -3493,7 +3505,17 @@ Patička stránkování nese `data-testid="pagination-container"` a text s počt
 
 | Metoda | Popis |
 |--------|-------|
+| `ChangePageSizeAsync(int size)` | Změní velikost stránky **na mountované tabulce** a vrátí ji na stránku 1 — bez remountu, takže scroll, fokus, výběr, řazení i rozbalené řádky zůstanou. Imperativní protějšek `PageSize` pro stránku, která má vlastní ovládání velikosti a nechce si držet stav. `size ≤ 0` hodí `ArgumentOutOfRangeException`. V server-side režimu jde nová velikost do nejbližšího dotazu `IDataTableDataProvider` |
 | `ResetPageAsync()` | Vrátí tabulku na první stránku a přenačte. **Volej po každém vlastním hledání/filtrování stránky** — tabulka si stránku sama neresetuje, jen ji klampuje dolů na novou poslední, takže bez toho uživatel po hledání zůstane na stránce 3. Záměrně to není automatické při změně `Items`: tabulka, která se periodicky přenačítá, by uživatele trhala zpět na první stránku při každém obnovení |
+
+**Velikost stránky za běhu** (od 2.8.12): dokud existovalo jen `DefaultPageSize`, četlo se jednou při
+inicializaci a nic veřejného ho pak nešlo změnit — stránka s vlastním ovládáním velikosti musela tabulku
+remountovat přes `@key`, čímž zahodila i scroll, fokus a rozbalené řádky. Použij buď `@bind-PageSize`
+(řízeně), nebo `ChangePageSizeAsync` přes `@ref` (imperativně). Když `PageSize` nastavíš, ale
+`PageSizeChanged` nepřipojíš, vestavěný výběr velikosti se při nejbližším renderu rodiče **srovná zpět na
+`PageSize`** — hodnota hosta je autoritativní a tiché rozejití obou čísel je horší než viditelný návrat.
+Velikost, kterou si vynutí `IDataTableDataProvider` ve své odpovědi, tenhle návrat **nespouští** (jinak by
+každý render rodiče stál jeden dotaz navíc), jen se ohlásí přes `PageSizeChanged`.
 
 Řadicí hlavička je **dostupná z klávesnice**: je fokusovatelná (`tabindex="0"`) a reaguje na `Enter`
 i `Mezerník`, se `Shift` pro multi-sort — stejně jako `Shift`+klik. Neřaditelné hlavičky fokusovatelné
