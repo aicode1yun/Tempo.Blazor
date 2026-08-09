@@ -161,4 +161,63 @@ public class TmNumberInputTests : LocalizationTestBase
 
         cut.Find(".tm-input-help-text").TextContent.Should().Contain("Enter a number between 1 and 100");
     }
+
+    // ── Required ────────────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// TmNumberInput had no way to say the field is mandatory, so a form mixing it with TmTextInput
+    /// marked some of its required fields and silently not others.
+    /// </summary>
+    [Fact]
+    public void NumberInput_Required_MarksLabelAndInput()
+    {
+        var cut = Render<TmNumberInput>(p => p
+            .Add(x => x.Value, 1)
+            .Add(x => x.Label, "Retention")
+            .Add(x => x.Required, true));
+
+        cut.Find("label").ClassList.Should().Contain("tm-input-label-required");
+        cut.Find("input").HasAttribute("required").Should().BeTrue();
+        cut.Find("input").GetAttribute("aria-required").Should().Be("true");
+    }
+
+    [Fact]
+    public void NumberInput_NotRequired_LeavesNoRequiredMarkers()
+    {
+        var cut = Render<TmNumberInput>(p => p
+            .Add(x => x.Value, 1)
+            .Add(x => x.Label, "Retention"));
+
+        cut.Find("label").ClassList.Should().NotContain("tm-input-label-required");
+        cut.Find("input").HasAttribute("required").Should().BeFalse();
+        cut.Find("input").GetAttribute("aria-required").Should().BeNull();
+    }
+
+    /// <summary>An asterisk on a label that names nothing is decoration, so the label got a `for`.</summary>
+    [Fact]
+    public void NumberInput_Label_IsAssociatedWithTheInput()
+    {
+        var cut = Render<TmNumberInput>(p => p
+            .Add(x => x.Value, 1)
+            .Add(x => x.Label, "Retention"));
+
+        var id = cut.Find("input").GetAttribute("id");
+        id.Should().NotBeNullOrEmpty();
+        cut.Find("label").GetAttribute("for").Should().Be(id);
+    }
+
+    [Fact]
+    public void NumberInput_ExplicitId_DrivesTheLabelAndTheDescribedByTargets()
+    {
+        var cut = Render<TmNumberInput>(p => p
+            .Add(x => x.Value, 1)
+            .Add(x => x.Label, "Retention")
+            .Add(x => x.Id, "retention-days")
+            .Add(x => x.Error, "Too small"));
+
+        cut.Find("input").GetAttribute("id").Should().Be("retention-days");
+        cut.Find("label").GetAttribute("for").Should().Be("retention-days");
+        cut.Find("input").GetAttribute("aria-describedby").Should().Be("retention-days-error");
+        cut.Find(".tm-input-error-message").GetAttribute("id").Should().Be("retention-days-error");
+    }
 }

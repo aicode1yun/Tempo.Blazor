@@ -172,4 +172,42 @@ public class TmToggleTests : LocalizationTestBase
 
         cut.Find(".tm-toggle-wrapper").GetAttribute("data-testid").Should().Be("channel-email-toggle");
     }
+
+    // ── Required ────────────────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void TmToggle_Required_MarksTheVisibleLabelAndSetsAriaRequired()
+    {
+        var cut = Render<TmToggle>(p => p
+            .Add(c => c.Label, "Accept terms")
+            .Add(c => c.Required, true));
+
+        cut.Find(".tm-toggle-label-text").ClassList.Should().Contain("tm-input-label-required");
+        cut.Find("input[type='checkbox']").GetAttribute("aria-required").Should().Be("true");
+    }
+
+    /// <summary>
+    /// Deliberate asymmetry with TmCheckbox: on a checkbox the native `required` means "must be ticked",
+    /// which is right for an "I agree" box and wrong for a switch whose off state is a legitimate answer —
+    /// it would refuse to submit the form. Required on a switch says the choice must be made, and the form
+    /// validates the value.
+    /// </summary>
+    [Fact]
+    public void TmToggle_Required_DoesNotEmitTheNativeRequiredAttribute()
+    {
+        var cut = Render<TmToggle>(p => p
+            .Add(c => c.Label, "Accept terms")
+            .Add(c => c.Required, true));
+
+        cut.Find("input[type='checkbox']").HasAttribute("required").Should().BeFalse();
+    }
+
+    [Fact]
+    public void TmToggle_NotRequired_LeavesNoRequiredMarkers()
+    {
+        var cut = Render<TmToggle>(p => p.Add(c => c.Label, "Dark mode"));
+
+        cut.Find(".tm-toggle-label-text").ClassList.Should().NotContain("tm-input-label-required");
+        cut.Find("input[type='checkbox']").HasAttribute("aria-required").Should().BeFalse();
+    }
 }

@@ -3,7 +3,7 @@
 <div class="tm-input-wrapper @Class">
     @if (!string.IsNullOrEmpty(Label))
     {
-        <label class="tm-input-label">@Label</label>
+        <label for="@Id" class="tm-input-label @(Required ? "tm-input-label-required" : "")">@Label</label>
     }
     <div class="tm-number-input @(Disabled ? "tm-number-input--disabled" : "") @(HasError ? "tm-number-input--error" : "")">
         @if (ShowButtons)
@@ -25,12 +25,15 @@
         }
 
         <input type="number"
+               id="@Id"
                value="@Value"
                placeholder="@Placeholder"
                disabled="@Disabled"
                min="@Min"
                max="@Max"
                step="@Step"
+               required="@Required"
+               aria-required="@(Required ? "true" : null)"
                autocomplete="@AutoComplete"
                aria-invalid="@(HasError ? "true" : null)"
                aria-describedby="@DescribedBy"
@@ -86,6 +89,18 @@
     /// <summary>Field label.</summary>
     [Parameter] public string? Label { get; set; }
 
+    /// <summary>
+    /// Id of the input, so the rendered <see cref="Label"/> can point at it with <c>for</c> and the error
+    /// and help text can be referenced. Defaults to a generated value.
+    /// </summary>
+    [Parameter] public string Id { get; set; } = Guid.NewGuid().ToString("n")[..8];
+
+    /// <summary>
+    /// Marks the field required: the asterisk on the label (<c>tm-input-label-required</c>, the marker the
+    /// other inputs use) plus <c>required</c> and <c>aria-required</c> on the input.
+    /// </summary>
+    [Parameter] public bool Required { get; set; }
+
     /// <summary>Placeholder text.</summary>
     [Parameter] public string? Placeholder { get; set; }
 
@@ -119,9 +134,8 @@
     private bool HasError => !string.IsNullOrEmpty(Error);
 
     // ── Accessibility ────────────────────────────────────────────
-    private readonly string _ariaId = Guid.NewGuid().ToString("n")[..8];
-    private string ErrorId => $"{_ariaId}-error";
-    private string HelpId => $"{_ariaId}-help";
+    private string ErrorId => $"{Id}-error";
+    private string HelpId => $"{Id}-help";
     private string? DescribedBy =>
         HasError ? ErrorId
         : !string.IsNullOrEmpty(HelpText) ? HelpId

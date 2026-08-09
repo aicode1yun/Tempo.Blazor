@@ -123,4 +123,49 @@ public class TmFormActionBarTests : LocalizationTestBase
         cut.Find(".tm-form-action-bar").ClassList.Should().NotContain("tm-form-action-bar--show-on-scroll");
         module.Invocations.Should().NotContain(invocation => invocation.Identifier == "register");
     }
+
+    /// <summary>
+    /// The floating bar spans the viewport, which runs it underneath a shell's fixed side navigation.
+    /// The inset has to be a variable a host can set, because the alternative — overriding <c>left</c>
+    /// from application CSS — has to out-specify this rule's <c>[b-*]</c> scope attribute and loses the
+    /// cascade whenever it merely ties. Asserted against the source file rather than a rendered element:
+    /// bUnit has no layout, so nothing about the cascade is observable from a rendered component.
+    /// </summary>
+    [Fact]
+    public void FormActionBarCss_FloatingBottomInset_IsHostOverridableViaCustomProperty()
+    {
+        var css = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(), "src", "Tempo.Blazor", "Components", "Toolbar", "TmFormActionBar.razor.css"));
+
+        var floating = SelectorBlock(css, ".tm-form-action-bar--floating-bottom");
+
+        floating.Should().Contain("left: var(--tm-form-action-bar-inset-inline-start, 0);");
+        floating.Should().Contain("right: var(--tm-form-action-bar-inset-inline-end, 0);");
+        // Unset, the fallback keeps the released full-bleed behaviour.
+        floating.Should().NotContain("left: 0;");
+        floating.Should().NotContain("right: 0;");
+    }
+
+    /// <summary>Text of the first declaration block whose selector line starts with <paramref name="selector"/>.</summary>
+    private static string SelectorBlock(string css, string selector)
+    {
+        var start = css.IndexOf(selector + " {", StringComparison.Ordinal);
+        start.Should().BeGreaterThanOrEqualTo(0, "the CSS must still declare {0}", selector);
+
+        var end = css.IndexOf('}', start);
+        end.Should().BeGreaterThan(start);
+
+        return css[start..end];
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "TempoBlazor.slnx")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName ?? throw new DirectoryNotFoundException("Could not find repository root.");
+    }
 }

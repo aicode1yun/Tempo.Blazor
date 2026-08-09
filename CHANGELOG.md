@@ -1,5 +1,75 @@
 # Changelog
 
+## 2.8.13 - 2026-08-09
+
+Six gaps that consuming applications had been papering over in their own code. Every one of them is a
+place where the library made the application reach around it — with a CSS override that has to win a
+specificity fight, with an `@key` remount, or with a marker the component would not render. Everything
+here is additive; no released member changed shape or meaning.
+
+### Added
+
+- **`--tm-form-action-bar-inset-inline-start` / `--tm-form-action-bar-inset-inline-end` — the floating
+  bar can be told about the shell's chrome.** `.tm-form-action-bar--floating-bottom` pinned `left: 0`,
+  so in an application with a fixed side navigation the bar ran underneath it. The only way out was to
+  override `left` from application CSS — and because Tempo ships as *isolated* CSS, that rule carries a
+  `[b-…]` scope attribute and therefore a specificity of at least (0,2,0), while the application's
+  stylesheet is loaded *before* the scoped bundle. A tie goes to Tempo, so the obvious override is a
+  dead rule that looks identical to a working one on a screenshot. Both insets now read a custom
+  property, defaulting to `0` — the released full-bleed behaviour — so the host sets a variable instead
+  of fighting the cascade.
+- **`TmScrollSpyNav.ScrollContainerSelector` — scroll-spy on the element that actually scrolls.** The
+  listener went on `window`, which is right only when the document itself scrolls. An application shell
+  that puts its content in an `overflow-y: auto` column raises the scroll event on that column and never
+  on the window, so `EnableScrollSpy` did nothing at all and did it silently. The selector names that
+  column and `ScrollOffset` is then measured from the top of the container rather than the viewport. A
+  selector that matches nothing falls back to the window rather than going quiet.
+- **`TmScrollSpyNav.AutoSelectFirstItem` — the option to have nothing current.** `OnParametersSet`
+  unconditionally made the first visible item active, so with scroll-spy off `aria-current="true"` sat
+  on the first section forever and went stale as the reader scrolled. Setting it to `false` leaves every
+  item non-current until a click or scroll-spy selects one. This has to be a parameter of its own: the
+  workaround it replaces — passing `ActiveId=""` — hands the component an id no section has.
+- **`TmUserPicker.Id` and `Required`, plus `aria-controls` and `aria-activedescendant`.** The label was
+  a bare `<label>` with no `for` and the input had no `id`, so clicking the label did nothing and no
+  assistive technology tied the two together. There was no way to mark the field required, so consumers
+  reproduced the asterisk with their own CSS. And `role="combobox"` shipped without either of the two
+  attributes that let a screen reader announce the option the arrow keys are moving over — focus stays
+  in the input, so without them the highlight is invisible to a reader. The listbox is now
+  `{Id}-results` and each option `{Id}-option-{i}`, both referenced from the input. `for` is omitted
+  while a user is selected, because the input is not on screen then and a dangling `for` is worse than
+  none.
+- **`TmUserPicker.FloatingMenu` — the results list can leave the flow.** The list is `position:
+  absolute`, so an ancestor with `overflow: auto` — a modal body, a scrolling form column — clipped it
+  and scrolled it away from its input. Opting in makes it `position: fixed` and has
+  `TmUserPicker.razor.js` anchor it to the input on every scroll (captured, so inner scrollers count)
+  and resize, flipping it above the input and clamping its height when there is not enough room below.
+  It is off by default: it costs a module import, and a picker that is not inside a scroll container
+  does not need it.
+  - This is a floating layer, **not** a DOM portal, and the difference is visible in one case: an
+    ancestor with a `transform`, `filter`, `perspective`, `contain`, or a `will-change` naming them
+    becomes the containing block for a fixed descendant. `.tm-modal` is one, because it animates in with
+    a transform. Inside such an ancestor the list is bounded by that box instead of by the viewport,
+    which is why the available space is measured against it and the list flips rather than overflowing.
+    The clipping and the scroll-away — the actual reported failure — are gone either way.
+  - The scroll and resize listeners are shared by every picker on the page and are unbound as soon as
+    the last open list closes.
+- **`TmNumberInput.Required` and `Id`, and `TmToggle.Required`.** A form mixing these with
+  `TmTextInput`/`TmSelect`/`TmTextArea` marked some of its mandatory fields and, with no parameter to
+  reach for, silently not the others. `TmNumberInput` renders the same `tm-input-label-required`
+  asterisk plus `required`/`aria-required`, and its label finally has a `for` — an asterisk on a label
+  that names nothing is decoration. `TmNumberInput.Id` also drives the error and help ids
+  (`{Id}-error`, `{Id}-help`), which were previously generated and unaddressable.
+  - `TmToggle.Required` deliberately does **not** emit the native `required` attribute. On a checkbox
+    that means "must be checked", which is right for an "I agree" box — `TmCheckbox` does emit it — and
+    wrong for a switch whose off state is a legitimate answer: the form would refuse to submit. It marks
+    the visible label and sets `aria-required` on the input; the value is the form's to validate.
+
+### Notes
+
+- `TmUserPicker` now implements `IAsyncDisposable` instead of `IDisposable`, so it can release the
+  floating layer's module. Blazor disposes components through whichever interface they implement; no
+  consumer calls `Dispose()` on a component directly.
+
 ## 2.8.12 - 2026-08-08
 
 Two gaps in the public API, not cosmetics: in both cases a consuming application could see the right

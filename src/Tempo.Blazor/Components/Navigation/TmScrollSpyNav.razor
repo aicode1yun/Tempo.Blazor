@@ -42,6 +42,7 @@
     private IJSObjectReference? _module;
     private DotNetObjectReference<TmScrollSpyNav>? _self;
     private string[] _observedIds = [];
+    private (int ScrollOffset, string? ScrollContainerSelector, bool AutoSelectFirstItem) _observedSettings;
 
     /// <summary>Sections to list. Only items with <c>IsVisible == true</c> render, ordered by <c>Order</c>.</summary>
     [Parameter] public IReadOnlyList<ScrollSpyNavItem> Items { get; set; } = [];
@@ -63,6 +64,24 @@
 
     /// <summary>Distance from the top (px) at which a section becomes active during scroll-spy.</summary>
     [Parameter] public int ScrollOffset { get; set; } = 120;
+
+    /// <summary>
+    /// CSS selector of the element that actually scrolls the sections. Null (the default) listens on the
+    /// window, which is correct only when the page itself scrolls; an application shell that puts the
+    /// content in its own <c>overflow-y: auto</c> column never raises a window scroll event, so scroll-spy
+    /// silently never fires. Point this at that column and <see cref="ScrollOffset"/> is then measured from
+    /// the top of the container rather than from the top of the viewport.
+    /// </summary>
+    [Parameter] public string? ScrollContainerSelector { get; set; }
+
+    /// <summary>
+    /// Whether the first visible item is active before anything selects one. Default <c>true</c>, the
+    /// released behaviour. Set it to <c>false</c> when nothing should be marked current until the user
+    /// clicks or scrolls into a section — with scroll-spy off, the default otherwise leaves
+    /// <c>aria-current="true"</c> stuck on the first section and going stale as the reader scrolls.
+    /// Prefer this over feeding in an empty <see cref="ActiveId"/>, which is not a valid section id.
+    /// </summary>
+    [Parameter] public bool AutoSelectFirstItem { get; set; } = true;
 
     /// <summary>Layout variant.</summary>
     [Parameter] public ScrollSpyNavVariant Variant { get; set; } = ScrollSpyNavVariant.SideRail;
@@ -98,7 +117,7 @@
         {
             _active = ActiveId;
         }
-        else if (_active is null)
+        else if (_active is null && AutoSelectFirstItem)
         {
             _active = VisibleItems.FirstOrDefault()?.Id;
         }
@@ -121,15 +140,22 @@
         if (EnableScrollSpy)
         {
             var ids = VisibleItems.Select(i => i.Id).ToArray();
-            if (!ids.SequenceEqual(_observedIds, StringComparer.Ordinal))
+
+            // Re-observe on anything the JS side was handed, not just the ids: a shell that resolves its
+            // scrolling column late (or swaps it) would otherwise keep a listener on the old root forever.
+            var settings = (ScrollOffset, ScrollContainerSelector, AutoSelectFirstItem);
+            if (!ids.SequenceEqual(_observedIds, StringComparer.Ordinal) || settings != _observedSettings)
             {
                 _observedIds = ids;
-                await _module.InvokeVoidAsync("observe", _self, ids, ScrollOffset);
+                _observedSettings = settings;
+                await _module.InvokeVoidAsync(
+                    "observe", _self, ids, ScrollOffset, ScrollContainerSelector, AutoSelectFirstItem);
             }
         }
         else if (_observedIds.Length > 0)
         {
             _observedIds = [];
+            _observedSettings = default;
             await _module.InvokeVoidAsync("unobserve");
         }
     }

@@ -263,4 +263,179 @@ public class TmUserPickerTests : LocalizationTestBase
 
         cut.Find(".custom-empty").TextContent.Should().Be("Nobody here");
     }
+
+    // ── Accessibility: label association, required, and the combobox/listbox wiring ──────────────
+
+    /// <summary>
+    /// The label used to be a bare <c>&lt;label&gt;</c> with no <c>for</c>, so clicking it did nothing and
+    /// a screen reader never tied it to the combobox.
+    /// </summary>
+    [Fact]
+    public void UserPicker_Label_IsAssociatedWithTheSearchInput()
+    {
+        var cut = RenderPicker(p => p.Add(x => x.Label, "Owner"));
+
+        var id = cut.Find("input").GetAttribute("id");
+        id.Should().NotBeNullOrEmpty();
+        cut.Find("label").GetAttribute("for").Should().Be(id);
+    }
+
+    [Fact]
+    public void UserPicker_ExplicitId_IsUsedForBothTheInputAndTheLabel()
+    {
+        var cut = RenderPicker(p => p
+            .Add(x => x.Label, "Owner")
+            .Add(x => x.Id, "owner-picker"));
+
+        cut.Find("input").GetAttribute("id").Should().Be("owner-picker");
+        cut.Find("label").GetAttribute("for").Should().Be("owner-picker");
+    }
+
+    /// <summary>Once a user is picked there is no input, so a <c>for</c> would point at nothing.</summary>
+    [Fact]
+    public void UserPicker_WithSelection_DropsTheDanglingLabelAssociation()
+    {
+        var cut = RenderPicker(p => p
+            .Add(x => x.Label, "Owner")
+            .Add(x => x.Value, "alice"));
+
+        cut.WaitForState(() => cut.FindAll(".tm-user-picker__selected").Count > 0);
+
+        cut.FindAll("input").Should().BeEmpty();
+        cut.Find("label").GetAttribute("for").Should().BeNull();
+    }
+
+    [Fact]
+    public void UserPicker_Required_MarksLabelAndInput()
+    {
+        var cut = RenderPicker(p => p
+            .Add(x => x.Label, "Owner")
+            .Add(x => x.Required, true));
+
+        cut.Find("label").ClassList.Should().Contain("tm-input-label-required");
+        cut.Find("input").HasAttribute("required").Should().BeTrue();
+        cut.Find("input").GetAttribute("aria-required").Should().Be("true");
+    }
+
+    [Fact]
+    public void UserPicker_NotRequired_LeavesNoRequiredMarkers()
+    {
+        var cut = RenderPicker(p => p.Add(x => x.Label, "Owner"));
+
+        cut.Find("label").ClassList.Should().NotContain("tm-input-label-required");
+        cut.Find("input").HasAttribute("required").Should().BeFalse();
+        cut.Find("input").GetAttribute("aria-required").Should().BeNull();
+    }
+
+    /// <summary>
+    /// <c>role="combobox"</c> shipped without <c>aria-controls</c> or <c>aria-activedescendant</c>, so a
+    /// screen reader had no way to announce the option the arrow keys were moving over: focus stays in the
+    /// input, and nothing pointed at the highlighted <c>option</c>.
+    /// </summary>
+    [Fact]
+    public async Task UserPicker_OpenResults_PointTheComboboxAtTheListboxAndHighlightedOption()
+    {
+        var cut = RenderPicker(p => p.Add(x => x.Id, "owner-picker"));
+
+        await cut.Find("input").InputAsync(new ChangeEventArgs { Value = "a" });
+        cut.WaitForState(() => cut.FindAll(".tm-user-picker__result-item").Count > 0);
+
+        var input = cut.Find("input");
+        var listbox = cut.Find("[role='listbox']");
+
+        listbox.GetAttribute("id").Should().Be("owner-picker-results");
+        input.GetAttribute("aria-controls").Should().Be("owner-picker-results");
+        input.GetAttribute("aria-expanded").Should().Be("true");
+
+        // First result is highlighted on open, so that is what has to be announced.
+        input.GetAttribute("aria-activedescendant").Should().Be("owner-picker-option-0");
+        cut.Find(".tm-user-picker__result-item--active").GetAttribute("id").Should().Be("owner-picker-option-0");
+    }
+
+    [Fact]
+    public async Task UserPicker_ArrowDown_MovesActiveDescendantWithTheHighlight()
+    {
+        var cut = RenderPicker(p => p.Add(x => x.Id, "owner-picker"));
+
+        await cut.Find("input").InputAsync(new ChangeEventArgs { Value = "a" });
+        cut.WaitForState(() => cut.FindAll(".tm-user-picker__result-item").Count > 1);
+
+        await cut.Find("input").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowDown" });
+
+        cut.Find("input").GetAttribute("aria-activedescendant").Should().Be("owner-picker-option-1");
+        cut.Find(".tm-user-picker__result-item--active").GetAttribute("id").Should().Be("owner-picker-option-1");
+    }
+
+    /// <summary>An id pointing at an element that is not there is worse than no attribute at all.</summary>
+    [Fact]
+    public void UserPicker_ClosedResults_HaveNoDanglingAriaControlsOrActiveDescendant()
+    {
+        var cut = RenderPicker(p => p.Add(x => x.Id, "owner-picker"));
+
+        var input = cut.Find("input");
+        input.GetAttribute("aria-controls").Should().BeNull();
+        input.GetAttribute("aria-activedescendant").Should().BeNull();
+    }
+
+    // ── Floating menu ───────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// The results list is <c>position: absolute</c>, so an ancestor with <c>overflow: auto</c> — a modal
+    /// body — clips it and scrolls it away from its input. The floating variant lifts it out of the flow
+    /// and has script anchor it to the input.
+    /// </summary>
+    [Fact]
+    public async Task UserPicker_FloatingMenu_AnchorsTheResultsListToTheInput()
+    {
+        var module = JSInterop.SetupModule(FloatingModulePath);
+        module.SetupVoid("anchor", _ => true).SetVoidResult();
+
+        var cut = RenderPicker(p => p.Add(x => x.FloatingMenu, true));
+
+        await cut.Find("input").InputAsync(new ChangeEventArgs { Value = "a" });
+        cut.WaitForState(() => cut.FindAll(".tm-user-picker__result-item").Count > 0);
+
+        cut.Find("[role='listbox']").ClassList.Should().Contain("tm-user-picker__results--floating");
+        module.Invocations.Should().Contain(invocation => invocation.Identifier == "anchor");
+    }
+
+    [Fact]
+    public async Task UserPicker_WithoutFloatingMenu_DoesNotTouchTheFloatingLayer()
+    {
+        var module = JSInterop.SetupModule(FloatingModulePath);
+        module.SetupVoid("anchor", _ => true).SetVoidResult();
+
+        var cut = RenderPicker(p => { });
+
+        await cut.Find("input").InputAsync(new ChangeEventArgs { Value = "a" });
+        cut.WaitForState(() => cut.FindAll(".tm-user-picker__result-item").Count > 0);
+
+        cut.Find("[role='listbox']").ClassList.Should().NotContain("tm-user-picker__results--floating");
+        module.Invocations.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// The shared scroll and resize listeners live in a module shared by every picker on the page, so a
+    /// closed list that never released its tracking entry would keep them bound forever.
+    /// </summary>
+    [Fact]
+    public async Task UserPicker_FloatingMenu_ReleasesTheAnchorWhenTheListCloses()
+    {
+        var module = JSInterop.SetupModule(FloatingModulePath);
+        module.SetupVoid("anchor", _ => true).SetVoidResult();
+        module.SetupVoid("release", _ => true).SetVoidResult();
+
+        var cut = RenderPicker(p => p.Add(x => x.FloatingMenu, true));
+
+        await cut.Find("input").InputAsync(new ChangeEventArgs { Value = "a" });
+        cut.WaitForState(() => cut.FindAll(".tm-user-picker__result-item").Count > 0);
+        module.Invocations.Should().NotContain(invocation => invocation.Identifier == "release");
+
+        await cut.Find(".tm-user-picker__result-item").PointerDownAsync(new PointerEventArgs());
+        cut.WaitForState(() => cut.FindAll("[role='listbox']").Count == 0);
+
+        module.Invocations.Should().Contain(invocation => invocation.Identifier == "release");
+    }
+
+    private const string FloatingModulePath = "./_content/Tempo.Blazor/Components/Inputs/TmUserPicker.razor.js";
 }

@@ -4,7 +4,7 @@
 <div class="tm-toggle-wrapper @(Value ? "tm-toggle-checked" : "") @(Disabled ? "tm-toggle-disabled" : "") @Class" @attributes="AdditionalAttributes">
     @if (!string.IsNullOrEmpty(Label))
     {
-        <span class="tm-toggle-label-text">@Label</span>
+        <span class="tm-toggle-label-text @(Required ? "tm-input-label-required" : "")">@Label</span>
     }
     <label class="tm-toggle-label">
         <input type="checkbox"
@@ -13,6 +13,7 @@
                disabled="@Disabled"
                class="tm-toggle-input"
                role="switch"
+               aria-required="@(Required ? "true" : null)"
                aria-label="@AccessibleName"
                aria-labelledby="@AriaLabelledBy"
                aria-checked="@Value.ToString().ToLowerInvariant()"
@@ -61,6 +62,19 @@
     /// Null (the default) renders no id attribute.
     /// </summary>
     [Parameter] public string? Id { get; set; }
+
+    /// <summary>
+    /// Marks the switch required: <c>aria-required="true"</c> on the input and, when <see cref="Label"/>
+    /// renders visible text, the same asterisk marker the other inputs use.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately does <em>not</em> emit the native <c>required</c> attribute. On a checkbox that means
+    /// "must be checked", so it would refuse to submit a form whose switch is legitimately off — which is
+    /// the normal state of most switches. Use it to say the choice must be made, and validate the value in
+    /// the form. <see cref="TmCheckbox"/> is the opposite case and does emit it: an "I agree" box really
+    /// does have to be ticked.
+    /// </remarks>
+    [Parameter] public bool Required { get; set; }
 
     /// <summary>Additional CSS class(es).</summary>
     [Parameter] public string? Class { get; set; }

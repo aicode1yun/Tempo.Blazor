@@ -72,6 +72,14 @@
     padding: 0;
 }
 
+/* Floating variant: out of the flow entirely, so no ancestor `overflow` clips it. Every geometric
+   property here is a pre-script fallback — TmUserPicker.razor.js overwrites width, left, top and
+   max-height against the input as soon as the list renders and on every scroll and resize after that. */
+.tm-user-picker__results--floating {
+    position: fixed;
+    margin: 0;
+}
+
 .tm-user-picker__result-item {
     display: flex;
     align-items: center;

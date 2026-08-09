@@ -3,12 +3,16 @@
 @typeparam TUser
 @using Microsoft.AspNetCore.Components.Web
 @using Tempo.Blazor.Components.Avatars
-@implements IDisposable
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
 
 <div class="tm-user-picker @(Disabled ? "tm-user-picker--disabled" : "")" data-testid="@TestId("tm-user-picker")" @attributes="AdditionalAttributes">
     @if (!string.IsNullOrEmpty(Label))
     {
-        <label class="tm-input-label">@Label</label>
+        @* `for` only when the search box is on screen: once a user is picked the input is gone and a
+           dangling `for` would point at nothing. *@
+        <label for="@(ShowsSearchInput ? Id : null)" class="tm-input-label @(Required ? "tm-input-label-required" : "")">@Label</label>
     }
 
     @if (_selectedUser is not null)
@@ -50,13 +54,19 @@
     {
         <div class="tm-user-picker__search">
             <input type="text"
+                   id="@Id"
+                   @ref="_inputRef"
                    value="@_searchTerm"
                    placeholder="@Placeholder"
                    disabled="@Disabled"
+                   required="@Required"
+                   aria-required="@(Required ? "true" : null)"
                    class="tm-user-picker__input"
                    role="combobox"
                    aria-expanded="@(_showResults ? "true" : "false")"
                    aria-autocomplete="list"
+                   aria-controls="@(_showResults && _results.Count > 0 ? ResultsId : null)"
+                   aria-activedescendant="@ActiveDescendantId"
                    data-testid="@TestId("tm-user-picker-input")"
                    @oninput="HandleSearchInputAsync"
                    @onkeydown="HandleKeyDownAsync"
@@ -83,12 +93,16 @@
             }
             else if (_showResults && _results.Count > 0)
             {
-                <ul class="tm-user-picker__results" role="listbox" data-testid="@TestId("tm-user-picker-results")">
+                <ul id="@ResultsId"
+                    @ref="_menuRef"
+                    class="tm-user-picker__results @(FloatingMenu ? "tm-user-picker__results--floating" : null)"
+                    role="listbox" data-testid="@TestId("tm-user-picker-results")">
                     @for (var i = 0; i < _results.Count; i++)
                     {
                         var user = _results[i];
                         var active = i == _highlightedIndex;
-                        <li class="tm-user-picker__result-item @(active ? "tm-user-picker__result-item--active" : null)"
+                        <li id="@OptionId(i)"
+                            class="tm-user-picker__result-item @(active ? "tm-user-picker__result-item--active" : null)"
                             role="option" aria-selected="@(active ? "true" : "false")" data-testid="@TestId("tm-user-picker-result-item")"
                             @onpointerdown="() => HandleSelectAsync(user)" @onpointerdown:preventDefault="true">
                             @if (ItemTemplate is not null)
@@ -121,6 +135,13 @@
 </div>
 
 @code {
+    private const string ModulePath = "./_content/Tempo.Blazor/Components/Inputs/TmUserPicker.razor.js";
+
+    private ElementReference _inputRef;
+    private ElementReference _menuRef;
+    private IJSObjectReference? _module;
+    private bool _menuAnchored;
+
     private string _searchTerm = string.Empty;
     private bool _showResults;
     private bool _loading;
@@ -168,6 +189,36 @@
     /// <summary>Field label.</summary>
     [Parameter] public string? Label { get; set; }
 
+    /// <summary>
+    /// Id of the search input, so the rendered <see cref="Label"/> can point at it with <c>for</c>.
+    /// Defaults to a generated value; supply one when the page owns the label.
+    /// </summary>
+    [Parameter] public string Id { get; set; } = Guid.NewGuid().ToString("n")[..8];
+
+    /// <summary>
+    /// Marks the field required: the asterisk on the label (<c>tm-input-label-required</c>, the same
+    /// marker the other inputs use) plus <c>required</c> and <c>aria-required</c> on the search input.
+    /// </summary>
+    [Parameter] public bool Required { get; set; }
+
+    /// <summary>
+    /// Lifts the results list out of the normal flow so an ancestor with <c>overflow: auto</c> — a modal
+    /// body, a scrolling form column — cannot clip it or scroll it away from its input. The list is then
+    /// positioned against the input by script, flipping above it when there is not enough room below.
+    /// Off by default: it costs a JS module import, and a picker that is not inside a scroll container
+    /// does not need it.
+    /// </summary>
+    /// <remarks>
+    /// This is a floating layer, not a DOM portal: the list stays where it is rendered and is positioned
+    /// with <c>position: fixed</c>. That escapes every ancestor <c>overflow</c> up to the nearest ancestor
+    /// that establishes a containing block for fixed elements (one with a <c>transform</c>, <c>filter</c>,
+    /// <c>perspective</c>, <c>contain</c> or a <c>will-change</c> naming them — <c>.tm-modal</c> is one,
+    /// because it animates with a transform). Inside such an ancestor the list is bounded by it instead of
+    /// by the viewport, which is why the available space is measured against that box and the list flips
+    /// and clamps its height to fit.
+    /// </remarks>
+    [Parameter] public bool FloatingMenu { get; set; }
+
     /// <summary>Search box placeholder.</summary>
     [Parameter] public string? Placeholder { get; set; }
 
@@ -207,6 +258,22 @@
     private string AvatarName(TUser user) => (AvatarNameSelector ?? DisplaySelector)(user);
 
     private string? AvatarSrc(TUser user) => AvatarSrcSelector?.Invoke(user);
+
+    /// <summary>True while the combobox itself is on screen — not when a selection or a resolve error is.</summary>
+    private bool ShowsSearchInput => _selectedUser is null && _resolveState != TmPickerFetchState.Transient;
+
+    private string ResultsId => $"{Id}-results";
+
+    private string OptionId(int index) => $"{Id}-option-{index.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+
+    /// <summary>
+    /// Id of the arrow-highlighted option, so a screen reader announces it while focus stays in the input.
+    /// Null whenever no option is highlighted — an id pointing at nothing is worse than no attribute.
+    /// </summary>
+    private string? ActiveDescendantId =>
+        _showResults && _highlightedIndex >= 0 && _highlightedIndex < _results.Count
+            ? OptionId(_highlightedIndex)
+            : null;
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
@@ -400,9 +467,52 @@
     }
 
     /// <inheritdoc />
-    public void Dispose()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!FloatingMenu)
+        {
+            return;
+        }
+
+        // Anchoring is re-applied on every render while the list is up: the input can move under it
+        // (a validation message appearing above, the form reflowing) without any scroll event firing.
+        if (ShowsSearchInput && _showResults && _results.Count > 0)
+        {
+            _module ??= await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
+            _menuAnchored = true;
+            await _module.InvokeVoidAsync("anchor", _inputRef, _menuRef);
+        }
+        else if (_menuAnchored && _module is not null)
+        {
+            // The element is already gone from the DOM here, so this only drops the tracking entry and,
+            // with it, the shared scroll listener once the last picker closes.
+            _menuAnchored = false;
+            await _module.InvokeVoidAsync("release", _menuRef);
+        }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
     {
         _debounceCts?.Cancel();
         _debounceCts?.Dispose();
+
+        try
+        {
+            if (_module is not null)
+            {
+                if (_menuAnchored)
+                {
+                    _menuAnchored = false;
+                    await _module.InvokeVoidAsync("release", _menuRef);
+                }
+
+                await _module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuit already gone.
+        }
     }
 }

@@ -399,7 +399,9 @@ Víceřádkové textové pole.
 | `Min` | `int?` | `null` | Minimální hodnota |
 | `Max` | `int?` | `null` | Maximální hodnota |
 | `Step` | `int` | `1` | Krok inkrementace |
-| `Label` | `string?` | `null` | Popisek |
+| `Label` | `string?` | `null` | Popisek; renderuje se s `for` mířícím na vstup |
+| `Id` | `string` | generované | `id` vstupu; odvozují se od něj i `id` chybové (`{Id}-error`) a nápovědné (`{Id}-help`) hlášky |
+| `Required` | `bool` | `false` | Hvězdička na popisku (`tm-input-label-required`) + `required` a `aria-required` na vstupu |
 | `Placeholder` | `string?` | `null` | Placeholder |
 | `Error` | `string?` | `null` | Chybová zpráva |
 | `HelpText` | `string?` | `null` | Pomocný text |
@@ -544,6 +546,7 @@ Generický picker uživatelů/entit s debounced zrušitelným vyhledáváním, v
 | `tm-user-picker__clear` | Tlačítko zrušení výběru |
 | `tm-user-picker__search` / `__input` | Vyhledávací pole |
 | `tm-user-picker__results` / `__result-item` / `__result-item--active` | Dropdown výsledků |
+| `tm-user-picker__results--floating` | Nabídka mimo tok (`FloatingMenu`), pozicovaná skriptem proti vstupu |
 | `tm-user-picker__loading` / `__no-results` | Stavy `Ok` (prázdno) / načítání |
 | `tm-user-picker__transient` / `__retry` | Stav `Transient` s tlačítkem opakování |
 
@@ -562,7 +565,10 @@ Generický picker uživatelů/entit s debounced zrušitelným vyhledáváním, v
 | `MinChars` | `int` | `3` | Min. znaků pro spuštění hledání |
 | `DebounceMs` | `int` | `300` | Debounce v ms |
 | `Disabled` | `bool` | `false` | Zakázáno |
-| `Label` | `string?` | `null` | Popisek |
+| `Label` | `string?` | `null` | Popisek; renderuje se s `for` mířícím na vyhledávací pole (a bez něj, když je hodnota vybraná a pole na obrazovce není) |
+| `Id` | `string` | generované | `id` vyhledávacího pole; odvozují se od něj i `id` seznamu (`{Id}-results`) a položek (`{Id}-option-{i}`) |
+| `Required` | `bool` | `false` | Hvězdička na popisku (`tm-input-label-required`) + `required` a `aria-required` na vstupu |
+| `FloatingMenu` | `bool` | `false` | Vytáhne nabídku výsledků z toku (`position: fixed`) a nechá ji skriptem ukotvit k poli, takže ji předek s `overflow: auto` (tělo modálu, rolující sloupec formuláře) neořízne ani neodroluje. Nabídka se překlopí nad pole, když se pod ním nevejde. Není to DOM portal — uvnitř předka s `transform`/`filter`/`contain` (např. `.tm-modal`, který se animuje transformací) je nabídka omezená tímto boxem, ne viewportem; proto se volné místo měří proti němu |
 | `Placeholder` | `string?` | `null` | Placeholder |
 | `LoadingText` | `string` | `"Loading..."` | Text během načítání |
 | `NoResultsText` | `string` | `"No results found"` | Text pro stav `Empty` |
@@ -1115,6 +1121,7 @@ Přepínací spínač (switch).
 | `AriaLabel` | `string?` | `null` | Přístupné jméno **bez viditelného textu** — jde na `<input>`, ne na obal, a má přednost před `Label` |
 | `AriaLabelledBy` | `string?` | `null` | `aria-labelledby` na `<input>` — pro případ, kdy popisek je jinde na stránce |
 | `Id` | `string?` | `null` | `id` vnitřního `<input>`, aby na něj mohl ukázat vlastní `<label for="…">` |
+| `Required` | `bool` | `false` | Hvězdička na viditelném popisku + `aria-required="true"` na `<input>`. **Nativní `required` záměrně NEemituje** — na checkboxu znamená „musí být zaškrtnuto", což by odmítlo odeslat formulář se spínačem legitimně vypnutým. Hodnotu validuj ve formuláři. (`TmCheckbox` je opačný případ a nativní `required` emituje.) |
 | `Disabled` | `bool` | `false` | Zakázáno |
 | `Class` | `string?` | `null` | Další CSS třídy |
 | `AdditionalAttributes` | `Dictionary<string, object>?` | `null` | Další HTML atributy — splatují se na **obalový `div`**, takže `aria-label` zadaný tudy spínač nepojmenuje; použij `AriaLabel` |
@@ -2486,7 +2493,7 @@ Sekční in-page navigace s volitelným scroll-spy sledováním aktivní sekce. 
 | `tm-scroll-spy-nav__link--active` | Aktivní položka |
 | `tm-scroll-spy-nav__label` | Výchozí text položky (když není `ItemTemplate`) |
 
-Aktivní položka má vždy `aria-current="true"` i `data-active="true"` (ostatní explicitně `"false"`).
+Aktivní položka má vždy `aria-current="true"` i `data-active="true"` (ostatní explicitně `"false"`). S `AutoSelectFirstItem="false"` nemusí být aktivní žádná — pak mají `"false"` všechny.
 
 #### Parametry
 
@@ -2499,6 +2506,8 @@ Aktivní položka má vždy `aria-current="true"` i `data-active="true"` (ostatn
 | `OnNavigate` | `EventCallback<string>` | — | Explicitní výběr kliknutím |
 | `EnableScrollSpy` | `bool` | `false` | Zapne pasivní scroll listener sledující aktivní sekci |
 | `ScrollOffset` | `int` | `120` | Práh (px) od horního okraje pro scroll-spy |
+| `ScrollContainerSelector` | `string?` | `null` | CSS selektor prvku, který sekcemi skutečně roluje. `null` poslouchá na `window` — což platí jen když roluje samotná stránka; shell s obsahem v `overflow-y: auto` sloupci na window scroll event nikdy nevyvolá a scroll-spy tiše nefunguje. S kontejnerem se `ScrollOffset` měří od jeho horního okraje, ne od okraje viewportu. Selektor, který nic nenajde, spadne zpět na `window` |
+| `AutoSelectFirstItem` | `bool` | `true` | Je-li první viditelná položka aktivní, dokud něco jiného aktivní nenastaví. `false` = dokud uživatel neklikne nebo neodroluje do sekce, není aktivní NIC. Používej to místo prázdného `ActiveId` — prázdný řetězec není `id` sekce |
 | `Variant` | `ScrollSpyNavVariant` | `SideRail` | `SideRail` (svislý, sticky) nebo `Breadcrumb` (vodorovný pruh) |
 | `Title` | `string?` | `null` | Nadpis panelu (jen SideRail) |
 | `Class` | `string?` | `null` | Další CSS třídy |
@@ -5214,6 +5223,13 @@ Sticky/plovoucí panel akcí pro dlouhé formuláře. Vlevo obsah (`ChildContent
 | `tm-form-action-bar__end` | Pravá strana (akce) |
 | `tm-form-action-bar__danger` / `__secondary` / `__primary` | Wrappery jednotlivých slotů akcí |
 | `tm-form-action-bar__live-region` | Skrytá `aria-live="polite"` oblast pro `LiveMessage` |
+
+#### CSS proměnné
+
+| Proměnná | Výchozí | Popis |
+|----------|---------|-------|
+| `--tm-form-action-bar-inset-inline-start` | `0` | Odsazení plovoucí lišty zleva. Shell s pevnou boční navigací jí tudy předá její šířku (`--tm-form-action-bar-inset-inline-start: 18.5rem`), místo aby přebíjel `left` z aplikačního CSS — takový override musí přebít i `[b-*]` atribut izolovaného CSS a při pouhé remíze specificity prohraje |
+| `--tm-form-action-bar-inset-inline-end` | `0` | Totéž zprava |
 
 #### Parametry
 
