@@ -14,11 +14,23 @@
 //
 // A module imported from the same URL is shared by every picker on the page, so all per-list state lives
 // in `tracked` and the scroll/resize listeners are bound once for all of them.
+//
+// `tracked` is keyed by a STRING the component owns, not by the element. Blazor resolves an
+// ElementReference through a document query, and by the time a closing list is released its element is
+// already detached — the query returns null, so an element-keyed map could never be cleaned up.
 
 const GAP = 4;
 
-// Below this, "there is room below" stops being true in any useful sense and flipping wins.
+// Below this, "there is room below" stops being true in any useful sense and flipping wins. It only
+// picks the SIDE: a floor cannot be clamped into max-height, because forcing a height larger than the
+// room available does not create room — it pushes the list out of the containing block, where the modal
+// clips it. That is the very symptom this layer exists to remove.
 const MIN_USABLE_HEIGHT = 96;
+
+// Mirrors max-height on .tm-user-picker__results. Going floating must not silently drop the cap: the
+// script overwrites max-height on every placement, so without this the list would be as tall as the
+// viewport allows, which the non-floating variant never was.
+const MAX_HEIGHT = 240;
 
 const tracked = new Map();
 let listenersBound = false;
@@ -57,9 +69,9 @@ function containingBlockOf(element) {
 }
 
 function place(entry) {
-    const { anchorElement, menuElement } = entry;
+    const { anchorElement, menuElement, key } = entry;
     if (!anchorElement.isConnected || !menuElement.isConnected) {
-        release(menuElement);
+        release(key);
         return;
     }
 
@@ -73,7 +85,7 @@ function place(entry) {
     const roomBelow = limitBottom - anchor.bottom - GAP;
     const roomAbove = anchor.top - limitTop - GAP;
     const below = roomBelow >= MIN_USABLE_HEIGHT || roomBelow >= roomAbove;
-    const room = Math.max(below ? roomBelow : roomAbove, 0);
+    const room = Math.min(Math.max(below ? roomBelow : roomAbove, 0), MAX_HEIGHT);
 
     menuElement.style.width = `${anchor.width}px`;
     menuElement.style.left = `${anchor.left - originLeft}px`;
@@ -124,22 +136,22 @@ function unbindListeners() {
     listenersBound = false;
 }
 
-export function anchor(anchorElement, menuElement) {
-    if (!anchorElement || !menuElement) {
+export function anchor(anchorElement, menuElement, key) {
+    if (!anchorElement || !menuElement || !key) {
         return;
     }
 
-    const entry = { anchorElement, menuElement };
-    tracked.set(menuElement, entry);
+    const entry = { anchorElement, menuElement, key };
+    tracked.set(key, entry);
     bindListeners();
     place(entry);
 }
 
-export function release(menuElement) {
-    if (!menuElement) {
+export function release(key) {
+    if (!key) {
         return;
     }
 
-    tracked.delete(menuElement);
+    tracked.delete(key);
     unbindListeners();
 }

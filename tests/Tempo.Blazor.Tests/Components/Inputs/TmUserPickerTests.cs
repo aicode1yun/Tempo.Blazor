@@ -418,23 +418,100 @@ public class TmUserPickerTests : LocalizationTestBase
     /// The shared scroll and resize listeners live in a module shared by every picker on the page, so a
     /// closed list that never released its tracking entry would keep them bound forever.
     /// </summary>
+    /// <remarks>
+    /// The release has to be addressed BY ID, not by element reference: the list is out of the DOM by
+    /// the time this runs, and Blazor resolves an <c>ElementReference</c> through a document query, so a
+    /// detached element arrives in JS as null and would release nothing at all. bUnit cannot see that —
+    /// it records the invocation either way — so the argument itself is what this asserts.
+    /// </remarks>
     [Fact]
-    public async Task UserPicker_FloatingMenu_ReleasesTheAnchorWhenTheListCloses()
+    public async Task UserPicker_FloatingMenu_ReleasesTheAnchorByIdWhenTheListCloses()
     {
         var module = JSInterop.SetupModule(FloatingModulePath);
         module.SetupVoid("anchor", _ => true).SetVoidResult();
         module.SetupVoid("release", _ => true).SetVoidResult();
 
-        var cut = RenderPicker(p => p.Add(x => x.FloatingMenu, true));
+        var cut = RenderPicker(p => p
+            .Add(x => x.FloatingMenu, true)
+            .Add(x => x.Id, "owner-picker"));
 
         await cut.Find("input").InputAsync(new ChangeEventArgs { Value = "a" });
         cut.WaitForState(() => cut.FindAll(".tm-user-picker__result-item").Count > 0);
         module.Invocations.Should().NotContain(invocation => invocation.Identifier == "release");
 
+        var anchorCall = module.Invocations.Single(invocation => invocation.Identifier == "anchor");
+        anchorCall.Arguments.Should().HaveCount(3);
+        anchorCall.Arguments[2].Should().Be("owner-picker-results");
+
         await cut.Find(".tm-user-picker__result-item").PointerDownAsync(new PointerEventArgs());
         cut.WaitForState(() => cut.FindAll("[role='listbox']").Count == 0);
 
-        module.Invocations.Should().Contain(invocation => invocation.Identifier == "release");
+        var releaseCall = module.Invocations.Single(invocation => invocation.Identifier == "release");
+        releaseCall.Arguments.Should().ContainSingle().Which.Should().Be("owner-picker-results");
+    }
+
+    /// <summary>
+    /// Turning the floating layer off while a list is open has to release it. The guard used to return
+    /// early on <c>FloatingMenu</c>, so the script kept writing inline left/top/width onto a list that
+    /// was no longer floating.
+    /// </summary>
+    [Fact]
+    public async Task UserPicker_FloatingMenuTurnedOffWhileOpen_ReleasesTheAnchor()
+    {
+        var module = JSInterop.SetupModule(FloatingModulePath);
+        module.SetupVoid("anchor", _ => true).SetVoidResult();
+        module.SetupVoid("release", _ => true).SetVoidResult();
+
+        var cut = RenderPicker(p => p
+            .Add(x => x.FloatingMenu, true)
+            .Add(x => x.Id, "owner-picker"));
+
+        await cut.Find("input").InputAsync(new ChangeEventArgs { Value = "a" });
+        cut.WaitForState(() => cut.FindAll(".tm-user-picker__result-item").Count > 0);
+
+        cut.Render(p =>
+        {
+            p.Add(x => x.SearchProvider, SearchProvider());
+            p.Add(x => x.ResolveProvider, ResolveProvider());
+            p.Add(x => x.ValueSelector, (TestUser u) => u.Login);
+            p.Add(x => x.DisplaySelector, (TestUser u) => u.DisplayName);
+            p.Add(x => x.MinChars, 1);
+            p.Add(x => x.Id, "owner-picker");
+            p.Add(x => x.FloatingMenu, false);
+        });
+
+        cut.Find("[role='listbox']").ClassList.Should().NotContain("tm-user-picker__results--floating");
+        var releaseCall = module.Invocations.Single(invocation => invocation.Identifier == "release");
+        releaseCall.Arguments.Should().ContainSingle().Which.Should().Be("owner-picker-results");
+    }
+
+    /// <summary>
+    /// Going floating must not silently drop the list's height cap: the script overwrites max-height on
+    /// every placement, so the 240px from the stylesheet has to be honoured in the script too.
+    /// </summary>
+    [Fact]
+    public void UserPickerFloatingScript_ClampsTheMenuToTheStylesheetMaxHeight()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var script = File.ReadAllText(Path.Combine(
+            repositoryRoot, "src", "Tempo.Blazor", "Components", "Inputs", "TmUserPicker.razor.js"));
+        var css = File.ReadAllText(Path.Combine(
+            repositoryRoot, "src", "Tempo.Blazor", "Components", "Inputs", "TmUserPicker.razor.css"));
+
+        css.Should().Contain("max-height: 240px;", "the script's cap has to mirror a real stylesheet value");
+        script.Should().Contain("const MAX_HEIGHT = 240;");
+        script.Should().Contain("MAX_HEIGHT)");
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "TempoBlazor.slnx")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName ?? throw new DirectoryNotFoundException("Could not find repository root.");
     }
 
     private const string FloatingModulePath = "./_content/Tempo.Blazor/Components/Inputs/TmUserPicker.razor.js";

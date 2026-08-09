@@ -469,25 +469,26 @@
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!FloatingMenu)
-        {
-            return;
-        }
-
-        // Anchoring is re-applied on every render while the list is up: the input can move under it
-        // (a validation message appearing above, the form reflowing) without any scroll event firing.
-        if (ShowsSearchInput && _showResults && _results.Count > 0)
+        // The release branch must stay reachable when FloatingMenu is switched OFF at runtime, so this
+        // deliberately does not start with an early return on FloatingMenu: otherwise the script would
+        // go on writing inline left/top/width onto a list that is no longer floating.
+        if (FloatingMenu && ShowsSearchInput && _showResults && _results.Count > 0)
         {
             _module ??= await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
             _menuAnchored = true;
-            await _module.InvokeVoidAsync("anchor", _inputRef, _menuRef);
+
+            // Anchoring is re-applied on every render while the list is up: the input can move under it
+            // (a validation message appearing above, the form reflowing) with no scroll event firing.
+            await _module.InvokeVoidAsync("anchor", _inputRef, _menuRef, ResultsId);
         }
         else if (_menuAnchored && _module is not null)
         {
-            // The element is already gone from the DOM here, so this only drops the tracking entry and,
-            // with it, the shared scroll listener once the last picker closes.
+            // Released BY ID, not by element reference. The list is already out of the DOM by the time
+            // this runs, and Blazor resolves an ElementReference through a document query — a detached
+            // element resolves to null, so passing the reference would silently release nothing and
+            // leave the entry (and the shared scroll listener) behind.
             _menuAnchored = false;
-            await _module.InvokeVoidAsync("release", _menuRef);
+            await _module.InvokeVoidAsync("release", ResultsId);
         }
     }
 
@@ -504,7 +505,7 @@
                 if (_menuAnchored)
                 {
                     _menuAnchored = false;
-                    await _module.InvokeVoidAsync("release", _menuRef);
+                    await _module.InvokeVoidAsync("release", ResultsId);
                 }
 
                 await _module.DisposeAsync();

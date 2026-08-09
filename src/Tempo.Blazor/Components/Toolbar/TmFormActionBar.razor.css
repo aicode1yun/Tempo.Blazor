@@ -13,12 +13,16 @@
    bar would run underneath it. The inset is a variable so the host can hand the bar the width of its
    own chrome (`--tm-form-action-bar-inset-inline-start: 18.5rem`) instead of overriding `left` from
    application CSS — an override that has to out-specify this rule's `[b-*]` scope attribute and loses
-   the cascade when it does not. Unset, the bar keeps spanning the full viewport as before. */
+   the cascade when it does not. Unset, the bar keeps spanning the full viewport as before.
+
+   The properties are the LOGICAL ones so the variable names are not a lie: in LTR they resolve to the
+   same left/right as before, in RTL the start inset follows the writing direction, which is what
+   "inset-inline-start" promises. */
 .tm-form-action-bar--floating-bottom {
     position: fixed;
-    right: var(--tm-form-action-bar-inset-inline-end, 0);
+    inset-inline-end: var(--tm-form-action-bar-inset-inline-end, 0);
     bottom: 0;
-    left: var(--tm-form-action-bar-inset-inline-start, 0);
+    inset-inline-start: var(--tm-form-action-bar-inset-inline-start, 0);
     z-index: var(--tm-z-sticky);
     padding: var(--tm-space-2) clamp(var(--tm-space-3), 2vw, var(--tm-space-6))
         calc(var(--tm-space-2) + env(safe-area-inset-bottom, 0px));

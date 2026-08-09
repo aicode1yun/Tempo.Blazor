@@ -139,8 +139,10 @@ public class TmFormActionBarTests : LocalizationTestBase
 
         var floating = SelectorBlock(css, ".tm-form-action-bar--floating-bottom");
 
-        floating.Should().Contain("left: var(--tm-form-action-bar-inset-inline-start, 0);");
-        floating.Should().Contain("right: var(--tm-form-action-bar-inset-inline-end, 0);");
+        // Logical properties, so the variable names describe what they actually do — in LTR they
+        // resolve to the same left/right the released version pinned.
+        floating.Should().Contain("inset-inline-start: var(--tm-form-action-bar-inset-inline-start, 0);");
+        floating.Should().Contain("inset-inline-end: var(--tm-form-action-bar-inset-inline-end, 0);");
         // Unset, the fallback keeps the released full-bleed behaviour.
         floating.Should().NotContain("left: 0;");
         floating.Should().NotContain("right: 0;");

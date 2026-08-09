@@ -1,5 +1,41 @@
 # Changelog
 
+## 2.8.14 - 2026-08-09
+
+Four review findings against 2.8.13, three of them in the floating layer that shipped the day before.
+Nothing here changes an API; it makes 2.8.13 behave the way its own documentation already claimed.
+
+### Fixed
+
+- **`TmUserPicker`'s floating layer never actually released itself.** The tracking entry was keyed by
+  the menu element and released by passing that `ElementReference` back to script. Blazor resolves an
+  `ElementReference` through a document query, and a closing list is out of the DOM by the time the
+  release runs — so the query returned null, `release` returned immediately, and the entry plus the
+  shared scroll/resize listeners stayed behind. It was self-healing (the next scroll dropped it through
+  the `isConnected` guard) but the code comment and the unit test both described something that never
+  happened in a browser. The map is now keyed by a string the component owns (`{Id}-results`), released
+  by that same string, and the test asserts the argument rather than merely the call.
+- **Switching `FloatingMenu` off while a list was open left the layer attached.** `OnAfterRenderAsync`
+  returned early on `FloatingMenu`, so the release branch was unreachable and the script went on writing
+  inline `left`/`top`/`width` onto a list that was no longer floating. The guard now sits inside the
+  anchor condition, leaving the release path open.
+- **The floating variant silently lost the list's height cap.** `.tm-user-picker__results` caps at
+  `max-height: 240px`, but the script overwrites `max-height` on every placement and wrote the whole
+  available space, so a floating list could be far taller than the same list not floating. It is now
+  clamped to the stylesheet's 240px, with a unit test tying the constant to the CSS so the two cannot
+  drift. Note the asymmetry, which is deliberate: only the ceiling can be clamped. Forcing a *floor*
+  into `max-height` would not create room — it would push the list out of its containing block, where
+  the modal clips it, which is the exact symptom the floating layer exists to remove. Too little room on
+  both sides is a layout problem in that dialog, and the list's honest response is to scroll within what
+  is left.
+
+### Changed
+
+- **`.tm-form-action-bar--floating-bottom` uses the logical inset properties.** The custom properties
+  were named `--tm-form-action-bar-inset-inline-start` / `-end` but were applied to physical `left` /
+  `right`, so the names were only true in left-to-right text. In LTR nothing changes; in RTL the start
+  inset now follows the writing direction, as the name always promised.
+
 ## 2.8.13 - 2026-08-09
 
 Six gaps that consuming applications had been papering over in their own code. Every one of them is a
