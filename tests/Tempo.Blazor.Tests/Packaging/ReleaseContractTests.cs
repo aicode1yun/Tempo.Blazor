@@ -150,11 +150,7 @@ public sealed class ReleaseContractTests
                 "a project that declares a PackageId is shipped, so it must declare the version it ships "
                 + "under; without one it inherits whatever the build supplies and escapes the check below");
 
-        var announced = Regex.Match(
-                File.ReadAllText(Path.Combine(repositoryRoot, "CHANGELOG.md")),
-                @"^##\s*(?<version>\d+\.\d+\.\d+(?:-[0-9A-Za-z][0-9A-Za-z.-]*)?(?:\+[0-9A-Za-z][0-9A-Za-z.-]*)?)",
-                RegexOptions.Multiline)
-            .Groups["version"].Value;
+        var announced = ReadAnnouncedVersion(repositoryRoot);
 
         announced.Should().NotBeEmpty(
             "the changelog must open with the version being released, or there is nothing to check against");
@@ -163,6 +159,152 @@ public sealed class ReleaseContractTests
             item => item.Version == announced,
             $"every locally packable project must ship under the version the changelog announces ({announced}); "
             + "a package numbered independently of the release notes is how a fix ships to nobody");
+    }
+
+    /// <summary>
+    /// The commit a package records as its origin must be the commit it was built from.
+    /// <para>
+    /// THE DEFECT THIS EXISTS FOR, measured rather than imagined: the published 2.8.15 nuspec carries
+    /// <c>commit="efb00b89…"</c>, which is 2.8.14 — one release behind the content it actually ships. The
+    /// content was correct; the LABEL was a release stale. That is worse than an empty field, because the
+    /// method this repository verifies releases by is "read the package content AND the recorded commit",
+    /// so an auditor who follows the label checks out the wrong tree, does not find the fix, and reports a
+    /// correct release as broken. A piece of evidence that accuses a good release is the expensive kind.
+    /// </para>
+    /// <para>
+    /// MECHANISM: SourceLink lives in the SDK, so <c>RepositoryCommit</c> comes from
+    /// <c>SourceRevisionId</c>, which <c>InitializeSourceControlInformation</c> resolves at BUILD time.
+    /// <c>eng/pack-nuget-packages.sh</c> packs with <c>--no-build</c>, so it reuses whatever the previous
+    /// build left in <c>obj/</c> — and an incremental build that decided nothing changed leaves the
+    /// PREVIOUS commit there.
+    /// </para>
+    /// <para>
+    /// WHY THIS GUARD READS THE SCRIPT AND THE PACKAGES, AND NOT ONLY THE PACKAGES: a unit test cannot
+    /// observe "the commit at the moment of packing", and the staging directory is usually empty on a
+    /// developer machine, so a packages-only assertion would pass vacuously exactly when it matters least
+    /// and would give a false sense of coverage. The always-running half is therefore the CONTRACT — the
+    /// pack script must both pass the commit in and verify it out of the produced bytes. The second half
+    /// checks any package that happens to be staged, which is what turns a stale local pack red.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public void PackedPackages_RecordTheCommitTheyWereBuiltFrom()
+    {
+        var repositoryRoot = FindRepoRoot();
+        var packScript = File.ReadAllText(Path.Combine(repositoryRoot, "eng", "pack-nuget-packages.sh"));
+        var announced = ReadAnnouncedVersion(repositoryRoot);
+
+        using (new AssertionScope())
+        {
+            packScript.Should().Contain(
+                "-p:RepositoryCommit=",
+                "pack runs with --no-build, so the commit must be passed in explicitly; without it the "
+                + "nuspec inherits whatever commit the last incremental build cached in obj/");
+
+            packScript.Should().Contain(
+                "git rev-parse HEAD",
+                "the commit that is passed in has to be read from the repository at pack time, not "
+                + "hardcoded or taken from an environment variable somebody can forget to update");
+
+            packScript.Should().Contain(
+                "refusing to ship them",
+                "passing the flag is the fix, reading it back out of the produced nupkg is the guard; a "
+                + "-p: value has already been observed losing to a cached one, so the pack must verify "
+                + "the bytes it produced rather than trust that the flag took effect");
+
+            // The staged packages, when there are any. `packages/` is gitignored and normally absent, so
+            // this half is evidence when it exists and silent when it does not — the assertions above are
+            // what run unconditionally.
+            var staging = Path.Combine(repositoryRoot, "packages");
+            if (!Directory.Exists(staging))
+            {
+                return;
+            }
+
+            var head = ReadGitHead(repositoryRoot);
+            if (head is null)
+            {
+                return;
+            }
+
+            // ONLY THE PACKAGES THAT CLAIM TO BE THIS RELEASE. The staging directory is not cleaned
+            // between releases by anything except the pack script itself, so it accumulates older
+            // versions — measured here: 26 leftovers from 2.8.7 next to a stray 2.1.1. Those were built
+            // from the commit they say they were, and demanding they match today's HEAD would make the
+            // guard permanently red for a reason that has nothing to do with the release being shipped.
+            // The invariant is "a package that claims version X was built from the commit that IS
+            // version X", so the population is the packages carrying the announced version.
+            var releaseSuffix = "." + announced + ".nupkg";
+
+            foreach (var package in Directory.EnumerateFiles(staging, "*.nupkg")
+                         .Where(path => !path.EndsWith(".symbols.nupkg", StringComparison.Ordinal))
+                         .Where(path => path.EndsWith(releaseSuffix, StringComparison.Ordinal))
+                         .OrderBy(path => path, StringComparer.Ordinal))
+            {
+                using var archive = System.IO.Compression.ZipFile.OpenRead(package);
+                var nuspecEntry = archive.Entries.FirstOrDefault(
+                    entry => entry.FullName.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
+                if (nuspecEntry is null)
+                {
+                    continue;
+                }
+
+                using var stream = nuspecEntry.Open();
+                var stamped = XDocument.Load(stream)
+                    .Descendants()
+                    .FirstOrDefault(element => element.Name.LocalName == "repository")
+                    ?.Attribute("commit")?.Value;
+
+                stamped.Should().Be(
+                    head,
+                    $"{Path.GetFileName(package)} must record the commit it was built from; a package "
+                    + "labelled with an older commit sends the next auditor to a tree that does not "
+                    + "contain the change it ships");
+            }
+        }
+    }
+
+    /// <summary>
+    /// The version the changelog announces: the first <c>##</c> heading whose text is a semantic version.
+    /// Shared by both guards so they can never disagree about which release is being shipped.
+    /// </summary>
+    private static string ReadAnnouncedVersion(string repositoryRoot) => Regex.Match(
+            File.ReadAllText(Path.Combine(repositoryRoot, "CHANGELOG.md")),
+            @"^##\s*(?<version>\d+\.\d+\.\d+(?:-[0-9A-Za-z][0-9A-Za-z.-]*)?(?:\+[0-9A-Za-z][0-9A-Za-z.-]*)?)",
+            RegexOptions.Multiline)
+        .Groups["version"].Value;
+
+    /// <summary>
+    /// Reads <c>HEAD</c> without shelling out to git, so the guard works in a container that has the
+    /// working tree but no git binary. Returns <see langword="null"/> when the layout is not the plain
+    /// one (a worktree, a packed ref this cannot resolve), because guessing would be worse than saying
+    /// nothing: a wrong "HEAD" would fail every correctly stamped package.
+    /// </summary>
+    private static string? ReadGitHead(string repositoryRoot)
+    {
+        var gitDirectory = Path.Combine(repositoryRoot, ".git");
+        if (!Directory.Exists(gitDirectory))
+        {
+            return null;
+        }
+
+        var headPath = Path.Combine(gitDirectory, "HEAD");
+        if (!File.Exists(headPath))
+        {
+            return null;
+        }
+
+        var head = File.ReadAllText(headPath).Trim();
+        if (!head.StartsWith("ref:", StringComparison.Ordinal))
+        {
+            return head.Length == 40 ? head : null;
+        }
+
+        var referencePath = Path.Combine(
+            gitDirectory,
+            head[4..].Trim().Replace('/', Path.DirectorySeparatorChar));
+
+        return File.Exists(referencePath) ? File.ReadAllText(referencePath).Trim() : null;
     }
 
     /// <summary>
