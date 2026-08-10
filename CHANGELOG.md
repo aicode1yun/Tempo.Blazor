@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.8.15 - 2026-08-10
+
+One fix, and it is a P1: since 2.8.13 a host that set the floating action bar's start inset got a bar
+that hung off the right edge of the screen, with its primary button unreachable by mouse.
+
+### Fixed
+
+- **`TmFormActionBar` in `FloatingBottom` never reset the base `width: 100%`, so the two insets and the
+  width formed an over-constrained box.** For a `position: fixed` element the containing block is the
+  viewport, so `width: 100%` resolves to the full window width. Combined with
+  `inset-inline-start` + `inset-inline-end` that is three constraints for one axis, and CSS resolves it
+  in LTR by dropping the END inset. A host setting
+  `--tm-form-action-bar-inset-inline-start: 18.5rem` on a 1440px window therefore got a bar laid out at
+  296…1736px — overflowing the viewport by exactly the start inset. Because `__end` right-aligns the
+  actions, the primary button landed around x 1620…1700, entirely off-screen.
+
+  This was worse than a cosmetic overflow: a fixed element contributes nothing to the document's
+  scrollable area, so no horizontal scrollbar appeared and the button could not be reached by mouse at
+  all. Keyboard users could Tab to it, but the focus ring was painted outside the window.
+
+  The floating variant now sets `width: auto` and lets both insets decide the box, which is what the
+  inset variables promised in 2.8.13. `2.8.13` and `2.8.14` both ship the defect; hosts that never set
+  the inset were unaffected, because `left: 0; width: 100%` happens to equal the viewport.
+
+  Guarded by `FormActionBarCss_FloatingBottom_ResetsBaseWidthSoBothInsetsDecideTheBox`. The existing
+  inset test could not have caught it — it only ever asserted the START inset, so it kept confirming
+  that the bar began in the right place while saying nothing about where it ended.
+
 ## 2.8.14 - 2026-08-09
 
 Four review findings against 2.8.13, three of them in the floating layer that shipped the day before.

@@ -20,6 +20,15 @@
    "inset-inline-start" promises. */
 .tm-form-action-bar--floating-bottom {
     position: fixed;
+    /* `width: auto` MUSÍ zůstat. Základní `.tm-form-action-bar` má `width: 100%` a u
+       `position: fixed` je containing block viewport, takže 100 % = celá šířka okna.
+       Spolu s oběma insety je to PŘEURČENÁ soustava (start + width + end) a CSS z ní v LTR
+       zahodí koncový inset: při `inset-inline-start: 18.5rem` na okně 1440 px pak lišta leží
+       na 296…1736 a 296 px jí přetéká za pravý okraj. Protože `__end` zarovnává akce doprava,
+       skončí primární tlačítko celé mimo obrazovku — a `position: fixed` nepřispívá do
+       rolovatelné oblasti dokumentu, takže nevznikne ani vodorovný posuvník a uživatel se
+       k tlačítku nedostane myší vůbec. S `auto` o šířce rozhodnou oba insety, jak se čeká. */
+    width: auto;
     inset-inline-end: var(--tm-form-action-bar-inset-inline-end, 0);
     bottom: 0;
     inset-inline-start: var(--tm-form-action-bar-inset-inline-start, 0);

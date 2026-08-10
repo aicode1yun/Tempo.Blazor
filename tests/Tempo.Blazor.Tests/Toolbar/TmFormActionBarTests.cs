@@ -148,6 +148,35 @@ public class TmFormActionBarTests : LocalizationTestBase
         floating.Should().NotContain("right: 0;");
     }
 
+    /// <summary>
+    /// The floating bar must reset the base <c>width: 100%</c>, or the two insets and the width form an
+    /// over-constrained box and the browser drops the end inset in LTR.
+    /// </summary>
+    /// <remarks>
+    /// This is the regression test for a P1 shipped in 2.8.13 and 2.8.14. With <c>width: 100%</c> the
+    /// containing block of a fixed element is the viewport, so on a 1440px window the bar resolved to
+    /// 296…1736px once a host set <c>--tm-form-action-bar-inset-inline-start: 18.5rem</c> — 296px of it
+    /// hanging off the right edge. Because <c>__end</c> right-aligns the actions, the primary button
+    /// landed entirely off-screen, and a fixed element contributes nothing to the document's scrollable
+    /// area, so no horizontal scrollbar appeared either: the button was unreachable by mouse.
+    /// The inset test above passed the whole time because it only ever checked the START inset.
+    /// </remarks>
+    [Fact]
+    public void FormActionBarCss_FloatingBottom_ResetsBaseWidthSoBothInsetsDecideTheBox()
+    {
+        var css = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(), "src", "Tempo.Blazor", "Components", "Toolbar", "TmFormActionBar.razor.css"));
+
+        SelectorBlock(css, ".tm-form-action-bar").Should().Contain(
+            "width: 100%;",
+            "the base class intentionally fills its parent — the floating variant is the one that must opt out");
+
+        SelectorBlock(css, ".tm-form-action-bar--floating-bottom").Should().Contain(
+            "width: auto;",
+            "start inset + width + end inset is over-constrained; without the reset the browser drops the "
+            + "end inset and the bar overflows the viewport by exactly the start inset");
+    }
+
     /// <summary>Text of the first declaration block whose selector line starts with <paramref name="selector"/>.</summary>
     private static string SelectorBlock(string css, string selector)
     {
