@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+### Known issue in the published 2.8.15 package — read this before auditing that release
+
+**The `2.8.15` package on the feed carries `repository commit="efb00b89"`, which is the commit of
+`2.8.14`.** The package CONTENT is correct — it contains the `width: auto` fix described under 2.8.15
+— only the provenance label is one release behind. An auditor who checks out the labelled commit will
+find the fix missing and conclude the release did not ship it, which is why this is written down
+rather than left as a curiosity.
+
+Cause: `eng/pack-nuget-packages.sh` packed with `--no-build`, and `dotnet pack --no-build` inherits
+`SourceRevisionId` from `obj/`, where it was stamped by the LAST build — one commit back.
+
+Fixed for every future release in `7dcdce52`: the pack script passes
+`-p:RepositoryCommit=$(git rev-parse HEAD)` and, after packing, reads the label back **out of the
+produced bytes** and refuses to publish a mismatch. Guarded both ways by
+`ReleaseContractTests.PackedPackages_RecordTheCommitTheyWereBuiltFrom`.
+
+The already-published `2.8.15` is deliberately **not** repackaged: republishing the same version with
+different bytes is worse than the wrong label, because it breaks the one property a version number
+has. It gets corrected by the next release. **When 2.8.16 ships, verify that the label matches its own
+commit** — that is the first live proof the guard works during a real pack, not only in a test.
+
 ## 2.8.15 - 2026-08-10
 
 One fix, and it is a P1: since 2.8.13 a host that set the floating action bar's start inset got a bar
