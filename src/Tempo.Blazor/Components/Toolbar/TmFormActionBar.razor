@@ -3,8 +3,17 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 
+@* `role="toolbar"` je pro odečítač příslib JEDINÉHO tab stopu a pohybu mezi akcemi šipkami
+   (WAI-ARIA authoring practices). Lišta roving tabindex nikdy neměla, takže uživatel uslyšel
+   „nástrojová lišta“, zkusil šipky a nestalo se nic — afordance bez mechanismu.
+   Role se proto NEVYDÁVÁ. Pro dvě až tři akce je `group` poctivější: neslibuje nic, co by se
+   muselo plnit, a přitom si lišta nechává přístupné jméno. Pozor na to, ČÍM ta vada vznikla:
+   komponenta se nezměnila a role taky ne — změnil se OBSAH. Dokud v liště ležely doplňkové
+   akce, byl „toolbar“ pravdivý popis; jakmile do ní hostitel přesunul PRIMÁRNÍ akci stránky,
+   stal se z něj slib, který nikdo neplní. Role kontejneru se musí přehodnotit, když se změní
+   to, co v něm leží. *@
 <div class="@RootClass"
-     role="toolbar"
+     role="group"
      aria-label="@AriaLabel"
      data-testid="@TestId"
      @attributes="AdditionalAttributes"

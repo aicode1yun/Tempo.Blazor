@@ -6,7 +6,7 @@
 .tm-form-action-bar--sticky-top {
     position: sticky;
     top: 0;
-    z-index: var(--tm-z-sticky);
+    z-index: var(--tm-form-action-bar-z-index, var(--tm-z-sticky));
 }
 
 /* The floating bar spans the viewport, which is wrong for a shell with a fixed side navigation: the
@@ -32,7 +32,7 @@
     inset-inline-end: var(--tm-form-action-bar-inset-inline-end, 0);
     bottom: 0;
     inset-inline-start: var(--tm-form-action-bar-inset-inline-start, 0);
-    z-index: var(--tm-z-sticky);
+    z-index: var(--tm-form-action-bar-z-index, var(--tm-z-sticky));
     padding: var(--tm-space-2) clamp(var(--tm-space-3), 2vw, var(--tm-space-6))
         calc(var(--tm-space-2) + env(safe-area-inset-bottom, 0px));
 }

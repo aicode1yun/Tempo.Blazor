@@ -209,6 +209,25 @@
   --tm-z-toast:       1080;
   --tm-z-tooltip:     1090;
 
+  /* ── Rezerva pod plovoucí lištou akcí ───────────────────────── */
+  /* VÝŠKU LIŠTY ZNÁ JEN TEMPO, tak ji Tempo publikuje. `position: fixed` do toku nepřispívá,
+     takže stránka pod lištou musí nechat místo, jinak lišta překryje konec formuláře. Dokud
+     token neexistoval, hostitel tu výšku HÁDAL — v jedné aplikaci ji hádalo šest stránek
+     nezávisle (`pb-44 md:pb-28` opsané z první z nich).
+
+     Hodnota je ODVOZENÁ z týchž tokenů, ze kterých je lišta složená, ne opsaná v pixelech:
+     vnější odsazení (2× space-2) + rámeček `__inner` (2× 1px) + jeho odsazení (2× space-2)
+     + výška tlačítka. Kdyby se změnil kterýkoli vstup, posune se i rezerva — magické číslo
+     by se rozešlo tiše.
+
+     REFERENČNÍ OBSAH je JEDNA řada akcí. Pod 768 px se `__inner` láme do sloupce, takže se
+     přičítá druhá řada a mezera mezi nimi. Hostitel, který na mobil dá VÍC skupin akcí
+     (`__danger` + `__secondary` + `__primary` jsou tam každá na celou šířku), musí za každou
+     další přičíst `--tm-input-height-md + --tm-space-2`. Tohle je mez tokenu, ne jeho vada:
+     kolik skupin akcí přijde, ví jen hostitel. */
+  --tm-form-action-bar-reserve-block-size:
+      calc(var(--tm-input-height-md) + 4 * var(--tm-space-2) + 2px + env(safe-area-inset-bottom, 0px));
+
   /* ── Alias Tokens (used by components) ──────────────────────── */
   --tm-surface:                var(--tm-bg-surface);
   --tm-surface-secondary:      var(--tm-bg-surface-secondary);
@@ -292,4 +311,15 @@
 
   /* ── Charts ── */
   --tm-chart-area-fill-opacity: 0.25;
+}
+
+/* Pod 768 px se `__inner` láme do sloupce (viz TmFormActionBar.razor.css), takže se k rezervě
+   přičítá druhá řada a mezera mezi nimi. Media query musí být VEDLE bloku `:root`, ne v něm —
+   vnořená by nebyla platné CSS a proměnná by tiše zůstala na desktopové hodnotě. */
+@media (max-width: 767.98px) {
+  :root {
+    --tm-form-action-bar-reserve-block-size:
+        calc(2 * var(--tm-input-height-md) + var(--tm-space-3) + 4 * var(--tm-space-2) + 2px
+             + env(safe-area-inset-bottom, 0px));
+  }
 }

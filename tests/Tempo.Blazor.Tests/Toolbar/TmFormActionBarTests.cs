@@ -10,12 +10,53 @@ public class TmFormActionBarTests : LocalizationTestBase
 {
     private const string ModulePath = "./_content/Tempo.Blazor/Components/Toolbar/TmFormActionBar.razor.js";
 
+    /// <summary>
+    /// Lišta se NEHLÁSÍ jako toolbar, protože ovládání šipkami neumí.
+    /// </summary>
+    /// <remarks>
+    /// NAHRAZUJE `FormActionBar_RendersAsToolbarRole`, který od 2.8.16 popisuje ZRUŠENÝ kontrakt.
+    /// Není to ohnutí testu pod implementaci: `role="toolbar"` je příslib jediného tab stopu
+    /// a pohybu šipkami, lišta roving tabindex nikdy neměla, takže ten test hlídal, že komponenta
+    /// SLIBUJE něco, co nedělá. Změnila se specifikace, ne měřidlo.
+    /// </remarks>
     [Fact]
-    public void FormActionBar_RendersAsToolbarRole()
+    public void FormActionBar_DoesNotClaimToolbarRoleItCannotHonour()
     {
-        var cut = Render<TmFormActionBar>();
+        var cut = Render<TmFormActionBar>(p => p.Add(x => x.AriaLabel, "Akce formuláře"));
 
-        cut.Find(".tm-form-action-bar").GetAttribute("role").Should().Be("toolbar");
+        var root = cut.Find(".tm-form-action-bar");
+
+        root.GetAttribute("role").Should().Be(
+            "group",
+            "dvě až tři akce nepotřebují toolbar; skupina neslibuje ovládání šipkami");
+        root.GetAttribute("aria-label").Should().Be(
+            "Akce formuláře",
+            "zrušení role nesmí liště vzít přístupné jméno");
+    }
+
+    /// <summary>
+    /// Hostitel musí umět zvednout lištu, aniž zvedne VŠECHNY sticky prvky.
+    /// </summary>
+    /// <remarks>
+    /// Aplikace si jinak musí zvedat vlastní hladiny (sidebar, zástin, hlavička) nad lištu,
+    /// protože přebít `--tm-z-sticky` by posunulo i TmTopBar a TmFab.
+    /// </remarks>
+    [Fact]
+    public void FormActionBarCss_ZIndex_IsHostOverridableWithoutMovingEverySticky()
+    {
+        var css = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(), "src", "Tempo.Blazor", "Components", "Toolbar", "TmFormActionBar.razor.css"));
+
+        foreach (var selector in new[]
+                 {
+                     ".tm-form-action-bar--sticky-top",
+                     ".tm-form-action-bar--floating-bottom"
+                 })
+        {
+            SelectorBlock(css, selector).Should().Contain(
+                "z-index: var(--tm-form-action-bar-z-index, var(--tm-z-sticky));",
+                "bez fallbacku by nenastavená proměnná lištu odhladinovala úplně");
+        }
     }
 
     [Fact]
@@ -242,6 +283,47 @@ public class TmFormActionBarTests : LocalizationTestBase
             FindRepositoryRoot(), "src", "Tempo.Blazor", "Components", "Toolbar", "TmFormActionBar.razor.css"));
 
         SelectorBlock(css, $".tm-form-action-bar__status--{severity}").Should().Contain("color:");
+    }
+
+    /// <summary>
+    /// Výšku lišty zná jen Tempo, tak ji Tempo publikuje — a ODVOZENĚ, ne jako pixelové číslo.
+    /// </summary>
+    /// <remarks>
+    /// `position: fixed` do toku nepřispívá, takže stránka pod lištou musí nechat rezervu.
+    /// Dokud token neexistoval, hostitel ji hádal — v jedné aplikaci ji hádalo šest stránek
+    /// nezávisle. Test hlídá obojí: že token existuje, a že je složený z týchž tokenů jako
+    /// lišta. Opsané číslo v pixelech by se při změně kteréhokoli vstupu rozešlo TIŠE.
+    /// </remarks>
+    [Fact]
+    public void Tokens_FormActionBarReserve_IsPublishedAndDerivedFromTheBarsOwnTokens()
+    {
+        var tokens = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(), "src", "Tempo.Blazor", "wwwroot", "css", "tokens.css"));
+
+        tokens.Should().Contain("--tm-form-action-bar-reserve-block-size:");
+
+        var declarations = tokens.Split("--tm-form-action-bar-reserve-block-size:")
+            .Skip(1)
+            .Select(part => part[..part.IndexOf(';', StringComparison.Ordinal)])
+            .ToList();
+
+        declarations.Should().HaveCount(
+            2,
+            "desktopová hodnota a varianta pod 768 px, kde se lišta láme do sloupce");
+
+        foreach (var declaration in declarations)
+        {
+            declaration.Should().Contain("var(--tm-input-height-md)");
+            declaration.Should().Contain("var(--tm-space-2)");
+            declaration.Should().MatchRegex(
+                @"^[^0-9]*(2px|[0-9]+ \* var|var)",
+                "jediné holé číslo smí být rámeček 1px na každé straně — všechno ostatní jde z tokenů");
+        }
+
+        tokens.Should().Contain(
+            "@media (max-width: 767.98px)",
+            "media query musí být vedle bloku :root, ne v něm — vnořená není platné CSS "
+            + "a proměnná by tiše zůstala na desktopové hodnotě");
     }
 
     /// <summary>Text of the first declaration block whose selector line starts with <paramref name="selector"/>.</summary>
