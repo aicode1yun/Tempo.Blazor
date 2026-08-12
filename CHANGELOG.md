@@ -2,6 +2,107 @@
 
 ## Unreleased
 
+## 2.8.16 - 2026-08-12
+
+Nine entries from a host application's gap register, released **as one tag**. The register's own rule is
+that a version it promises must arrive whole: a register that names a version and then ships half of it
+stops being read. Six of the nine are about a form's action bar, its navigation guard and the picker
+that sits above them, and they share one defect class — **an affordance with no mechanism**: a marker,
+a role or a parameter that states an intent the rendering, the keyboard or the save path never honours.
+
+### Known issue in the published 2.8.15 package — read this before auditing that release
+
+**The `2.8.15` package on the feed carries `repository commit="efb00b89"`, which is the commit of
+`2.8.14`** — see the section below, kept here because it is still true of the package on the feed.
+`2.8.16` is the first release packed by the fixed script, and its label was verified against the bytes
+during the pack, not only in a test.
+
+### Changed (source-breaking, one parameter)
+
+- **`TmNavigationGuard.OnSaveAndLeave` is now `Func<Task<bool>>?` instead of `EventCallback`, and a
+  failed save no longer discards the work.** The guard used to navigate as soon as the callback
+  completed, whatever it did — so a save that failed on an HTTP error or on server-side validation threw
+  the changes away. That is precisely the loss the guard exists to prevent, delivered by the button that
+  promises to prevent it, which is why the only host that needed this API deliberately did not use it.
+  A delegate with no result cannot say "the save failed", so the type had to change; leaving a
+  data-losing API alive under a familiar name would be worse than making callers pick a return value.
+  Return `true` and the guard re-issues the blocked navigation, `false` and it navigates nowhere and
+  leaves the dialog open, so the user keeps both the changes and the choice — including the original
+  destination, so a retry that succeeds still goes where they were going. A second click while the save
+  is in flight is swallowed rather than duplicated.
+
+  Not inferred from `IsDirty` after the callback, though that was the cheaper option: the parameter is
+  pushed by the parent's render, which has not necessarily happened when the awaited callback returns,
+  so the guard would be reading a value that is stale for reasons it cannot see. The host knows whether
+  the save succeeded; now it says so.
+
+  Guarded by `SaveAndLeave_FailedSave_StaysPut_AndKeepsTheDialogOpen`,
+  `SaveAndLeave_RetryAfterFailure_LeavesForTheOriginalDestination` and
+  `SaveAndLeave_SecondClickDuringSave_DoesNotStartASecondSave`.
+
+- **`TmStatCard` rejects `SubValueColor` without `SubValue`** with an `InvalidOperationException` naming
+  the card, instead of ignoring it. The sub-value span is rendered only when `SubValue` is non-empty, so
+  a colour on its own is a stated intent that rendering silently denies — the first instance of it lived
+  through eight call sites and several months, because a parameter that does nothing says nothing.
+  The invariant is in the COMPONENT, not in a markup scanner, and the placement is the point: it covers
+  splatted `@attributes`, `DynamicComponent` and consumers outside this repository, and it fails at the
+  moment of misuse rather than at the next audit. A static scan of `.razor` markup is a legitimate second
+  line for a release gate, but it cannot see those paths and must carry its own denominator.
+
+### Fixed
+
+- **`TmUserPicker`'s result list painted below sticky chrome.** It sat on `--tm-z-dropdown` (1000) while
+  a floating `TmFormActionBar` sits on `--tm-z-sticky` (1020), so a list opened near the bottom of a page
+  ended up UNDER the bar and its items were unreachable by mouse — keyboard selection still worked, which
+  is what makes this easy to miss. Now on `--tm-z-popover`, the same fix `_filterable-dropdown.css` already
+  carries for the same defect. `FloatingMenu` widens the exposure, because a fixed list reaches the bottom
+  of the viewport.
+
+- **The picked user's chip had no accessible name.** Once a user is selected the search input disappears,
+  and with it the `<label for=…>` association — a screen reader then read the person's name with no hint
+  of WHICH field held it. The chip now borrows the same label through `aria-labelledby`, carried by
+  `role="group"`: a plain container cannot take an accessible name, and `group` promises no keyboard
+  mechanism, unlike the `toolbar` role this release removes from `TmFormActionBar`. No label, no role —
+  a role whose only job is to carry a name is an empty promise when there is no name to carry.
+
+- **"Loading…" and "No results found" were never announced.** Both were plain elements that appeared and
+  disappeared with the search. The fix is not an `aria-live` attribute on the message — a live region that
+  enters the DOM together with its own text is not reliably announced, because the screen reader was not
+  watching that node when the text arrived. There is now ONE permanent `role="status"` region, rendered
+  even when it has nothing to say; only the messages inside it are conditional. Empty it has no box of its
+  own. The transient error keeps its own `role="alert"` region: it is an interruption, not a progress
+  report, and it carries a retry button.
+
+- **`TmFormActionBar` coloured the generic `Status` slot as SUCCESS.** `.tm-form-action-bar__status` hard-coded
+  `color: var(--tm-color-success-text)` although the parameter is called `Status`, not `SuccessStatus`, so an
+  error message next to the save button would have been GREEN — the colour contradicting the text. Severity is
+  now STATED via `StatusSeverity` (default `None` = inherit) and never derived, and every severity has both a
+  modifier and its own colour, because a parameter whose values do not change anything is the same defect one
+  level up.
+
+- **`TmFormActionBar` no longer claims `role="toolbar"`.** The role promises a single tab stop and arrow-key
+  movement between the actions; the bar never had roving tabindex, so a screen-reader user heard "toolbar",
+  pressed an arrow and nothing happened. It is a `group` with the same `aria-label` now — honest for two or
+  three buttons, and it promises nothing that would have to be delivered. **This class is NOT closed:**
+  `role="toolbar"` without roving tabindex is still on ~25 other components (`TmBulkActionBar`,
+  `TmAuditLogViewer`, `TmLedgerGrid`, `TmReportViewer`, the editors). Recorded, not fixed — the bar is where
+  it surfaced, because Phase 3.5 moved a page's PRIMARY action into it, but the mechanism is shared.
+
+### Added
+
+- **`--tm-form-action-bar-z-index`, defaulting to `--tm-z-sticky`.** Overriding `--tm-z-sticky` was not a
+  substitute: it moves EVERY sticky element, so a host that needed the bar above its mobile menu had to lift
+  its own sidebar, scrim and header instead.
+
+- **`--tm-form-action-bar-reserve-block-size`, desktop and below 768 px.** `position: fixed` contributes
+  nothing to the flow, so a page under the bar must leave room or the bar covers the end of the form — and the
+  only party that knows the bar's height is this library, since it is made of its own `--tm-space-*`, the
+  `__inner` border and the button height. Hosts were GUESSING it; in one application six pages guessed
+  independently. The value is DERIVED from the same tokens the bar is built from, never written in pixels: a
+  magic number would drift silently the moment any input changed. Its reference content is ONE row of actions —
+  how many action groups reach a phone is something only the host knows, and that limit is spelled out in the
+  token itself, together with the arithmetic.
+
 ### Known issue in the published 2.8.15 package — read this before auditing that release
 
 **The `2.8.15` package on the feed carries `repository commit="efb00b89"`, which is the commit of

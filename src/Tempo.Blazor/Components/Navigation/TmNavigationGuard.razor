@@ -9,7 +9,7 @@
 
 @if (Enabled)
 {
-    @if (OnSaveAndLeave.HasDelegate)
+    @if (OnSaveAndLeave is not null)
     {
         @* Three-choice variant: Stay / Save and leave / Leave.
            OnResult wires Escape (TmDialog cancel) to "stay", matching the two-choice variant. *@
@@ -22,7 +22,7 @@
                 <TmButton Variant="ButtonVariant.Ghost" OnClick="() => HandleDialogResultAsync(false)">
                     @CancelText
                 </TmButton>
-                <TmButton Variant="ButtonVariant.Primary" OnClick="HandleSaveAndLeaveAsync">
+                <TmButton Variant="ButtonVariant.Primary" Disabled="@_saving" OnClick="HandleSaveAndLeaveAsync">
                     @SaveAndLeaveText
                 </TmButton>
                 <TmButton Variant="ButtonVariant.Danger" OnClick="() => HandleDialogResultAsync(true)">
@@ -49,6 +49,7 @@
     private IDisposable? _locationChangingRegistration;
     private IJSObjectReference? _module;
     private bool _showConfirm;
+    private bool _saving;
     private bool _suppressNext;
     private string? _pendingTargetLocation;
     private bool? _lastPushedDirty;
@@ -79,16 +80,37 @@
 
     /// <summary>
     /// Text for the optional third button that saves the pending work and then leaves. The button is only
-    /// rendered when <see cref="OnSaveAndLeave"/> has a delegate, so existing two-choice usages are unchanged.
+    /// rendered when <see cref="OnSaveAndLeave"/> is set, so existing two-choice usages are unchanged.
     /// </summary>
     [Parameter] public string SaveAndLeaveText { get; set; } = "Save and leave";
 
     /// <summary>
     /// Optional callback that persists the pending work before navigation continues. When set, the
-    /// confirmation dialog shows a third "save and leave" button; the guard awaits this callback and then
-    /// re-issues the blocked navigation. Leave unset for the classic Leave/Stay behavior.
+    /// confirmation dialog shows a third "save and leave" button. Leave unset for the classic
+    /// Leave/Stay behavior.
+    /// <para>
+    /// <b>Return <c>true</c> only when the work is actually persisted.</b> On <c>true</c> the guard
+    /// re-issues the blocked navigation; on <c>false</c> it navigates NOWHERE and leaves the dialog
+    /// open, so the user keeps both the changes and the choice.
+    /// </para>
     /// </summary>
-    [Parameter] public EventCallback OnSaveAndLeave { get; set; }
+    /// <remarks>
+    /// <para>
+    /// Until 2.8.16 this was an <see cref="EventCallback"/> and the guard navigated as soon as it
+    /// completed — regardless of what it did. A save that failed (HTTP error, server-side validation)
+    /// therefore DISCARDED the changes: exactly the loss the guard exists to prevent, triggered by the
+    /// button that promises to prevent it. The type change is deliberate and source-breaking: a delegate
+    /// with no result cannot express "the save failed", and leaving a data-losing API alive under a
+    /// familiar name is worse than making callers pick a return value.
+    /// </para>
+    /// <para>
+    /// Not inferred from <see cref="IsDirty"/> after the callback: that parameter is pushed by the parent
+    /// render, which has not necessarily happened by the time the awaited callback returns, so the guard
+    /// would be reading a value that is stale for reasons it cannot see. The host knows whether the save
+    /// succeeded; it says so.
+    /// </para>
+    /// </remarks>
+    [Parameter] public Func<Task<bool>>? OnSaveAndLeave { get; set; }
 
     /// <summary>
     /// Optional predicate over the target URI deciding whether a navigation should be guarded at all.
@@ -193,13 +215,42 @@
         }
     }
 
+    /// <summary>
+    /// Saves, and leaves ONLY if the save reported success. The pending target and the open dialog are
+    /// released after the callback, not before it: a failed save must leave the user exactly where the
+    /// guard stopped them, with the choice still on screen.
+    /// </summary>
     private async Task HandleSaveAndLeaveAsync()
     {
+        if (_saving || OnSaveAndLeave is null)
+        {
+            // Re-entrancy: the dialog stays up during the save, so the button stays clickable in every
+            // renderer that ignores `disabled` (and during the render gap before it is applied).
+            return;
+        }
+
+        _saving = true;
+        bool saved;
+        try
+        {
+            saved = await OnSaveAndLeave();
+        }
+        finally
+        {
+            _saving = false;
+        }
+
+        if (!saved)
+        {
+            // Stay put. The dialog is still open and `_pendingTargetLocation` still holds the blocked
+            // destination, so a retry or a deliberate "leave" both still work.
+            StateHasChanged();
+            return;
+        }
+
         _showConfirm = false;
         var targetLocation = _pendingTargetLocation;
         _pendingTargetLocation = null;
-
-        await OnSaveAndLeave.InvokeAsync();
 
         if (targetLocation is not null)
         {

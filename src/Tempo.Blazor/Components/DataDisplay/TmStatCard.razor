@@ -22,6 +22,42 @@
     /// <summary>Secondary value or trend indicator (e.g. "+12% this month").</summary>
     [Parameter] public string? SubValue { get; set; }
 
-    /// <summary>CSS classes for the SubValue color (e.g. "text-green-600").</summary>
+    /// <summary>
+    /// CSS classes for the SubValue color (e.g. "text-green-600"). Only meaningful together with
+    /// <see cref="SubValue"/>: without it there is nothing to colour and the card REFUSES to render
+    /// (see <see cref="OnParametersSet"/>).
+    /// </summary>
     [Parameter] public string? SubValueColor { get; set; }
+
+    /// <summary>
+    /// Rejects <see cref="SubValueColor"/> without <see cref="SubValue"/> — an affordance without a
+    /// mechanism: the call site states an intent ("this card has a coloured sub-value") that rendering
+    /// silently denies, because the whole span is conditional on <see cref="SubValue"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is a THROW, not a log or a test: the component owns the contract, so it covers every call
+    /// path — markup, splatted <c>@attributes</c>, <c>DynamicComponent</c>, and consumers outside this
+    /// repository — and it fails at the moment of misuse rather than at the next audit. A static scan of
+    /// <c>.razor</c> markup is a legitimate second line for the release gate, but it cannot see the
+    /// splatted paths, so it must carry its own denominator (see `DEC-STATIC-ANALYSIS-FAIL-CLOSED`).
+    /// </para>
+    /// <para>
+    /// It cost eight call sites and several months to notice the first instance: the colour was live and
+    /// the value was never passed, so the parameter did nothing and nothing said so.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">
+    /// <see cref="SubValueColor"/> is set while <see cref="SubValue"/> is null or empty.
+    /// </exception>
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrEmpty(SubValueColor) && string.IsNullOrEmpty(SubValue))
+        {
+            throw new InvalidOperationException(
+                $"{nameof(TmStatCard)}: {nameof(SubValueColor)}=\"{SubValueColor}\" was set without {nameof(SubValue)} " +
+                $"(Title=\"{Title}\"). The sub-value span is only rendered when {nameof(SubValue)} is non-empty, so the " +
+                $"colour would never reach the screen. Pass {nameof(SubValue)} as well, or drop {nameof(SubValueColor)}.");
+        }
+    }
 }

@@ -73,6 +73,25 @@
       "type": "EventCallback",
       "isRequired": false,
       "description": "Raised after the user cancels and stays on the page."
+    },
+    {
+      "name": "OnSaveAndLeave",
+      "type": "Func<Task<bool>>?",
+      "isRequired": false,
+      "description": "Optional save callback. When set, the confirmation dialog gets a third \"save and leave\" button. Return true ONLY when the work is persisted: on true the guard re-issues the blocked navigation, on false it navigates nowhere and leaves the dialog open, so a failed save cannot discard the changes the guard exists to protect. Before 2.8.16 this was an EventCallback and the guard left regardless of the outcome."
+    },
+    {
+      "name": "ShouldGuard",
+      "type": "Func<string, bool>?",
+      "isRequired": false,
+      "description": "Optional predicate over the target URI deciding whether a navigation is guarded at all. Return false to let a navigation through without prompting even when the host is dirty (e.g. URL tabs of the same document). When null, every navigation is guarded."
+    },
+    {
+      "name": "SaveAndLeaveText",
+      "type": "string",
+      "isRequired": false,
+      "default": "Save and leave",
+      "description": "Text of the third button. Rendered only when OnSaveAndLeave is set."
     }
   ],
   "cssClasses": [],

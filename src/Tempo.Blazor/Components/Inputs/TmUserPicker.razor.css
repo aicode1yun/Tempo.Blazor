@@ -59,7 +59,12 @@
 
 .tm-user-picker__results {
     position: absolute;
-    z-index: var(--tm-z-dropdown);
+    /* --tm-z-popover, not --tm-z-dropdown: an OPEN result list is a transient anchored popup and must paint
+       above sticky/floating chrome (TmFormActionBar --tm-z-sticky). At --tm-z-dropdown (1000 < sticky 1020)
+       a list opened near the bottom of a page ends up UNDER the floating action bar and its items are
+       mouse-unreachable (keyboard still works). Same defect, same fix as `_filterable-dropdown.css`;
+       FloatingMenu widens the exposure, because a fixed list reaches the bottom of the viewport. */
+    z-index: var(--tm-z-popover, 1030);
     width: 100%;
     max-height: 240px;
     overflow-y: auto;

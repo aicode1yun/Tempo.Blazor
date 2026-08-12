@@ -7575,7 +7575,7 @@
           "name": "SubValueColor",
           "type": "string?",
           "isRequired": false,
-          "description": "CSS classes for the SubValue color (e.g. \"text-green-600\")."
+          "description": "CSS classes for the SubValue color (e.g. \"text-green-600\"). Only meaningful together with SubValue: the sub-value span is rendered only when SubValue is non-empty, so a colour on its own would never reach the screen. The component THROWS InvalidOperationException for that pair instead of ignoring it."
         },
         {
           "name": "Title",
@@ -17901,16 +17901,16 @@
         },
         {
           "name": "OnSaveAndLeave",
-          "type": "EventCallback",
+          "type": "Func<Task<bool>>?",
           "isRequired": false,
-          "description": "Optional callback that persists the pending work before navigation continues. When set, the confirmation dialog shows a third \"save and leave\" button; the guard awaits this callback and then re-issues the blocked navigation. Leave unset for the classic Leave/Stay behavior."
+          "description": "Optional callback that persists the pending work before navigation continues. When set, the confirmation dialog shows a third \"save and leave\" button. RETURN TRUE ONLY WHEN THE WORK IS PERSISTED: on true the guard re-issues the blocked navigation, on false it navigates nowhere and leaves the dialog open, so a failed save cannot discard the very changes the guard exists to protect. Until 2.8.16 this was an EventCallback and the guard left regardless of the outcome."
         },
         {
           "name": "SaveAndLeaveText",
           "type": "string",
           "isRequired": false,
           "default": "\"Save and leave\"",
-          "description": "Text for the optional third button that saves the pending work and then leaves. The button is only rendered when OnSaveAndLeave has a delegate, so existing two-choice usages are unchanged."
+          "description": "Text for the optional third button that saves the pending work and then leaves. The button is only rendered when OnSaveAndLeave is set, so existing two-choice usages are unchanged."
         },
         {
           "name": "ShouldGuard",

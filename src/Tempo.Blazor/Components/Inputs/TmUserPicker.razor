@@ -11,13 +11,22 @@
     @if (!string.IsNullOrEmpty(Label))
     {
         @* `for` only when the search box is on screen: once a user is picked the input is gone and a
-           dangling `for` would point at nothing. *@
-        <label for="@(ShowsSearchInput ? Id : null)" class="tm-input-label @(Required ? "tm-input-label-required" : "")">@Label</label>
+           dangling `for` would point at nothing. The id is emitted unconditionally, because the chip
+           that REPLACES the input borrows the very same label through `aria-labelledby`. *@
+        <label id="@LabelId" for="@(ShowsSearchInput ? Id : null)" class="tm-input-label @(Required ? "tm-input-label-required" : "")">@Label</label>
     }
 
     @if (_selectedUser is not null)
     {
-        <div class="tm-user-picker__selected">
+        @* Named group, not a bare div: once a user is picked the input (which carried the label through
+           `for`) is gone, and a plain container cannot take an accessible name — a screen reader would
+           read the picked person without ever saying WHOSE field it is. `group` is deliberate: it names a
+           set of related nodes and promises no keyboard mechanism, unlike `toolbar`. No label, no role —
+           a role whose only job is to carry a name is pointless when there is no name to carry. *@
+        <div class="tm-user-picker__selected"
+             role="@(HasLabel ? "group" : null)"
+             aria-labelledby="@(HasLabel ? LabelId : null)"
+             data-testid="@TestId("tm-user-picker-selected")">
             @if (SelectedTemplate is not null)
             {
                 @SelectedTemplate(_selectedUser)
@@ -72,11 +81,33 @@
                    @onkeydown="HandleKeyDownAsync"
                    @onblur="HandleBlur" />
 
-            @if (_loading)
-            {
-                <div class="tm-user-picker__loading" data-testid="@TestId("tm-user-picker-loading")">@LoadingText</div>
-            }
-            else if (_showResults && _searchState == TmPickerFetchState.Transient)
+            @* PERSISTENT live region for "loading" and "no results". It is rendered even when it has
+               nothing to say, and that is the whole mechanism: a live region that appears in the DOM
+               together with its text is not reliably announced, because the screen reader was not
+               watching the node when the text arrived. Only the MESSAGES are conditional; the region
+               is not. Empty it has no box of its own — the padding lives on the messages inside.
+               The transient error keeps its own `role="alert"` region: it is an interruption, not a
+               progress report, and it carries a retry button that must not be announced politely. *@
+            <div class="tm-user-picker__status" role="status" aria-live="polite"
+                 data-testid="@TestId("tm-user-picker-status")">
+                @if (_loading)
+                {
+                    <div class="tm-user-picker__loading" data-testid="@TestId("tm-user-picker-loading")">@LoadingText</div>
+                }
+                else if (_showResults && _searchState != TmPickerFetchState.Transient && _results.Count == 0)
+                {
+                    @if (EmptyTemplate is not null)
+                    {
+                        @EmptyTemplate
+                    }
+                    else
+                    {
+                        <div class="tm-user-picker__no-results" data-testid="@TestId("tm-user-picker-no-results")">@NoResultsText</div>
+                    }
+                }
+            </div>
+
+            @if (!_loading && _showResults && _searchState == TmPickerFetchState.Transient)
             {
                 <div class="tm-user-picker__transient" role="alert" aria-live="polite" data-testid="@TestId("tm-user-picker-search-transient")">
                     @if (TransientErrorTemplate is not null)
@@ -91,7 +122,7 @@
                     }
                 </div>
             }
-            else if (_showResults && _results.Count > 0)
+            else if (!_loading && _showResults && _results.Count > 0)
             {
                 <ul id="@ResultsId"
                     @ref="_menuRef"
@@ -118,17 +149,6 @@
                         </li>
                     }
                 </ul>
-            }
-            else if (_showResults)
-            {
-                @if (EmptyTemplate is not null)
-                {
-                    @EmptyTemplate
-                }
-                else
-                {
-                    <div class="tm-user-picker__no-results" data-testid="@TestId("tm-user-picker-no-results")">@NoResultsText</div>
-                }
             }
         </div>
     }
@@ -261,6 +281,15 @@
 
     /// <summary>True while the combobox itself is on screen — not when a selection or a resolve error is.</summary>
     private bool ShowsSearchInput => _selectedUser is null && _resolveState != TmPickerFetchState.Transient;
+
+    /// <summary>True when a <see cref="Label"/> is rendered and can therefore name the chip.</summary>
+    private bool HasLabel => !string.IsNullOrEmpty(Label);
+
+    /// <summary>
+    /// Id of the rendered label. The search input reaches it through <c>for</c>, the selected chip
+    /// through <c>aria-labelledby</c> — one label, both states.
+    /// </summary>
+    private string LabelId => $"{Id}-label";
 
     private string ResultsId => $"{Id}-results";
 

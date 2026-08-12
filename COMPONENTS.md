@@ -1579,7 +1579,7 @@ Karta se statistikou (KPI).
 | `Label` | `string?` | `null` | Alias pro Title |
 | `Value` | `string?` | `null` | Hlavní hodnota |
 | `SubValue` | `string?` | `null` | Vedlejší hodnota (trend) |
-| `SubValueColor` | `string?` | `null` | Barva trendu |
+| `SubValueColor` | `string?` | `null` | Barva trendu. **Jen spolu se `SubValue`** — bez něj se prvek s barvou vůbec nevykreslí, takže komponenta dvojici odmítne výjimkou `InvalidOperationException` (2.8.16) místo aby barvu tiše zahodila |
 | `Class` | `string?` | `null` | Další CSS třídy |
 | `AdditionalAttributes` | `Dictionary<string, object>?` | `null` | Další HTML atributy |
 

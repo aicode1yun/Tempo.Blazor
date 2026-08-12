@@ -30,7 +30,7 @@
       "name": "SubValueColor",
       "type": "string?",
       "isRequired": false,
-      "description": "CSS classes for the SubValue color (e.g. \"text-green-600\")."
+      "description": "CSS classes for the SubValue color (e.g. \"text-green-600\"). Only meaningful together with SubValue: the sub-value span is rendered only when SubValue is non-empty, so a colour on its own would never reach the screen. The component THROWS InvalidOperationException for that pair instead of ignoring it."
     }
   ],
   "cssClasses": [

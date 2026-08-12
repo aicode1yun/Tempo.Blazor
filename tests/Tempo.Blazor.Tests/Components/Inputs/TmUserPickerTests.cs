@@ -503,6 +503,150 @@ public class TmUserPickerTests : LocalizationTestBase
         script.Should().Contain("MAX_HEIGHT)");
     }
 
+    /// <summary>
+    /// The open result list must paint ABOVE sticky/floating chrome, not below it. At
+    /// <c>--tm-z-dropdown</c> (1000) a list opened near the bottom of a page ends up under a
+    /// <c>TmFormActionBar</c> (<c>--tm-z-sticky</c>, 1020) and its items are mouse-unreachable, which is
+    /// the same defect `_filterable-dropdown.css` already records and fixes with <c>--tm-z-popover</c>.
+    /// </summary>
+    /// <remarks>
+    /// Asserted against the stylesheet, not the DOM: bUnit renders no cascade, so a rendered z-index is
+    /// not observable there. The ORDER of the two levels is asserted from `tokens.css` as well, so the
+    /// test fails if someone keeps the token name and inverts the scale underneath it.
+    /// </remarks>
+    [Fact]
+    public void UserPickerResults_PaintAbovestickyChrome_OnThePopoverLevel()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var css = File.ReadAllText(Path.Combine(
+            repositoryRoot, "src", "Tempo.Blazor", "Components", "Inputs", "TmUserPicker.razor.css"));
+        var tokens = File.ReadAllText(Path.Combine(
+            repositoryRoot, "src", "Tempo.Blazor", "wwwroot", "css", "tokens.css"));
+
+        css.Should().Contain(
+            "z-index: var(--tm-z-popover, 1030);",
+            "an open result list is a transient popup and must outrank sticky chrome");
+        css.Should().NotContain(
+            "z-index: var(--tm-z-dropdown)",
+            "1000 is below --tm-z-sticky (1020), which is exactly what put the list under the action bar");
+
+        LevelOf(tokens, "--tm-z-popover").Should().BeGreaterThan(
+            LevelOf(tokens, "--tm-z-sticky"),
+            "the fix is the ORDER of the levels, not the name of the token");
+    }
+
+    private static int LevelOf(string tokensCss, string token)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(
+            tokensCss, System.Text.RegularExpressions.Regex.Escape(token) + @":\s*(\d+);");
+        match.Success.Should().BeTrue($"{token} must be defined in tokens.css");
+        return int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>
+    /// Once a user is picked, the search input — the element the <c>&lt;label&gt;</c> pointed at with
+    /// <c>for</c> — is gone, and what replaces it is the chip. Without a name of its own the chip is read
+    /// as a bare person's name with no hint of WHICH field holds it.
+    /// </summary>
+    /// <remarks>
+    /// The chip takes <c>role="group"</c>, whose only job here is to carry the name: a plain container has
+    /// no role, and an accessible name on a roleless element is ignored by screen readers. <c>group</c>
+    /// promises no keyboard mechanism, unlike <c>toolbar</c> — the trap this library removed in the same
+    /// release.
+    /// </remarks>
+    [Fact]
+    public void UserPicker_AfterSelection_ChipCarriesTheFieldsAccessibleName()
+    {
+        var cut = RenderPicker(p => p
+            .Add(x => x.Label, "Owner")
+            .Add(x => x.Id, "owner-picker")
+            .Add(x => x.Value, "alice"));
+
+        cut.WaitForState(() => cut.FindAll("[data-testid='tm-user-picker-selected']").Count > 0);
+
+        var chip = cut.Find("[data-testid='tm-user-picker-selected']");
+        chip.GetAttribute("role").Should().Be("group");
+        var labelledBy = chip.GetAttribute("aria-labelledby");
+        labelledBy.Should().NotBeNullOrEmpty();
+
+        // The reference must resolve, not merely exist: an id pointing at nothing names nothing.
+        var label = cut.Find($"#{labelledBy}");
+        label.TagName.Should().Be("LABEL");
+        label.TextContent.Should().Be("Owner");
+        cut.FindAll("input").Should().BeEmpty("the chip replaces the search input, which is why it needs its own name");
+    }
+
+    /// <summary>
+    /// No label, no role: a role whose only purpose is to carry a name is an empty promise when there is
+    /// no name to carry.
+    /// </summary>
+    [Fact]
+    public void UserPicker_AfterSelection_WithoutLabel_ChipTakesNoEmptyRole()
+    {
+        var cut = RenderPicker(p => p.Add(x => x.Value, "alice"));
+
+        cut.WaitForState(() => cut.FindAll("[data-testid='tm-user-picker-selected']").Count > 0);
+
+        var chip = cut.Find("[data-testid='tm-user-picker-selected']");
+        chip.GetAttribute("role").Should().BeNull();
+        chip.GetAttribute("aria-labelledby").Should().BeNull();
+    }
+
+    /// <summary>
+    /// "Loading" and "No results found" have to be ANNOUNCED, and the mechanism for that is a live region
+    /// that is already in the DOM when the text arrives — a region inserted together with its own text is
+    /// not reliably announced, because the screen reader was not watching that node.
+    /// </summary>
+    /// <remarks>
+    /// This is why the test asserts the EMPTY region before any search: `aria-live` on the message itself
+    /// would pass a "does the attribute exist" check and still announce nothing. The messages stay
+    /// conditional; only the region is permanent.
+    /// </remarks>
+    [Fact]
+    public async Task UserPicker_MenuStates_AreAnnouncedFromAPersistentLiveRegion()
+    {
+        var cut = RenderPicker(p => { });
+
+        var region = cut.Find("[data-testid='tm-user-picker-status']");
+        region.GetAttribute("role").Should().Be("status");
+        region.GetAttribute("aria-live").Should().Be("polite");
+        region.TextContent.Trim().Should().BeEmpty("the region exists before it has anything to say");
+
+        await cut.Find("input").InputAsync(new ChangeEventArgs { Value = "zzz-no-match" });
+        cut.WaitForState(() => cut.FindAll("[data-testid='tm-user-picker-no-results']").Count > 0);
+
+        // Same node, new text — that is what makes it an announcement rather than an insertion.
+        cut.Find("[data-testid='tm-user-picker-status'] [data-testid='tm-user-picker-no-results']")
+            .TextContent.Should().Be("No results found");
+    }
+
+    /// <summary>The in-flight state is announced from the same permanent region, not from a fresh node.</summary>
+    [Fact]
+    public async Task UserPicker_LoadingState_IsAnnouncedFromTheSamePersistentLiveRegion()
+    {
+        var gate = new TaskCompletionSource();
+        Func<string, CancellationToken, Task<TmPickerSearchResult<TestUser>>> slow = async (_, _) =>
+        {
+            await gate.Task;
+            return new TmPickerSearchResult<TestUser>([AllUsers[0]], TmPickerFetchState.Ok);
+        };
+
+        var cut = RenderPicker(p => { }, search: slow);
+
+        var input = cut.Find("input");
+        var typing = cut.InvokeAsync(() => input.InputAsync(new ChangeEventArgs { Value = "alice" }));
+        cut.WaitForState(() => cut.FindAll("[data-testid='tm-user-picker-loading']").Count > 0);
+
+        cut.Find("[data-testid='tm-user-picker-status'] [data-testid='tm-user-picker-loading']")
+            .TextContent.Should().Be("Loading...");
+
+        gate.SetResult();
+        await typing;
+        cut.WaitForState(() => cut.FindAll(".tm-user-picker__result-item").Count > 0);
+        cut.Find("[data-testid='tm-user-picker-status']").TextContent.Trim()
+            .Should().BeEmpty("results are the list's job; the region goes quiet again");
+    }
+
     private static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
