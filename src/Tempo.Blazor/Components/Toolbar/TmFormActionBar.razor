@@ -18,7 +18,7 @@
             @ChildContent
             @if (Status is not null)
             {
-                <div class="tm-form-action-bar__status">@Status</div>
+                <div class="@StatusClass">@Status</div>
             }
         </div>
         @if (PrimaryActions is not null || SecondaryActions is not null || DangerActions is not null)
@@ -69,6 +69,16 @@
     /// <summary>Save/validation status content shown next to the start content.</summary>
     [Parameter] public RenderFragment? Status { get; set; }
 
+    /// <summary>
+    /// What the <see cref="Status"/> content means. Defaults to <see cref="FormActionBarStatusSeverity.None"/>,
+    /// which leaves the slot inheriting its colour.
+    /// </summary>
+    /// <remarks>
+    /// Stated, never inferred. The slot used to be painted as success unconditionally, so an error
+    /// reported next to the Save button came out green — see <see cref="FormActionBarStatusSeverity"/>.
+    /// </remarks>
+    [Parameter] public FormActionBarStatusSeverity StatusSeverity { get; set; } = FormActionBarStatusSeverity.None;
+
     /// <summary>Left/start content, typically a title or breadcrumb.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
@@ -86,6 +96,15 @@
 
     /// <summary>Additional HTML attributes for the root element.</summary>
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string StatusClass => StatusSeverity switch
+    {
+        FormActionBarStatusSeverity.Success => "tm-form-action-bar__status tm-form-action-bar__status--success",
+        FormActionBarStatusSeverity.Warning => "tm-form-action-bar__status tm-form-action-bar__status--warning",
+        FormActionBarStatusSeverity.Error => "tm-form-action-bar__status tm-form-action-bar__status--error",
+        FormActionBarStatusSeverity.Info => "tm-form-action-bar__status tm-form-action-bar__status--info",
+        _ => "tm-form-action-bar__status"
+    };
 
     private string RootClass
     {

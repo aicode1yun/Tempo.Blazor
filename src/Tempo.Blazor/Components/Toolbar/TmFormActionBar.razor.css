@@ -78,12 +78,31 @@
     flex: 1 1 auto;
 }
 
+/* Generický slot NEBARVÍ. Do 2.8.15 tu stálo `color: var(--tm-color-success-text)` natvrdo,
+   takže hlášení chyby u tlačítka Uložit vyšlo zeleně — barva tvrdila opak textu. Parametr se
+   přitom jmenuje `Status`, ne `SuccessStatus`, takže komponenta o obsahu nic neví a neměla si
+   nic domýšlet. Význam se od 2.8.16 UVÁDÍ přes `StatusSeverity`; bez něj se barva dědí. */
 .tm-form-action-bar__status {
     display: flex;
     align-items: center;
     gap: var(--tm-space-1);
     font-size: var(--tm-text-sm);
+}
+
+.tm-form-action-bar__status--success {
     color: var(--tm-color-success-text);
+}
+
+.tm-form-action-bar__status--warning {
+    color: var(--tm-color-warning-text);
+}
+
+.tm-form-action-bar__status--error {
+    color: var(--tm-color-danger-text);
+}
+
+.tm-form-action-bar__status--info {
+    color: var(--tm-color-info-text);
 }
 
 .tm-form-action-bar__end {

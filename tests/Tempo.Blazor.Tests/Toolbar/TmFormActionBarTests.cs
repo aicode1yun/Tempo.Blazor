@@ -177,6 +177,73 @@ public class TmFormActionBarTests : LocalizationTestBase
             + "end inset and the bar overflows the viewport by exactly the start inset");
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Slot `Status` je GENERICKÝ a nesmí si o obsahu nic domýšlet (registr 2.8.16, položka 10).
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Generický slot nesmí barvit obsah, o kterém nic neví.
+    /// </summary>
+    /// <remarks>
+    /// Do 2.8.15 měl <c>.tm-form-action-bar__status</c> natvrdo <c>color: var(--tm-color-success-text)</c>,
+    /// přestože parametr se jmenuje <c>Status</c>, ne <c>SuccessStatus</c>. Hlášení chyby u tlačítka
+    /// tedy bylo ZELENÉ — barva tvrdila opak textu. Knihovna diktovala význam obsahu, který nezná.
+    /// Hostitelská aplikace to musela obcházet tím, že barvu deklarovala na vlastním potomkovi slotu,
+    /// protože přebít scoped pravidlo z aplikačního CSS nejde (DEC-TEMPO-CSS-OVERRIDE-CONTRACT).
+    /// </remarks>
+    [Fact]
+    public void FormActionBarCss_GenericStatusSlot_DoesNotHardcodeSuccessColour()
+    {
+        var css = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(), "src", "Tempo.Blazor", "Components", "Toolbar", "TmFormActionBar.razor.css"));
+
+        SelectorBlock(css, ".tm-form-action-bar__status").Should().NotContain(
+            "color:",
+            "slot je generický — barvu dědí, a sémantiku vyjadřuje parametr StatusSeverity");
+    }
+
+    [Fact]
+    public void FormActionBar_StatusWithoutSeverity_CarriesNoSeverityModifier()
+    {
+        var cut = Render<TmFormActionBar>(p => p.Add(x => x.Status, "uloženo"));
+
+        cut.Find(".tm-form-action-bar__status").ClassList.Should().HaveCount(
+            1,
+            "bez udané závažnosti nemá komponenta co tvrdit, takže nepřidá žádný modifikátor");
+    }
+
+    [Theory]
+    [InlineData(FormActionBarStatusSeverity.Success, "tm-form-action-bar__status--success")]
+    [InlineData(FormActionBarStatusSeverity.Warning, "tm-form-action-bar__status--warning")]
+    [InlineData(FormActionBarStatusSeverity.Error, "tm-form-action-bar__status--error")]
+    [InlineData(FormActionBarStatusSeverity.Info, "tm-form-action-bar__status--info")]
+    public void FormActionBar_StatusSeverity_MarksSlotWithMatchingModifier(
+        FormActionBarStatusSeverity severity, string expectedClass)
+    {
+        var cut = Render<TmFormActionBar>(p => p
+            .Add(x => x.Status, "hláška")
+            .Add(x => x.StatusSeverity, severity));
+
+        cut.Find(".tm-form-action-bar__status").ClassList.Should().Contain(expectedClass);
+    }
+
+    /// <summary>
+    /// Každá závažnost musí mít v CSS vlastní barvu — jinak by parametr byl afordance bez mechanismu,
+    /// tedy přesně ta třída vady, kvůli které se tenhle řádek registru otevřel.
+    /// </summary>
+    [Theory]
+    [InlineData("success")]
+    [InlineData("warning")]
+    [InlineData("error")]
+    [InlineData("info")]
+    public void FormActionBarCss_EverySeverityModifier_DeclaresItsOwnColour(string severity)
+    {
+        var css = File.ReadAllText(Path.Combine(
+            FindRepositoryRoot(), "src", "Tempo.Blazor", "Components", "Toolbar", "TmFormActionBar.razor.css"));
+
+        SelectorBlock(css, $".tm-form-action-bar__status--{severity}").Should().Contain("color:");
+    }
+
     /// <summary>Text of the first declaration block whose selector line starts with <paramref name="selector"/>.</summary>
     private static string SelectorBlock(string css, string selector)
     {
